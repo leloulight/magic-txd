@@ -1,0 +1,1 @@
+Put in the imageformats libraries that were generated using bldscript.bat.

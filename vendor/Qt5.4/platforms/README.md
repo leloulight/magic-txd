@@ -1,0 +1,1 @@
+Copy in the static platform libraries that were generated from the Qt5.4 repository using bldscript.bat.

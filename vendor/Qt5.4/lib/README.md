@@ -1,0 +1,1 @@
+Add static Qt5.4 libraries here. Use the bldscript.bat file to compile them for you.
