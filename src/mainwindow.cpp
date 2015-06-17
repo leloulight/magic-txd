@@ -19,6 +19,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     // Initialize variables.
     this->currentTXD = NULL;
+    this->txdNameLabel = NULL;
 
     // Initialize the RenderWare engine.
     rw::LibraryVersion engineVersion;
@@ -43,7 +44,7 @@ MainWindow::MainWindow(QWidget *parent)
     try
     {
 	    /* --- Window --- */
-        setWindowTitle(tr("Magic.TXD (test)"));
+        updateWindowTitle();
         setMinimumSize(380, 300);
 	    resize(900, 680);
 
@@ -52,7 +53,7 @@ MainWindow::MainWindow(QWidget *parent)
 	    listWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
 	    listWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
-        this->connect( listWidget, &QListWidget::itemClicked, this, &MainWindow::onTextureItemSelected );
+        connect( listWidget, &QListWidget::itemClicked, this, &MainWindow::onTextureItemSelected );
 
         // We will store all our texture names in this.
         this->textureListWidget = listWidget;
@@ -78,9 +79,11 @@ MainWindow::MainWindow(QWidget *parent)
 	    QWidget *txdNameBackground = new QWidget();
 	    txdNameBackground->setFixedHeight(60);
 	    txdNameBackground->setObjectName("txdNameBackground");
-	    QLabel *txdName = new QLabel("effectsPC.txd");
+	    QLabel *txdName = new QLabel();
 	    txdName->setObjectName("txdName");
 	    txdName->setAlignment(Qt::AlignCenter);
+
+        this->txdNameLabel = txdName;
 
 	    QGridLayout *txdNameLayout = new QGridLayout();
 	    QLabel *starsBox = new QLabel;
@@ -105,7 +108,7 @@ MainWindow::MainWindow(QWidget *parent)
 	    QAction *actionOpen = new QAction("&Open", this);
 	    fileMenu->addAction(actionOpen);
 
-        this->connect( actionOpen, &QAction::triggered, this, &MainWindow::onOpenFile );
+        connect( actionOpen, &QAction::triggered, this, &MainWindow::onOpenFile );
 
 	    QAction *actionSave = new QAction("&Save", this);
 	    fileMenu->addAction(actionSave);
@@ -115,7 +118,7 @@ MainWindow::MainWindow(QWidget *parent)
 	    fileMenu->addAction(closeCurrent);
 	    fileMenu->addSeparator();
 
-        this->connect( closeCurrent, &QAction::triggered, this, &MainWindow::onCloseCurrent );
+        connect( closeCurrent, &QAction::triggered, this, &MainWindow::onCloseCurrent );
 
 	    QAction *actionQuit = new QAction("&Quit", this);
 	    fileMenu->addAction(actionQuit);
@@ -280,6 +283,37 @@ void MainWindow::setCurrentTXD( rw::TexDictionary *txdObj )
     }
 }
 
+void MainWindow::updateWindowTitle( void )
+{
+    QString windowTitleString = tr( "Magic.TXD" );
+
+#ifdef _DEBUG
+    windowTitleString += " DEBUG";
+#endif
+
+    if ( rw::TexDictionary *txd = this->currentTXD )
+    {
+        windowTitleString += " (" + QString( this->openedTXDFileInfo.absoluteFilePath() ) + ")";
+    }
+
+    setWindowTitle( windowTitleString );
+
+    // Also update the top label.
+    if ( this->txdNameLabel )
+    {
+        if ( rw::TexDictionary *txd = this->currentTXD )
+        {
+            this->txdNameLabel->setText(
+                QString( this->openedTXDFileInfo.fileName() ) + QString( " [rwver: " ) + txd->GetEngineVersion().toString().c_str() + QString( "]" )
+            );
+        }
+        else
+        {
+            this->txdNameLabel->clear();
+        }
+    }
+}
+
 void MainWindow::onOpenFile( bool checked )
 {
     QString fileName = QFileDialog::getOpenFileName( this, tr( "Open TXD file..." ), QString(), tr( "RW Texture Archive (*.txd)" ) );
@@ -318,6 +352,15 @@ void MainWindow::onOpenFile( bool checked )
                     // Okay, we got a new TXD.
                     // Set it as our current object in the editor.
                     this->setCurrentTXD( newTXD );
+
+                    this->openedTXDFileInfo = QFileInfo( fileName );
+
+                    this->updateWindowTitle();
+                }
+                else
+                {
+                    // Get rid of the object that is not a TXD.
+                    this->rwEngine->DeleteRwObject( parsedObject );
                 }
             }
 
@@ -331,6 +374,8 @@ void MainWindow::onCloseCurrent( bool checked )
 {
     // Make sure we got no TXD active.
     this->setCurrentTXD( NULL );
+
+    this->updateWindowTitle();
 }
 
 void MainWindow::onTextureItemSelected( QListWidgetItem *listItem )

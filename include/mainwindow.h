@@ -3,6 +3,8 @@
 
 #include <QMainWindow>
 #include <QListWidget>
+#include <QFileInfo>
+#include <QLabel>
 
 #include <renderware.h>
 
@@ -18,6 +20,8 @@ public:
 
     void setCurrentTXD( rw::TexDictionary *txdObj );
 
+    void updateWindowTitle( void );
+
 public slots:
     void onOpenFile( bool checked );
     void onCloseCurrent( bool checked );
@@ -28,8 +32,12 @@ private:
     rw::Interface *rwEngine;
     rw::TexDictionary *currentTXD;
 
+    QFileInfo openedTXDFileInfo;
+
     QListWidget *textureListWidget;
     TexViewportWidget *textureViewport;
+
+    QLabel *txdNameLabel;
 };
 
 #endif // MAINWINDOW_H

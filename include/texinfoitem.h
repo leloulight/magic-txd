@@ -27,6 +27,9 @@ public:
             const char *typeName = rasterInfo->getNativeDataTypeName();
 
             textureInfo += " " + QString( typeName );
+
+            // After that how many mipmap levels we have.
+            textureInfo += " " + QString::number( rasterInfo->getMipmapCount() ) + " levels";
         }
 
         QLabel *texInfo = new QLabel(textureInfo, this);
