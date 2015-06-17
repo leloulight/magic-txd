@@ -13,12 +13,15 @@ class PluginDependantStructRegister
 
     unsigned int pluginId;
 
+    bool hasConstructionInitialized;
+
 public:
     inline PluginDependantStructRegister( factoryType& theFactory, unsigned int pluginId = factoryType::ANONYMOUS_PLUGIN_ID )
     {
         this->hostFactory = NULL;
         this->pluginId = pluginId;
         this->structPluginOffset = factoryType::INVALID_PLUGIN_OFFSET;
+        this->hasConstructionInitialized = true;
 
         RegisterPlugin( theFactory );
     }
@@ -28,13 +31,14 @@ public:
         this->hostFactory = NULL;
         this->pluginId = pluginId;
         this->structPluginOffset = factoryType::INVALID_PLUGIN_OFFSET;
+        this->hasConstructionInitialized = false;
     }
 
     inline ~PluginDependantStructRegister( void )
     {
-        if ( this->hostFactory && factoryType::IsOffsetValid( this->structPluginOffset ) )
+        if ( this->hasConstructionInitialized == true )
         {
-            this->hostFactory->UnregisterPlugin( this->structPluginOffset );
+            this->UnregisterPlugin();
         }
     }
 
@@ -44,6 +48,14 @@ public:
             theFactory.RegisterDependantStructPlugin <structType> ( this->pluginId );
 
         this->hostFactory = &theFactory;
+    }
+
+    inline void UnregisterPlugin( void )
+    {
+        if ( this->hostFactory && factoryType::IsOffsetValid( this->structPluginOffset ) )
+        {
+            this->hostFactory->UnregisterPlugin( this->structPluginOffset );
+        }
     }
 
     inline structType* GetPluginStruct( typename factoryType::hostType_t *hostObj )

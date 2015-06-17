@@ -1,0 +1,207 @@
+QMenuBar
+{
+    min-height: 47px;
+    background-color: transparent;
+    font-family:"Segoe UI Light";
+    font-size: 26px;
+    color: #ffffff;
+    border: none;
+}
+
+QMenuBar::item
+{
+    spacing: 0px; /* spacing between menu bar items */
+    padding: 1px 20px;
+    background: transparent;
+}
+
+QMenuBar::item:selected
+{
+    background: #0f0046;
+}
+
+QMenuBar::item:pressed
+{
+    background: #0f0046;
+}
+
+QMenu
+{
+    background-color: #0d0031;
+    border: none;
+    font-family:"Segoe UI Light";
+    font-size: 22px;
+    color: #ffffff;
+}
+
+QMenu::item
+{
+    background-color: transparent;
+}
+
+QMenu::item:selected
+{
+    background-color: #150064;
+}
+
+QListWidget
+{
+    background-color: #0f0046;
+}
+
+QScrollBar:vertical
+{
+    background: #050018;
+    border: 1px solid #050018;
+    width: 22px;
+    margin: 0px 0px 0px 0px;
+}
+
+QScrollBar::handle:vertical
+{
+    background: #0f0046;
+    min-height: 20px;
+}
+
+QScrollBar::add-line:vertical
+{
+    background: #080025;
+    height: 0px;
+}
+
+QScrollBar::sub-line:vertical
+{
+    background: #080025;
+    height: 0px;
+}
+
+QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical
+{
+    width: 0px;
+    height: 0px;
+    background: #050018;
+}
+
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical
+{
+    background: none;
+}
+
+QScrollBar:horizontal
+{
+    background: #050018;
+    border: 1px solid #050018;
+    height: 22px;
+    margin: 0px 0px 0px 0px;
+}
+
+QScrollBar::handle:horizontal
+{
+    background: #0f0046;
+    min-width: 20px;
+}
+
+QScrollBar::add-line:horizontal
+{
+    background: #080025;
+    width: 0px;
+}
+
+QScrollBar::sub-line:horizontal
+{
+    background: #080025;
+    width: 0px;
+}
+
+QScrollBar::up-arrow:horizontal, QScrollBar::down-arrow:horizontal
+{
+    width: 0px;
+    height: 0px;
+    background: #050018;
+}
+
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal
+{
+    background: none;
+}
+
+QListView
+{
+    border: none;
+    outline: 0;
+    show-decoration-selected: 0;
+    alternate-background-color: #0f0046;
+}
+
+QListView::item:alternate
+{
+    background: #080025;
+}
+
+QListView::item
+{
+    background: #080025;
+}
+
+QListView::item:selected:!active
+{
+    background: #0f0046;
+}
+
+QListView::item:selected:active
+{
+    background: #0f0046;
+}
+
+QListView::item:hover
+{
+}
+
+QLabel
+{
+    font-family:"Segoe UI Light";
+    color: #ffffff;
+}
+
+QSplitter::handle
+{
+    background-color: #150062;
+    height: 3px;
+}
+
+QLabel#txdName
+{
+    font-size: 36px;
+}
+
+QLabel#texName
+{
+    font-size: 19px;
+}
+
+QLabel#texInfo
+{
+    font-size: 16px;
+    color: #666178;
+}
+
+QWidget#txdNameBackground
+{
+    background-color: #050018;
+}
+
+QWidget#txdOptionsBackground
+{
+    background-color: #080025;
+}
+
+QWidget#hLineBackground
+{
+    background-color: #d1db2f;
+}
+
+QWidget#textureViewBackground
+{
+    background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                      stop: 0 #0f0045, stop: 1 #050018);
+}

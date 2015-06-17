@@ -703,7 +703,7 @@ void d3dNativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture, 
     engineInterface->DeserializeExtensions( theTexture, inputProvider );
 }
 
-static PluginDependantStructRegister <d3dNativeTextureTypeProvider, RwInterfaceFactory_t> d3dNativeTexturePluginRegister( engineFactory );
+static PluginDependantStructRegister <d3dNativeTextureTypeProvider, RwInterfaceFactory_t> d3dNativeTexturePluginRegister;
 
 void registerD3DNativeTexture( Interface *engineInterface )
 {
@@ -713,6 +713,11 @@ void registerD3DNativeTexture( Interface *engineInterface )
     {
         RegisterNativeTextureType( engineInterface, "Direct3D", d3dTexEnv, sizeof( NativeTextureD3D ) );
     }
+}
+
+void registerD3DNativePlugin( void )
+{
+    d3dNativeTexturePluginRegister.RegisterPlugin( engineFactory );
 }
 
 };

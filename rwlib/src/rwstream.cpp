@@ -346,7 +346,7 @@ struct streamSystemPlugin
     typeInfoList_t custom_types;
 };
 
-static PluginDependantStructRegister <streamSystemPlugin, RwInterfaceFactory_t> streamSystemPluginRegister( engineFactory );
+static PluginDependantStructRegister <streamSystemPlugin, RwInterfaceFactory_t> streamSystemPluginRegister;
 
 struct customStreamConstructionParams
 {
@@ -580,6 +580,11 @@ void Interface::DeleteStream( Stream *theStream )
 {
     // Just rek it.
     this->typeSystem.Destroy( this, RwTypeSystem::GetTypeStructFromObject( theStream ) );
+}
+
+void registerStreamGlobalPlugins( void )
+{
+    streamSystemPluginRegister.RegisterPlugin( engineFactory );
 }
 
 };

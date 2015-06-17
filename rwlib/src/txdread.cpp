@@ -229,7 +229,7 @@ TexDictionary::~TexDictionary( void )
     }
 }
 
-static PluginDependantStructRegister <texDictionaryStreamPlugin, RwInterfaceFactory_t> texDictionaryStreamStore( engineFactory );
+static PluginDependantStructRegister <texDictionaryStreamPlugin, RwInterfaceFactory_t> texDictionaryStreamStore;
 
 void initializeTXDEnvironment( Interface *theInterface )
 {
@@ -1195,7 +1195,7 @@ struct nativeTextureStreamPlugin : public serializationProvider
     RwList <texNativeTypeProvider> texNativeTypes;
 };
 
-static PluginDependantStructRegister <nativeTextureStreamPlugin, RwInterfaceFactory_t> nativeTextureStreamStore( engineFactory );
+static PluginDependantStructRegister <nativeTextureStreamPlugin, RwInterfaceFactory_t> nativeTextureStreamStore;
 
 // Texture native type registrations.
 void registerD3DNativeTexture( Interface *engineInterface );
@@ -2159,6 +2159,22 @@ bool Raster::hasNativeDataOfType( const char *typeName ) const
     return ( strcmp( typeInfo->name, typeName ) == 0 );
 }
 
+const char* Raster::getNativeDataTypeName( void ) const
+{
+    PlatformTexture *platformTex = this->platformData;
+
+    if ( !platformTex )
+        return false;
+
+    Interface *engineInterface = this->engineInterface;
+
+    GenericRTTI *rtObj = RwTypeSystem::GetTypeStructFromObject( platformTex );
+
+    RwTypeSystem::typeInfoBase *typeInfo = RwTypeSystem::GetTypeInfoFromTypeStruct( rtObj );
+
+    return ( typeInfo->name );
+}
+
 void* Raster::getNativeInterface( void )
 {
     PlatformTexture *platformTex = this->platformData;
@@ -2871,6 +2887,30 @@ void wardrumFormatInfo::set(const TextureBase& inTex)
     this->filterMode = (uint32)inTex.GetFilterMode();
     this->uAddressing = (uint32)inTex.GetUAddressing();
     this->vAddressing = (uint32)inTex.GetVAddressing();
+}
+
+// Initializator for TXD plugins, as it cannot be done statically.
+extern void registerATCNativePlugin( void );
+extern void registerD3DNativePlugin( void );
+extern void registerMobileDXTNativePlugin( void );
+extern void registerPS2NativePlugin( void );
+extern void registerPVRNativePlugin( void );
+extern void registerMobileUNCNativePlugin( void );
+extern void registerXBOXNativePlugin( void );
+
+void registerTXDPlugins( void )
+{
+    texDictionaryStreamStore.RegisterPlugin( engineFactory );
+    nativeTextureStreamStore.RegisterPlugin( engineFactory );
+
+    // Now register sub module plugins.
+    registerATCNativePlugin();
+    registerD3DNativePlugin();
+    registerMobileDXTNativePlugin();
+    registerPS2NativePlugin();
+    registerPVRNativePlugin();
+    registerMobileUNCNativePlugin();
+    registerXBOXNativePlugin();
 }
 
 }

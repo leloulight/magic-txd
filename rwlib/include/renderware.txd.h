@@ -259,6 +259,7 @@ struct Raster
     void clearNativeData( void );
 
     bool hasNativeDataOfType( const char *typeName ) const;
+    const char* getNativeDataTypeName( void ) const;
 
     void* getNativeInterface( void );
 

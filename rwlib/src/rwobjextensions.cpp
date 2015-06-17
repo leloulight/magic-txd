@@ -210,7 +210,7 @@ struct rwInterfaceExtensionPlugin
     }
 };
 
-static PluginDependantStructRegister <rwInterfaceExtensionPlugin, RwInterfaceFactory_t> rwExtensionsRegister( engineFactory );
+static PluginDependantStructRegister <rwInterfaceExtensionPlugin, RwInterfaceFactory_t> rwExtensionsRegister;
 
 void Interface::SerializeExtensions( const RwObject *rwObj, BlockProvider& outputProvider )
 {
@@ -302,6 +302,11 @@ void Interface::DeserializeExtensions( RwObject *rwObj, BlockProvider& inputProv
     }
 
     extensionBlock.LeaveContext();
+}
+
+void registerObjectExtensionsPlugins( void )
+{
+    rwExtensionsRegister.RegisterPlugin( engineFactory );
 }
 
 };

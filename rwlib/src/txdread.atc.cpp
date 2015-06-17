@@ -917,7 +917,7 @@ void atcNativeTextureTypeProvider::GetTextureInfo( Interface *engineInterface, v
     infoOut.baseHeight = baseHeight;
 }
 
-static PluginDependantStructRegister <atcNativeTextureTypeProvider, RwInterfaceFactory_t> atcNativeTexturePluginStore( engineFactory );
+static PluginDependantStructRegister <atcNativeTextureTypeProvider, RwInterfaceFactory_t> atcNativeTexturePluginStore;
 
 void registerATCNativeTexture( Interface *engineInterface )
 {
@@ -928,6 +928,11 @@ void registerATCNativeTexture( Interface *engineInterface )
         // Register it.
         RegisterNativeTextureType( engineInterface, "ATI_Compress", atcTexEnv, sizeof( NativeTextureATC ) );
     }
+}
+
+void registerATCNativePlugin( void )
+{
+    atcNativeTexturePluginStore.RegisterPlugin( engineFactory );
 }
 
 };

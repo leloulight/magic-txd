@@ -872,7 +872,7 @@ void ps2NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture, 
     engineInterface->DeserializeExtensions( theTexture, inputProvider );
 }
 
-static PluginDependantStructRegister <ps2NativeTextureTypeProvider, RwInterfaceFactory_t> ps2NativeTexturePlugin( engineFactory );
+static PluginDependantStructRegister <ps2NativeTextureTypeProvider, RwInterfaceFactory_t> ps2NativeTexturePlugin;
 
 void registerPS2NativeTexture( Interface *engineInterface )
 {
@@ -882,6 +882,11 @@ void registerPS2NativeTexture( Interface *engineInterface )
     {
         RegisterNativeTextureType( engineInterface, "PlayStation2", ps2TexEnv, sizeof( NativeTexturePS2 ) );
     }
+}
+
+void registerPS2NativePlugin( void )
+{
+    ps2NativeTexturePlugin.RegisterPlugin( engineFactory );
 }
 
 /* convert from CLUT format used by the ps2 */

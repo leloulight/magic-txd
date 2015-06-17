@@ -241,7 +241,7 @@ void pvrNativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture, 
     engineInterface->DeserializeExtensions( theTexture, inputProvider );
 }
 
-static PluginDependantStructRegister <pvrNativeTextureTypeProvider, RwInterfaceFactory_t> pvrNativeTexturePlugin( engineFactory );
+static PluginDependantStructRegister <pvrNativeTextureTypeProvider, RwInterfaceFactory_t> pvrNativeTexturePlugin;
 
 void registerPVRNativeTexture( Interface *engineInterface )
 {
@@ -251,6 +251,11 @@ void registerPVRNativeTexture( Interface *engineInterface )
     {
         RegisterNativeTextureType( engineInterface, "PowerVR", pvrTexEnv, sizeof( NativeTexturePVR ) );
     }
+}
+
+void registerPVRNativePlugin( void )
+{
+    pvrNativeTexturePlugin.RegisterPlugin( engineFactory );
 }
 
 };

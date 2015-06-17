@@ -219,7 +219,7 @@ struct warningHandlerPlugin
     }
 };
 
-static PluginDependantStructRegister <warningHandlerPlugin, RwInterfaceFactory_t> warningHandlerPluginRegister( engineFactory );
+static PluginDependantStructRegister <warningHandlerPlugin, RwInterfaceFactory_t> warningHandlerPluginRegister;
 
 void Interface::PushWarning( const std::string& message )
 {
@@ -337,9 +337,31 @@ bool Interface::GetIgnoreSerializationBlockRegions( void ) const
     return this->ignoreSerializationBlockRegions;
 }
 
+// Static library object that takes care of initializing the module dependencies properly.
+extern void registerTXDPlugins( void );
+extern void registerObjectExtensionsPlugins( void );
+extern void registerSerializationPlugins( void );
+extern void registerStreamGlobalPlugins( void );
+
+static bool hasInitialized = false;
+
 // Interface creation for the RenderWare engine.
 Interface* CreateEngine( LibraryVersion theVersion )
 {
+    if ( hasInitialized == false )
+    {
+        // Initialize our plugins first.
+        warningHandlerPluginRegister.RegisterPlugin( engineFactory );
+
+        // Now do the main modules.
+        registerTXDPlugins();
+        registerObjectExtensionsPlugins();
+        registerSerializationPlugins();
+        registerStreamGlobalPlugins();
+
+        hasInitialized = true;
+    }
+
     // Create a specialized engine depending on the version.
     Interface *engineOut = engineFactory.Construct( _engineMemAlloc );
 
@@ -365,6 +387,8 @@ Interface* CreateEngine( LibraryVersion theVersion )
 
 void DeleteEngine( Interface *theEngine )
 {
+    assert( hasInitialized == true );
+
     shutdownNativeTextureEnvironment( theEngine );
     shutdownTXDEnvironment( theEngine );
 

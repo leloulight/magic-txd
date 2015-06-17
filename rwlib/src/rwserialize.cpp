@@ -56,7 +56,7 @@ struct serializationStorePlugin
     }
 };
 
-static PluginDependantStructRegister <serializationStorePlugin, RwInterfaceFactory_t> serializationStoreRegister( engineFactory );
+static PluginDependantStructRegister <serializationStorePlugin, RwInterfaceFactory_t> serializationStoreRegister;
 
 bool Interface::RegisterSerialization( uint32 chunkID, RwTypeSystem::typeInfoBase *rwType, serializationProvider *serializer, eSerializationTypeMode mode )
 {
@@ -307,6 +307,11 @@ RwObject* Interface::Deserialize( Stream *inputStream )
     BlockProvider mainBlock( inputStream, RWBLOCKMODE_READ );
 
     return this->DeserializeBlock( mainBlock );
+}
+
+void registerSerializationPlugins( void )
+{
+    serializationStoreRegister.RegisterPlugin( engineFactory );
 }
 
 };
