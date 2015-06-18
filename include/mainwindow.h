@@ -5,10 +5,9 @@
 #include <QListWidget>
 #include <QFileInfo>
 #include <QLabel>
+#include <QScrollArea>
 
 #include <renderware.h>
-
-#include "textureViewport.h"
 
 class MainWindow : public QMainWindow
 {
@@ -35,7 +34,9 @@ private:
     QFileInfo openedTXDFileInfo;
 
     QListWidget *textureListWidget;
-    TexViewportWidget *textureViewport;
+
+	QScrollArea *imageView; // we handle full 2d-viewport as a scroll-area
+	QLabel *imageWidget;    // we use label to put image on it
 
     QLabel *txdNameLabel;
 };

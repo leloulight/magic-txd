@@ -59,16 +59,18 @@ MainWindow::MainWindow(QWidget *parent)
         this->textureListWidget = listWidget;
 
 	    /* --- Viewport --- */
-	    TexViewportWidget *textureViewBackground = new TexViewportWidget();
-	    textureViewBackground->setObjectName("textureViewBackground");
-
-        // We shall render our things into this.
-        this->textureViewport = textureViewBackground;
+		imageView = new QScrollArea;
+		imageView->setFrameShape(QFrame::NoFrame);
+		imageView->setObjectName("textureViewBackground");
+		imageWidget = new QLabel;
+		imageWidget->setObjectName("transparentBackground"); // "chessBackground" > grid background
+		imageView->setWidget(imageWidget);
+		imageView->setAlignment(Qt::AlignCenter);
 
 	    /* --- Splitter --- */
 	    QSplitter *splitter = new QSplitter;
 	    splitter->addWidget(listWidget);
-	    splitter->addWidget(textureViewBackground);
+		splitter->addWidget(imageView);
 	    QList<int> sizes;
 	    sizes.push_back(200);
 	    sizes.push_back(splitter->size().width() - 200);
@@ -255,7 +257,7 @@ void MainWindow::setCurrentTXD( rw::TexDictionary *txdObj )
     if ( this->currentTXD != NULL )
     {
         // Make sure we have no more texture in our viewport.
-        this->textureViewport->setTextureHandle( NULL );
+		this->imageWidget->clear();
 
         this->rwEngine->DeleteRwObject( this->currentTXD );
 
@@ -388,10 +390,18 @@ void MainWindow::onTextureItemSelected( QListWidgetItem *listItem )
 
     if ( texItem != NULL )
     {
-        // Get the actual texture we are associated with and present it on the output pane.
-        rw::TextureBase *theTexture = texItem->GetTextureHandle();
-
-        // Put it to render in our viewport.
-        this->textureViewport->setTextureHandle( theTexture );
+		// Get the actual texture we are associated with and present it on the output pane.
+		rw::TextureBase *theTexture = texItem->GetTextureHandle();
+		rw::Raster *rasterData = theTexture->GetRaster();
+		if (rasterData)
+		{
+			rw::Bitmap rasterBitmap = rasterData->getBitmap();
+			rw::uint32 width, height;
+			rasterBitmap.getSize(width, height);
+			QImage texImage((uchar *)rasterBitmap.getTexelsData(), width, height, QImage::Format::Format_ARGB32);
+			QPixmap pixmap;
+			imageWidget->setPixmap(pixmap.fromImage(texImage));
+			imageWidget->setFixedSize(QSize(width, height));
+		}
     }
 }

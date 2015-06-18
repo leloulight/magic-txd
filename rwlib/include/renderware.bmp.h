@@ -196,6 +196,11 @@ struct Bitmap
     {
         return this->dataSize;
     }
+
+	inline void *getTexelsData(void) const
+	{
+		return this->texels;
+	}
     
     inline void* copyPixelData( void ) const
     {
