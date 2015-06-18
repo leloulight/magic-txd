@@ -475,7 +475,7 @@ void MainWindow::updateTextureView( void )
 
             if ( this->drawMipmapLayers )
             {
-                rasterBitmap.setBgColor( 1.0, 1.0, 1.0 );
+                rasterBitmap.setBgColor( 1.0, 1.0, 1.0, 0.0 );
 
                 rw::DebugDrawMipmaps( this->rwEngine, rasterData, rasterBitmap );
             }
@@ -486,15 +486,6 @@ void MainWindow::updateTextureView( void )
 
 			QImage texImage = convertRWBitmapToQImage( rasterBitmap );
 
-			//rw::Bitmap rasterBitmap = rasterData->getBitmap();
-			//rw::uint32 width, height;
-			//rasterBitmap.getSize(width, height);
-			//QImage::Format format;
-			//if (rasterBitmap.getFormat() == rw::RASTER_8888)
-			//	format = QImage::Format::Format_ARGB32;
-			//else
-			//	format = QImage::Format::Format_RGB32;
-			//QImage texImage((uchar *)rasterBitmap.getTexelsData(), width, height, format);
 			imageWidget->setPixmap(QPixmap::fromImage(texImage));
 			imageWidget->setFixedSize(QSize(texImage.width(), texImage.height()));
 		}

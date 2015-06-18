@@ -35,7 +35,7 @@ void Bitmap::setSize( uint32 width, uint32 height )
                 uint8 srcRed = packcolor( this->bgRed );
                 uint8 srcGreen = packcolor( this->bgGreen );
                 uint8 srcBlue = packcolor( this->bgBlue );
-                uint8 srcAlpha = 255;
+                uint8 srcAlpha = packcolor( this->bgAlpha );
 
                 // Try to get a source color.
                 if ( oldTexels != NULL && x < oldWidth && y < oldHeight )

@@ -20,6 +20,7 @@ struct Bitmap
         this->bgRed = 0;
         this->bgGreen = 0;
         this->bgBlue = 0;
+        this->bgAlpha = 1.0;
     }
 
     inline Bitmap( uint32 depth, eRasterFormat theFormat, eColorOrdering colorOrder )
@@ -36,6 +37,7 @@ struct Bitmap
         this->bgRed = 0;
         this->bgGreen = 0;
         this->bgBlue = 0;
+        this->bgAlpha = 1.0;
     }
 
 private:
@@ -65,6 +67,7 @@ private:
         this->bgRed = right.bgRed;
         this->bgGreen = right.bgGreen;
         this->bgBlue = right.bgBlue;
+        this->bgAlpha = right.bgAlpha;
     }
 
 public:
@@ -90,6 +93,7 @@ private:
         this->bgRed = right.bgRed;
         this->bgGreen = right.bgGreen;
         this->bgBlue = right.bgBlue;
+        this->bgAlpha = right.bgAlpha;
 
         // Default the moved from object.
         right.texels = NULL;
@@ -275,11 +279,12 @@ public:
         return newPixels;
     }
 
-    inline void setBgColor( double red, double green, double blue )
+    inline void setBgColor( double red, double green, double blue, double alpha = 1.0 )
     {
         this->bgRed = red;
         this->bgGreen = green;
         this->bgBlue = blue;
+        this->bgAlpha = alpha;
     }
 
     inline void getBgColor( double& red, double& green, double& blue ) const
@@ -333,5 +338,5 @@ private:
 
     eColorOrdering colorOrder;
 
-    double bgRed, bgGreen, bgBlue;
+    double bgRed, bgGreen, bgBlue, bgAlpha;
 };
