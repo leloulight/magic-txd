@@ -38,7 +38,8 @@ struct Bitmap
         this->bgBlue = 0;
     }
 
-    inline Bitmap( const Bitmap& right )
+private:
+    inline void assignFrom( const Bitmap& right )
     {
         this->width = right.width;
         this->height = right.height;
@@ -66,13 +67,70 @@ struct Bitmap
         this->bgBlue = right.bgBlue;
     }
 
-    inline ~Bitmap( void )
+public:
+    inline Bitmap( const Bitmap& right )
+    {
+        this->assignFrom( right );
+    }
+
+private:
+    inline void moveFrom( Bitmap&& right )
+    {
+        this->width = right.width;
+        this->height = right.height;
+        this->depth = right.depth;
+        this->rasterFormat = right.rasterFormat;
+
+        // Move over texels.
+        this->texels = right.texels;
+        this->dataSize = right.dataSize;
+
+        this->colorOrder = right.colorOrder;
+        
+        this->bgRed = right.bgRed;
+        this->bgGreen = right.bgGreen;
+        this->bgBlue = right.bgBlue;
+
+        // Default the moved from object.
+        right.texels = NULL;
+    }
+
+public:
+    inline Bitmap( Bitmap&& right )
+    {
+        this->moveFrom( std::move( right ) );
+    }
+
+private:
+    inline void clearTexelData( void )
     {
         // If we have texel data, deallocate it.
         if ( void *ourTexels = this->texels )
         {
             delete [] ourTexels;
+
+            this->texels = NULL;
         }
+    }
+
+public:
+    inline void operator =( const Bitmap& right )
+    {
+        this->clearTexelData();
+
+        this->assignFrom( right );
+    }
+
+    inline void operator =( Bitmap&& right )
+    {
+        this->clearTexelData();
+
+        this->moveFrom( std::move( right ) );
+    }
+
+    inline ~Bitmap( void )
+    {
+        this->clearTexelData();
     }
 
     inline static uint32 getRasterFormatDepth( eRasterFormat format )

@@ -20,6 +20,9 @@ MainWindow::MainWindow(QWidget *parent)
     // Initialize variables.
     this->currentTXD = NULL;
     this->txdNameLabel = NULL;
+    this->currentSelectedTexture = NULL;
+
+    this->drawMipmapLayers = false;
 
     // Initialize the RenderWare engine.
     rw::LibraryVersion engineVersion;
@@ -29,7 +32,7 @@ MainWindow::MainWindow(QWidget *parent)
     engineVersion.rwLibMajor = 3;
     engineVersion.rwLibMinor = 6;
     engineVersion.rwRevMajor = 0;
-    engineVersion.rwRevMinor = 4;
+    engineVersion.rwRevMinor = 3;
 
     this->rwEngine = rw::CreateEngine( engineVersion );
 
@@ -114,8 +117,14 @@ MainWindow::MainWindow(QWidget *parent)
 
 	    QAction *actionSave = new QAction("&Save", this);
 	    fileMenu->addAction(actionSave);
+
+        connect( actionSave, &QAction::triggered, this, &MainWindow::onRequestSaveTXD );
+
 	    QAction *actionSaveAs = new QAction("&Save as...", this);
 	    fileMenu->addAction(actionSaveAs);
+
+        connect( actionSaveAs, &QAction::triggered, this, &MainWindow::onRequestSaveAsTXD );
+
 	    QAction *closeCurrent = new QAction("&Close current", this);
 	    fileMenu->addAction(closeCurrent);
 	    fileMenu->addSeparator();
@@ -140,6 +149,14 @@ MainWindow::MainWindow(QWidget *parent)
 	    editMenu->addAction(actionSetPixelFormat);
 	    QAction *actionSetupMipLevels = new QAction("&Setup mip-levels", this);
 	    editMenu->addAction(actionSetupMipLevels);
+
+        connect( actionSetupMipLevels, &QAction::triggered, this, &MainWindow::onSetupMipmapLayers );
+
+        QAction *actionClearMipLevels = new QAction("&Clear mip-levels", this);
+        editMenu->addAction(actionClearMipLevels);
+
+        connect( actionClearMipLevels, &QAction::triggered, this, &MainWindow::onClearMipmapLayers );
+
 	    QAction *actionSetupRenderingProperties = new QAction("&Setup rendering properties", this);
 	    editMenu->addAction(actionSetupRenderingProperties);
 	    editMenu->addSeparator();
@@ -174,6 +191,9 @@ MainWindow::MainWindow(QWidget *parent)
 	    viewMenu->addAction(action3dView);
 	    QAction *actionShowMipLevels = new QAction("&Display mip-levels", this);
 	    viewMenu->addAction(actionShowMipLevels);
+
+        connect( actionShowMipLevels, &QAction::triggered, this, &MainWindow::onToggleShowMipmapLayers );
+
 	    viewMenu->addSeparator();
 	    QAction *actionSetupTheme = new QAction("&Setup theme", this);
 	    viewMenu->addAction(actionSetupTheme);
@@ -254,10 +274,15 @@ MainWindow::~MainWindow()
 
 void MainWindow::setCurrentTXD( rw::TexDictionary *txdObj )
 {
+    if ( this->currentTXD == txdObj )
+        return;
+
     if ( this->currentTXD != NULL )
     {
         // Make sure we have no more texture in our viewport.
 		this->imageWidget->clear();
+
+        this->currentSelectedTexture = NULL;
 
         this->rwEngine->DeleteRwObject( this->currentTXD );
 
@@ -313,6 +338,15 @@ void MainWindow::updateWindowTitle( void )
         {
             this->txdNameLabel->clear();
         }
+    }
+}
+
+void MainWindow::updateTextureMetaInfo( void )
+{
+    if ( TexInfoWidget *infoWidget = this->currentSelectedTexture )
+    {
+        // Update it.
+        infoWidget->updateInfo();
     }
 }
 
@@ -374,10 +408,41 @@ void MainWindow::onOpenFile( bool checked )
 
 void MainWindow::onCloseCurrent( bool checked )
 {
+    this->currentSelectedTexture = NULL;
+
     // Make sure we got no TXD active.
     this->setCurrentTXD( NULL );
 
     this->updateWindowTitle();
+}
+
+inline QImage convertRWBitmapToQImage( const rw::Bitmap& rasterBitmap )
+{
+	rw::uint32 width, height;
+	rasterBitmap.getSize(width, height);
+
+	QImage texImage(width, height, QImage::Format::Format_ARGB32);
+
+	// Copy scanline by scanline.
+	for (int y = 0; y < height; y++)
+	{
+		uchar *scanLineContent = texImage.scanLine(y);
+
+		QRgb *colorItems = (QRgb*)scanLineContent;
+
+		for (int x = 0; x < width; x++)
+		{
+			QRgb *colorItem = (colorItems + x);
+
+			unsigned char r, g, b, a;
+
+			rasterBitmap.browsecolor(x, y, r, g, b, a);
+
+			*colorItem = qRgba(r, g, b, a);
+		}
+	}
+
+    return texImage;
 }
 
 void MainWindow::onTextureItemSelected( QListWidgetItem *listItem )
@@ -388,6 +453,15 @@ void MainWindow::onTextureItemSelected( QListWidgetItem *listItem )
 
     TexInfoWidget *texItem = dynamic_cast <TexInfoWidget*> ( listItemWidget );
 
+    this->currentSelectedTexture = texItem;
+
+    this->updateTextureView();
+}
+
+void MainWindow::updateTextureView( void )
+{
+    TexInfoWidget *texItem = this->currentSelectedTexture;
+
     if ( texItem != NULL )
     {
 		// Get the actual texture we are associated with and present it on the output pane.
@@ -397,31 +471,20 @@ void MainWindow::onTextureItemSelected( QListWidgetItem *listItem )
 		{
 			// Get a bitmap to the raster.
 			// This is a 2D color component surface.
-			rw::Bitmap rasterBitmap = rasterData->getBitmap();
+			rw::Bitmap rasterBitmap( 32, rw::RASTER_8888, rw::COLOR_BGRA );
 
-			rw::uint32 width, height;
-			rasterBitmap.getSize(width, height);
+            if ( this->drawMipmapLayers )
+            {
+                rasterBitmap.setBgColor( 1.0, 1.0, 1.0 );
 
-			QImage texImage(width, height, QImage::Format::Format_ARGB32);
+                rw::DebugDrawMipmaps( this->rwEngine, rasterData, rasterBitmap );
+            }
+            else
+            {
+                rasterBitmap = rasterData->getBitmap();
+            }
 
-			// Copy scanline by scanline.
-			for (int y = 0; y < height; y++)
-			{
-				uchar *scanLineContent = texImage.scanLine(y);
-
-				QRgb *colorItems = (QRgb*)scanLineContent;
-
-				for (int x = 0; x < width; x++)
-				{
-					QRgb *colorItem = (colorItems + x);
-
-					unsigned char r, g, b, a;
-
-					rasterBitmap.browsecolor(x, y, r, g, b, a);
-
-					*colorItem = qRgba(r, g, b, a);
-				}
-			}
+			QImage texImage = convertRWBitmapToQImage( rasterBitmap );
 
 			//rw::Bitmap rasterBitmap = rasterData->getBitmap();
 			//rw::uint32 width, height;
@@ -432,9 +495,107 @@ void MainWindow::onTextureItemSelected( QListWidgetItem *listItem )
 			//else
 			//	format = QImage::Format::Format_RGB32;
 			//QImage texImage((uchar *)rasterBitmap.getTexelsData(), width, height, format);
-			QPixmap pixmap;
-			imageWidget->setPixmap(pixmap.fromImage(texImage));
-			imageWidget->setFixedSize(QSize(width, height));
+			imageWidget->setPixmap(QPixmap::fromImage(texImage));
+			imageWidget->setFixedSize(QSize(texImage.width(), texImage.height()));
 		}
+    }
+}
+
+void MainWindow::onToggleShowMipmapLayers( bool checked )
+{
+    this->drawMipmapLayers = !( this->drawMipmapLayers );
+
+    // Update the texture view.
+    this->updateTextureView();
+}
+
+void MainWindow::onSetupMipmapLayers( bool checked )
+{
+    // We just generate up to the top mipmap level for now.
+    if ( TexInfoWidget *texInfo = this->currentSelectedTexture )
+    {
+        rw::TextureBase *texture = texInfo->GetTextureHandle();
+
+        // Generate mipmaps.
+        texture->generateMipmaps( 32, rw::MIPMAPGEN_DEFAULT );
+    }
+
+    // Make sure we update the info.
+    this->updateTextureMetaInfo();
+
+    // Update the texture view.
+    this->updateTextureView();
+}
+
+void MainWindow::onClearMipmapLayers( bool checked )
+{
+    // Here is a quick way to clear mipmap layers from a texture.
+    if ( TexInfoWidget *texInfo = this->currentSelectedTexture )
+    {
+        rw::TextureBase *texture = texInfo->GetTextureHandle();
+
+        // Clear the mipmaps.
+        texture->clearMipmaps();
+    }
+
+    // Update the info.
+    this->updateTextureMetaInfo();
+
+    // Update the texture view.
+    this->updateTextureView();
+}
+
+void MainWindow::saveCurrentTXDAt( QString txdFullPath )
+{
+    if ( rw::TexDictionary *currentTXD = this->currentTXD )
+    {
+        // We serialize what we have at the location we loaded the TXD from.
+        std::string ansiFullPath = txdFullPath.toStdString();
+
+        rw::streamConstructionFileParam_t fileOpenParam( ansiFullPath.c_str() );
+
+        rw::Stream *newTXDStream = this->rwEngine->CreateStream( rw::RWSTREAMTYPE_FILE, rw::RWSTREAMMODE_CREATE, &fileOpenParam );
+
+        if ( newTXDStream )
+        {
+            // Write the TXD into it.
+            try
+            {
+                this->rwEngine->Serialize( currentTXD, newTXDStream );
+            }
+            catch( rw::RwException& except )
+            {
+                // TODO: notify the user about a RenderWare error.
+            }
+
+            // Close the stream.
+            this->rwEngine->DeleteStream( newTXDStream );
+        }
+    }
+}
+
+void MainWindow::onRequestSaveTXD( bool checked )
+{
+    if ( this->currentTXD != NULL )
+    {
+        QString txdFullPath = this->openedTXDFileInfo.absolutePath();
+
+        if ( txdFullPath.length() != 0 )
+        {
+            this->saveCurrentTXDAt( txdFullPath );
+        }
+    }
+}
+
+void MainWindow::onRequestSaveAsTXD( bool checked )
+{
+    if ( this->currentTXD != NULL )
+    {
+        QString newSaveLocation = QFileDialog::getSaveFileName( this, "Save TXD as...", QString(), tr( "RW Texture Dictionary (*.txd)" ) );
+
+        if ( newSaveLocation.length() != 0 )
+        {
+            this->saveCurrentTXDAt( newSaveLocation );
+        }
     }
 }
