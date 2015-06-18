@@ -57,7 +57,7 @@ MainWindow::MainWindow(QWidget *parent)
 	    listWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
 	    //listWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
-        connect( listWidget, &QListWidget::itemClicked, this, &MainWindow::onTextureItemSelected );
+        connect( listWidget, &QListWidget::currentItemChanged, this, &MainWindow::onTextureItemChanged );
 
         // We will store all our texture names in this.
         this->textureListWidget = listWidget;
@@ -308,6 +308,8 @@ void MainWindow::setCurrentTXD( rw::TexDictionary *txdObj )
 
         QListWidget *listWidget = this->textureListWidget;
 
+		bool selected = false;
+
 	    for ( rw::TexDictionary::texIter_t iter( txdObj->GetTextureIterator() ); iter.IsEnd() == false; iter.Increment() )
 	    {
             rw::TextureBase *texItem = iter.Resolve();
@@ -316,6 +318,12 @@ void MainWindow::setCurrentTXD( rw::TexDictionary *txdObj )
 	        listWidget->addItem(item);
 	        listWidget->setItemWidget(item, new TexInfoWidget(texItem) );
 		    item->setSizeHint(QSize(listWidget->sizeHintForColumn(0), 54));
+			// select first item in a list
+			if (!selected)
+			{
+				item->setSelected(true);
+				selected = true;
+			}
 	    }
     }
 }
@@ -457,7 +465,7 @@ inline QImage convertRWBitmapToQImage( const rw::Bitmap& rasterBitmap )
     return texImage;
 }
 
-void MainWindow::onTextureItemSelected( QListWidgetItem *listItem )
+void MainWindow::onTextureItemChanged(QListWidgetItem *listItem, QListWidgetItem *prevTexInfoItem)
 {
     QListWidget *texListWidget = this->textureListWidget;
 

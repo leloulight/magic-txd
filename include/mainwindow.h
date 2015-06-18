@@ -34,7 +34,7 @@ public slots:
     void onOpenFile( bool checked );
     void onCloseCurrent( bool checked );
 
-    void onTextureItemSelected( QListWidgetItem *texInfoItem );
+	void onTextureItemChanged(QListWidgetItem *texInfoItem, QListWidgetItem *prevTexInfoItem);
 
     void onToggleShowMipmapLayers( bool checked );
 	void onToggleShowBackground(bool checked);

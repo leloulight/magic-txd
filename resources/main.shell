@@ -37,11 +37,20 @@ QMenu
 QMenu::item
 {
     background-color: transparent;
+    padding: 2px 20px;
 }
 
 QMenu::item:selected
 {
     background-color: #150064;
+}
+
+QMenu::separator
+{
+    height: 1px;
+    background-color: #150064;
+    margin-left: 0px;
+    margin-right: 0px;
 }
 
 QListWidget
