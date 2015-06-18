@@ -28,6 +28,8 @@ public:
 
     void saveCurrentTXDAt( QString location );
 
+	void clearViewImage( void );
+
 public slots:
     void onOpenFile( bool checked );
     void onCloseCurrent( bool checked );
@@ -35,6 +37,7 @@ public slots:
     void onTextureItemSelected( QListWidgetItem *texInfoItem );
 
     void onToggleShowMipmapLayers( bool checked );
+	void onToggleShowBackground(bool checked);
     void onSetupMipmapLayers( bool checked );
     void onClearMipmapLayers( bool checked );
 
@@ -57,6 +60,7 @@ private:
     QLabel *txdNameLabel;
 
     bool drawMipmapLayers;
+	bool showBackground;
 };
 
 #endif // MAINWINDOW_H
