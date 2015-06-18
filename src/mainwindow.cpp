@@ -51,7 +51,7 @@ MainWindow::MainWindow(QWidget *parent)
 	    /* --- List --- */
 	    QListWidget *listWidget = new QListWidget();
 	    listWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
-	    listWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
+	    //listWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
         connect( listWidget, &QListWidget::itemClicked, this, &MainWindow::onTextureItemSelected );
 
@@ -395,10 +395,43 @@ void MainWindow::onTextureItemSelected( QListWidgetItem *listItem )
 		rw::Raster *rasterData = theTexture->GetRaster();
 		if (rasterData)
 		{
+			// Get a bitmap to the raster.
+			// This is a 2D color component surface.
 			rw::Bitmap rasterBitmap = rasterData->getBitmap();
+
 			rw::uint32 width, height;
 			rasterBitmap.getSize(width, height);
-			QImage texImage((uchar *)rasterBitmap.getTexelsData(), width, height, QImage::Format::Format_ARGB32);
+
+			QImage texImage(width, height, QImage::Format::Format_ARGB32);
+
+			// Copy scanline by scanline.
+			for (int y = 0; y < height; y++)
+			{
+				uchar *scanLineContent = texImage.scanLine(y);
+
+				QRgb *colorItems = (QRgb*)scanLineContent;
+
+				for (int x = 0; x < width; x++)
+				{
+					QRgb *colorItem = (colorItems + x);
+
+					unsigned char r, g, b, a;
+
+					rasterBitmap.browsecolor(x, y, r, g, b, a);
+
+					*colorItem = qRgba(r, g, b, a);
+				}
+			}
+
+			//rw::Bitmap rasterBitmap = rasterData->getBitmap();
+			//rw::uint32 width, height;
+			//rasterBitmap.getSize(width, height);
+			//QImage::Format format;
+			//if (rasterBitmap.getFormat() == rw::RASTER_8888)
+			//	format = QImage::Format::Format_ARGB32;
+			//else
+			//	format = QImage::Format::Format_RGB32;
+			//QImage texImage((uchar *)rasterBitmap.getTexelsData(), width, height, format);
 			QPixmap pixmap;
 			imageWidget->setPixmap(pixmap.fromImage(texImage));
 			imageWidget->setFixedSize(QSize(width, height));
