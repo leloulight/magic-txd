@@ -1,6 +1,9 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+// Update this string if there is a new version release :)
+#define MTXD_VERSION_STRING     "alpha"
+
 #include <QMainWindow>
 #include <QListWidget>
 #include <QFileInfo>
@@ -10,6 +13,7 @@
 #include <renderware.h>
 
 #include "texinfoitem.h"
+#include "txdlogwindow.h"
 
 class MainWindow : public QMainWindow
 {
@@ -35,6 +39,7 @@ public slots:
     void onTextureItemSelected( QListWidgetItem *texInfoItem );
 
     void onToggleShowMipmapLayers( bool checked );
+    void onToggleShowLog( bool checked );
     void onSetupMipmapLayers( bool checked );
     void onClearMipmapLayers( bool checked );
 
@@ -42,6 +47,25 @@ public slots:
     void onRequestSaveAsTXD( bool checked );
 
 private:
+    class rwPublicWarningDispatcher : public rw::WarningManagerInterface
+    {
+    public:
+        inline rwPublicWarningDispatcher( MainWindow *theWindow )
+        {
+            this->mainWnd = theWindow;
+        }
+
+        void OnWarning( const std::string& msg ) override
+        {
+            this->mainWnd->logWidget->addLogMessage( msg.c_str(), LOGMSG_WARNING );
+        }
+
+    private:
+        MainWindow *mainWnd;
+    };
+
+    rwPublicWarningDispatcher rwWarnMan;
+
     rw::Interface *rwEngine;
     rw::TexDictionary *currentTXD;
 
@@ -57,6 +81,8 @@ private:
     QLabel *txdNameLabel;
 
     bool drawMipmapLayers;
+
+    TxdLogWindow *logWidget;    // log dock window where we notify the user about events
 };
 
 #endif // MAINWINDOW_H

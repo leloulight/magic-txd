@@ -154,6 +154,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\textureViewport.h" />
+    <ClInclude Include="..\..\include\txdlogwindow.h" />
     <CustomBuild Include="../../include/mainwindow.h">
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">setlocal
 if errorlevel 1 goto VCEnd

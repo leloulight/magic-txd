@@ -43,10 +43,19 @@ public:
 
             textureInfo += QString::number( width ) + QString( "x" ) + QString::number( height );
 
-            // Then is the platform info.
-            const char *typeName = rasterInfo->getNativeDataTypeName();
+            // Then is the platform format info.
+            {
+                char platformTexInfoBuf[ 256 + 1 ];
 
-            textureInfo += " " + QString( typeName );
+                size_t platformTexInfoLength;
+
+                rasterInfo->getFormatString( platformTexInfoBuf, sizeof( platformTexInfoBuf ) - 1, platformTexInfoLength );
+
+                // Zero terminate it.
+                platformTexInfoBuf[ platformTexInfoLength ] = '\0';
+
+                textureInfo += " " + QString( platformTexInfoBuf );
+            }
 
             // After that how many mipmap levels we have.
             textureInfo += " " + QString::number( rasterInfo->getMipmapCount() ) + " levels";

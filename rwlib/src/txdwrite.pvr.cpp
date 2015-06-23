@@ -888,4 +888,38 @@ void pvrNativeTextureTypeProvider::GetTextureInfo( Interface *engineInterface, v
     infoOut.baseHeight = baseHeight;
 }
 
+void pvrNativeTextureTypeProvider::GetTextureFormatString( Interface *engineInterface, void *objMem, char *buf, size_t bufLen, size_t& lengthOut ) const
+{
+    NativeTexturePVR *nativeTex = (NativeTexturePVR*)objMem;
+
+    // Return a format string based on the internalFormat parameter.
+    std::string formatString( "PVR " );
+
+    ePVRInternalFormat internalFormat = nativeTex->internalFormat;
+
+    if ( internalFormat == ePVRInternalFormat::GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG )
+    {
+        formatString += "RGB 2bit";
+    }
+    else if ( internalFormat == ePVRInternalFormat::GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG )
+    {
+        formatString += "RGBA 2bit";
+    }
+    else if ( internalFormat == ePVRInternalFormat::GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG )
+    {
+        formatString += "RGB 4bit";
+    }
+    else if ( internalFormat == ePVRInternalFormat::GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG )
+    {
+        formatString += "RGBA 4bit";
+    }
+
+    if ( buf )
+    {
+        strncpy( buf, formatString.c_str(), bufLen );
+    }
+
+    lengthOut = formatString.size();
+}
+
 };

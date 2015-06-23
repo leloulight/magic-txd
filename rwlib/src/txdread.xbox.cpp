@@ -1140,4 +1140,52 @@ void xboxNativeTextureTypeProvider::GetTextureInfo( Interface *engineInterface, 
     infoOut.baseHeight = baseHeight;
 }
 
+void xboxNativeTextureTypeProvider::GetTextureFormatString( Interface *engineInterface, void *objMem, char *buf, size_t bufLen, size_t& lengthOut ) const
+{
+    NativeTextureXBOX *nativeTex = (NativeTextureXBOX*)objMem;
+
+    // We can be DXT compressed or swizzled into a default raster format.
+    std::string formatString( "XBOX" );
+
+    int xboxCompressionType = nativeTex->dxtCompression;
+
+    if ( xboxCompressionType != 0 )
+    {
+        if ( xboxCompressionType == 0xC )
+        {
+            formatString += " DXT1";
+        }
+        else if ( xboxCompressionType == 0xD )
+        {
+            formatString += " DXT2";
+        }
+        else if ( xboxCompressionType == 0xE )
+        {
+            formatString += " DXT3";
+        }
+        else if ( xboxCompressionType == 0xF )
+        {
+            formatString += " DXT4";
+        }
+        else if ( xboxCompressionType == 0x10 )
+        {
+            formatString += " DXT5";
+        }
+    }
+    else
+    {
+        formatString += " ";
+
+        // Just a default raster type.
+        getDefaultRasterFormatString( nativeTex->rasterFormat, nativeTex->paletteType, nativeTex->colorOrder, formatString );
+    }
+
+    if ( buf )
+    {
+        strncpy( buf, formatString.c_str(), bufLen );
+    }
+
+    lengthOut = formatString.length();
+}
+
 };

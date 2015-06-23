@@ -263,6 +263,8 @@ struct Raster
 
     void* getNativeInterface( void );
 
+    void getFormatString( char *buf, size_t bufSize, size_t& lengthOut ) const;
+
 	void convertToFormat(eRasterFormat format);
     void convertToPalette(ePaletteType paletteType);
 
@@ -684,6 +686,7 @@ struct texNativeTypeProvider abstract
 
     // Information API.
     virtual void            GetTextureInfo( Interface *engineInterface, void *objMem, nativeTextureBatchedInfo& infoOut ) = 0;
+    virtual void            GetTextureFormatString( Interface *engineInterface, void *objMen, char *buf, size_t bufSize, size_t& lengthOut ) const = 0;
 
     virtual ePaletteType    GetTexturePaletteType( const void *objMem ) = 0;
     virtual bool            IsTextureCompressed( const void *objMem ) = 0;

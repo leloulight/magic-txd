@@ -14,8 +14,9 @@
 
 #include "textureViewport.h"
 
-MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
+MainWindow::MainWindow(QWidget *parent) :
+    QMainWindow(parent),
+    rwWarnMan( this )
 {
     // Initialize variables.
     this->currentTXD = NULL;
@@ -43,6 +44,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Set some typical engine properties.
     this->rwEngine->SetIgnoreSerializationBlockRegions( true );
+
+    this->rwEngine->SetWarningLevel( 3 );
+    this->rwEngine->SetWarningManager( &this->rwWarnMan );
 
     try
     {
@@ -109,7 +113,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 	    /* --- Menu --- */
 	    QMenuBar *menu = new QMenuBar;
-	    QMenu *fileMenu = menu->addMenu(tr("File"));
+	    QMenu *fileMenu = menu->addMenu(tr("&File"));
 	    QAction *actionOpen = new QAction("&Open", this);
 	    fileMenu->addAction(actionOpen);
 
@@ -134,7 +138,7 @@ MainWindow::MainWindow(QWidget *parent)
 	    QAction *actionQuit = new QAction("&Quit", this);
 	    fileMenu->addAction(actionQuit);
 
-	    QMenu *editMenu = menu->addMenu(tr("Edit"));
+	    QMenu *editMenu = menu->addMenu(tr("&Edit"));
 	    QAction *actionAdd = new QAction("&Add", this);
 	    editMenu->addAction(actionAdd);
 	    QAction *actionReplace = new QAction("&Replace", this);
@@ -171,7 +175,7 @@ MainWindow::MainWindow(QWidget *parent)
 	    QAction *actionSetupTxdVersion = new QAction("&Setup TXD version", this);
 	    editMenu->addAction(actionSetupTxdVersion);
 
-	    QMenu *exportMenu = menu->addMenu(tr("Export"));
+	    QMenu *exportMenu = menu->addMenu(tr("&Export"));
 	    QAction *actionExportPNG = new QAction("&PNG", this);
 	    exportMenu->addAction(actionExportPNG);
 	    QAction *actionExportDDS = new QAction("&DDS", this);
@@ -184,7 +188,7 @@ MainWindow::MainWindow(QWidget *parent)
 	    QAction *actionExportAll = new QAction("&Export all", this);
 	    exportMenu->addAction(actionExportAll);
 
-	    QMenu *viewMenu = menu->addMenu(tr("View"));
+	    QMenu *viewMenu = menu->addMenu(tr("&View"));
 	    QAction *actionBackground = new QAction("&Background", this);
 	    viewMenu->addAction(actionBackground);
 	    QAction *action3dView = new QAction("&3D View", this);
@@ -193,6 +197,11 @@ MainWindow::MainWindow(QWidget *parent)
 	    viewMenu->addAction(actionShowMipLevels);
 
         connect( actionShowMipLevels, &QAction::triggered, this, &MainWindow::onToggleShowMipmapLayers );
+        
+        QAction *actionShowLog = new QAction("&Show Log", this);
+        viewMenu->addAction(actionShowLog);
+
+        connect( actionShowLog, &QAction::triggered, this, &MainWindow::onToggleShowLog );
 
 	    viewMenu->addSeparator();
 	    QAction *actionSetupTheme = new QAction("&Setup theme", this);
@@ -244,6 +253,12 @@ MainWindow::MainWindow(QWidget *parent)
 
 	    QWidget *window = new QWidget();
 	    window->setLayout(mainLayout);
+
+        TxdLogWindow *logWidget = new TxdLogWindow();
+
+        this->addDockWidget( Qt::DockWidgetArea::BottomDockWidgetArea, logWidget );
+
+        this->logWidget = logWidget;
 
 	    setCentralWidget(window);
     }
@@ -366,6 +381,8 @@ void MainWindow::onOpenFile( bool checked )
         // If the opening succeeded, process things.
         if ( txdFileStream )
         {
+            this->logWidget->addLogMessage( QString( "loading TXD: " ) + fileName );
+
             // Parse the input file.
             rw::RwObject *parsedObject = NULL;
 
@@ -375,7 +392,7 @@ void MainWindow::onOpenFile( bool checked )
             }
             catch( rw::RwException& except )
             {
-                // TODO: display this error to the user.
+                this->logWidget->addLogMessage( QString( "failed to load the TXD archive: %1" ).arg( except.message.c_str() ), LOGMSG_ERROR );
             }
 
             if ( parsedObject )
@@ -500,6 +517,12 @@ void MainWindow::onToggleShowMipmapLayers( bool checked )
     this->updateTextureView();
 }
 
+void MainWindow::onToggleShowLog( bool checked )
+{
+    // Make sure the log is visible.
+    this->logWidget->show();
+}
+
 void MainWindow::onSetupMipmapLayers( bool checked )
 {
     // We just generate up to the top mipmap level for now.
@@ -556,7 +579,7 @@ void MainWindow::saveCurrentTXDAt( QString txdFullPath )
             }
             catch( rw::RwException& except )
             {
-                // TODO: notify the user about a RenderWare error.
+                this->logWidget->addLogMessage( QString( "failed to save the TXD archive: %1" ).arg( except.message.c_str() ), LOGMSG_ERROR );
             }
 
             // Close the stream.

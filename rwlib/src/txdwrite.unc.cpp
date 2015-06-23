@@ -1,5 +1,6 @@
 #include "StdInc.h"
 
+#include "txdread.d3d.hxx"
 #include "txdread.unc.hxx"
 
 #include "streamutil.hxx"
@@ -411,6 +412,29 @@ void uncNativeTextureTypeProvider::GetTextureInfo( Interface *engineInterface, v
 
     infoOut.baseWidth = baseWidth;
     infoOut.baseHeight = baseHeight;
+}
+
+void uncNativeTextureTypeProvider::GetTextureFormatString( Interface *engineInterface, void *objMem, char *buf, size_t bufLen, size_t& lengthOut ) const
+{
+    NativeTextureMobileUNC *nativeTex = (NativeTextureMobileUNC*)objMem;
+
+    // Get our format.
+    std::string formatString;
+
+    eRasterFormat rasterFormat;
+    uint32 depth;
+    eColorOrdering colorOrder;
+
+    getUNCRasterFormat( nativeTex->hasAlpha, rasterFormat, colorOrder, depth );
+
+    getDefaultRasterFormatString( rasterFormat, PALETTE_NONE, colorOrder, formatString );
+
+    if ( buf )
+    {
+        strncpy( buf, formatString.c_str(), bufLen );
+    }
+
+    lengthOut = formatString.length();
 }
 
 };

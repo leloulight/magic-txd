@@ -812,6 +812,56 @@ void d3dNativeTextureTypeProvider::GetTextureInfo( Interface *engineInterface, v
     infoOut.baseHeight = baseHeight;
 }
 
+void d3dNativeTextureTypeProvider::GetTextureFormatString( Interface *engineInterface, void *objMem, char *buf, size_t bufLen, size_t& lengthOut ) const
+{
+    NativeTextureD3D *nativeTexture = (NativeTextureD3D*)objMem;
+
+    std::string formatString;
+
+    int dxtType = nativeTexture->dxtCompression;
+
+    if ( dxtType != 0 )
+    {
+        if ( dxtType == 1 )
+        {
+            formatString = "DXT1";
+        }
+        else if ( dxtType == 2 )
+        {
+            formatString = "DXT2";
+        }
+        else if ( dxtType == 3 )
+        {
+            formatString = "DXT3";
+        }
+        else if ( dxtType == 4 )
+        {
+            formatString = "DXT4";
+        }
+        else if ( dxtType == 5 )
+        {
+            formatString = "DXT5";
+        }
+        else
+        {
+            formatString = "unknown";
+        }
+    }
+    else
+    {
+        // We are a default raster.
+        // Share functionality here.
+        getDefaultRasterFormatString( nativeTexture->rasterFormat, nativeTexture->paletteType, nativeTexture->colorOrdering, formatString );
+    }
+
+    if ( buf )
+    {
+        strncpy( buf, formatString.c_str(), bufLen );
+    }
+
+    lengthOut += formatString.length();
+}
+
 // Platform update API function.
 void NativeTextureD3D::NativeSetPlatformType( ePlatformType newPlatform )
 {

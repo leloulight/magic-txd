@@ -987,16 +987,27 @@ struct nativeTextureStreamPlugin : public serializationProvider
 
                             if ( warningQueue.message_list.empty() )
                             {
-                                typeWarnBuf += "no warnings.\n";
+                                typeWarnBuf += "no warnings.";
                             }
                             else
                             {
                                 typeWarnBuf += "\n";
 
+                                bool isFirstItem = true;
+
                                 for ( QueuedWarningHandler::messages_t::const_iterator iter = warningQueue.message_list.begin(); iter != warningQueue.message_list.end(); iter++ )
                                 {
+                                    if ( !isFirstItem )
+                                    {
+                                        typeWarnBuf += "\n";
+                                    }
+
                                     typeWarnBuf += *iter;
-                                    typeWarnBuf += "\n";
+
+                                    if ( isFirstItem )
+                                    {
+                                        isFirstItem = false;
+                                    }
                                 }
                             }
 
@@ -1820,6 +1831,28 @@ LibraryVersion Raster::GetEngineVersion( void ) const
     }
 
     return texProvider->GetTextureVersion( platformTex );
+}
+
+void Raster::getFormatString( char *buf, size_t bufSize, size_t& lengthOut ) const
+{
+    // Ask the native platform texture to deliver us a format string.
+    PlatformTexture *platformTex = this->platformData;
+
+    if ( !platformTex )
+    {
+        throw RwException( "no native data" );
+    }
+
+    Interface *engineInterface = this->engineInterface;
+
+    const texNativeTypeProvider *texProvider = GetNativeTextureTypeProvider( engineInterface, platformTex );
+
+    if ( !texProvider )
+    {
+        throw RwException( "invalid native data" );
+    }
+
+    texProvider->GetTextureFormatString( engineInterface, platformTex, buf, bufSize, lengthOut );
 }
 
 void Raster::convertToFormat(eRasterFormat newFormat)

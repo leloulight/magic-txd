@@ -917,6 +917,36 @@ void atcNativeTextureTypeProvider::GetTextureInfo( Interface *engineInterface, v
     infoOut.baseHeight = baseHeight;
 }
 
+void atcNativeTextureTypeProvider::GetTextureFormatString( Interface *engineInterface, void *objMem, char *buf, size_t bufLen, size_t& lengthOut ) const
+{
+    // Return a good information string about the internalFormat.
+    NativeTextureATC *nativeTex = (NativeTextureATC*)objMem;
+
+    std::string fmtString = "ATC ";
+
+    eATCInternalFormat internalFormat = nativeTex->internalFormat;
+
+    if ( internalFormat == eATCInternalFormat::ATC_RGB_AMD )
+    {
+        fmtString += "RGB";
+    }
+    else if ( internalFormat == eATCInternalFormat::ATC_RGBA_EXPLICIT_ALPHA_AMD )
+    {
+        fmtString += "RGBA_explicit";
+    }
+    else if ( internalFormat == eATCInternalFormat::ATC_RGBA_INTERPOLATED_ALPHA_AMD )
+    {
+        fmtString += "RGBA_interpolated";
+    }
+
+    if ( buf )
+    {
+        strncpy( buf, fmtString.c_str(), bufLen );
+    }
+
+    lengthOut = fmtString.size();
+}
+
 static PluginDependantStructRegister <atcNativeTextureTypeProvider, RwInterfaceFactory_t> atcNativeTexturePluginStore;
 
 void registerATCNativeTexture( Interface *engineInterface )

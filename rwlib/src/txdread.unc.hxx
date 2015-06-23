@@ -140,6 +140,7 @@ struct uncNativeTextureTypeProvider : public texNativeTypeProvider
     void ClearMipmaps( Interface *engineInterface, void *objMem );
 
     void GetTextureInfo( Interface *engineInterface, void *objMem, nativeTextureBatchedInfo& infoOut );
+    void GetTextureFormatString( Interface *engineInterface, void *objMem, char *buf, size_t bufLen, size_t& lengthOut ) const;
 
     ePaletteType GetTexturePaletteType( const void *objMem )
     {

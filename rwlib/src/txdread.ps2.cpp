@@ -2067,4 +2067,22 @@ void ps2NativeTextureTypeProvider::GetTextureInfo( Interface *engineInterface, v
     infoOut.baseHeight = baseHeight;
 }
 
+void ps2NativeTextureTypeProvider::GetTextureFormatString( Interface *engineInterface, void *objMem, char *buf, size_t bufLen, size_t& lengthOut ) const
+{
+    NativeTexturePS2 *nativeTex = (NativeTexturePS2*)objMem;
+
+    // We are just a standard raster.
+    // The PS2 specific encoding does not matter.
+    std::string formatString = "PS2 ";
+
+    getDefaultRasterFormatString( nativeTex->rasterFormat, nativeTex->paletteType, nativeTex->colorOrdering, formatString );
+
+    if ( buf )
+    {
+        strncpy( buf, formatString.c_str(), bufLen );
+    }
+
+    lengthOut = formatString.length();
+}
+
 };

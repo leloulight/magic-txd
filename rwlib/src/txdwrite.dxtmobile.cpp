@@ -524,4 +524,37 @@ void dxtMobileNativeTextureTypeProvider::GetTextureInfo( Interface *engineInterf
     infoOut.baseHeight = baseHeight;
 }
 
+void dxtMobileNativeTextureTypeProvider::GetTextureFormatString( Interface *engineInterface, void *objMem, char *buf, size_t bufLen, size_t& lengthOut ) const
+{
+    NativeTextureMobileDXT *nativeTex = (NativeTextureMobileDXT*)objMem;
+
+    const char *theFormat = "unknown";
+
+    eS3TCInternalFormat internalFormat = nativeTex->internalFormat;
+
+    if ( internalFormat == eS3TCInternalFormat::COMPRESSED_RGB_S3TC_DXT1 )
+    {
+        theFormat = "DXT1";
+    }
+    else if ( internalFormat == eS3TCInternalFormat::COMPRESSED_RGBA_S3TC_DXT1 )
+    {
+        theFormat = "DXT1_alpha";
+    }
+    else if ( internalFormat == eS3TCInternalFormat::COMPRESSED_RGBA_S3TC_DXT3 )
+    {
+        theFormat = "DXT3";
+    }
+    else if ( internalFormat == eS3TCInternalFormat::COMPRESSED_RGBA_S3TC_DXT5 )
+    {
+        theFormat = "DXT5";
+    }
+
+    if ( buf )
+    {
+        strncpy( buf, theFormat, bufLen );
+    }
+
+    lengthOut = strlen( theFormat );
+}
+
 };
