@@ -32,13 +32,16 @@ public:
 
     void saveCurrentTXDAt( QString location );
 
+	void clearViewImage( void );
+
 public slots:
     void onOpenFile( bool checked );
     void onCloseCurrent( bool checked );
 
-    void onTextureItemSelected( QListWidgetItem *texInfoItem );
+	void onTextureItemChanged(QListWidgetItem *texInfoItem, QListWidgetItem *prevTexInfoItem);
 
     void onToggleShowMipmapLayers( bool checked );
+	void onToggleShowBackground(bool checked);
     void onToggleShowLog( bool checked );
     void onSetupMipmapLayers( bool checked );
     void onClearMipmapLayers( bool checked );
@@ -81,6 +84,7 @@ private:
     QLabel *txdNameLabel;
 
     bool drawMipmapLayers;
+	bool showBackground;
 
     TxdLogWindow *logWidget;    // log dock window where we notify the user about events
 };

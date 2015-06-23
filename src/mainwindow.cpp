@@ -24,6 +24,7 @@ MainWindow::MainWindow(QWidget *parent) :
     this->currentSelectedTexture = NULL;
 
     this->drawMipmapLayers = false;
+	this->showBackground = false;
 
     // Initialize the RenderWare engine.
     rw::LibraryVersion engineVersion;
@@ -60,7 +61,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	    listWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
 	    //listWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
-        connect( listWidget, &QListWidget::itemClicked, this, &MainWindow::onTextureItemSelected );
+        connect( listWidget, &QListWidget::currentItemChanged, this, &MainWindow::onTextureItemChanged );
 
         // We will store all our texture names in this.
         this->textureListWidget = listWidget;
@@ -70,7 +71,8 @@ MainWindow::MainWindow(QWidget *parent) :
 		imageView->setFrameShape(QFrame::NoFrame);
 		imageView->setObjectName("textureViewBackground");
 		imageWidget = new QLabel;
-		imageWidget->setObjectName("transparentBackground"); // "chessBackground" > grid background
+		//imageWidget->setObjectName("transparentBackground"); // "chessBackground" > grid background
+		imageWidget->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
 		imageView->setWidget(imageWidget);
 		imageView->setAlignment(Qt::AlignCenter);
 
@@ -190,10 +192,16 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	    QMenu *viewMenu = menu->addMenu(tr("&View"));
 	    QAction *actionBackground = new QAction("&Background", this);
+		actionBackground->setCheckable(true);
 	    viewMenu->addAction(actionBackground);
+
+		connect(actionBackground, &QAction::triggered, this, &MainWindow::onToggleShowBackground);
+
 	    QAction *action3dView = new QAction("&3D View", this);
+		action3dView->setCheckable(true);
 	    viewMenu->addAction(action3dView);
 	    QAction *actionShowMipLevels = new QAction("&Display mip-levels", this);
+		actionShowMipLevels->setCheckable(true);
 	    viewMenu->addAction(actionShowMipLevels);
 
         connect( actionShowMipLevels, &QAction::triggered, this, &MainWindow::onToggleShowMipmapLayers );
@@ -261,6 +269,8 @@ MainWindow::MainWindow(QWidget *parent) :
         this->logWidget = logWidget;
 
 	    setCentralWidget(window);
+
+		imageWidget->hide();
     }
     catch( ... )
     {
@@ -295,7 +305,7 @@ void MainWindow::setCurrentTXD( rw::TexDictionary *txdObj )
     if ( this->currentTXD != NULL )
     {
         // Make sure we have no more texture in our viewport.
-		this->imageWidget->clear();
+		clearViewImage();
 
         this->currentSelectedTexture = NULL;
 
@@ -313,6 +323,8 @@ void MainWindow::setCurrentTXD( rw::TexDictionary *txdObj )
 
         QListWidget *listWidget = this->textureListWidget;
 
+		bool selected = false;
+
 	    for ( rw::TexDictionary::texIter_t iter( txdObj->GetTextureIterator() ); iter.IsEnd() == false; iter.Increment() )
 	    {
             rw::TextureBase *texItem = iter.Resolve();
@@ -321,6 +333,12 @@ void MainWindow::setCurrentTXD( rw::TexDictionary *txdObj )
 	        listWidget->addItem(item);
 	        listWidget->setItemWidget(item, new TexInfoWidget(texItem) );
 		    item->setSizeHint(QSize(listWidget->sizeHintForColumn(0), 54));
+			// select first item in a list
+			if (!selected)
+			{
+				item->setSelected(true);
+				selected = true;
+			}
 	    }
     }
 }
@@ -427,6 +445,8 @@ void MainWindow::onCloseCurrent( bool checked )
 {
     this->currentSelectedTexture = NULL;
 
+	clearViewImage();
+
     // Make sure we got no TXD active.
     this->setCurrentTXD( NULL );
 
@@ -462,7 +482,7 @@ inline QImage convertRWBitmapToQImage( const rw::Bitmap& rasterBitmap )
     return texImage;
 }
 
-void MainWindow::onTextureItemSelected( QListWidgetItem *listItem )
+void MainWindow::onTextureItemChanged(QListWidgetItem *listItem, QListWidgetItem *prevTexInfoItem)
 {
     QListWidget *texListWidget = this->textureListWidget;
 
@@ -505,6 +525,7 @@ void MainWindow::updateTextureView( void )
 
 			imageWidget->setPixmap(QPixmap::fromImage(texImage));
 			imageWidget->setFixedSize(QSize(texImage.width(), texImage.height()));
+			imageWidget->show();
 		}
     }
 }
@@ -515,6 +536,15 @@ void MainWindow::onToggleShowMipmapLayers( bool checked )
 
     // Update the texture view.
     this->updateTextureView();
+}
+
+void MainWindow::onToggleShowBackground(bool checked)
+{
+	this->showBackground = !(this->showBackground);
+	if (showBackground)
+		imageWidget->setStyleSheet("background-image: url(\"resources/viewBackground.png\");");
+	else
+		imageWidget->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
 }
 
 void MainWindow::onToggleShowLog( bool checked )
@@ -612,4 +642,10 @@ void MainWindow::onRequestSaveAsTXD( bool checked )
             this->saveCurrentTXDAt( newSaveLocation );
         }
     }
+}
+
+void MainWindow::clearViewImage()
+{
+	imageWidget->clear();
+	imageWidget->hide();
 }
