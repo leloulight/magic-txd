@@ -47,14 +47,14 @@ public:
             {
                 char platformTexInfoBuf[ 256 + 1 ];
 
-                size_t platformTexInfoLength;
+                size_t platformTexInfoLength = 0;
 
                 rasterInfo->getFormatString( platformTexInfoBuf, sizeof( platformTexInfoBuf ) - 1, platformTexInfoLength );
 
                 // Zero terminate it.
                 platformTexInfoBuf[ platformTexInfoLength ] = '\0';
 
-                textureInfo += " " + QString( platformTexInfoBuf );
+                textureInfo += " " + QString( (const char*)platformTexInfoBuf );
             }
 
             // After that how many mipmap levels we have.
