@@ -37,20 +37,11 @@ QMenu
 QMenu::item
 {
     background-color: transparent;
-    padding: 2px 20px;
 }
 
 QMenu::item:selected
 {
     background-color: #150064;
-}
-
-QMenu::separator
-{
-    height: 1px;
-    background-color: #150064;
-    margin-left: 0px;
-    margin-right: 0px;
 }
 
 QListWidget
@@ -213,4 +204,75 @@ QWidget#textureViewBackground
 {
     background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
                                       stop: 0 #0f0045, stop: 1 #050018);
+}
+
+QWidget#transparentBackground
+{
+    background-color: rgba(255, 255, 255, 0);
+}
+
+QWidget#chessBackground
+{
+    background-image: url("resources/viewBackground.png");
+}
+
+QListView::item#txdLogWindowList
+{
+    background-color: rgba(240, 240, 240, 20);
+}
+
+QDockWidget
+{
+    color: rgba( 240, 180, 200, 255 );
+}
+
+QDockWidget::title
+{
+    text-align: center;
+    background-color: #0f0026;
+}
+
+QDockWidget::close-button, QDockWidget::float-button
+{
+    color: white;
+    border: white;
+    background-color: white;
+}
+
+QMainWindow::separator
+{
+    background-color: rgba(40, 40, 30, 255);
+}
+
+QTableWidget
+{
+    color: white;
+    background-color: rgba( 15, 15, 25, 255 );
+}
+
+QHeaderView::section
+{
+    color: rgba(255, 255, 255, 255);
+    background-color: #0f0046;
+}
+
+QWidget#logItemIconBackground
+{
+    background-color: rgba(5, 5, 5, 255);
+}
+
+QMenuBar#logWindowMenu
+{
+    background-color: rgba( 5, 0, 0, 255 );
+    min-height: 20px;
+    font-size: 15px;
+    color: white;
+    border: none;
+}
+
+QPlainTextEdit#logItemMessageEditor
+{
+    background-color: rgba( 0, 0, 0, 255 );
+    color: white;
+    border: none;
 }
