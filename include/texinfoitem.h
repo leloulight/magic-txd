@@ -47,12 +47,23 @@ public:
             {
                 char platformTexInfoBuf[ 256 + 1 ];
 
-                size_t platformTexInfoLength = 0;
+                size_t localPlatformTexInfoLength = 0;
+                {
+                    // Note that the format string is only put into our buffer as much space as we have in it.
+                    // If the format string is longer, then that does not count as an error.
+                    // lengthOut will always return the format string length of the real thing, so be careful here.
+                    const size_t availableStringCharSpace = ( sizeof( platformTexInfoBuf ) - 1 );
 
-                rasterInfo->getFormatString( platformTexInfoBuf, sizeof( platformTexInfoBuf ) - 1, platformTexInfoLength );
+                    size_t platformTexInfoLength = 0;
+
+                    rasterInfo->getFormatString( platformTexInfoBuf, availableStringCharSpace, platformTexInfoLength );
+
+                    // Get the trimmed string length.
+                    localPlatformTexInfoLength = std::min( platformTexInfoLength, availableStringCharSpace );
+                }
 
                 // Zero terminate it.
-                platformTexInfoBuf[ platformTexInfoLength ] = '\0';
+                platformTexInfoBuf[ localPlatformTexInfoLength ] = '\0';
 
                 textureInfo += " " + QString( (const char*)platformTexInfoBuf );
             }

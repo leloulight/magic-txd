@@ -352,6 +352,10 @@ public:
             // Close us again.
             fileHandle.close();
         }
+        else
+        {
+            // TODO: display reason why failed.
+        }
     }
 
 public slots:
