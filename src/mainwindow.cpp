@@ -622,7 +622,7 @@ void MainWindow::onRequestSaveTXD( bool checked )
 {
     if ( this->currentTXD != NULL )
     {
-        QString txdFullPath = this->openedTXDFileInfo.absolutePath();
+        QString txdFullPath = this->openedTXDFileInfo.absoluteFilePath();
 
         if ( txdFullPath.length() != 0 )
         {
