@@ -25,6 +25,7 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <PlatformToolset>v120</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -56,11 +57,12 @@
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <PrecompiledHeader />
+      <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>StdInc.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName)_2013.pch</PrecompiledHeaderOutputFile>
     </ClCompile>
     <Lib>
       <AdditionalDependencies>libimagequant_d_2013.lib;squishd_2013.lib;ATI_Compress_MT.lib;PVRTexLib.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -79,11 +81,12 @@
       <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <PrecompiledHeader />
+      <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>StdInc.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName)_2013.pch</PrecompiledHeaderOutputFile>
     </ClCompile>
     <Lib>
       <AdditionalDependencies>libimagequant_2013.lib;squish_2013.lib;ATI_Compress_MT.lib;PVRTexLib.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -94,13 +97,12 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\..\Shared\sdk\DynamicTypeSystem.h" />
-    <ClInclude Include="..\..\..\..\..\Shared\sdk\MemoryUtils.h" />
     <ClInclude Include="..\..\include\renderware.blockapi.h" />
     <ClInclude Include="..\..\include\renderware.bmp.h" />
     <ClInclude Include="..\..\include\renderware.dff.h" />
     <ClInclude Include="..\..\include\renderware.file.h" />
     <ClInclude Include="..\..\include\renderware.h" />
+    <ClInclude Include="..\..\include\renderware.imaging.h" />
     <ClInclude Include="..\..\include\renderware.material.h" />
     <ClInclude Include="..\..\include\renderware.stream.h" />
     <ClInclude Include="..\..\include\renderware.txd.d3d.h" />
@@ -110,6 +112,7 @@
     <ClInclude Include="..\..\rwconf.h" />
     <ClInclude Include="..\..\src\pixelformat.hxx" />
     <ClInclude Include="..\..\src\pluginutil.hxx" />
+    <ClInclude Include="..\..\src\rwimaging.hxx" />
     <ClInclude Include="..\..\src\streamutil.hxx" />
     <ClInclude Include="..\..\src\txdread.atc.hxx" />
     <ClInclude Include="..\..\src\txdread.common.hxx" />
@@ -124,6 +127,9 @@
     <ClInclude Include="..\..\src\txdread.pvr.hxx" />
     <ClInclude Include="..\..\src\txdread.unc.hxx" />
     <ClInclude Include="..\..\src\txdread.xbox.hxx" />
+    <ClInclude Include="..\..\vendor\eirrepo\sdk\DynamicTypeSystem.h" />
+    <ClInclude Include="..\..\vendor\eirrepo\sdk\MemoryUtils.h" />
+    <ClInclude Include="..\..\vendor\eirrepo\sdk\rwlist.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\dffread.cpp">
@@ -140,7 +146,12 @@
     <ClCompile Include="..\..\src\rwblockapi.cpp" />
     <ClCompile Include="..\..\src\rwbmp.cpp" />
     <ClCompile Include="..\..\src\rwfile.cpp" />
-    <ClCompile Include="..\..\src\rwinterface.cpp" />
+    <ClCompile Include="..\..\src\rwimaging.cpp" />
+    <ClCompile Include="..\..\src\rwimaging.tga.cpp" />
+    <ClCompile Include="..\..\src\rwinterface.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="..\..\src\rwmem.cpp" />
     <ClCompile Include="..\..\src\rwobjextensions.cpp" />
     <ClCompile Include="..\..\src\rwserialize.cpp" />

@@ -53,7 +53,7 @@ struct GenericRTTI
 // This class manages runtime type information.
 // It allows for dynamic C++ class extension depending on runtime conditions.
 // Main purpose for its creation are tight memory requirements.
-template <typename allocatorType, typename systemPointer_t>
+template <typename allocatorType, typename systemPointer_t, typename structFlavorDispatchType = cachedMinimalStructRegistryFlavor <GenericRTTI>>
 struct DynamicTypeSystem
 {
     typedef allocatorType memAllocType;
@@ -131,16 +131,19 @@ struct DynamicTypeSystem
         }
     };
 
-    typedef AnonymousPluginStructRegistry <GenericRTTI, pluginDescriptor, cachedMinimalStructRegistryFlavor <GenericRTTI>, systemPointer_t*> structRegistry_t;
+    typedef AnonymousPluginStructRegistry <GenericRTTI, pluginDescriptor, structFlavorDispatchType, systemPointer_t*> structRegistry_t;
 
     // Localize important struct details.
-    typedef typename structRegistry_t::pluginOffset_t pluginOffset_t;
+    typedef typename pluginDescriptor::pluginOffset_t pluginOffset_t;
     typedef typename structRegistry_t::pluginInterface pluginInterface;
 
     static const pluginOffset_t INVALID_PLUGIN_OFFSET = (pluginOffset_t)-1;
 
-    struct typeInfoBase
+    struct typeInfoBase abstract
     {
+        virtual ~typeInfoBase( void )
+        { }
+
         virtual void Cleanup( memAllocType& memAlloc ) = 0;
 
         const char *name;   // name of this type
@@ -228,7 +231,9 @@ struct DynamicTypeSystem
 
         size_t baseOffset = GetTypeInfoStructOffset( sysPtr, rtObj, typeInfo );
 
-        return (pluginStructType*)( (char*)rtObj + baseOffset + offset );
+        pluginOffset_t realOffset = GetTypeRegisteredPluginLocation( typeInfo, rtObj, offset );
+
+        return (pluginStructType*)( (char*)rtObj + baseOffset + realOffset );
     }
 
     template <typename pluginStructType>
@@ -239,7 +244,9 @@ struct DynamicTypeSystem
 
         size_t baseOffset = GetTypeInfoStructOffset( sysPtr, (GenericRTTI*)rtObj, typeInfo );
 
-        return (const pluginStructType*)( (char*)rtObj + baseOffset + offset );
+        pluginOffset_t realOffset = GetTypeRegisteredPluginLocation( typeInfo, rtObj, offset );
+
+        return (const pluginStructType*)( (char*)rtObj + baseOffset + realOffset );
     }
 
     // Function used to register a new plugin struct into the class.
@@ -274,6 +281,16 @@ struct DynamicTypeSystem
         pluginDescriptor descriptor( pluginId, typeInfo );
 
         return functoidHelper_t( *this ).RegisterDependantStructPlugin <structType> ( descriptor, structSize );
+    }
+
+    typedef typename functoidHelper_t::conditionalPluginStructInterface conditionalPluginStructInterface;
+
+    template <typename structType>
+    inline pluginOffset_t RegisterDependantConditionalStructPlugin( typeInfoBase *typeInfo, unsigned int pluginId, conditionalPluginStructInterface *conditional, size_t structSize = sizeof(structType) )
+    {
+        pluginDescriptor descriptor( pluginId, typeInfo );
+
+        return functoidHelper_t( *this ).RegisterDependantConditionalStructPlugin( descriptor, conditional, structSize );
     }
 
     RwList <typeInfoBase> registeredTypes;
@@ -437,7 +454,7 @@ struct DynamicTypeSystem
     }
 
     template <typename structType>
-    inline typeInfoBase* RegisterStructType( const char *typeName, typeInfoBase *inheritsFrom = NULL ) throw( ... )
+    inline typeInfoBase* RegisterStructType( const char *typeName, typeInfoBase *inheritsFrom = NULL, size_t structSize = sizeof( structType ) ) throw( ... )
     {
         struct structTypeInterface : public typeInterface
         {
@@ -458,13 +475,15 @@ struct DynamicTypeSystem
 
             size_t GetTypeSize( systemPointer_t *sysPtr, void *construct_params ) const
             {
-                return sizeof( structType );
+                return this->structSize;
             }
 
             size_t GetTypeSizeByObject( systemPointer_t *sysPtr, const void *langObj ) const
             {
-                return sizeof( structType );
+                return this->structSize;
             }
+
+            size_t structSize;
         };
 
         structTypeInterface *tInterface = _newstruct <structTypeInterface> ( *_memAlloc );
@@ -473,6 +492,8 @@ struct DynamicTypeSystem
 
         if ( tInterface )
         {
+            tInterface->structSize = structSize;
+
             try
             {
                 newTypeInfo = RegisterCommonTypeInterface( typeName, tInterface, inheritsFrom );
@@ -493,7 +514,7 @@ struct DynamicTypeSystem
     {
         struct structPluginInterface : staticRegistry::pluginInterface
         {
-            bool OnPluginConstruct( staticRegistry::hostType_t *obj, staticRegistry::pluginOffset_t pluginOffset, staticRegistry::pluginDescriptor pluginId )
+            bool OnPluginConstruct( staticRegistry::hostType_t *obj, staticRegistry::pluginOffset_t pluginOffset, staticRegistry::pluginDescriptor pluginId ) override
             {
                 void *structMem = pluginId.RESOLVE_STRUCT <void> ( obj, pluginOffset );
 
@@ -514,7 +535,7 @@ struct DynamicTypeSystem
                 return ( rtObj != NULL );
             }
 
-            void OnPluginDestruct( staticRegistry::hostType_t *obj, staticRegistry::pluginOffset_t pluginOffset, staticRegistry::pluginDescriptor pluginId )
+            void OnPluginDestruct( staticRegistry::hostType_t *obj, staticRegistry::pluginOffset_t pluginOffset, staticRegistry::pluginDescriptor pluginId ) override
             {
                 GenericRTTI *rtObj = pluginId.RESOLVE_STRUCT <GenericRTTI> ( obj, pluginOffset );
 
@@ -526,10 +547,10 @@ struct DynamicTypeSystem
                 }
 
                 // Destruct the type.
-                typeSys->DestroyPlacement( rtObj );
+                typeSys->DestroyPlacement( obj, rtObj );
             }
 
-            bool OnPluginAssign( staticRegistry::hostType_t *dstObject, const staticRegistry::hostType_t *srcObject, staticRegistry::pluginOffset_t pluginOffset, staticRegistry::pluginDescriptor pluginId )
+            bool OnPluginAssign( staticRegistry::hostType_t *dstObject, const staticRegistry::hostType_t *srcObject, staticRegistry::pluginOffset_t pluginOffset, staticRegistry::pluginDescriptor pluginId ) override
             {
                 return false;
             }
@@ -582,9 +603,9 @@ struct DynamicTypeSystem
     {
         virtual ~structTypeMetaInfo( void )     {}
 
-        virtual size_t GetTypeSize( void *construct_params ) const = 0;
+        virtual size_t GetTypeSize( systemPointer_t *sysPtr, void *construct_params ) const = 0;
 
-        virtual size_t GetTypeSizeByObject( const void *mem ) const = 0;
+        virtual size_t GetTypeSizeByObject( systemPointer_t *sysPtr, const void *mem ) const = 0;
     };
 
     template <typename structType>
@@ -628,12 +649,12 @@ struct DynamicTypeSystem
 
             size_t GetTypeSize( systemPointer_t *sysPtr, void *construct_params ) const
             {
-                return meta_info->GetTypeSize( construct_params );
+                return meta_info->GetTypeSize( sysPtr, construct_params );
             }
 
             size_t GetTypeSizeByObject( systemPointer_t *sysPtr, const void *obj ) const
             {
-                return meta_info->GetTypeSizeByObject( obj );
+                return meta_info->GetTypeSizeByObject( sysPtr, obj );
             }
            
             structTypeMetaInfo *meta_info;
@@ -671,7 +692,7 @@ struct DynamicTypeSystem
         // In the DynamicTypeSystem environment, we do not introduce conditional registry plugin structs.
         // That would complicate things too much, but support can be added if truly required.
         // Development does not have to be hell.
-        // Without conditional struct support, this operation stays O(1)
+        // Without conditional struct support, this operation stays O(1).
         size_t sizeOut = (size_t)typeInfo->structRegistry.GetPluginSizeByRuntime();
         
         // Add the plugin sizes of all inherited classes.
@@ -681,6 +702,11 @@ struct DynamicTypeSystem
         }
 
         return sizeOut;
+    }
+
+    static inline pluginOffset_t GetTypeRegisteredPluginLocation( typeInfoBase *typeInfo, const GenericRTTI *theObject, pluginOffset_t pluginOffDesc )
+    {
+        return typeInfo->structRegistry.ResolvePluginStructOffsetByObject( theObject, pluginOffDesc );
     }
 
     inline bool ConstructPlugins( systemPointer_t *sysPtr, typeInfoBase *typeInfo, GenericRTTI *rtObj )

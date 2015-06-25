@@ -460,6 +460,7 @@ struct RwException
 #include "renderware.txd.h"
 #include "renderware.material.h"
 #include "renderware.dff.h"
+#include "renderware.imaging.h"
 #include "renderware.file.h"
 
 // Warning manager interface.

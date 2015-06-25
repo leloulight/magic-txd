@@ -342,43 +342,72 @@ extern void registerTXDPlugins( void );
 extern void registerObjectExtensionsPlugins( void );
 extern void registerSerializationPlugins( void );
 extern void registerStreamGlobalPlugins( void );
+extern void registerImagingPlugin( void );
 
 static bool hasInitialized = false;
+
+static bool VerifyLibraryIntegrity( void )
+{
+    // We need to standardize the number formats.
+    // One way to check that is to make out their size, I guess.
+    // Then there is also the problem of endianness, which we do not check here :(
+    // For that we have to add special handling into the serialization environments.
+    return
+        ( sizeof(uint8) == 1 &&
+          sizeof(uint16) == 2 &&
+          sizeof(uint32) == 4 &&
+          sizeof(uint64) == 8 &&
+          sizeof(int8) == 1 &&
+          sizeof(int16) == 2 &&
+          sizeof(int32) == 4 &&
+          sizeof(int64) == 8 &&
+          sizeof(float32) == 4 );
+}
 
 // Interface creation for the RenderWare engine.
 Interface* CreateEngine( LibraryVersion theVersion )
 {
     if ( hasInitialized == false )
     {
-        // Initialize our plugins first.
-        warningHandlerPluginRegister.RegisterPlugin( engineFactory );
+        // Verify data constants before we create a valid engine.
+        if ( VerifyLibraryIntegrity() )
+        {
+            // Initialize our plugins first.
+            warningHandlerPluginRegister.RegisterPlugin( engineFactory );
 
-        // Now do the main modules.
-        registerTXDPlugins();
-        registerObjectExtensionsPlugins();
-        registerSerializationPlugins();
-        registerStreamGlobalPlugins();
+            // Now do the main modules.
+            registerTXDPlugins();
+            registerObjectExtensionsPlugins();
+            registerSerializationPlugins();
+            registerStreamGlobalPlugins();
+            registerImagingPlugin();
 
-        hasInitialized = true;
+            hasInitialized = true;
+        }
     }
 
-    // Create a specialized engine depending on the version.
-    Interface *engineOut = engineFactory.Construct( _engineMemAlloc );
+    Interface *engineOut = NULL;
 
-    if ( engineOut )
+    if ( hasInitialized == true )
     {
-        engineOut->SetVersion( theVersion );
+        // Create a specialized engine depending on the version.
+        engineOut = engineFactory.Construct( _engineMemAlloc );
 
-        try
+        if ( engineOut )
         {
-            // Initialize all environments.
-            initializeTXDEnvironment( engineOut );
-            initializeNativeTextureEnvironment( engineOut );
-        }
-        catch( ... )
-        {
-            engineFactory.Destroy( _engineMemAlloc, (EngineInterface*)engineOut );
-            return NULL;
+            engineOut->SetVersion( theVersion );
+
+            try
+            {
+                // Initialize all environments.
+                initializeTXDEnvironment( engineOut );
+                initializeNativeTextureEnvironment( engineOut );
+            }
+            catch( ... )
+            {
+                engineFactory.Destroy( _engineMemAlloc, (EngineInterface*)engineOut );
+                return NULL;
+            }
         }
     }
 

@@ -14,10 +14,13 @@
 
 #include "texinfoitem.h"
 #include "txdlogwindow.h"
+#include "txdadddialog.h"
 
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
+
+    friend class TexAddDialog;
 
 public:
     MainWindow(QWidget *parent = 0);

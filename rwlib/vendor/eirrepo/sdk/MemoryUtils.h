@@ -46,16 +46,15 @@ public:
         LIST_CLEAR( blockList.root );
     }
 
-    inline bool FindSpace( numberType sizeOfBlock, allocInfo& infoOut )
+    inline bool FindSpace( numberType sizeOfBlock, allocInfo& infoOut, const numberType alignmentWidth = sizeof( void* ) )
     {
         // Try to allocate memory at the first position we find.
         memSlice_t newAllocSlice( 0, sizeOfBlock );
 
         blockIter_t appendNode = &blockList.root;
 
-        // Make sure we align to the system integer.
+        // Make sure we align to the system integer (by default).
         // todo: maybe this is not correct all the time?
-        const numberType alignmentWidth = sizeof( void* );
 
         LIST_FOREACH_BEGIN( block_t, blockList.root, node )
             // Intersect the current memory slice with the ones on our list.
@@ -351,7 +350,6 @@ public:
         // If the block that we request the offset of should be ignored anyway, we will simply return false.
         if ( conditional.DoIgnoreBlock( theBlock ) )
         {
-            assert( 0 );    // we actually never want this.
             return false;
         }
 
@@ -364,10 +362,64 @@ public:
             // We terminate if we found our block.
             if ( iterator.ResolveBlock() == theBlock )
             {
+                hasFoundTheBlock = true;
                 break;
             }
 
             iterator.Increment();
+        }
+
+        if ( hasFoundTheBlock == false )
+        {
+            // This should never happen.
+            return false;
+        }
+
+        // Return the actual offset that preserves alignment.
+        outOffset = iterator.ResolveOffset();
+        return true;
+    }
+
+    // This is a very optimized algorithm for turning a static-allocation-offset into its conditional equivalent.
+    template <typename collisionConditionalType>
+    inline bool ResolveConditionalBlockOffset( numberType staticBlockOffset, numberType& outOffset, collisionConditionalType& conditional ) const
+    {
+        // If the block that we request the offset of should be ignored anyway, we will simply return false.
+        if ( conditional.DoIgnoreBlock( theBlock ) )
+        {
+            return false;
+        }
+
+        conditionalRegionIterator <collisionConditionalType> iterator( this, conditional );
+
+        bool hasFoundTheBlock = false;
+
+        while ( iterator.IsEnd() == false )
+        {
+            // We terminate if we found our block.
+            const block_t *theBlock = iterator.ResolveBlock();
+
+            numberType thisBlockOffset = theBlock->slice.GetSliceStartPoint();
+
+            if ( thisBlockOffset == staticBlockOffset )
+            {
+                hasFoundTheBlock = true;
+                break;
+            }
+            else if ( thisBlockOffset > staticBlockOffset )
+            {
+                // We have not found it.
+                // Terminate early.
+                break;
+            }
+
+            iterator.Increment();
+        }
+
+        if ( hasFoundTheBlock == false )
+        {
+            // This should never happen.
+            return false;
         }
 
         // Return the actual offset that preserves alignment.
@@ -484,6 +536,20 @@ struct cachedMinimalStructRegistryFlavor
     }
 
     template <typename managerType>
+    inline bool GetPluginStructOffset( managerType *manPtr, size_t handleOffset, size_t& actualOffset ) const
+    {
+        actualOffset = handleOffset;
+        return true;
+    }
+
+    template <typename managerType>
+    inline bool GetPluginStructOffsetByObject( managerType *manPtr, const abstractionType *object, size_t handleOffset, size_t& actualOffset ) const
+    {
+        actualOffset = handleOffset;
+        return true;
+    }
+
+    template <typename managerType>
     inline size_t GetPluginAllocSize( managerType *manPtr ) const
     {
         return this->pluginAllocSize;
@@ -501,6 +567,11 @@ struct cachedMinimalStructRegistryFlavor
         // Update the overall class size.
         // It is determined by the end of this plugin struct.
         this->pluginAllocSize = manPtr->pluginRegions.GetSpanSize();    // often it will just be ( useOffset + pluginSize ), but we must not rely on that.
+    }
+
+    inline static bool DoesUseUnifiedPluginOffset( void )
+    {
+        return true;
     }
 
     template <typename managerType>
@@ -725,9 +796,30 @@ struct conditionalStructRegistryFlavor
     }
 
     template <typename managerType>
+    inline bool GetPluginStructOffset( managerType *manPtr, size_t handleOffset, size_t& actualOffset ) const
+    {
+        runtimeBlockConditional <managerType> conditional( manPtr );
+
+        return manPtr->pluginRegions.ResolveConditionalBlockOffset( handleOffset, actualOffset, conditional );
+    }
+
+    template <typename managerType>
+    inline bool GetPluginStructOffsetByObject( managerType *manPtr, const abstractionType *object, size_t handleOffset, size_t& actualOffset ) const
+    {
+        objectBasedBlockConditional <managerType> conditional( manPtr, object );
+
+        return manPtr->pluginRegions.ResolveConditionalBlockOffset( handleOffset, actualOffset, conditional );
+    }
+
+    template <typename managerType>
     inline void UpdatePluginRegion( managerType *manPtr )
     {
         // Whatever.
+    }
+
+    inline static bool DoesUseUnifiedPluginOffset( void )
+    {
+        return false;
     }
 
     template <typename managerType>
@@ -852,9 +944,7 @@ struct AnonymousPluginStructRegistry
         // Determine the plugin offset that should be used for allocation.
         blockAlloc_t::allocInfo blockAllocInfo;
 
-        // TODO: actually use the preferred alignment.
-
-        bool hasSpace = pluginRegions.FindSpace( pluginSize, blockAllocInfo );
+        bool hasSpace = pluginRegions.FindSpace( pluginSize, blockAllocInfo, this->preferredAlignment );
 
         // Handle obscure errors.
         if ( hasSpace == false )
@@ -1056,6 +1146,26 @@ public:
 
         DestroyPluginBlockInternal( pluginObj, endIter, addArgs... );
     }
+
+    // Use this function whenever you receive a handle offset to a plugin struct.
+    // It is optimized so that you cannot go wrong.
+    inline pluginOffset_t ResolvePluginStructOffsetByRuntime( pluginOffset_t handleOffset )
+    {
+        size_t theActualOffset;
+
+        bool gotOffset = this->regBoundFlavor.GetPluginStructOffset( this, handleOffset, theActualOffset );
+
+        return ( gotOffset ? theActualOffset : 0 );
+    }
+
+    inline pluginOffset_t ResolvePluginStructOffsetByObject( const abstractionType *obj, pluginOffset_t handleOffset )
+    {
+        size_t theActualOffset;
+
+        bool gotOffset = this->regBoundFlavor.GetPluginStructOffsetByObject( this, obj, handleOffset, theActualOffset );
+
+        return ( gotOffset ? theActualOffset : 0 );
+    }
 };
 
 // Helper struct for common plugin system functions.
@@ -1157,8 +1267,18 @@ struct CommonPluginSystemDispatch
 
             if ( theStruct )
             {
-                // Initialize the manager.
-                theStruct->Initialize( obj );
+                try
+                {
+                    // Initialize the manager.
+                    theStruct->Initialize( obj );
+                }
+                catch( ... )
+                {
+                    // We have to destroy our struct again.
+                    theStruct->~structType();
+
+                    throw;
+                }
             }
 
             return ( theStruct != NULL );

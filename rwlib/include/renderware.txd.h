@@ -732,10 +732,14 @@ TexDictionary* ToTexDictionary( Interface *engineInterface, RwObject *rwObj );
 TextureBase* CreateTexture( Interface *engineInterface, Raster *theRaster );
 TextureBase* ToTexture( Interface *engineInterface, RwObject *rwObj );
 
+typedef std::list <std::string> platformTypeNameList_t;
+
 // Complex native texture API.
 bool RegisterNativeTextureType( Interface *engineInterface, const char *nativeName, texNativeTypeProvider *typeProvider, size_t memSize );
 bool UnregisterNativeTextureType( Interface *engineInterface, const char *nativeName );
 bool ConvertRasterTo( Raster *theRaster, const char *nativeName );
+
+platformTypeNameList_t GetAvailableNativeTextureTypes( Interface *engineInterface );
 
 // Raster API.
 Raster* CreateRaster( Interface *engineInterface );

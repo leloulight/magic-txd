@@ -1,3 +1,5 @@
+#include "StdInc.h"
+
 #include <cstring>
 #include <cstdlib>
 #include <fstream>
@@ -8,8 +10,6 @@
 #include <map>
 #include <algorithm>
 #include <cmath>
-
-#include "StdInc.h"
 
 #include "pixelformat.hxx"
 
@@ -1696,6 +1696,32 @@ bool ConvertRasterTo( Raster *theRaster, const char *nativeName )
     return conversionSuccess;
 }
 
+platformTypeNameList_t GetAvailableNativeTextureTypes( Interface *engineInterface )
+{
+    platformTypeNameList_t registeredTypes;
+
+    nativeTextureStreamPlugin *nativeTexEnv = nativeTextureStreamStore.GetPluginStruct( (EngineInterface*)engineInterface );
+
+    if ( nativeTexEnv )
+    {
+        if ( RwTypeSystem::typeInfoBase *nativeTexType = nativeTexEnv->platformTexType )
+        {
+            // We need to iterate through all types and return the ones that directly inherit from our native tex type.
+            for ( RwTypeSystem::type_iterator iter = engineInterface->typeSystem.GetTypeIterator(); iter.IsEnd() == false; iter.Increment() )
+            {
+                RwTypeSystem::typeInfoBase *theType = iter.Resolve();
+
+                if ( theType->inheritsFrom == nativeTexType )
+                {
+                    registeredTypes.push_back( theType->name );
+                }
+            }
+        }
+    }
+    
+    return registeredTypes;
+}
+
 /*
  * Raster
  */
@@ -2496,73 +2522,6 @@ void Raster::compress( float quality )
     }
 }
 
-#pragma pack(1)
-struct TgaHeader
-{
-    BYTE IDLength;        /* 00h  Size of Image ID field */
-    BYTE ColorMapType;    /* 01h  Color map type */
-    BYTE ImageType;       /* 02h  Image type code */
-    WORD CMapStart;       /* 03h  Color map origin */
-    WORD CMapLength;      /* 05h  Color map length */
-    BYTE CMapDepth;       /* 07h  Depth of color map entries */
-    WORD XOffset;         /* 08h  X origin of image */
-    WORD YOffset;         /* 0Ah  Y origin of image */
-    WORD Width;           /* 0Ch  Width of image */
-    WORD Height;          /* 0Eh  Height of image */
-    BYTE PixelDepth;      /* 10h  Image pixel size */
-
-    struct
-    {
-        unsigned char numAttrBits : 4;
-        unsigned char imageOrdering : 2;
-        unsigned char reserved : 2;
-    } ImageDescriptor; /* 11h  Image descriptor byte */
-};
-#pragma pack()
-
-static void writeTGAPixels(
-    Interface *engineInterface,
-    const void *texelSource, uint32 colorUnitCount,
-    eRasterFormat srcRasterFormat, uint32 srcItemDepth, ePaletteType srcPaletteType, const void *srcPaletteData, uint32 srcMaxPalette,
-    eRasterFormat dstRasterFormat, uint32 dstItemDepth,
-    eColorOrdering srcColorOrder,
-    Stream *tgaStream
-)
-{
-    // Check whether we need to create a TGA compatible color array.
-    if ( srcRasterFormat != dstRasterFormat || srcItemDepth != dstItemDepth || srcPaletteType != PALETTE_NONE || srcColorOrder != COLOR_BGRA )
-    {
-        // Get the data size.
-        uint32 texelDataSize = getRasterDataSize(colorUnitCount, dstItemDepth);
-
-        // Allocate a buffer for the fixed pixel data.
-        void *tgaColors = engineInterface->PixelAllocate( texelDataSize );
-
-        for ( uint32 n = 0; n < colorUnitCount; n++ )
-        {
-            // Grab the color.
-            uint8 red, green, blue, alpha;
-
-            browsetexelcolor(texelSource, srcPaletteType, srcPaletteData, srcMaxPalette, n, srcRasterFormat, srcColorOrder, srcItemDepth, red, green, blue, alpha);
-
-            // Write it with correct ordering.
-            puttexelcolor(tgaColors, n, dstRasterFormat, COLOR_BGRA, dstItemDepth, red, green, blue, alpha);
-        }
-
-        tgaStream->write((const char*)tgaColors, texelDataSize);
-
-        // Free memory.
-        engineInterface->PixelFree( tgaColors );
-    }
-    else
-    {
-        // Simply write the color source.
-        uint32 texelDataSize = getRasterDataSize(colorUnitCount, srcItemDepth);
-
-        tgaStream->write((const char*)texelSource, texelDataSize);
-    }
-}
-
 void Raster::writeTGA(const char *path, bool optimized)
 {
     // If optimized == true, then this routine will output files in a commonly unsupported format
@@ -2597,8 +2556,6 @@ void Raster::writeTGA(const char *path, bool optimized)
 
 void Raster::writeTGAStream(Stream *tgaStream, bool optimized)
 {
-    // We are using an extended version of the TGA standard that not a lot of editors support.
-
     Interface *engineInterface = this->engineInterface;
 
     PlatformTexture *platformTex = this->platformData;
@@ -2625,179 +2582,7 @@ void Raster::writeTGAStream(Stream *tgaStream, bool optimized)
         throw RwException( "failed to get raw bitmap data in TGA writing" );
     }
 
-    // Decide how to write the raster.
-    eRasterFormat srcRasterFormat = rawBmp.rasterFormat;
-    ePaletteType srcPaletteType = rawBmp.paletteType;
-    uint32 srcItemDepth = rawBmp.depth;
 
-    eRasterFormat dstRasterFormat;
-    uint32 dstColorDepth;
-    uint32 dstAlphaBits;
-    bool hasDstRasterFormat = false;
-
-    ePaletteType dstPaletteType;
-
-    if ( !optimized )
-    {
-        // We output in a format that every parser should understand.
-        dstRasterFormat = RASTER_8888;
-        dstColorDepth = 32;
-        dstAlphaBits = 8;
-
-        dstPaletteType = PALETTE_NONE;
-
-        hasDstRasterFormat = true;
-    }
-    else
-    {
-        if ( srcRasterFormat == RASTER_1555 )
-        {
-            dstRasterFormat = RASTER_1555;
-            dstColorDepth = 16;
-            dstAlphaBits = 1;
-
-            hasDstRasterFormat = true;
-        }
-        else if ( srcRasterFormat == RASTER_565 )
-        {
-            dstRasterFormat = RASTER_565;
-            dstColorDepth = 16;
-            dstAlphaBits = 0;
-
-            hasDstRasterFormat = true;
-        }
-        else if ( srcRasterFormat == RASTER_4444 )
-        {
-            dstRasterFormat = RASTER_4444;
-            dstColorDepth = 16;
-            dstAlphaBits = 4;
-
-            hasDstRasterFormat = true;
-        }
-        else if ( srcRasterFormat == RASTER_8888 ||
-                  srcRasterFormat == RASTER_888 )
-        {
-            dstRasterFormat = RASTER_8888;
-            dstColorDepth = 32;
-            dstAlphaBits = 8;
-
-            hasDstRasterFormat = true;
-        }
-        else if ( srcRasterFormat == RASTER_555 )
-        {
-            dstRasterFormat = RASTER_555;
-            dstColorDepth = 16; // 15?
-            dstAlphaBits = 0;
-
-            hasDstRasterFormat = true;
-        }
-
-        // We palettize if present.
-        dstPaletteType = srcPaletteType;
-    }
-
-    if ( !hasDstRasterFormat )
-    {
-        engineInterface->PushWarning( "could not find a raster format to write TGA image with" );
-    }
-    else
-    {
-        // Prepare the TGA header.
-        TgaHeader header;
-
-        uint32 maxpalette = rawBmp.paletteSize;
-
-        bool isPalette = (dstPaletteType != PALETTE_NONE);
-
-        header.IDLength = 0;
-        header.ColorMapType = ( isPalette ? 1 : 0 );
-        header.ImageType = ( isPalette ? 1 : 2 );
-
-        // The pixel depth is the number of bits a color entry is going to take (real RGBA color).
-        uint32 pixelDepth = 0;
-
-        if (isPalette)
-        {
-            pixelDepth = Bitmap::getRasterFormatDepth(dstRasterFormat);
-        }
-        else
-        {
-            pixelDepth = dstColorDepth;
-        }
-        
-        header.CMapStart = 0;
-        header.CMapLength = ( isPalette ? maxpalette : 0 );
-        header.CMapDepth = ( isPalette ? pixelDepth : 0 );
-
-        header.XOffset = 0;
-        header.YOffset = 0;
-
-        uint32 width = rawBmp.width;
-        uint32 height = rawBmp.height;
-
-        header.Width = width;
-        header.Height = height;
-        header.PixelDepth = ( isPalette ? srcItemDepth : dstColorDepth );
-
-        header.ImageDescriptor.numAttrBits = dstAlphaBits;
-        header.ImageDescriptor.imageOrdering = 2;
-        header.ImageDescriptor.reserved = 0;
-
-        // Write the header.
-        tgaStream->write((const char*)&header, sizeof(header));
-
-        const void *texelSource = rawBmp.texelData;
-        const void *paletteData = rawBmp.paletteData;
-        eColorOrdering colorOrder = rawBmp.colorOrder;
-
-        // Write the palette if we require.
-        if (isPalette)
-        {
-            writeTGAPixels(
-                engineInterface,
-                paletteData, maxpalette,
-                srcRasterFormat, pixelDepth, PALETTE_NONE, NULL, 0,
-                dstRasterFormat, pixelDepth,
-                colorOrder, tgaStream
-            );
-        }
-
-        // Now write image information.
-        // If we are a palette, we simply write the color indice.
-        uint32 colorUnitCount = ( width * height );
-
-        if (isPalette)
-        {
-            assert( srcPaletteType != PALETTE_NONE );
-
-            // Write a fixed version of the palette indice.
-            uint32 texelDataSize = rawBmp.dataSize; // for palette items its the same size.
-
-            void *fixedPalItems = engineInterface->PixelAllocate( texelDataSize );
-
-            ConvertPaletteDepth(
-                texelSource, fixedPalItems,
-                colorUnitCount,
-                srcPaletteType, maxpalette,
-                srcItemDepth, srcItemDepth
-            );
-
-            tgaStream->write((const char*)fixedPalItems, texelDataSize);
-
-            // Clean up memory.
-            engineInterface->PixelFree( fixedPalItems );
-        }
-        else
-        {
-            writeTGAPixels(
-                engineInterface,
-                texelSource, colorUnitCount,
-                srcRasterFormat, srcItemDepth, srcPaletteType, paletteData, maxpalette,
-                dstRasterFormat, dstColorDepth,
-                colorOrder, tgaStream
-            );
-        }
-    }
 
     // Free raw bitmap resources.
     if ( rawBmp.isNewlyAllocated )
@@ -2813,8 +2598,7 @@ inline bool isValidFilterMode( uint32 binaryFilterMode )
          binaryFilterMode == RWFILTER_POINT_POINT ||
          binaryFilterMode == RWFILTER_LINEAR_POINT ||
          binaryFilterMode == RWFILTER_POINT_LINEAR ||
-         binaryFilterMode == RWFILTER_LINEAR_LINEAR ||
-         binaryFilterMode == RWFILTER_ANISOTROPY )  // not sure about this one.
+         binaryFilterMode == RWFILTER_LINEAR_LINEAR )
     {
         return true;
     }

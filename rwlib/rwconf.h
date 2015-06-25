@@ -10,4 +10,16 @@
 // algorithms. Having this macro defined is recommended.
 #define _USE_XBOX_SDK_
 
+// Define this macro if you want to include imaging support in your rwlib compilation.
+// This will allow you to store texel data of textures in popular picture formats, such as TGA.
+#define RWLIB_INCLUDE_IMAGING
+
+// Define those if you want to ship with specific imaging format support.
+// If you undefine those, you can save quite some library space.
+#define RWLIB_INCLUDE_TGA_IMAGING
+#define RWLIB_INCLUDE_BMP_IMAGING
+#define RWLIB_INCLUDE_PNG_IMAGING
+#define RWLIB_INCLUDE_JPEG_IMAGING
+#define RWLIB_INCLUDE_GIF_IMAGING
+
 #endif //_RENDERWARE_CONFIGURATION_

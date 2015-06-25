@@ -168,7 +168,7 @@ public:
         return getRasterDataSize( imageItemCount, depth );
     }
 
-    inline void setImageData( void *theTexels, eRasterFormat theFormat, eColorOrdering colorOrder, uint32 depth, uint32 width, uint32 height, uint32 dataSize )
+    inline void setImageData( void *theTexels, eRasterFormat theFormat, eColorOrdering colorOrder, uint32 depth, uint32 width, uint32 height, uint32 dataSize, bool assignData = false )
     {
         this->width = width;
         this->height = height;
@@ -183,14 +183,22 @@ public:
             this->texels = NULL;
         }
 
-        // Copy the texels.
-        if ( dataSize != 0 )
+        if ( assignData == false )
         {
-            void *newTexels = new uint8[ dataSize ];
+            // Copy the texels.
+            if ( dataSize != 0 )
+            {
+                void *newTexels = new uint8[ dataSize ];
 
-            memcpy( newTexels, theTexels, dataSize );
+                memcpy( newTexels, theTexels, dataSize );
 
-            this->texels = newTexels;
+                this->texels = newTexels;
+            }
+        }
+        else
+        {
+            // Just give us the data.
+            this->texels = theTexels;
         }
         this->dataSize = dataSize;
 
