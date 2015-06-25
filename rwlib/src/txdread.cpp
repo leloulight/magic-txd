@@ -1437,7 +1437,7 @@ void pixelDataTraversal::mipmapResource::Free( Interface *engineInterface )
     }
 }
 
-inline void CompatibilityTransformPixelData( Interface *engineInterface, pixelDataTraversal& pixelData, const pixelCapabilities& pixelCaps )
+void CompatibilityTransformPixelData( Interface *engineInterface, pixelDataTraversal& pixelData, const pixelCapabilities& pixelCaps )
 {
     // Make sure the pixelData does not violate the capabilities struct.
     // This is done by "downcasting". It preserves maximum image quality, but increases memory requirements.
@@ -2572,22 +2572,27 @@ void Raster::writeTGAStream(Stream *tgaStream, bool optimized)
         throw RwException( "invalid native texture" );
     }
 
-    // Get the raw bitmap from layer 0.
-    rawBitmapFetchResult rawBmp;
+    // Get the mipmap from layer 0.
+    rawMipmapLayer rawLayer;
 
-    bool gotRawBmp = GetNativeTextureRawBitmapData( engineInterface, platformTex, texProvider, 0, true, rawBmp );
+    bool gotLayer = texProvider->GetMipmapLayer( engineInterface, platformTex, 0, rawLayer );
 
-    if ( !gotRawBmp )
+    if ( !gotLayer )
     {
-        throw RwException( "failed to get raw bitmap data in TGA writing" );
+        throw RwException( "failed to get mipmap layer zero data in TGA writing" );
     }
 
+    // Push the mipmap to the imaging plugin.
+    bool successfullyStored = SerializeMipmapLayer( tgaStream, "TGA", rawLayer );
 
+    // TODO: what to do with the bool?
 
     // Free raw bitmap resources.
-    if ( rawBmp.isNewlyAllocated )
+    if ( rawLayer.isNewlyAllocated )
     {
-        rawBmp.FreePixels( engineInterface );
+        engineInterface->PixelFree( rawLayer.mipData.texels );
+
+        rawLayer.mipData.texels = NULL;
     }
 }
 

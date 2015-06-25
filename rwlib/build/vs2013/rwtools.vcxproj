@@ -146,6 +146,7 @@
     <ClCompile Include="..\..\src\rwblockapi.cpp" />
     <ClCompile Include="..\..\src\rwbmp.cpp" />
     <ClCompile Include="..\..\src\rwfile.cpp" />
+    <ClCompile Include="..\..\src\rwimaging.bmp.cpp" />
     <ClCompile Include="..\..\src\rwimaging.cpp" />
     <ClCompile Include="..\..\src\rwimaging.tga.cpp" />
     <ClCompile Include="..\..\src\rwinterface.cpp">

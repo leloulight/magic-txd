@@ -457,18 +457,15 @@ inline uint8 packcolor( double color )
     return (uint8)( color * 255.0 );
 }
 
-inline bool calculateHasAlpha( const pixelDataTraversal& pixelData )
+inline bool mipmapCalculateHasAlpha(
+    uint32 layerWidth, uint32 layerHeight, uint32 mipWidth, uint32 mipHeight, const void *texelSource, uint32 texelDataSize,
+    eRasterFormat rasterFormat, uint32 depth, eColorOrdering colorOrder, ePaletteType paletteType, const void *paletteData, uint32 paletteSize
+)
 {
-    assert( pixelData.compressionType == RWCOMPRESS_NONE );
-
     bool hasAlpha = false;
 
     // Decide whether we even can have alpha.
     // Otherwise there is no point in going through the pixels.
-    eRasterFormat rasterFormat = pixelData.rasterFormat;
-    ePaletteType paletteType = pixelData.paletteType;
-    eColorOrdering colorOrder = pixelData.colorOrder;
-
     if (rasterFormat == RASTER_1555 || rasterFormat == RASTER_4444 || rasterFormat == RASTER_8888)
     {
         // Alright, the raster can have alpha.
@@ -476,7 +473,7 @@ inline bool calculateHasAlpha( const pixelDataTraversal& pixelData )
         if (paletteType != PALETTE_NONE)
         {
             // Determine whether we REALLY use all palette indice.
-            uint32 palItemCount = pixelData.paletteSize;
+            uint32 palItemCount = paletteSize;
 
             bool *usageFlags = new bool[ palItemCount ];
 
@@ -487,16 +484,12 @@ inline bool calculateHasAlpha( const pixelDataTraversal& pixelData )
 
             // Loop through all pixels of the image.
             {
-                const pixelDataTraversal::mipmapResource& mipLayer = pixelData.mipmaps[ 0 ];
-
-                uint32 texWidth = mipLayer.width;
-                uint32 texHeight = mipLayer.height;
+                uint32 texWidth = mipWidth;
+                uint32 texHeight = mipHeight;
 
                 uint32 texItemCount = ( texWidth * texHeight );
 
-                const void *texelData = mipLayer.texels;
-
-                uint32 depth = pixelData.depth;
+                const void *texelData = texelSource;
 
                 for ( uint32 n = 0; n < texItemCount; n++ )
                 {
@@ -511,7 +504,7 @@ inline bool calculateHasAlpha( const pixelDataTraversal& pixelData )
                 }
             }
 
-            const void *palColorSource = pixelData.paletteData;
+            const void *palColorSource = paletteData;
 
             uint32 palFormatDepth = Bitmap::getRasterFormatDepth(rasterFormat);
 
@@ -538,22 +531,13 @@ inline bool calculateHasAlpha( const pixelDataTraversal& pixelData )
         {
             // We have to process the entire image. Oh boy.
             // For that, we decide based on the main raster only.
-            const pixelDataTraversal::mipmapResource& mipLayer = pixelData.mipmaps[ 0 ];
-
-            const void *texelSource = mipLayer.texels;
-
-            uint32 mipWidth = mipLayer.width;
-            uint32 mipHeight = mipLayer.height;
-
-            uint32 mipDepth = pixelData.depth;
-
             uint32 imageItemCount = ( mipWidth * mipHeight );
 
             for (uint32 n = 0; n < imageItemCount; n++)
             {
                 uint8 r, g, b, a;
 
-                bool hasColor = browsetexelcolor(texelSource, PALETTE_NONE, NULL, 0, n, rasterFormat, colorOrder, mipDepth, r, g, b, a);
+                bool hasColor = browsetexelcolor(texelSource, PALETTE_NONE, NULL, 0, n, rasterFormat, colorOrder, depth, r, g, b, a);
 
                 if (hasColor && a != 255)
                 {
@@ -565,6 +549,19 @@ inline bool calculateHasAlpha( const pixelDataTraversal& pixelData )
     }
 
     return hasAlpha;
+}
+
+inline bool calculateHasAlpha( const pixelDataTraversal& pixelData )
+{
+    assert( pixelData.compressionType == RWCOMPRESS_NONE );
+
+    const pixelDataTraversal::mipmapResource& mipLayer = pixelData.mipmaps[ 0 ];
+
+    return mipmapCalculateHasAlpha(
+        mipLayer.mipWidth, mipLayer.mipHeight, mipLayer.width, mipLayer.height, mipLayer.texels, mipLayer.dataSize,
+        pixelData.rasterFormat, pixelData.depth, pixelData.colorOrder,
+        pixelData.paletteType, pixelData.paletteData, pixelData.paletteSize
+    );
 }
 
 };

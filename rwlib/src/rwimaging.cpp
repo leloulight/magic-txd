@@ -2,6 +2,10 @@
 
 #include "rwimaging.hxx"
 
+#include "pixelformat.hxx"
+
+#include "txdread.d3d.dxt.hxx"
+
 #include <PluginHelpers.h>
 
 #include <map>
@@ -14,6 +18,165 @@ namespace rw
 #ifdef RWLIB_INCLUDE_IMAGING
 // This component is used to convert Streams into a Bitmap and the other way round.
 // The user should be able to decide in rwconf.h what modules he wants to ship with, or to trim the imaging altogether.
+
+inline void CompatibilityTransformImagingLayer( Interface *engineInterface, const imagingLayerTraversal& layer, imagingLayerTraversal& layerOut, const pixelCapabilities& pixelCaps )
+{
+    // TODO: this is a copy of the code from txdread but adjusted for a single mipmap.
+    // I hope I can somehow combine both functions together... because this is complicated.
+
+    // Make sure the imaging layer does not violate the capabilities struct.
+    // This is done by "downcasting". It preserves maximum image quality, but increases memory requirements.
+
+    // First get the original parameters onto stack.
+    eRasterFormat srcRasterFormat = layer.rasterFormat;
+    uint32 srcDepth = layer.depth;
+    eColorOrdering srcColorOrder = layer.colorOrder;
+    ePaletteType srcPaletteType = layer.paletteType;
+    void *srcPaletteData = layer.paletteData;
+    uint32 srcPaletteSize = layer.paletteSize;
+    eCompressionType srcCompressionType = layer.compressionType;
+
+    // Now decide the target format depending on the capabilities.
+    eRasterFormat dstRasterFormat = srcRasterFormat;
+    uint32 dstDepth = srcDepth;
+    eColorOrdering dstColorOrder = srcColorOrder;
+    ePaletteType dstPaletteType = srcPaletteType;
+    void *dstPaletteData = srcPaletteData;
+    uint32 dstPaletteSize = srcPaletteSize;
+    eCompressionType dstCompressionType = srcCompressionType;
+
+    bool hasBeenModded = false;
+
+    if ( dstCompressionType == RWCOMPRESS_DXT1 && pixelCaps.supportsDXT1 == false ||
+         dstCompressionType == RWCOMPRESS_DXT2 && pixelCaps.supportsDXT2 == false ||
+         dstCompressionType == RWCOMPRESS_DXT3 && pixelCaps.supportsDXT3 == false ||
+         dstCompressionType == RWCOMPRESS_DXT4 && pixelCaps.supportsDXT4 == false ||
+         dstCompressionType == RWCOMPRESS_DXT5 && pixelCaps.supportsDXT5 == false )
+    {
+        // Set proper decompression parameters.
+        uint32 dxtType;
+
+        bool isDXT = IsDXTCompressionType( dstCompressionType, dxtType );
+
+        assert( isDXT == true );
+
+        eRasterFormat targetRasterFormat = getDXTDecompressionRasterFormat( engineInterface, dxtType, layer.hasAlpha );
+
+        dstRasterFormat = targetRasterFormat;
+        dstDepth = Bitmap::getRasterFormatDepth( targetRasterFormat );
+        dstColorOrder = COLOR_BGRA;
+        dstPaletteType = PALETTE_NONE;
+        dstPaletteData = NULL;
+        dstPaletteSize = 0;
+
+        // We decompress stuff.
+        dstCompressionType = RWCOMPRESS_NONE;
+
+        hasBeenModded = true;
+    }
+
+    if ( hasBeenModded == false )
+    {
+        if ( dstPaletteType != PALETTE_NONE && pixelCaps.supportsPalette == false )
+        {
+            // We want to do things without a palette.
+            dstPaletteType = PALETTE_NONE;
+            dstPaletteSize = 0;
+            dstPaletteData = NULL;
+
+            dstDepth = Bitmap::getRasterFormatDepth(dstRasterFormat);
+
+            hasBeenModded = true;
+        }
+    }
+
+    // Check whether we even want an update.
+    bool wantsUpdate = false;
+
+    if ( srcRasterFormat != dstRasterFormat || dstDepth != srcDepth || dstColorOrder != srcColorOrder ||
+         dstPaletteType != srcPaletteType || dstPaletteData != srcPaletteData || dstPaletteSize != srcPaletteSize ||
+         dstCompressionType != srcCompressionType )
+    {
+        wantsUpdate = true;
+    }
+
+    uint32 srcMipWidth = layer.mipWidth;
+    uint32 srcMipHeight = layer.mipHeight;
+    uint32 srcLayerWidth = layer.layerWidth;
+    uint32 srcLayerHeight = layer.layerHeight;
+    void *srcTexels = layer.texelSource;
+    uint32 srcDataSize = layer.dataSize;
+
+    uint32 dstMipWidth = srcMipWidth;
+    uint32 dstMipHeight = srcMipHeight;
+    uint32 dstLayerWidth = srcLayerWidth;
+    uint32 dstLayerHeight = srcLayerHeight;
+    void *dstTexels = srcTexels;
+    uint32 dstDataSize = srcDataSize;
+
+    if ( wantsUpdate )
+    {
+        // Convert the pixels now.
+        bool hasUpdated;
+        {
+            // Just convert.
+            uint32 dstPlaneWidth, dstPlaneHeight;
+            void *dstTexels;
+            uint32 dstDataSize;
+
+            bool couldConvert = ConvertMipmapLayerNative(
+                engineInterface, layer.mipWidth, layer.mipHeight, layer.layerWidth, layer.layerHeight, layer.texelSource, layer.dataSize,
+                srcRasterFormat, srcDepth, srcColorOrder, srcPaletteType, srcPaletteData, srcPaletteSize, srcCompressionType,
+                dstRasterFormat, dstDepth, dstColorOrder, dstPaletteType, dstPaletteData, dstPaletteSize, dstCompressionType,
+                false,
+                dstPlaneWidth, dstPlaneHeight,
+                dstTexels, dstDataSize
+            );
+
+            if ( couldConvert )
+            {
+                dstMipWidth = dstPlaneWidth;
+                dstMipHeight = dstPlaneHeight;
+                
+                // We assume the input layer is _never_ newly allocated.
+                // Now it is, tho. MAKE SURE you handle this right!
+                dstTexels = dstTexels;
+                dstDataSize = dstDataSize;
+
+                hasUpdated = true;
+            }
+        }
+
+        // If we want an update, we should get an update.
+        // Otherwise, ConvertPixelData is to blame.
+        assert( hasUpdated == true );
+
+        // If we have updated at all, apply changes.
+        if ( hasUpdated )
+        {
+            // We must have the correct parameters.
+            // Here we verify problematic parameters only.
+            // Params like rasterFormat are expected to be handled properly no matter what.
+            assert( layer.compressionType == dstCompressionType );
+        }
+    }
+
+    // Put data into the new struct.
+    layerOut.mipWidth = dstMipWidth;
+    layerOut.mipHeight = dstMipHeight;
+    layerOut.layerWidth = dstLayerWidth;
+    layerOut.layerHeight = dstLayerHeight;
+    layerOut.texelSource = dstTexels;
+    layerOut.dataSize = dstDataSize;
+
+    layerOut.rasterFormat = dstRasterFormat;
+    layerOut.depth = dstDepth;
+    layerOut.colorOrder = dstColorOrder;
+    layerOut.paletteType = dstPaletteType;
+    layerOut.paletteData = dstPaletteData;
+    layerOut.paletteSize = dstPaletteSize;
+    layerOut.compressionType = dstCompressionType;
+}
 
 struct rwImagingEnv
 {
@@ -113,10 +276,6 @@ struct rwImagingEnv
 
     inline bool Serialize( Interface *engineInterface, Stream *outputStream, const char *formatDescriptor, const imagingLayerTraversal& theLayer ) const
     {
-        // TODO: make sure the imaging layer data can be safely put into the image format.
-        // the image format has to export capabilities, just like the native texture rasters.
-        assert( theLayer.compressionType == RWCOMPRESS_NONE );
-
         // We get the image format that is properly described by formatDescriptor and serialize the Bitmap with it.
         imagingFormatExtension *fittingFormat = NULL;
 
@@ -136,18 +295,36 @@ struct rwImagingEnv
 
         if ( fittingFormat != NULL )
         {
-            // Do it.
+            // Get the capabilities of the imaging layer and decide whether it needs a transform.
+            pixelCapabilities imageCaps;
+
+            fittingFormat->GetStorageCapabilities( imageCaps );
+
+            // Create a copy, because the input is const.
+            imagingLayerTraversal layerPush;
+
+            CompatibilityTransformImagingLayer( engineInterface, theLayer, layerPush, imageCaps );
+
+            bool success = true;
+
             try
             {
+                // Serialize the legit pixels.
                 fittingFormat->SerializeImage( engineInterface, outputStream, theLayer );
             }
             catch( ... )
             {
-                return false;
+                success = false;
             }
 
-            // We are successful.
-            return true;
+            // If we allocated new pixels, free the new ones.
+            if ( theLayer.texelSource != layerPush.texelSource )
+            {
+                engineInterface->PixelFree( layerPush.texelSource );
+            }
+
+            // We could be successful, hopefully.
+            return success;
         }
 
         // Something must have failed.
@@ -165,8 +342,93 @@ inline rwImagingEnv* GetImagingEnvironment( Interface *engineInterface )
 
 // We also have native raster serialization functions.
 // These methods should be used if the target image should store optimized texture data.
-//todo.
+bool DeserializeMipmapLayer( Stream *inputStream, rawMipmapLayer& rawLayer )
+{
+    bool success = false;
 
+#ifdef RWLIB_INCLUDE_IMAGING
+    Interface *engineInterface = inputStream->engineInterface;
+
+    if ( const rwImagingEnv *imgEnv = GetImagingEnvironment( engineInterface ) )
+    {
+        // Fetch pixel data. All formats can be displayed in rawMipmapLayer.
+        imagingLayerTraversal travData;
+
+        bool hasDeserialized = imgEnv->Deserialize( engineInterface, inputStream, travData );
+
+        if ( hasDeserialized )
+        {
+            // Just give the data to the runtime.
+            rawLayer.mipData.width = travData.mipWidth;
+            rawLayer.mipData.height = travData.mipHeight;
+            rawLayer.mipData.mipWidth = travData.layerWidth;
+            rawLayer.mipData.mipHeight = travData.layerHeight;
+            rawLayer.mipData.texels = travData.texelSource;
+            rawLayer.mipData.dataSize = travData.dataSize;
+
+            rawLayer.rasterFormat = travData.rasterFormat;
+            rawLayer.depth = travData.depth;
+            rawLayer.colorOrder = travData.colorOrder;
+            rawLayer.paletteType = travData.paletteType;
+            rawLayer.paletteData = travData.paletteData;
+            rawLayer.paletteSize = travData.paletteSize;
+            rawLayer.compressionType = travData.compressionType;
+
+            rawLayer.hasAlpha = false;  // TODO.
+
+            // Done!
+            success = true;
+        }
+    }
+#endif //RWLIB_INCLUDE_IMAGING
+
+    return success;
+}
+
+bool SerializeMipmapLayer( Stream *outputStream, const char *formatDescriptor, const rawMipmapLayer& rawLayer )
+{
+    bool success = false;
+
+#ifdef RWLIB_INCLUDE_IMAGING
+    Interface *engineInterface = outputStream->engineInterface;
+
+    if ( const rwImagingEnv *imgEnv = GetImagingEnvironment( engineInterface ) )
+    {
+        // We put data into the traversal struct and push it to the imaging format manager.
+        imagingLayerTraversal travData;
+        travData.layerWidth = rawLayer.mipData.mipWidth;
+        travData.layerHeight = rawLayer.mipData.mipHeight;
+        travData.mipWidth = rawLayer.mipData.width;
+        travData.mipHeight = rawLayer.mipData.height;
+        travData.texelSource = rawLayer.mipData.texels;
+        travData.dataSize = rawLayer.mipData.dataSize;
+
+        travData.rasterFormat = rawLayer.rasterFormat;
+        travData.depth = rawLayer.depth;
+        travData.colorOrder = rawLayer.colorOrder;
+        travData.paletteType = rawLayer.paletteType;
+        travData.paletteData = rawLayer.paletteData;
+        travData.paletteSize = rawLayer.paletteSize;
+        travData.compressionType = rawLayer.compressionType;
+
+        travData.hasAlpha = rawLayer.hasAlpha;
+
+        // Now send it to our serializer.
+        bool hasSerialized = imgEnv->Serialize( engineInterface, outputStream, formatDescriptor, travData );
+
+        if ( hasSerialized )
+        {
+            // OK!
+            success = true;
+        }
+    }
+#endif //RWLIB_INCLUDE_IMAGING
+
+    return success;
+}
+
+// Those are generic routines for pushing RGBA data to image formats.
+// Most likely those image formats will be supported the most.
 bool DeserializeImage( Stream *inputStream, Bitmap& outputPixels )
 {
     // If successful, we overwrite outputPixels with the new image data.
@@ -297,6 +559,8 @@ bool SerializeImage( Stream *outputStream, const char *formatDescriptor, const B
 
         texelData.compressionType = RWCOMPRESS_NONE;
 
+        texelData.hasAlpha = false; // TODO.
+
         // Now attempt stuff.
         bool hasSerialized = imgEnv->Serialize( engineInterface, outputStream, formatDescriptor, texelData );
 
@@ -369,6 +633,7 @@ bool UnregisterImagingFormat( Interface *engineInterface, imagingFormatExtension
 
 // Imaging extensions.
 extern void registerTGAImagingExtension( void );
+extern void registerBMPImagingExtension( void );
 
 void registerImagingPlugin( void )
 {
@@ -377,6 +642,7 @@ void registerImagingPlugin( void )
 
     // TODO: register all extensions that use us.
     registerTGAImagingExtension();
+    registerBMPImagingExtension();
 #endif //RWLIB_INCLUDE_IMAGING
 }
 
