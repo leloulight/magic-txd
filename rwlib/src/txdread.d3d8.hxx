@@ -1,15 +1,15 @@
-#include "txdread.d3d.genmip.hxx"
+#include "txdread.d3d.hxx"
 
 namespace rw
 {
 
-struct NativeTextureXBOX
+struct NativeTextureD3D8
 {
     Interface *engineInterface;
 
     LibraryVersion texVersion;
 
-    inline NativeTextureXBOX( Interface *engineInterface )
+    inline NativeTextureD3D8( Interface *engineInterface )
     {
         // Initialize the texture object.
         this->engineInterface = engineInterface;
@@ -17,20 +17,20 @@ struct NativeTextureXBOX
         this->palette = NULL;
         this->paletteSize = 0;
         this->paletteType = PALETTE_NONE;
-        this->rasterFormat = RASTER_DEFAULT;
+        this->rasterFormat = RASTER_8888;
         this->depth = 0;
-        this->dxtCompression = 0;
-        this->hasAlpha = false;
-        this->colorOrder = COLOR_BGRA;
-        this->rasterType = 4;   // by default it is a texture raster.
         this->autoMipmaps = false;
+        this->dxtCompression = 0;
+        this->rasterType = 4;
+        this->hasAlpha = true;
+        this->colorOrdering = COLOR_BGRA;
     }
 
-    inline NativeTextureXBOX( const NativeTextureXBOX& right )
+    inline NativeTextureD3D8( const NativeTextureD3D8& right )
     {
         Interface *engineInterface = right.engineInterface;
 
-        this->engineInterface = right.engineInterface;
+        this->engineInterface = engineInterface;
         this->texVersion = right.texVersion;
 
         // Copy palette information.
@@ -58,17 +58,15 @@ struct NativeTextureXBOX
         {
             copyMipmapLayers( engineInterface, right.mipmaps, this->mipmaps );
 
-            // Copy over attributes.
             this->rasterFormat = right.rasterFormat;
             this->depth = right.depth;
         }
 
-        this->dxtCompression = right.dxtCompression;
-        this->hasAlpha = right.hasAlpha;
-
-        this->colorOrder = right.colorOrder;
-        this->rasterType = right.rasterType;
-        this->autoMipmaps = right.autoMipmaps;
+        this->autoMipmaps =         right.autoMipmaps;
+        this->dxtCompression =      right.dxtCompression;
+        this->rasterType =          right.rasterType;
+        this->hasAlpha =            right.hasAlpha;
+        this->colorOrdering =       right.colorOrdering;
     }
 
     inline void clearTexelData( void )
@@ -80,73 +78,54 @@ struct NativeTextureXBOX
 	        palette = NULL;
         }
 
-	    deleteMipmapLayers( this->engineInterface, this->mipmaps );
-
-        this->mipmaps.clear();
+        deleteMipmapLayers( this->engineInterface, this->mipmaps );
     }
 
-    inline ~NativeTextureXBOX( void )
+    inline ~NativeTextureD3D8( void )
     {
         this->clearTexelData();
     }
+
+public:
+    typedef genmip::mipmapLayer mipmapLayer;
 
     eRasterFormat rasterFormat;
 
     uint32 depth;
 
-    typedef genmip::mipmapLayer mipmapLayer;
-
-    std::vector <mipmapLayer> mipmaps;
+	std::vector <mipmapLayer> mipmaps;
 
 	void *palette;
 	uint32 paletteSize;
 
     ePaletteType paletteType;
 
-    uint8 rasterType;
+	// PC/XBOX
+    bool autoMipmaps;
 
-    eColorOrdering colorOrder;
+    uint32 dxtCompression;
+    uint32 rasterType;
 
     bool hasAlpha;
 
-    bool autoMipmaps;
-
-	// PC/XBOX
-	uint32 dxtCompression;
-
-    struct swizzleMipmapTraversal
-    {
-        // Input.
-        uint32 mipWidth, mipHeight;
-        uint32 depth;
-        void *texels;
-        uint32 dataSize;
-
-        // Output.
-        uint32 newWidth, newHeight;
-        void *newtexels;
-        uint32 newDataSize;
-    };
-
-    static void swizzleMipmap( Interface *engineInterface, swizzleMipmapTraversal& pixelData );
-    static void unswizzleMipmap( Interface *engineInterface, swizzleMipmapTraversal& pixelData );
+    eColorOrdering colorOrdering;
 };
 
-struct xboxNativeTextureTypeProvider : public texNativeTypeProvider
+struct d3d8NativeTextureTypeProvider : public texNativeTypeProvider
 {
     void ConstructTexture( Interface *engineInterface, void *objMem, size_t memSize )
     {
-        new (objMem) NativeTextureXBOX( engineInterface );
+        new (objMem) NativeTextureD3D8( engineInterface );
     }
 
     void CopyConstructTexture( Interface *engineInterface, void *objMem, const void *srcObjMem, size_t memSize )
     {
-        new (objMem) NativeTextureXBOX( *(const NativeTextureXBOX*)srcObjMem );
+        new (objMem) NativeTextureD3D8( *(const NativeTextureD3D8*)srcObjMem );
     }
     
     void DestroyTexture( Interface *engineInterface, void *objMem, size_t memSize )
     {
-        ( *(NativeTextureXBOX*)objMem ).~NativeTextureXBOX();
+        ( *(NativeTextureD3D8*)objMem ).~NativeTextureD3D8();
     }
 
     eTexNativeCompatibility IsCompatibleTextureBlock( BlockProvider& inputProvider ) const;
@@ -182,14 +161,14 @@ struct xboxNativeTextureTypeProvider : public texNativeTypeProvider
 
     void SetTextureVersion( Interface *engineInterface, void *objMem, LibraryVersion version )
     {
-        NativeTextureXBOX *nativeTex = (NativeTextureXBOX*)objMem;
+        NativeTextureD3D8 *nativeTex = (NativeTextureD3D8*)objMem;
 
         nativeTex->texVersion = version;
     }
 
     LibraryVersion GetTextureVersion( const void *objMem )
     {
-        const NativeTextureXBOX *nativeTex = (const NativeTextureXBOX*)objMem;
+        const NativeTextureD3D8 *nativeTex = (const NativeTextureD3D8*)objMem;
 
         return nativeTex->texVersion;
     }
@@ -198,66 +177,79 @@ struct xboxNativeTextureTypeProvider : public texNativeTypeProvider
     bool AddMipmapLayer( Interface *engineInterface, void *objMem, const rawMipmapLayer& layerIn, acquireFeedback_t& feedbackOut );
     void ClearMipmaps( Interface *engineInterface, void *objMem );
 
+    void* GetNativeInterface( void *objMem )
+    {
+        // TODO.
+        return NULL;
+    }
+
     void GetTextureInfo( Interface *engineInterface, void *objMem, nativeTextureBatchedInfo& infoOut );
     void GetTextureFormatString( Interface *engineInterface, void *objMem, char *buf, size_t bufLen, size_t& lengthOut ) const;
 
     ePaletteType GetTexturePaletteType( const void *objMem )
     {
-        const NativeTextureXBOX *nativeTex = (const NativeTextureXBOX*)objMem;
+        const NativeTextureD3D8 *nativeTex = (const NativeTextureD3D8*)objMem;
 
         return nativeTex->paletteType;
     }
 
     bool IsTextureCompressed( const void *objMem )
     {
-        const NativeTextureXBOX *nativeTex = (const NativeTextureXBOX*)objMem;
+        const NativeTextureD3D8 *nativeTex = (const NativeTextureD3D8*)objMem;
 
         return ( nativeTex->dxtCompression != 0 );
     }
 
     bool DoesTextureHaveAlpha( const void *objMem )
     {
-        const NativeTextureXBOX *nativeTex = (const NativeTextureXBOX*)objMem;
+        const NativeTextureD3D8 *nativeTex = (const NativeTextureD3D8*)objMem;
 
         return nativeTex->hasAlpha;
     }
 
     uint32 GetDriverIdentifier( void *objMem ) const
     {
-        // Always the generic XBOX driver.
-        return 8;
+        // Direct3D 8 driver.
+        return 1;
     }
 
     inline void Initialize( Interface *engineInterface )
     {
-        RegisterNativeTextureType( engineInterface, "XBOX", this, sizeof( NativeTextureXBOX ) );
+        RegisterNativeTextureType( engineInterface, "Direct3D8", this, sizeof( NativeTextureD3D8 ) );
     }
 
     inline void Shutdown( Interface *engineInterface )
     {
-        UnregisterNativeTextureType( engineInterface, "XBOX" );
+        UnregisterNativeTextureType( engineInterface, "Direct3D8" );
     }
 };
 
-#pragma pack(1)
-struct textureMetaHeaderStructXbox
+namespace d3d8
 {
-    rw::texFormatInfo formatInfo;
 
+#pragma pack(1)
+struct textureMetaHeaderStructGeneric
+{
+    uint32 platformDescriptor;
+
+    rw::texFormatInfo texFormat;
+    
     char name[32];
     char maskName[32];
 
     uint32 rasterFormat;
     uint32 hasAlpha;
-    uint16 width, height;
 
+    uint16 width;
+    uint16 height;
     uint8 depth;
     uint8 mipmapCount;
-    uint8 rasterType;
+    uint8 rasterType : 3;
+    uint8 pad1 : 5;
     uint8 dxtCompression;
-
-    uint32 imageDataSectionSize;
 };
 #pragma pack()
 
 };
+
+}

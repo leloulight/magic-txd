@@ -231,26 +231,6 @@ TexDictionary::~TexDictionary( void )
 
 static PluginDependantStructRegister <texDictionaryStreamPlugin, RwInterfaceFactory_t> texDictionaryStreamStore;
 
-void initializeTXDEnvironment( Interface *theInterface )
-{
-    texDictionaryStreamPlugin *txdStream = texDictionaryStreamStore.GetPluginStruct( (EngineInterface*)theInterface );
-
-    if ( txdStream )
-    {
-        theInterface->RegisterSerialization( CHUNK_TEXDICTIONARY, txdStream->txdTypeInfo, txdStream, RWSERIALIZE_ISOF );
-    }
-}
-
-void shutdownTXDEnvironment( Interface *theInterface )
-{
-    texDictionaryStreamPlugin *txdStream = texDictionaryStreamStore.GetPluginStruct( (EngineInterface*)theInterface );
-
-    if ( txdStream )
-    {
-        theInterface->UnregisterSerialization( CHUNK_TEXDICTIONARY, txdStream->txdTypeInfo, txdStream );
-    }
-}
-
 void TexDictionary::clear(void)
 {
 	// We remove the links of all textures inside of us.
@@ -634,10 +614,16 @@ struct nativeTextureStreamPlugin : public serializationProvider
 
         // Initialize the list that will keep all native texture types.
         LIST_CLEAR( this->texNativeTypes.root );
+
+        // Register us in the serialization manager.
+        engineInterface->RegisterSerialization( CHUNK_TEXTURENATIVE, engineInterface->textureTypeInfo, this, RWSERIALIZE_INHERIT );
     }
 
     inline void Shutdown( Interface *engineInterface )
     {
+        // Unregister us again.
+        engineInterface->UnregisterSerialization( CHUNK_TEXTURENATIVE, engineInterface->textureTypeInfo, this );
+
         // Unregister all type providers.
         LIST_FOREACH_BEGIN( texNativeTypeProvider, this->texNativeTypes.root, managerData.managerNode )
             // We just set them to false.
@@ -1209,45 +1195,6 @@ struct nativeTextureStreamPlugin : public serializationProvider
 static PluginDependantStructRegister <nativeTextureStreamPlugin, RwInterfaceFactory_t> nativeTextureStreamStore;
 
 // Texture native type registrations.
-void registerD3DNativeTexture( Interface *engineInterface );
-void registerXBOXNativeTexture( Interface *engineInterface );
-void registerPS2NativeTexture( Interface *engineInterface );
-void registerMobileDXTNativeTexture( Interface *engineInterface );
-void registerATCNativeTexture( Interface *engineInterface );
-void registerPVRNativeTexture( Interface *engineInterface );
-void registerMobileUNCNativeTexture( Interface *engineInterface );
-
-void initializeNativeTextureEnvironment( Interface *engineInterface )
-{
-    nativeTextureStreamPlugin *nativeTexEnv = nativeTextureStreamStore.GetPluginStruct( (EngineInterface*)engineInterface );
-
-    if ( nativeTexEnv )
-    {
-        // Register the native texture stream plugin.
-        engineInterface->RegisterSerialization( CHUNK_TEXTURENATIVE, engineInterface->textureTypeInfo, nativeTexEnv, RWSERIALIZE_INHERIT );
-    }
-
-    // Register sub environments.
-    registerD3DNativeTexture( engineInterface );
-    registerXBOXNativeTexture( engineInterface );
-    registerPS2NativeTexture( engineInterface );
-    registerMobileDXTNativeTexture( engineInterface );
-    registerATCNativeTexture( engineInterface );
-    registerPVRNativeTexture( engineInterface );
-    registerMobileUNCNativeTexture( engineInterface );
-}
-
-void shutdownNativeTextureEnvironment( Interface *engineInterface )
-{
-    nativeTextureStreamPlugin *nativeTexEnv = nativeTextureStreamStore.GetPluginStruct( (EngineInterface*)engineInterface );
-
-    if ( nativeTexEnv )
-    {
-        // Unregister us again.
-        engineInterface->UnregisterSerialization( CHUNK_TEXTURENATIVE, engineInterface->textureTypeInfo, nativeTexEnv );
-    }
-}
-
 bool RegisterNativeTextureType( Interface *engineInterface, const char *nativeName, texNativeTypeProvider *typeProvider, size_t memSize )
 {
     bool success = false;
@@ -2713,7 +2660,8 @@ void wardrumFormatInfo::set(const TextureBase& inTex)
 
 // Initializator for TXD plugins, as it cannot be done statically.
 extern void registerATCNativePlugin( void );
-extern void registerD3DNativePlugin( void );
+extern void registerD3D8NativePlugin( void );
+extern void registerD3D9NativePlugin( void );
 extern void registerMobileDXTNativePlugin( void );
 extern void registerPS2NativePlugin( void );
 extern void registerPVRNativePlugin( void );
@@ -2727,7 +2675,8 @@ void registerTXDPlugins( void )
 
     // Now register sub module plugins.
     registerATCNativePlugin();
-    registerD3DNativePlugin();
+    registerD3D8NativePlugin();
+    registerD3D9NativePlugin();
     registerMobileDXTNativePlugin();
     registerPS2NativePlugin();
     registerPVRNativePlugin();

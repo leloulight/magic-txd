@@ -167,12 +167,12 @@ struct uncNativeTextureTypeProvider : public texNativeTypeProvider
 
     inline void Initialize( Interface *engineInterface )
     {
-
+        RegisterNativeTextureType( engineInterface, "uncompressed_mobile", this, sizeof( NativeTextureMobileUNC ) );
     }
 
     inline void Shutdown( Interface *engineInterface )
     {
-
+        UnregisterNativeTextureType( engineInterface, "uncompressed_mobile" );
     }
 };
 

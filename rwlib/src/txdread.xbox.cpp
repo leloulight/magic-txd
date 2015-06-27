@@ -358,16 +358,6 @@ void xboxNativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
 
 static PluginDependantStructRegister <xboxNativeTextureTypeProvider, RwInterfaceFactory_t> xboxNativeTexturePlugin;
 
-void registerXBOXNativeTexture( Interface *engineInterface )
-{
-    xboxNativeTextureTypeProvider *xboxTexEnv = xboxNativeTexturePlugin.GetPluginStruct( (EngineInterface*)engineInterface );
-
-    if ( xboxTexEnv )
-    {
-        RegisterNativeTextureType( engineInterface, "XBOX", xboxTexEnv, sizeof( NativeTextureXBOX ) );
-    }
-}
-
 void registerXBOXNativePlugin( void )
 {
     xboxNativeTexturePlugin.RegisterPlugin( engineFactory );

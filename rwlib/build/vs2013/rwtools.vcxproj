@@ -119,6 +119,8 @@
     <ClInclude Include="..\..\src\txdread.d3d.dxt.hxx" />
     <ClInclude Include="..\..\src\txdread.d3d.genmip.hxx" />
     <ClInclude Include="..\..\src\txdread.d3d.hxx" />
+    <ClInclude Include="..\..\src\txdread.d3d8.hxx" />
+    <ClInclude Include="..\..\src\txdread.d3d9.hxx" />
     <ClInclude Include="..\..\src\txdread.dxtmobile.hxx" />
     <ClInclude Include="..\..\src\txdread.miputil.hxx" />
     <ClInclude Include="..\..\src\txdread.palette.hxx" />
@@ -159,9 +161,8 @@
     <ClCompile Include="..\..\src\rwstream.cpp" />
     <ClCompile Include="..\..\src\txdread.atc.cpp" />
     <ClCompile Include="..\..\src\txdread.cpp" />
-    <ClCompile Include="..\..\src\txdread.d3d.bitmap.cpp" />
-    <ClCompile Include="..\..\src\txdread.d3d.cpp" />
-    <ClCompile Include="..\..\src\txdread.d3d.dxt.cpp" />
+    <ClCompile Include="..\..\src\txdread.d3d8.cpp" />
+    <ClCompile Include="..\..\src\txdread.d3d9.cpp" />
     <ClCompile Include="..\..\src\txdread.debugutil.cpp" />
     <ClCompile Include="..\..\src\txdread.dxtmobile.cpp" />
     <ClCompile Include="..\..\src\txdread.mipmaps.cpp" />
@@ -176,7 +177,8 @@
     <ClCompile Include="..\..\src\txdread.xbox.swizzle.cpp" />
     <ClCompile Include="..\..\src\txdwrite.atc.cpp" />
     <ClCompile Include="..\..\src\txdwrite.cpp" />
-    <ClCompile Include="..\..\src\txdwrite.d3d.cpp" />
+    <ClCompile Include="..\..\src\txdwrite.d3d8.cpp" />
+    <ClCompile Include="..\..\src\txdwrite.d3d9.cpp" />
     <ClCompile Include="..\..\src\txdwrite.dxtmobile.cpp" />
     <ClCompile Include="..\..\src\txdwrite.ps2.cpp" />
     <ClCompile Include="..\..\src\txdwrite.pvr.cpp" />

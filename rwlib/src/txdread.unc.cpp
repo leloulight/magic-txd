@@ -248,16 +248,6 @@ void uncNativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture, 
 
 static PluginDependantStructRegister <uncNativeTextureTypeProvider, RwInterfaceFactory_t> uncNativeTexturePlugin;
 
-void registerMobileUNCNativeTexture( Interface *engineInterface )
-{
-    uncNativeTextureTypeProvider *uncEnv = uncNativeTexturePlugin.GetPluginStruct( (EngineInterface*)engineInterface );
-
-    if ( uncEnv )
-    {
-        RegisterNativeTextureType( engineInterface, "uncompressed_mobile", uncEnv, sizeof( NativeTextureMobileUNC ) );
-    }
-}
-
 void registerMobileUNCNativePlugin( void )
 {
     uncNativeTexturePlugin.RegisterPlugin( engineFactory );

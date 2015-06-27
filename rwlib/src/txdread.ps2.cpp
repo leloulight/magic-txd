@@ -874,16 +874,6 @@ void ps2NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture, 
 
 static PluginDependantStructRegister <ps2NativeTextureTypeProvider, RwInterfaceFactory_t> ps2NativeTexturePlugin;
 
-void registerPS2NativeTexture( Interface *engineInterface )
-{
-    ps2NativeTextureTypeProvider *ps2TexEnv = ps2NativeTexturePlugin.GetPluginStruct( (EngineInterface*)engineInterface );
-
-    if ( ps2TexEnv )
-    {
-        RegisterNativeTextureType( engineInterface, "PlayStation2", ps2TexEnv, sizeof( NativeTexturePS2 ) );
-    }
-}
-
 void registerPS2NativePlugin( void )
 {
     ps2NativeTexturePlugin.RegisterPlugin( engineFactory );

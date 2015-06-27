@@ -949,17 +949,6 @@ void atcNativeTextureTypeProvider::GetTextureFormatString( Interface *engineInte
 
 static PluginDependantStructRegister <atcNativeTextureTypeProvider, RwInterfaceFactory_t> atcNativeTexturePluginStore;
 
-void registerATCNativeTexture( Interface *engineInterface )
-{
-    atcNativeTextureTypeProvider *atcTexEnv = atcNativeTexturePluginStore.GetPluginStruct( (EngineInterface*)engineInterface );
-
-    if ( atcTexEnv )
-    {
-        // Register it.
-        RegisterNativeTextureType( engineInterface, "ATI_Compress", atcTexEnv, sizeof( NativeTextureATC ) );
-    }
-}
-
 void registerATCNativePlugin( void )
 {
     atcNativeTexturePluginStore.RegisterPlugin( engineFactory );

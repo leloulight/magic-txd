@@ -5,11 +5,12 @@ struct texDictionaryStreamPlugin : public serializationProvider
 {
     inline void Initialize( Interface *engineInterface )
     {
-        txdTypeInfo = engineInterface->typeSystem.RegisterStructType <TexDictionary> ( "texture_dictionary" );
+        txdTypeInfo = engineInterface->typeSystem.RegisterStructType <TexDictionary> ( "texture_dictionary", engineInterface->rwobjTypeInfo );
 
         if ( txdTypeInfo )
         {
-            engineInterface->typeSystem.SetTypeInfoInheritingClass( txdTypeInfo, engineInterface->rwobjTypeInfo );
+            // Register ourselves.
+            engineInterface->RegisterSerialization( CHUNK_TEXDICTIONARY, txdTypeInfo, this, RWSERIALIZE_ISOF );
         }
     }
 
@@ -17,6 +18,9 @@ struct texDictionaryStreamPlugin : public serializationProvider
     {
         if ( RwTypeSystem::typeInfoBase *txdTypeInfo = this->txdTypeInfo )
         {
+            // Unregister us again.
+            engineInterface->UnregisterSerialization( CHUNK_TEXDICTIONARY, txdTypeInfo, this );
+
             engineInterface->typeSystem.DeleteType( txdTypeInfo );
         }
     }

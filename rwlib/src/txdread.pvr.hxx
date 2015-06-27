@@ -185,12 +185,12 @@ struct pvrNativeTextureTypeProvider : public texNativeTypeProvider
 
     inline void Initialize( Interface *engineInterface )
     {
-
+        RegisterNativeTextureType( engineInterface, "PowerVR", this, sizeof( NativeTexturePVR ) );
     }
 
     inline void Shutdown( Interface *engineInterface )
     {
-
+        UnregisterNativeTextureType( engineInterface, "PowerVR" );
     }
 };
 

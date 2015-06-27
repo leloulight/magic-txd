@@ -902,12 +902,12 @@ struct ps2NativeTextureTypeProvider : public texNativeTypeProvider
 
     inline void Initialize( Interface *engineInterface )
     {
-
+        RegisterNativeTextureType( engineInterface, "PlayStation2", this, sizeof( NativeTexturePS2 ) );
     }
 
     inline void Shutdown( Interface *engineInterface )
     {
-
+        UnregisterNativeTextureType( engineInterface, "PlayStation2" );
     }
 };
 

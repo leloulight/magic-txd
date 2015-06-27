@@ -1,6 +1,6 @@
 #include <StdInc.h>
 
-#include "txdread.d3d.hxx"
+#include "txdread.d3d9.hxx"
 
 #include "pixelformat.hxx"
 
@@ -41,7 +41,7 @@ inline uint32 getCompressionFromD3DFormat( D3DFORMAT d3dFormat )
     return compressionIndex;
 }
 
-void d3dNativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture, PlatformTexture *nativeTex, BlockProvider& inputProvider ) const
+void d3d9NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture, PlatformTexture *nativeTex, BlockProvider& inputProvider ) const
 {
     Interface *engineInterface = theTexture->engineInterface;
 
@@ -54,28 +54,18 @@ void d3dNativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture, 
         {
             if ( texNativeImageStruct.getBlockID() == CHUNK_STRUCT )
             {
-                d3d::textureMetaHeaderStructGeneric metaHeader;
+                d3d9::textureMetaHeaderStructGeneric metaHeader;
                 texNativeImageStruct.read( &metaHeader, sizeof(metaHeader) );
 
 	            uint32 platform = metaHeader.platformDescriptor;
 
-	            if (platform != PLATFORM_D3D8 && platform != PLATFORM_D3D9)
+	            if (platform != 9)
                 {
-                    throw RwException( "invalid platform type in Direct3D texture reading" );
+                    throw RwException( "invalid platform type in Direct3D 9 texture reading" );
                 }
 
                 // Recast the texture to our native type.
-                NativeTextureD3D *platformTex = (NativeTextureD3D*)nativeTex;
-
-                // Store the proper platform type.
-                if ( platform == PLATFORM_D3D8 )
-                {
-                    platformTex->platformType = NativeTextureD3D::PLATFORM_D3D8;
-                }
-                else if ( platform == PLATFORM_D3D9 )
-                {
-                    platformTex->platformType = NativeTextureD3D::PLATFORM_D3D9;
-                }
+                NativeTextureD3D9 *platformTex = (NativeTextureD3D9*)nativeTex;
 
                 int engineWarningLevel = engineInterface->GetWarningLevel();
 
@@ -109,43 +99,23 @@ void d3dNativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture, 
 
                 platformTex->hasAlpha = false;
 
-                if ( platform == PLATFORM_D3D9 )
-                {
-                    D3DFORMAT d3dFormat;
+                // Read the D3DFORMAT field.
+                platformTex->d3dFormat = metaHeader.d3dFormat;
 
-	                texNativeImageStruct.read( &d3dFormat, sizeof(d3dFormat) );
-
-                    // Alpha is not decided here.
-                    platformTex->d3dFormat = d3dFormat;
-                }
-                else
-                {
-	                platformTex->hasAlpha = ( inputProvider.readUInt32() != 0 );
-
-                    // Set d3dFormat later.
-                }
-
-                d3d::textureMetaHeaderStructDimInfo dimInfo;
-                inputProvider.read( &dimInfo, sizeof(dimInfo) );
-
-                uint32 depth = dimInfo.depth;
-                uint32 maybeMipmapCount = dimInfo.mipmapCount;
+                uint32 depth = metaHeader.depth;
+                uint32 maybeMipmapCount = metaHeader.mipmapCount;
 
                 platformTex->depth = depth;
 
-                platformTex->rasterType = dimInfo.rasterType;
+                platformTex->rasterType = metaHeader.rasterType;
 
-                if ( platform == PLATFORM_D3D9 )
                 {
                     // Here we decide about alpha.
-                    d3d::textureContentInfoStruct contentInfo;
-                    texNativeImageStruct.read( &contentInfo, sizeof(contentInfo) );
+	                platformTex->hasAlpha = metaHeader.hasAlpha;
+                    platformTex->isCubeTexture = metaHeader.isCubeTexture;
+                    platformTex->autoMipmaps = metaHeader.autoMipMaps;
 
-	                platformTex->hasAlpha = contentInfo.hasAlpha;
-                    platformTex->isCubeTexture = contentInfo.isCubeTexture;
-                    platformTex->autoMipmaps = contentInfo.autoMipMaps;
-
-	                if ( contentInfo.isCompressed )
+	                if ( metaHeader.isNotRwCompatible )    // LEGACY: "compression flag"
                     {
 		                // Detect FOUR-CC versions for compression method.
                         uint32 dxtCompression = getCompressionFromD3DFormat(platformTex->d3dFormat);
@@ -161,64 +131,6 @@ void d3dNativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture, 
                     {
 		                platformTex->dxtCompression = 0;
                     }
-                }
-                else
-                {
-                    uint32 dxtInfo = texNativeImageStruct.readUInt8();
-
-                    platformTex->dxtCompression = dxtInfo;
-
-                    // Auto-decide the Direct3D format.
-                    D3DFORMAT d3dFormat = D3DFMT_A8R8G8B8;
-
-                    if ( dxtInfo != 0 )
-                    {
-                        if ( dxtInfo == 1 )
-                        {
-                            d3dFormat = D3DFMT_DXT1;
-                        }
-                        else if ( dxtInfo == 2 )
-                        {
-                            d3dFormat = D3DFMT_DXT2;
-                        }
-                        else if ( dxtInfo == 3 )
-                        {
-                            d3dFormat = D3DFMT_DXT3;
-                        }
-                        else if ( dxtInfo == 4 )
-                        {
-                            d3dFormat = D3DFMT_DXT4;
-                        }
-                        else if ( dxtInfo == 5 )
-                        {
-                            d3dFormat = D3DFMT_DXT5;
-                        }
-                        else
-                        {
-                            throw RwException( "invalid Direct3D texture compression format" );
-                        }
-                    }
-                    else
-                    {
-                        eRasterFormat paletteRasterType = platformTex->rasterFormat;
-                        ePaletteType paletteType = platformTex->paletteType;
-                        
-                        eColorOrdering probableColorOrder = COLOR_BGRA;
-
-                        if (paletteType != PALETTE_NONE)
-                        {
-                            probableColorOrder = COLOR_RGBA;
-                        }
-
-                        bool hasFormat = getD3DFormatFromRasterType( paletteRasterType, paletteType, probableColorOrder, depth, d3dFormat );
-
-                        if ( !hasFormat )
-                        {
-                            throw RwException( "could not determine D3DFORMAT for texture " + theTexture->GetName() );
-                        }
-                    }
-
-                    platformTex->d3dFormat = d3dFormat;
                 }
 
                 // Verify raster properties and attempt to fix broken textures.
@@ -493,7 +405,7 @@ void d3dNativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture, 
                     platformTex->paletteSize = reqPalItemCount;
                 }
 
-                mipGenLevelGenerator mipLevelGen( dimInfo.width, dimInfo.height );
+                mipGenLevelGenerator mipLevelGen( metaHeader.width, metaHeader.height );
 
                 if ( !mipLevelGen.isValidLevel() )
                 {
@@ -523,7 +435,7 @@ void d3dNativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture, 
                     }
 
                     // Create a new mipmap layer.
-                    NativeTextureD3D::mipmapLayer newLayer;
+                    NativeTextureD3D9::mipmapLayer newLayer;
 
                     newLayer.layerWidth = mipLevelGen.getLevelWidth();
                     newLayer.layerHeight = mipLevelGen.getLevelHeight();
@@ -703,19 +615,9 @@ void d3dNativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture, 
     engineInterface->DeserializeExtensions( theTexture, inputProvider );
 }
 
-static PluginDependantStructRegister <d3dNativeTextureTypeProvider, RwInterfaceFactory_t> d3dNativeTexturePluginRegister;
+static PluginDependantStructRegister <d3d9NativeTextureTypeProvider, RwInterfaceFactory_t> d3dNativeTexturePluginRegister;
 
-void registerD3DNativeTexture( Interface *engineInterface )
-{
-    d3dNativeTextureTypeProvider *d3dTexEnv = d3dNativeTexturePluginRegister.GetPluginStruct( (EngineInterface*)engineInterface );
-
-    if ( d3dTexEnv )
-    {
-        RegisterNativeTextureType( engineInterface, "Direct3D", d3dTexEnv, sizeof( NativeTextureD3D ) );
-    }
-}
-
-void registerD3DNativePlugin( void )
+void registerD3D9NativePlugin( void )
 {
     d3dNativeTexturePluginRegister.RegisterPlugin( engineFactory );
 }

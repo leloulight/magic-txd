@@ -184,12 +184,12 @@ struct atcNativeTextureTypeProvider : public texNativeTypeProvider
 
     inline void Initialize( Interface *engineInterface )
     {
-
+        RegisterNativeTextureType( engineInterface, "ATI_Compress", this, sizeof( NativeTextureATC ) );
     }
 
     inline void Shutdown( Interface *engineInterface )
     {
-
+        UnregisterNativeTextureType( engineInterface, "ATI_Compress" );
     }
 };
 

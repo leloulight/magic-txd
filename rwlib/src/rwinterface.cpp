@@ -376,10 +376,10 @@ Interface* CreateEngine( LibraryVersion theVersion )
             warningHandlerPluginRegister.RegisterPlugin( engineFactory );
 
             // Now do the main modules.
-            registerTXDPlugins();
-            registerObjectExtensionsPlugins();
-            registerSerializationPlugins();
             registerStreamGlobalPlugins();
+            registerSerializationPlugins();
+            registerObjectExtensionsPlugins();
+            registerTXDPlugins();
             registerImagingPlugin();
 
             hasInitialized = true;
@@ -396,18 +396,6 @@ Interface* CreateEngine( LibraryVersion theVersion )
         if ( engineOut )
         {
             engineOut->SetVersion( theVersion );
-
-            try
-            {
-                // Initialize all environments.
-                initializeTXDEnvironment( engineOut );
-                initializeNativeTextureEnvironment( engineOut );
-            }
-            catch( ... )
-            {
-                engineFactory.Destroy( _engineMemAlloc, (EngineInterface*)engineOut );
-                return NULL;
-            }
         }
     }
 
@@ -417,9 +405,6 @@ Interface* CreateEngine( LibraryVersion theVersion )
 void DeleteEngine( Interface *theEngine )
 {
     assert( hasInitialized == true );
-
-    shutdownNativeTextureEnvironment( theEngine );
-    shutdownTXDEnvironment( theEngine );
 
     // Destroy the engine again.
     engineFactory.Destroy( _engineMemAlloc, (EngineInterface*)theEngine );

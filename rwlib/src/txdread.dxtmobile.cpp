@@ -292,16 +292,6 @@ void dxtMobileNativeTextureTypeProvider::DeserializeTexture( TextureBase *theTex
 
 static PluginDependantStructRegister <dxtMobileNativeTextureTypeProvider, RwInterfaceFactory_t> dxtMobileNativeTexRegister;
 
-void registerMobileDXTNativeTexture( Interface *engineInterface )
-{
-    dxtMobileNativeTextureTypeProvider *dxtMobileEnv = dxtMobileNativeTexRegister.GetPluginStruct( (EngineInterface*)engineInterface );
-
-    if ( dxtMobileEnv )
-    {
-        RegisterNativeTextureType( engineInterface, "s3tc_mobile", dxtMobileEnv, sizeof( NativeTextureMobileDXT ) );
-    }
-}
-
 void registerMobileDXTNativePlugin( void )
 {
     dxtMobileNativeTexRegister.RegisterPlugin( engineFactory );

@@ -183,12 +183,12 @@ struct dxtMobileNativeTextureTypeProvider : public texNativeTypeProvider
 
     inline void Initialize( Interface *engineInterface )
     {
-
+        RegisterNativeTextureType( engineInterface, "s3tc_mobile", this, sizeof( NativeTextureMobileDXT ) );
     }
 
     inline void Shutdown( Interface *engineInterface )
     {
-
+        UnregisterNativeTextureType( engineInterface, "s3tc_mobile" );
     }
 };
 

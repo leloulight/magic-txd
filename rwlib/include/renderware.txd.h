@@ -90,7 +90,7 @@ enum eRasterFormat
     RASTER_1555,
     RASTER_565,
     RASTER_4444,
-    RASTER_LUM8,        // D3DFMT_A4L4
+    RASTER_LUM8,        // D3DFMT_L8
     RASTER_8888,
     RASTER_888,
     RASTER_16,          // D3DFMT_D16

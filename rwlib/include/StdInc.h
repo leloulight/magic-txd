@@ -41,13 +41,6 @@ typedef RwInterfaceFactory_t::pluginOffset_t RwInterfacePluginOffset_t;
 
 extern RwInterfaceFactory_t engineFactory;
 
-// Environment initializations.
-void initializeTXDEnvironment( Interface *theInterface );
-void shutdownTXDEnvironment( Interface *theInterface );
-
-void initializeNativeTextureEnvironment( Interface *engineInterface );
-void shutdownNativeTextureEnvironment( Interface *engineInterface );
-
 struct rawBitmapFetchResult
 {
     void *texelData;
