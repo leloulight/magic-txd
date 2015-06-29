@@ -1,5 +1,7 @@
 #include "txdread.d3d.hxx"
 
+#define PLATFORM_D3D9   9
+
 namespace rw
 {
 
@@ -147,7 +149,7 @@ struct NativeTextureD3D9 : public d3dpublic::d3dNativeTextureInterface
         this->isCubeTexture = false;
         this->autoMipmaps = false;
         this->d3dFormat = D3DFMT_A8R8G8B8;
-        this->hasD3DFormat = true;
+        this->d3dRasterFormatLink = false;
         this->dxtCompression = 0;
         this->rasterType = 4;
         this->hasAlpha = true;
@@ -193,7 +195,7 @@ struct NativeTextureD3D9 : public d3dpublic::d3dNativeTextureInterface
         this->isCubeTexture =       right.isCubeTexture;
         this->autoMipmaps =         right.autoMipmaps;
         this->d3dFormat =           right.d3dFormat;
-        this->hasD3DFormat =        right.hasD3DFormat;
+        this->d3dRasterFormatLink = right.d3dRasterFormatLink;
         this->dxtCompression =      right.dxtCompression;
         this->rasterType =          right.rasterType;
         this->hasAlpha =            right.hasAlpha;
@@ -221,14 +223,8 @@ struct NativeTextureD3D9 : public d3dpublic::d3dNativeTextureInterface
 
     bool GetD3DFormat( DWORD& d3dFormat ) const
     {
-        bool hasD3DFormat = this->hasD3DFormat;
-
-        if ( hasD3DFormat )
-        {
-            d3dFormat = (DWORD)this->d3dFormat;
-        }
-
-        return hasD3DFormat;
+        d3dFormat = (DWORD)this->d3dFormat;
+        return true;
     }
 
     // PUBLIC API END
@@ -236,7 +232,7 @@ struct NativeTextureD3D9 : public d3dpublic::d3dNativeTextureInterface
 public:
     typedef genmip::mipmapLayer mipmapLayer;
 
-    eRasterFormat rasterFormat; // TODO: make sure this is always valid.
+    eRasterFormat rasterFormat;
 
     uint32 depth;
 
@@ -255,60 +251,13 @@ public:
     uint32 dxtCompression;
     uint32 rasterType;
 
-    bool hasD3DFormat;
+    bool d3dRasterFormatLink;
 
-    inline void updateD3DFormat( void )
+    inline bool IsRWCompatible( void ) const
     {
-        // Execute it whenever the rasterFormat, the palette type, the color order or depth may change.
-        D3DFORMAT newD3DFormat;
-
-        bool hasD3DFormat = false;
-
-        uint32 dxtType = this->dxtCompression;
-
-        if ( dxtType != 0 )
-        {
-            if ( dxtType == 1 )
-            {
-                newD3DFormat = D3DFMT_DXT1;
-
-                hasD3DFormat = true;
-            }
-            else if ( dxtType == 2 )
-            {
-                newD3DFormat = D3DFMT_DXT2;
-
-                hasD3DFormat = true;
-            }
-            else if ( dxtType == 3 )
-            {
-                newD3DFormat = D3DFMT_DXT3;
-
-                hasD3DFormat = true;
-            }
-            else if ( dxtType == 4 )
-            {
-                newD3DFormat = D3DFMT_DXT4;
-
-                hasD3DFormat = true;
-            }
-            else if ( dxtType == 5 )
-            {
-                newD3DFormat = D3DFMT_DXT5;
-
-                hasD3DFormat = true;
-            }
-        }
-        else
-        {
-            hasD3DFormat = getD3DFormatFromRasterType( this->rasterFormat, this->paletteType, this->colorOrdering, this->depth, newD3DFormat );
-        }
-
-        if ( hasD3DFormat )
-        {
-            this->d3dFormat = newD3DFormat;
-        }
-        this->hasD3DFormat = hasD3DFormat;
+        // This function returns whether we can push our data to the RW implementation.
+        // We cannot push anything to RW that we have no idea about how it actually looks like.
+        return ( this->d3dRasterFormatLink == true || this->dxtCompression != 0 );
     }
 
     bool hasAlpha;

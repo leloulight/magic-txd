@@ -947,11 +947,13 @@ inline void nativePaletteRemap(
 
     void *newTexelData = engineInterface->PixelAllocate( dataSize );
 
+    colorModelDispatcher <const void> fetchDispatch( texelSource, srcRasterFormat, srcColorOrder, srcItemDepth, srcPaletteData, srcPaletteCount, srcPaletteType );
+
     for ( uint32 colorIndex = 0; colorIndex < itemCount; colorIndex++ )
     {
         // Browse each texel of the original image and link it to a palette entry.
         uint8 red, green, blue, alpha;
-        bool hasColor = browsetexelcolor(texelSource, srcPaletteType, srcPaletteData, srcPaletteCount, colorIndex, srcRasterFormat, srcColorOrder, srcItemDepth, red, green, blue, alpha);
+        bool hasColor = fetchDispatch.getRGBA(colorIndex, red, green, blue, alpha);
 
         if ( !hasColor )
         {
@@ -1003,14 +1005,13 @@ inline void RemapMipmapLayer(
 
     uint32 palItemDepth = Bitmap::getRasterFormatDepth(palRasterFormat);
 
+    colorModelDispatcher <const void> fetchPalDispatch( paletteData, palRasterFormat, palColorOrder, palItemDepth, NULL, 0, PALETTE_NONE );
+
     for ( uint32 n = 0; n < paletteSize; n++ )
     {
         uint8 r, g, b, a;
 
-        bool hasColor = browsetexelcolor(
-            paletteData, PALETTE_NONE, NULL, 0, n, palRasterFormat, palColorOrder, palItemDepth,
-            r, g, b, a
-        );
+        bool hasColor = fetchPalDispatch.getRGBA(n, r, g, b, a);
 
         if ( !hasColor )
         {

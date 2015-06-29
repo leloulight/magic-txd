@@ -3,18 +3,17 @@
 #include <cstdio>
 #include <cstdlib>
 
-using namespace std;
+namespace rw
+{
 
-namespace rw {
-
-void Geometry::readXboxNativeSkin(istream &rw)
+void Geometry::readXboxNativeSkin(std::istream &rw)
 {
 	HeaderInfo header;
 
 	READ_HEADER(CHUNK_STRUCT);
 
 	if (readUInt32(rw) != PLATFORM_XBOX) {
-		cerr << "error: native data not in xbox format\n";
+		std::cerr << "error: native data not in xbox format\n";
 		return;
 	}
 
@@ -58,26 +57,24 @@ void Geometry::readXboxNativeSkin(istream &rw)
 			indices[j] = (readUInt16(rw)/3);
 			indices[j] = boneTab1[indices[j]];
 		}
-		vertexBoneIndices.push_back(indices[3] << 24 |
-	                                    indices[2] << 16 |
-	                                    indices[1] << 8 |
-	                                    indices[0]);
+		vertexBoneIndices.push_back( indices[3] << 24 | indices[2] << 16 | indices[1] << 8 | indices[0] );
 	}
 
 	inverseMatrices.resize(boneCount*0x10);
 	for (uint32 i = 0; i < boneCount; i++)
-		rw.read((char *) (&inverseMatrices[i*0x10]),
-		        0x10*sizeof(float32));
+    {
+		rw.read((char *) (&inverseMatrices[i*0x10]),0x10*sizeof(float32));
+    }
 }
 
-void Geometry::readXboxNativeData(istream &rw)
+void Geometry::readXboxNativeData(std::istream &rw)
 {
 	HeaderInfo header;
 
 	READ_HEADER(CHUNK_STRUCT);
 
 	if (readUInt32(rw) != PLATFORM_XBOX) {
-		cerr << "error: native data not in xbox format\n";
+		std::cerr << "error: native data not in xbox format\n";
 		return;
 	}
 
@@ -85,7 +82,7 @@ void Geometry::readXboxNativeData(istream &rw)
 	vertexPosition += readUInt32(rw);
 
 	/* Header */
-	rw.seekg(2, ios::cur);
+	rw.seekg(2, std::ios::cur);
 	uint32 splitCount = readUInt16(rw);
 	splits.resize(splitCount);
 	/* from here the index blocks are 0x10 byte aligned */
@@ -100,13 +97,13 @@ void Geometry::readXboxNativeData(istream &rw)
 	}
 	uint32 vertexCount = readUInt32(rw);
 	uint32 vertexSize = readUInt32(rw);
-	rw.seekg(16, ios::cur);
+	rw.seekg(16, std::ios::cur);
 
 	/* Splits */
 	for (uint32 i = 0; i < splitCount; i++) {
-		rw.seekg(8, ios::cur);
+		rw.seekg(8, std::ios::cur);
 		splits[i].indices.resize(readUInt32(rw));
-		rw.seekg(12, ios::cur);
+		rw.seekg(12, std::ios::cur);
 	}
 
 	/* Indices */
@@ -114,13 +111,13 @@ void Geometry::readXboxNativeData(istream &rw)
 		/* skip padding */
 		uint32 pos = rw.tellg();
 		if ((pos - blockStart) % 0x10 != 0)
-			rw.seekg(0x10 - (pos - blockStart) % 0x10, ios::cur);
+			rw.seekg(0x10 - (pos - blockStart) % 0x10, std::ios::cur);
 		for (uint32 j = 0; j < splits[i].indices.size(); j++)
 			splits[i].indices[j] = readUInt16(rw);
 	}
 
 	/* Vertices */
-	rw.seekg(vertexPosition, ios::beg);
+	rw.seekg(vertexPosition, std::ios::beg);
 
 	/* known vertex sizes: 0x28, 0x20, 0x1c, 0x18, 0x14, 0x10, 0x0c */
 
@@ -148,8 +145,7 @@ void Geometry::readXboxNativeData(istream &rw)
 
 		if (flags & FLAGS_PRELIT) {
 			uint8 color[4];
-			rw.read(reinterpret_cast <char *>
-				 (color), 4*sizeof(uint8));
+			rw.read(reinterpret_cast <char *> (color), 4*sizeof(uint8));
 			vertexColors.push_back(color[2]);
 			vertexColors.push_back(color[1]);
 			vertexColors.push_back(color[0]);

@@ -25,6 +25,14 @@ void Bitmap::setSize( uint32 width, uint32 height )
         eColorOrdering colorOrder = this->colorOrder;
         uint32 rasterDepth = this->depth;
 
+        const uint8 srcBgRed = packcolor( this->bgRed );
+        const uint8 srcBgGreen = packcolor( this->bgGreen );
+        const uint8 srcBgBlue = packcolor( this->bgBlue );
+        const uint8 srcBgAlpha = packcolor( this->bgAlpha );
+
+        colorModelDispatcher <const void> fetchDispatch( oldTexels, rasterFormat, colorOrder, rasterDepth, NULL, 0, PALETTE_NONE );
+        colorModelDispatcher <void> putDispatch( newTexels, rasterFormat, colorOrder, rasterDepth, NULL, 0, PALETTE_NONE );
+
         // Do an image copy.
         for ( uint32 y = 0; y < height; y++ )
         {
@@ -32,26 +40,21 @@ void Bitmap::setSize( uint32 width, uint32 height )
             {
                 uint32 colorIndex = ( y * width + x );
 
-                uint8 srcRed = packcolor( this->bgRed );
-                uint8 srcGreen = packcolor( this->bgGreen );
-                uint8 srcBlue = packcolor( this->bgBlue );
-                uint8 srcAlpha = packcolor( this->bgAlpha );
+                uint8 srcRed = srcBgRed;
+                uint8 srcGreen = srcBgGreen;
+                uint8 srcBlue = srcBgBlue;
+                uint8 srcAlpha = srcBgAlpha;
 
                 // Try to get a source color.
                 if ( oldTexels != NULL && x < oldWidth && y < oldHeight )
                 {
                     uint32 oldColorIndex = ( y * oldWidth + x );
 
-                    browsetexelcolor(
-                        oldTexels, PALETTE_NONE, NULL, 0, oldColorIndex, rasterFormat, colorOrder, rasterDepth,
-                        srcRed, srcGreen, srcBlue, srcAlpha
-                    );
+                    fetchDispatch.getRGBA( oldColorIndex, srcRed, srcGreen, srcBlue, srcAlpha );
                 }
 
                 // Put it into the new storage.
-                puttexelcolor(
-                    newTexels, colorIndex, rasterFormat, colorOrder, rasterDepth, srcRed, srcGreen, srcBlue, srcAlpha
-                );
+                putDispatch.setRGBA( colorIndex, srcRed, srcGreen, srcBlue, srcAlpha );
             }
         }
     }
@@ -69,13 +72,15 @@ void Bitmap::setSize( uint32 width, uint32 height )
     this->dataSize = dataSize;
 }
 
-static inline void fetchpackedcolor(
+AINLINE void fetchpackedcolor(
     void *texels, uint32 colorIndex, eRasterFormat theFormat, eColorOrdering colorOrder, uint32 itemDepth, double& redOut, double& greenOut, double& blueOut, double& alphaOut
 )
 {
+    colorModelDispatcher <const void> fetchDispatch( texels, theFormat, colorOrder, itemDepth, NULL, 0, PALETTE_NONE );
+
     uint8 sourceRedPacked, sourceGreenPacked, sourceBluePacked, sourceAlphaPacked;
-    browsetexelcolor(
-        texels, PALETTE_NONE, NULL, 0, colorIndex, theFormat, colorOrder, itemDepth,
+    fetchDispatch.getRGBA(
+        colorIndex,
         sourceRedPacked, sourceGreenPacked, sourceBluePacked, sourceAlphaPacked
     );
 
@@ -85,7 +90,7 @@ static inline void fetchpackedcolor(
     alphaOut = unpackcolor( sourceAlphaPacked );
 }
 
-static inline void getblendfactor(
+AINLINE void getblendfactor(
     double srcRed, double srcGreen, double srcBlue, double srcAlpha,
     double dstRed, double dstGreen, double dstBlue, double dstAlpha,
     Bitmap::eShadeMode shadeMode,
@@ -131,6 +136,11 @@ static inline void getblendfactor(
     }
 }
 
+eColorModel Bitmap::getColorModel( void ) const
+{
+    return colorModelDispatcher <const void> ( NULL, this->rasterFormat, this->colorOrder, this->depth, NULL, 0, PALETTE_NONE ).getColorModel();
+}
+
 bool Bitmap::browsecolor(uint32 x, uint32 y, uint8& redOut, uint8& greenOut, uint8& blueOut, uint8& alphaOut) const
 {
     bool hasColor = false;
@@ -139,10 +149,52 @@ bool Bitmap::browsecolor(uint32 x, uint32 y, uint8& redOut, uint8& greenOut, uin
     {
         uint32 colorIndex = PixelFormat::coord2index( x, y, this->width );
 
-        hasColor = browsetexelcolor(
-            this->texels, PALETTE_NONE, NULL, 0, colorIndex, this->rasterFormat, this->colorOrder, this->depth,
+        colorModelDispatcher <const void> fetchDispatch( this->texels, this->rasterFormat, this->colorOrder, this->depth, NULL, 0, PALETTE_NONE );
+
+        hasColor = fetchDispatch.getRGBA(
+            colorIndex,
             redOut, greenOut, blueOut, alphaOut
         );
+    }
+
+    return hasColor;
+}
+
+bool Bitmap::browselum(uint32 x, uint32 y, uint8& lum) const
+{
+    bool hasColor = false;
+
+    if ( x < this->width && y < this->height )
+    {
+        uint32 colorIndex = PixelFormat::coord2index( x, y, this->width );
+
+        colorModelDispatcher <const void> fetchDispatch( this->texels, this->rasterFormat, this->colorOrder, this->depth, NULL, 0, PALETTE_NONE );
+
+        hasColor = fetchDispatch.getLuminance(
+            colorIndex,
+            lum
+        );
+    }
+
+    return hasColor;
+}
+
+bool Bitmap::browsecolorex(uint32 x, uint32 y, abstractColorItem& colorItem) const
+{
+    bool hasColor = false;
+
+    if ( x < this->width && y < this->height )
+    {
+        uint32 colorIndex = PixelFormat::coord2index( x, y, this->width );
+
+        colorModelDispatcher <const void> fetchDispatch( this->texels, this->rasterFormat, this->colorOrder, this->depth, NULL, 0, PALETTE_NONE );
+
+        fetchDispatch.getColor(
+            colorIndex,
+            colorItem
+        );
+
+        hasColor = true;
     }
 
     return hasColor;

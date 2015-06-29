@@ -41,6 +41,8 @@ static void _fetch_image_data_libquant(liq_color row_out[], int row_index, int w
     void *palColors = pixelData->paletteData;
     uint32 palColorCount = pixelData->paletteSize;
 
+    colorModelDispatcher <const void> fetchDispatch( texelSource, rasterFormat, colorOrder, itemDepth, palColors, palColorCount, paletteType );
+
     for (int n = 0; n < width; n++)
     {
         uint32 colorIndex = PixelFormat::coord2index(n, row_index, width);
@@ -48,7 +50,7 @@ static void _fetch_image_data_libquant(liq_color row_out[], int row_index, int w
         // Fetch the color.
         uint8 r, g, b, a;
 
-        browsetexelcolor(texelSource, paletteType, palColors, palColorCount, colorIndex, rasterFormat, colorOrder, itemDepth, r, g, b, a);
+        fetchDispatch.getRGBA( colorIndex, r, g, b, a );
 
         // Store the color.
         liq_color& outColor = row_out[ n ];
@@ -169,6 +171,8 @@ void PalettizePixelData( Interface *engineInterface, pixelDataTraversal& pixelDa
                 conv.after_characterize();
 #endif
 
+                colorModelDispatcher <const void> fetchDispatch( texelSource, srcRasterFormat, srcColorOrder, srcDepth, srcPaletteData, srcPaletteCount, srcPaletteType );
+
                 // Linear eliminate.
                 for (uint32 y = 0; y < srcHeight; y++)
                 {
@@ -177,7 +181,7 @@ void PalettizePixelData( Interface *engineInterface, pixelDataTraversal& pixelDa
                         uint32 colorIndex = PixelFormat::coord2index(x, y, srcStride);
 
                         uint8 red, green, blue, alpha;
-                        bool hasColor = browsetexelcolor(texelSource, srcPaletteType, srcPaletteData, srcPaletteCount, colorIndex, srcRasterFormat, srcColorOrder, srcDepth, red, green, blue, alpha);
+                        bool hasColor = fetchDispatch.getRGBA( colorIndex, red, green, blue, alpha );
 
                         if ( hasColor )
                         {

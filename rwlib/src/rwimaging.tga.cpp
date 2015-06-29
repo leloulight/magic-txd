@@ -55,15 +55,18 @@ static void writeTGAPixels(
         // Allocate a buffer for the fixed pixel data.
         void *tgaColors = engineInterface->PixelAllocate( texelDataSize );
 
+        colorModelDispatcher <const void> fetchDispatch( texelSource, srcRasterFormat, srcColorOrder, srcItemDepth, srcPaletteData, srcMaxPalette, srcPaletteType );
+        colorModelDispatcher <void> putDispatch( tgaColors, dstRasterFormat, COLOR_BGRA, dstItemDepth, NULL, 0, PALETTE_NONE );
+
         for ( uint32 n = 0; n < colorUnitCount; n++ )
         {
             // Grab the color.
-            uint8 red, green, blue, alpha;
+            abstractColorItem colorItem;
 
-            browsetexelcolor(texelSource, srcPaletteType, srcPaletteData, srcMaxPalette, n, srcRasterFormat, srcColorOrder, srcItemDepth, red, green, blue, alpha);
+            fetchDispatch.getColor(n, colorItem);
 
             // Write it with correct ordering.
-            puttexelcolor(tgaColors, n, dstRasterFormat, COLOR_BGRA, dstItemDepth, red, green, blue, alpha);
+            putDispatch.setColor(n, colorItem);
         }
 
         tgaStream->write((const void*)tgaColors, texelDataSize);
@@ -201,12 +204,6 @@ struct tgaImagingExtension : public imagingFormatExtension
             throw RwException( "failed to read .tga header" );
         }
 
-        // Check whether we even support this TGA.
-        if ( headerData.ImageDescriptor.imageOrdering != 2 )
-        {
-            throw RwException( "invalid .tga image data ordering (expected top left)" );
-        }
-
         // Decide about how to map it to RenderWare data.
         eRasterFormat dstRasterFormat;
         uint32 dstDepth;
@@ -218,7 +215,35 @@ struct tgaImagingExtension : public imagingFormatExtension
 
         uint32 dstItemDepth;
 
-        if ( headerData.ColorMapType == 0 ) // no palette.
+        bool hasPalette = ( headerData.ColorMapType == 1 );
+        bool requiresPalette = false;
+
+        if ( headerData.ImageType == 1 ) // with palette.
+        {
+            if ( hasPalette == false )
+            {
+                throw RwException( "invalid color mapped TGA that has no palette included" );
+            }
+
+            if ( headerData.PixelDepth == 4 || headerData.PixelDepth == 8 )
+            {
+                bool hasPixelRasterFormat = getTGARasterFormat( headerData.CMapDepth, headerData.ImageDescriptor.numAttrBits, dstRasterFormat, dstDepth );
+
+                if ( hasPixelRasterFormat )
+                {
+                    dstItemDepth = headerData.PixelDepth;
+
+                    hasRasterFormat = true;
+                }
+            }
+            else
+            {
+                throw RwException( "invalid color map depth in TGA" );
+            }
+
+            requiresPalette = true;
+        }
+        else if ( headerData.ImageType == 2 ) // without palette, raw colors.
         {
             hasRasterFormat = getTGARasterFormat( headerData.PixelDepth, headerData.ImageDescriptor.numAttrBits, dstRasterFormat, dstDepth );
 
@@ -227,19 +252,17 @@ struct tgaImagingExtension : public imagingFormatExtension
                 dstItemDepth = dstDepth;
             }
         }
-        else if ( headerData.ColorMapType == 1 ) // has palette.
+        else if ( headerData.ImageType == 3 ) // grayscale.
         {
-            bool hasPixelRasterFormat = getTGARasterFormat( headerData.CMapDepth, headerData.ImageDescriptor.numAttrBits, dstRasterFormat, dstDepth );
+            dstRasterFormat = RASTER_LUM8;
+            dstDepth = 8;
+            dstItemDepth = 8;
 
-            if ( hasPixelRasterFormat )
-            {
-                if ( headerData.PixelDepth == 4 || headerData.PixelDepth == 8 )
-                {
-                    dstItemDepth = headerData.PixelDepth;
-
-                    hasRasterFormat = true;
-                }
-            }
+            hasRasterFormat = true;
+        }
+        else // TODO: add RLE support.
+        {
+            throw RwException( "unknown TGA image type" );
         }
 
         if ( hasRasterFormat == false )
@@ -257,30 +280,42 @@ struct tgaImagingExtension : public imagingFormatExtension
         void *paletteData = NULL;
         uint32 paletteSize = headerData.CMapLength;
 
-        if ( headerData.ColorMapType == 1 )
+        if ( hasPalette )
         {
             uint32 paletteDataSize = getRasterDataSize( paletteSize, dstDepth );
 
-            checkAhead( inputStream, paletteDataSize );
-
-            paletteData = engineInterface->PixelAllocate( paletteDataSize );
-
-            try
+            // Only save the palette if we really need it.
+            if ( requiresPalette )
             {
-                size_t readCount = inputStream->read( paletteData, paletteDataSize );
+                checkAhead( inputStream, paletteDataSize );
 
-                if ( readCount != paletteDataSize )
+                paletteData = engineInterface->PixelAllocate( paletteDataSize );
+
+                try
                 {
-                    throw RwException( "failed to read .tga palette data" );
+                    size_t readCount = inputStream->read( paletteData, paletteDataSize );
+
+                    if ( readCount != paletteDataSize )
+                    {
+                        throw RwException( "failed to read .tga palette data" );
+                    }
+                }
+                catch( ... )
+                {
+                    engineInterface->PixelFree( paletteData );
+
+                    paletteData = NULL;
+
+                    throw;
                 }
             }
-            catch( ... )
+            else
             {
-                engineInterface->PixelFree( paletteData );
-
-                paletteData = NULL;
-
-                throw;
+                // Just skip this stuff.
+                if ( paletteDataSize != 0 )
+                {
+                    inputStream->skip( paletteDataSize );
+                }
             }
         }
 

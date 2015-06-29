@@ -203,6 +203,9 @@ inline void DecompressPVRMipmap(
     // Allocate new texels.
     void *dstTexels = engineInterface->PixelAllocate( dstDataSize );
 
+    colorModelDispatcher <const void> fetchDispatch( srcTexelPtr, pvrRasterFormat, pvrColorOrder, pvrDepth, NULL, 0, PALETTE_NONE );
+    colorModelDispatcher <void> putDispatch( dstTexels, targetRasterFormat, targetColorOrder, targetDepth, NULL, 0, PALETTE_NONE );
+
     for ( uint32 y = 0; y < pvrHeight; y++ )
     {
         for ( uint32 x = 0; x < pvrWidth; x++ )
@@ -210,9 +213,9 @@ inline void DecompressPVRMipmap(
             uint8 r, g, b, a;
 
             uint32 pvrColorIndex = PixelFormat::coord2index(x, y, pvrWidth);
-            
-            bool hasColor = browsetexelcolor(srcTexelPtr, PALETTE_NONE, NULL, 0, pvrColorIndex, pvrRasterFormat, pvrColorOrder, pvrDepth, r, g, b, a);
 
+            bool hasColor = fetchDispatch.getRGBA( pvrColorIndex, r, g, b, a );
+            
             if ( !hasColor )
             {
                 r = 0;
@@ -226,7 +229,7 @@ inline void DecompressPVRMipmap(
                 // Put the color in the correct format.
                 uint32 dstColorIndex = PixelFormat::coord2index(x, y, layerWidth);
 
-                puttexelcolor(dstTexels, dstColorIndex, targetRasterFormat, targetColorOrder, targetDepth, r, g, b, a);
+                putDispatch.setRGBA( dstColorIndex, r, g, b, a );
             }
         }
     }
@@ -387,6 +390,9 @@ inline void CompressMipmapToPVR(
 
     void *pvrDstBuf = pvrTexture.getDataPtr();
 
+    colorModelDispatcher <const void> fetchDispatch( srcTexels, srcRasterFormat, srcColorOrder, srcDepth, srcPaletteData, srcPaletteSize, srcPaletteType );
+    colorModelDispatcher <void> putDispatch( pvrDstBuf, pvrRasterFormat, pvrColorOrder, pvrDepth, NULL, 0, PALETTE_NONE );
+
     for ( uint32 y = 0; y < pvrTexHeight; y++ )
     {
         for ( uint32 x = 0; x < pvrTexWidth; x++ )
@@ -399,9 +405,7 @@ inline void CompressMipmapToPVR(
             {
                 uint32 colorIndex = PixelFormat::coord2index(x, y, mipWidth);
 
-                hasColor = browsetexelcolor(
-                    srcTexels, srcPaletteType, srcPaletteData, srcPaletteSize, colorIndex, srcRasterFormat, srcColorOrder, srcDepth, r, g, b, a
-                );
+                hasColor = fetchDispatch.getRGBA( colorIndex, r, g, b, a );
             }
 
             if ( !hasColor )
@@ -414,7 +418,7 @@ inline void CompressMipmapToPVR(
 
             uint32 pvrColorIndex = PixelFormat::coord2index(x, y, pvrTexWidth);
 
-            puttexelcolor(pvrDstBuf, pvrColorIndex, pvrRasterFormat, pvrColorOrder, pvrDepth, r, g, b, a);
+            putDispatch.setRGBA( pvrColorIndex, r, g, b, a );
         }
     }
 

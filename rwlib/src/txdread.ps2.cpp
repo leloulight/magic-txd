@@ -303,7 +303,7 @@ eTexNativeCompatibility ps2NativeTextureTypeProvider::IsCompatibleTextureBlock( 
             // If it matches, we believe it definately is a PS2 texture.
             uint32 checksum = texNativeMasterHeader.readUInt32();
 
-            if ( checksum == PLATFORM_PS2FOURCC )
+            if ( checksum == PS2_FOURCC )
             {
                 returnCompat = RWTEXCOMPAT_ABSOLUTE;
             }
@@ -338,7 +338,7 @@ void ps2NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture, 
             {
 	            uint32 checksum = texNativeMasterHeader.readUInt32();
 
-	            if (checksum != PLATFORM_PS2FOURCC)
+	            if (checksum != PS2_FOURCC)
                 {
                     throw RwException( "invalid platform for PS2 texture reading" );
                 }
@@ -1017,10 +1017,13 @@ inline void convertTexelsFromPS2(
 {
     if ( fixAlpha || srcColorOrder != dstColorOrder || srcRasterFormat != dstRasterFormat || srcDepth != dstDepth )
     {
+        colorModelDispatcher <const void> fetchDispatch( texelSource, srcRasterFormat, srcColorOrder, srcDepth, NULL, 0, PALETTE_NONE );
+        colorModelDispatcher <void> putDispatch( dstTexels, dstRasterFormat, dstColorOrder, dstDepth, NULL, 0, PALETTE_NONE );
+
 	    for (uint32 i = 0; i < texelCount; i++)
         {
             uint8 red, green, blue, alpha;
-            browsetexelcolor(texelSource, PALETTE_NONE, NULL, 0, i, srcRasterFormat, srcColorOrder, srcDepth, red, green, blue, alpha);
+            fetchDispatch.getRGBA( i, red, green, blue, alpha );
 
 	        // fix alpha
             if (fixAlpha)
@@ -1034,7 +1037,7 @@ inline void convertTexelsFromPS2(
                 alpha = newAlpha;
             }
 
-            puttexelcolor(dstTexels, i, dstRasterFormat, dstColorOrder, dstDepth, red, green, blue, alpha);
+            putDispatch.setRGBA( i, red, green, blue, alpha );
 	    }
     }
 }
@@ -1344,10 +1347,13 @@ inline void convertTexelsToPS2(
 {
     if ( fixAlpha || srcColorOrder != ps2ColorOrder || srcRasterFormat != dstRasterFormat || srcItemDepth != dstItemDepth )
     {
+        colorModelDispatcher <const void> fetchDispatch( srcTexelData, srcRasterFormat, srcColorOrder, srcItemDepth, NULL, 0, PALETTE_NONE );
+        colorModelDispatcher <void> putDispatch( dstTexelData, dstRasterFormat, ps2ColorOrder, dstItemDepth, NULL, 0, PALETTE_NONE );
+
 		for (uint32 i = 0; i < texelCount; i++)
         {
             uint8 red, green, blue, alpha;
-            browsetexelcolor(srcTexelData, PALETTE_NONE, NULL, 0, i, srcRasterFormat, srcColorOrder, srcItemDepth, red, green, blue, alpha);
+            fetchDispatch.getRGBA( i, red, green, blue, alpha );
 
 		    // fix alpha
             if (fixAlpha)
@@ -1361,7 +1367,7 @@ inline void convertTexelsToPS2(
                 alpha = newAlpha;
             }
 
-            puttexelcolor(dstTexelData, i, dstRasterFormat, ps2ColorOrder, dstItemDepth, red, green, blue, alpha);
+            putDispatch.setRGBA( i, red, green, blue, alpha );
 		}
     }
 }

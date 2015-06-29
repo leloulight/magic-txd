@@ -3,6 +3,27 @@ inline uint32 getRasterDataSize( uint32 itemCount, uint32 depth )
     return ALIGN_SIZE( itemCount * depth, 8u ) / 8u;
 }
 
+enum eColorModel
+{
+    COLORMODEL_RGBA,
+    COLORMODEL_LUMINANCE,
+    COLORMODEL_DEPTH
+};
+
+struct abstractColorItem
+{
+    eColorModel model;
+    union
+    {
+        struct
+        {
+            uint8 r, g, b, a;
+        } rgbaColor;
+
+        uint8 lumColor;
+    };
+};
+
 // Bitmap software rendering includes.
 struct Bitmap
 {
@@ -303,6 +324,10 @@ public:
     }
 
     bool browsecolor(uint32 x, uint32 y, uint8& redOut, uint8& greenOut, uint8& blueOut, uint8& alphaOut) const;
+    bool browselum(uint32 x, uint32 y, uint8& lum) const;
+    bool browsecolorex(uint32 x, uint32 y, abstractColorItem& colorItem ) const;
+
+    eColorModel getColorModel( void ) const;
 
     enum eBlendMode
     {

@@ -31,7 +31,7 @@ void d3d8NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
 
 	            uint32 platform = metaHeader.platformDescriptor;
 
-	            if (platform != 8)
+	            if (platform != PLATFORM_D3D8)
                 {
                     throw RwException( "invalid platform type in Direct3D 8 texture reading" );
                 }

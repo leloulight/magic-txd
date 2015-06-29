@@ -332,6 +332,9 @@ inline void DecompressATCMipmap(
             dstTexels = engineInterface->PixelAllocate( dstDataSize );
         }
 
+        colorModelDispatcher <const void> fetchSrcDispatch( atcTexels, atcRasterFormat, atcColorOrder, atcDepth, NULL, 0, PALETTE_NONE );
+        colorModelDispatcher <void> putDispatch( dstTexels, targetRasterFormat, targetColorOrder, targetDepth, NULL, 0, PALETTE_NONE );
+
         for ( uint32 y = 0; y < layerHeight; y++ )
         {
             for ( uint32 x = 0; x < layerWidth; x++ )
@@ -340,7 +343,7 @@ inline void DecompressATCMipmap(
 
                 uint32 srcColorIndex = PixelFormat::coord2index(x, y, mipWidth);
 
-                bool gotColor = browsetexelcolor(atcTexels, PALETTE_NONE, NULL, 0, srcColorIndex, atcRasterFormat, atcColorOrder, atcDepth, r, g, b, a);
+                bool gotColor = fetchSrcDispatch.getRGBA( srcColorIndex, r, g, b, a );
 
                 if ( !gotColor )
                 {
@@ -352,7 +355,7 @@ inline void DecompressATCMipmap(
 
                 uint32 dstColorIndex = PixelFormat::coord2index(x, y, layerWidth);
 
-                puttexelcolor(dstTexels, dstColorIndex, targetRasterFormat, targetColorOrder, targetDepth, r, g, b, a);
+                putDispatch.setRGBA( dstColorIndex, r, g, b, a );
             }
         }
 
@@ -472,15 +475,14 @@ inline void CompressMipmapToATC(
 
     void *feedTexels = engineInterface->PixelAllocate( srcTextureDataSize );
 
+    colorModelDispatcher <const void> fetchDispatch( srcTexels, srcRasterFormat, srcColorOrder, srcDepth, srcPaletteData, srcPaletteSize, srcPaletteType );
+    colorModelDispatcher <void> putDispatch( feedTexels, feedRasterFormat, feedColorOrder, feedDepth, NULL, 0, PALETTE_NONE );
+
     for ( uint32 index = 0; index < srcLayerTexUnitCount; index++ )
     {
         uint8 r, g, b, a;
 
-        bool gotColor = browsetexelcolor(
-            srcTexels, srcPaletteType, srcPaletteData, srcPaletteSize, index,
-            srcRasterFormat, srcColorOrder, srcDepth,
-            r, g, b, a
-        );
+        bool gotColor = fetchDispatch.getRGBA( index, r, g, b, a );
 
         if ( !gotColor )
         {
@@ -490,7 +492,7 @@ inline void CompressMipmapToATC(
             a = 0;
         }
 
-        puttexelcolor(feedTexels, index, feedRasterFormat, feedColorOrder, feedDepth, r, g, b, a);
+        putDispatch.setRGBA( index, r, g, b, a );
     }
 
     // Determine the compressed texture dimensions.

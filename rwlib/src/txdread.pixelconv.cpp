@@ -31,6 +31,8 @@ inline bool decompressTexelsUsingDXT(
 
     bool successfullyDecompressed = true;
 
+    colorModelDispatcher <void> putDispatch( newtexels, rawRasterFormat, rawColorOrder, rawDepth, NULL, 0, PALETTE_NONE );
+
 	for (uint32 n = 0; n < compressedBlockCount; n++)
     {
         PixelFormat::pixeldata32bit colors[4][4];
@@ -63,7 +65,7 @@ inline bool decompressTexelsUsingDXT(
 
                     uint32 dstColorIndex = PixelFormat::coord2index(target_x, target_y, texLayerWidth);
 
-                    puttexelcolor(newtexels, dstColorIndex, rawRasterFormat, rawColorOrder, rawDepth, red, green, blue, alpha);
+                    putDispatch.setRGBA(dstColorIndex, red, green, blue, alpha);
                 }
             }
         }
@@ -417,29 +419,18 @@ void ConvertMipmapLayer(
     }
     else
     {
+        colorModelDispatcher <const void> fetchDispatch( srcTexels, srcRasterFormat, srcColorOrder, srcDepth, srcPaletteData, srcPaletteSize, srcPaletteType );
+        colorModelDispatcher <void> putDispatch( dstTexels, dstRasterFormat, dstColorOrder, dstDepth, NULL, 0, PALETTE_NONE );
+
         // If we are not a palette, then we have to process colors.
         for ( uint32 n = 0; n < srcItemCount; n++ )
         {
-            uint8 r, g, b, a;
+            abstractColorItem colorItem;
 
-            bool hasColor = browsetexelcolor(
-                srcTexels, srcPaletteType, srcPaletteData, srcPaletteSize, n, srcRasterFormat, srcColorOrder, srcDepth,
-                r, g, b, a
-            );
-
-            if ( !hasColor )
-            {
-                r = 0;
-                g = 0;
-                b = 0;
-                a = 0;
-            }
+            fetchDispatch.getColor( n, colorItem );
 
             // Just put the color inside.
-            puttexelcolor(
-                dstTexels, n, dstRasterFormat, dstColorOrder, dstDepth,
-                r, g, b, a
-            );
+            putDispatch.setColor( n, colorItem );
         }
     }
     
@@ -521,22 +512,18 @@ bool ConvertMipmapLayerNative(
 
             newtexels = engineInterface->PixelAllocate( dstDataSize );
 
+            colorModelDispatcher <const void> fetchDispatch( srcTexels, srcRasterFormat, srcColorOrder, srcDepth, srcPaletteData, srcPaletteSize, srcPaletteType );
+            colorModelDispatcher <void> putDispatch( newtexels, dstRasterFormat, dstColorOrder, dstDepth, NULL, 0, PALETTE_NONE );
+
             // Do the conversion.
             for ( uint32 n = 0; n < texUnitCount; n++ )
             {
-                uint8 r, g, b, a;
+                abstractColorItem colorItem;
 
-                bool gotColor = browsetexelcolor( srcTexels, srcPaletteType, srcPaletteData, srcPaletteSize, n, srcRasterFormat, srcColorOrder, srcDepth, r, g, b, a );
+                fetchDispatch.getColor( n, colorItem );
 
-                if ( !gotColor )
-                {
-                    r = 0;
-                    g = 0;
-                    b = 0;
-                    a = 0;
-                }
-
-                puttexelcolor( newtexels, n, dstRasterFormat, dstColorOrder, dstDepth, r, g, b, a );
+                // Just put the color inside.
+                putDispatch.setColor( n, colorItem );
             }
         }
         else if ( srcPaletteType != PALETTE_NONE )
@@ -787,36 +774,22 @@ void ConvertPaletteData(
     // Process valid colors.
     uint32 canProcessCount = std::min( srcPaletteSize, dstPaletteSize );
 
+    colorModelDispatcher <const void> fetchDispatcher( srcPaletteTexels, srcRasterFormat, srcColorOrder, srcPalRasterDepth, NULL, 0, PALETTE_NONE );
+    colorModelDispatcher <void> putDispatcher( dstPaletteTexels, dstRasterFormat, dstColorOrder, dstPalRasterDepth, NULL, 0, PALETTE_NONE );
+
     for ( uint32 n = 0; n < canProcessCount; n++ )
     {
-        uint8 r, g, b, a;
+        abstractColorItem colorItem;
 
-        bool hasColor = browsetexelcolor(
-            srcPaletteTexels, PALETTE_NONE, NULL, 0, n, srcRasterFormat, srcColorOrder, srcPalRasterDepth,
-            r, g, b, a
-        );
+        fetchDispatcher.getColor( n, colorItem );
 
-        if ( !hasColor )
-        {
-            r = 0;
-            g = 0;
-            b = 0;
-            a = 0;
-        }
-
-        puttexelcolor(
-            dstPaletteTexels, n, dstRasterFormat, dstColorOrder, dstPalRasterDepth,
-            r, g, b, a
-        );
+        putDispatcher.setColor( n, colorItem );
     }
 
     // Zero out any remainder.
     for ( uint32 n = canProcessCount; n < dstPaletteSize; n++ )
     {
-        puttexelcolor(
-            dstPaletteTexels, n, dstRasterFormat, dstColorOrder, dstPalRasterDepth,
-            0, 0, 0, 0
-        );
+        putDispatcher.clearColor( n );
     }
 }
 

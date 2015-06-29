@@ -59,7 +59,7 @@ void d3d9NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
 
 	            uint32 platform = metaHeader.platformDescriptor;
 
-	            if (platform != 9)
+	            if (platform != PLATFORM_D3D9)
                 {
                     throw RwException( "invalid platform type in Direct3D 9 texture reading" );
                 }
@@ -100,7 +100,9 @@ void d3d9NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
                 platformTex->hasAlpha = false;
 
                 // Read the D3DFORMAT field.
-                platformTex->d3dFormat = metaHeader.d3dFormat;
+                D3DFORMAT d3dFormat = metaHeader.d3dFormat; // can be really anything.
+
+                platformTex->d3dFormat = d3dFormat;
 
                 uint32 depth = metaHeader.depth;
                 uint32 maybeMipmapCount = metaHeader.mipmapCount;
@@ -109,26 +111,30 @@ void d3d9NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
 
                 platformTex->rasterType = metaHeader.rasterType;
 
+                bool hasExpandedFormatRegion = ( metaHeader.isNotRwCompatible == true );    // LEGACY: "compression flag"
+
                 {
                     // Here we decide about alpha.
 	                platformTex->hasAlpha = metaHeader.hasAlpha;
                     platformTex->isCubeTexture = metaHeader.isCubeTexture;
                     platformTex->autoMipmaps = metaHeader.autoMipMaps;
 
-	                if ( metaHeader.isNotRwCompatible )    // LEGACY: "compression flag"
+	                if ( hasExpandedFormatRegion )
                     {
-		                // Detect FOUR-CC versions for compression method.
-                        uint32 dxtCompression = getCompressionFromD3DFormat(platformTex->d3dFormat);
+                        // If we are a texture with expanded format region, we can map to much more than original RW textures.
+                        // We can be a compressed texture, or something entirely different that we do not know about.
 
-                        if ( dxtCompression == 0 )
-                        {
-                            throw RwException( "invalid Direct3D texture compression format" );
-                        }
+                        // A really bad thing is that we cannot check the D3DFORMAT field for validity.
+                        // There are countless undefined formats out there that we must be able to just "pass on".
+
+		                // Detect FOUR-CC versions for compression method.
+                        uint32 dxtCompression = getCompressionFromD3DFormat(d3dFormat);
 
                         platformTex->dxtCompression = dxtCompression;
                     }
 	                else
                     {
+                        // There is never compression in original RW.
 		                platformTex->dxtCompression = 0;
                     }
                 }
@@ -136,7 +142,6 @@ void d3d9NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
                 // Verify raster properties and attempt to fix broken textures.
                 // Broken textures travel with mods like San Andreas Retextured.
                 // - Verify compression.
-                D3DFORMAT d3dFormat = platformTex->d3dFormat;
                 {
                     uint32 actualCompression = getCompressionFromD3DFormat( d3dFormat );
 
@@ -148,11 +153,13 @@ void d3d9NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
                     }
                 }
                 // - Verify raster format.
+                bool d3dRasterFormatLink = false;
                 {
+                    eColorOrdering colorOrder = COLOR_BGRA;
+
                     bool isValidFormat = false;
                     bool isRasterFormatRequired = true;
 
-                    eColorOrdering colorOrder;
                     eRasterFormat d3dRasterFormat;
 
                     bool isD3DFORMATImportant = true;
@@ -160,12 +167,14 @@ void d3d9NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
                     bool hasActualD3DFormat = false;
                     D3DFORMAT actualD3DFormat;
 
+                    bool hasReportedStrongWarning = false;
+
                     // Do special logic for palettized textures.
                     // (thank you DK22Pac)
                     if (platformTex->paletteType != PALETTE_NONE)
                     {
                         // This overrides the D3DFORMAT field.
-                        // We are not forced to using the eRasterFormat property.
+                        // We are forced to use the eRasterFormat property.
                         isD3DFORMATImportant = false;
 
                         colorOrder = COLOR_RGBA;
@@ -176,10 +185,20 @@ void d3d9NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
                         actualD3DFormat = D3DFMT_P8;
 
                         isValidFormat = ( d3dFormat == D3DFMT_P8 );
+
+                        // Basically, we have to tell the user that it should have had a palette D3DFORMAT.
+                        if ( engineIgnoreSecureWarnings == false )
+                        {
+                            engineInterface->PushWarning( "texture " + theTexture->GetName() + " is a palette texture but did not set D3DFMT_P8" );
+
+                            hasReportedStrongWarning = true;
+                        }
                     }
                     else
                     {
                         // Set it for clarity sake.
+                        // We do not load entirely complaint to GTA:SA, because we give higher priority to the D3DFORMAT field.
+                        // Even though we do that, it is preferable, since the driver implementation is more powerful than the RW original types.
                         isD3DFORMATImportant = true;
 
                         if (d3dFormat == D3DFMT_A8R8G8B8)
@@ -254,6 +273,16 @@ void d3d9NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
 
                             isValidFormat = true;
                         }
+                        else if (d3dFormat == D3DFMT_L8)
+                        {
+                            d3dRasterFormat = RASTER_LUM8;
+
+                            // Actually, there is no such thing as a color order for luminance textures.
+                            // We set this field so we make things happy.
+                            colorOrder = COLOR_BGRA;
+
+                            isValidFormat = true;
+                        }
                         else if (d3dFormat == D3DFMT_DXT1)
                         {
                             if (platformTex->hasAlpha)
@@ -296,44 +325,66 @@ void d3d9NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
                             // We cannot be a palette texture without having actual palette data.
                             isValidFormat = false;
                         }
+
+                        // Is the D3DFORMAT known by this implementation?
+                        // This is equivalent to the notion that we are a valid format.
+                        if ( isValidFormat == false )
+                        {
+                            // If the user wants to know about such things, notify him.
+                            if ( engineIgnoreSecureWarnings == false )
+                            {
+                                engineInterface->PushWarning( "texture " + theTexture->GetName() + " has an unknown D3DFORMAT link (" + std::to_string( (DWORD)d3dFormat ) + ")" );
+
+                                hasReportedStrongWarning = true;
+                            }
+                        }
                     }
 
                     if ( isValidFormat == false )
                     {
-                        if ( isD3DFORMATImportant == true )
-                        {
-                            throw RwException( "invalid D3DFORMAT in texture " + theTexture->GetName() );
-                        }
-                        else
-                        {
-                            if ( engineIgnoreSecureWarnings == false )
-                            {
-                                engineInterface->PushWarning( "texture " + theTexture->GetName() + " has a wrong D3DFORMAT field (ignoring)" );
-                            }
-                        }
-
                         // Fix it (if possible).
                         if ( hasActualD3DFormat )
                         {
                             d3dFormat = actualD3DFormat;
 
                             platformTex->d3dFormat = actualD3DFormat;
-                        }
-                        else
-                        {
-                            assert( 0 );
+
+                            // We rescued ourselves into valid territory.
+                            isValidFormat = true;
                         }
                     }
 
+                    // If we are a valid format, we are actually known, which means we have a D3DFORMAT -> eRasterFormat link.
+                    // This allows us to be handled by the Direct3D 9 RW implementation.
+                    if ( isValidFormat )
+                    {
+                        // If the raster format is not required though, then it means that it actually has no link.
+                        if ( isRasterFormatRequired )
+                        {
+                            d3dRasterFormatLink = true;
+                        }
+                    }
+                    else
+                    {
+                        // If we are a valid format that we know, we also have a d3dRasterFormat that we want to enforce.
+                        // Otherwise we are not entirely sure, so we should keep it as RASTER_DEFAULT.
+                        d3dRasterFormat = RASTER_DEFAULT;
+                    }
+                    
                     eRasterFormat rasterFormat = platformTex->rasterFormat;
 
                     if ( rasterFormat != d3dRasterFormat )
                     {
-                        if ( isRasterFormatRequired || !engineIgnoreSecureWarnings )
+                        // We should only warn about a mismatching format if we kinda know what we are doing.
+                        // Otherwise we have already warned the user about the invalid D3DFORMAT entry, that we base upon anyway.
+                        if ( hasReportedStrongWarning == false )
                         {
-                            if ( engineWarningLevel >= 3 )
+                            if ( isRasterFormatRequired || !engineIgnoreSecureWarnings )
                             {
-                                engineInterface->PushWarning( "texture " + theTexture->GetName() + " has an invalid raster format (ignoring)" );
+                                if ( engineWarningLevel >= 3 )
+                                {
+                                    engineInterface->PushWarning( "texture " + theTexture->GetName() + " has an invalid raster format (ignoring)" );
+                                }
                             }
                         }
 
@@ -344,8 +395,8 @@ void d3d9NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
                     // Store the color ordering.
                     platformTex->colorOrdering = colorOrder;
 
-                    // When reading a texture native, we must have a D3DFORMAT.
-                    platformTex->hasD3DFormat = true;
+                    // Store whether we have the D3D raster format link.
+                    platformTex->d3dRasterFormatLink = d3dRasterFormatLink;
                 }
                 // - Verify depth.
                 {
@@ -376,6 +427,13 @@ void d3d9NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
 
                 if (platformTex->paletteType != PALETTE_NONE)
                 {
+                    // We kind assume we have a valid D3D raster format link here.
+                    if ( d3dRasterFormatLink == false )
+                    {
+                        // If we do things correctly, this should never be triggered.
+                        throw RwException( "texture " + theTexture->GetName() + " is a palette texture but has no Direct3D raster format link" );
+                    }
+
                     uint32 reqPalItemCount = getD3DPaletteCount( platformTex->paletteType );
 
                     uint32 palDepth = Bitmap::getRasterFormatDepth( platformTex->rasterFormat );
@@ -462,7 +520,10 @@ void d3d9NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
                     processedMipmapCount++;
 
                     // Verify the data size.
+                    // We can only do that if we know about its format.
                     bool isValidMipmap = true;
+
+                    if ( d3dRasterFormatLink == true )
                     {
                         uint32 texItemCount = ( texWidth * texHeight );
 
@@ -478,6 +539,14 @@ void d3d9NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
                         }
 
                         if (actualDataSize != texDataSize)
+                        {
+                            isValidMipmap = false;
+                        }
+                    }
+                    else
+                    {
+                        // Check some general stuff.
+                        if ( texDataSize == 0 )
                         {
                             isValidMipmap = false;
                         }

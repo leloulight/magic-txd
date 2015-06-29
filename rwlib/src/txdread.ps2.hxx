@@ -1,3 +1,5 @@
+#define PS2_FOURCC 0x00325350 /* "PS2\0" */
+
 namespace rw
 {
 

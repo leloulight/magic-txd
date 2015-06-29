@@ -33,8 +33,8 @@ namespace rw
 // Forward declaration.
 struct Interface;
 
-// Type system declaration for type abstraction.
-// This is where atomics, frames, geometries register to.
+// Main memory allocator for everything, if I get around to standardizing it!
+// TODO: improve this.
 struct RwMemoryAllocator
 {
 public:
@@ -59,6 +59,8 @@ public:
     }
 };
 
+// Type system declaration for type abstraction.
+// This is where atomics, frames, geometries register to.
 typedef DynamicTypeSystem <RwMemoryAllocator, Interface> RwTypeSystem;
 
 // Common types used in this library.
@@ -73,20 +75,12 @@ typedef unsigned int uint32;            // 4 bytes
 typedef unsigned long long uint64;      // 8 bytes
 typedef float float32;                  // 4 bytes
 
-enum PLATFORM_ID
-{
-	PLATFORM_OGL    = 2,
-	PLATFORM_PS2    = 4,
-	PLATFORM_XBOX   = 5,
-	PLATFORM_D3D8   = 8,
-	PLATFORM_D3D9   = 9,
-    PLATFORM_PVR    = 10,
-    PLATFORM_ATC    = 11,
-    PLATFORM_UNC    = 12,   // you can send your hatemail to Wardrum Studios, today!
-    PLATFORM_MOBILE_DXT = 13,   // quite the abomination, as it uses the same platform id as d3d9.
-	PLATFORM_PS2FOURCC = 0x00325350 /* "PS2\0" */
-};
+// These do not have to be exclusively defined, so be careful.
+#define PLATFORM_OGL    2
+#define PLATFORM_PS2    4
+#define PLATFORM_XBOX   5
 
+// An exclusively defined list of chunk ids.
 enum CHUNK_TYPE
 {
     CHUNK_NAOBJECT        = 0x0,
@@ -302,11 +296,6 @@ std::string getChunkName(uint32 i);
  * DFFs
  */
 
-//#define NORMALSCALE (1.0/128.0)
-//#define	VERTSCALE1 (1.0/128.0)	/* normally used */
-//#define	VERTSCALE2 (1.0/1024.0)	/* used by objects with normals */
-//#define	UVSCALE (1.0/4096.0)
-
 enum
 { 
     FLAGS_TRISTRIP   = 0x01, 
@@ -329,7 +318,8 @@ enum
 	MATFX_DUALUVTRANSFORM = 0x6,
 };
 
-enum {
+enum
+{
 	FACETYPE_STRIP = 0x1,
 	FACETYPE_LIST = 0x0
 };
@@ -445,6 +435,8 @@ struct Frame : public RwObject
 	void dump(uint32 index, std::string ind = "");
 };
 
+// Main exception base class of this RenderWare framework.
+// If you want to catch it, please make sure that you compile your project with the same compiler as this framework.
 struct RwException
 {
     inline RwException( const std::string& msg )
@@ -489,6 +481,8 @@ enum eSerializationTypeMode
     RWSERIALIZE_ISOF
 };
 
+// Main chunk serialization interface.
+// Allows you to store data in the RenderWare ecosystem, be officially registering it.
 struct serializationProvider abstract
 {
     inline serializationProvider( void )
@@ -508,6 +502,7 @@ struct serializationProvider abstract
     virtual void            Serialize( Interface *engineInterface, BlockProvider& outputProvider, RwObject *objectToSerialize ) const = 0;
     virtual void            Deserialize( Interface *engineInterface, BlockProvider& inputProvider, RwObject *objectToDeserialize ) const = 0;
 
+    // Do not access this data. It is off-limits for you.
     struct
     {
         RwListEntry <serializationProvider> managerNode;
@@ -520,7 +515,7 @@ struct serializationProvider abstract
     } managerData;
 };
 
-struct Interface
+struct Interface abstract
 {
 protected:
     Interface( void );

@@ -84,33 +84,42 @@ void texDictionaryStreamPlugin::Deserialize( Interface *engineInterface, BlockPr
 
         texDictMetaStructBlock.EnterContext();
 
-        if ( texDictMetaStructBlock.getBlockID() == CHUNK_STRUCT )
+        try
         {
-            // Read the header block depending on version.
-            LibraryVersion libVer = texDictMetaStructBlock.getBlockVersion();
-
-            if (libVer.rwLibMinor <= 5)
+            if ( texDictMetaStructBlock.getBlockID() == CHUNK_STRUCT )
             {
-                textureBlockCount = texDictMetaStructBlock.readUInt32();
+                // Read the header block depending on version.
+                LibraryVersion libVer = texDictMetaStructBlock.getBlockVersion();
+
+                if (libVer.rwLibMinor <= 5)
+                {
+                    textureBlockCount = texDictMetaStructBlock.readUInt32();
+                }
+                else
+                {
+                    textureBlockCount = texDictMetaStructBlock.readUInt16();
+                    uint16 recommendedPlatform = texDictMetaStructBlock.readUInt16();
+
+                    // So if there is a recommended platform set, we will also give it one if we will write it.
+                    requiresRecommendedPlatform = ( recommendedPlatform != 0 );
+                }
             }
             else
             {
-                textureBlockCount = texDictMetaStructBlock.readUInt16();
-                uint16 recommendedPlatform = texDictMetaStructBlock.readUInt16();
-
-                // So if there is a recommended platform set, we will also give it one if we will write it.
-                requiresRecommendedPlatform = ( recommendedPlatform != 0 );
+                engineInterface->PushWarning( "could not find texture dictionary meta information" );
             }
         }
-        else
+        catch( ... )
         {
-            engineInterface->PushWarning( "could not find texture dictionary meta information" );
+            texDictMetaStructBlock.LeaveContext();
+            
+            throw;
         }
-
-        txdObj->hasRecommendedPlatform = requiresRecommendedPlatform;
 
         // We finished reading meta data.
         texDictMetaStructBlock.LeaveContext();
+
+        txdObj->hasRecommendedPlatform = requiresRecommendedPlatform;
 
         // Now follow multiple TEXTURENATIVE blocks.
         // Deserialize all of them.
@@ -2112,6 +2121,45 @@ void TextureBase::improveFiltering(void)
     if ( currentFilterMode != newFilterMode )
     {
         this->filterMode = newFilterMode;
+    }
+}
+
+void TextureBase::fixFiltering(void)
+{
+    // Only do things if we have a raster.
+    if ( Raster *texRaster = this->texRaster )
+    {
+        // Adjust filtering mode.
+        eRasterStageFilterMode currentFilterMode = this->GetFilterMode();
+
+        uint32 actualNewMipmapCount = texRaster->getMipmapCount();
+
+        // We need to represent a correct filter state, depending on the mipmap count
+        // of the native texture. This is required to enable mipmap rendering, when required!
+        if ( actualNewMipmapCount > 1 )
+        {
+            if ( currentFilterMode == RWFILTER_POINT )
+            {
+                this->SetFilterMode( RWFILTER_POINT_POINT );
+            }
+            else if ( currentFilterMode == RWFILTER_LINEAR )
+            {
+                this->SetFilterMode( RWFILTER_LINEAR_LINEAR );
+            }
+        }
+        else
+        {
+            if ( currentFilterMode == RWFILTER_POINT_POINT ||
+                    currentFilterMode == RWFILTER_POINT_LINEAR )
+            {
+                this->SetFilterMode( RWFILTER_POINT );
+            }
+            else if ( currentFilterMode == RWFILTER_LINEAR_POINT ||
+                        currentFilterMode == RWFILTER_LINEAR_LINEAR )
+            {
+                this->SetFilterMode( RWFILTER_LINEAR );
+            }
+        }
     }
 }
 

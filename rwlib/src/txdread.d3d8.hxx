@@ -1,5 +1,7 @@
 #include "txdread.d3d.hxx"
 
+#define PLATFORM_D3D8   8
+
 namespace rw
 {
 

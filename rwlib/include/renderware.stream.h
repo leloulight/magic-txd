@@ -79,7 +79,7 @@ struct customStreamInterface abstract
     virtual size_t Read( void *memBuf, void *out_buf, size_t readCount ) const = 0;
     virtual size_t Write( void *memBuf, const void *in_buf, size_t writeCount ) const = 0;
 
-    virtual void Skip( void *memBuf, size_t skipCount ) const = 0;
+    virtual void Skip( void *memBuf, int64 skipCount ) const = 0;
 
     // Advanced stream API.
     virtual int64 Tell( const void *memBuf ) const = 0;
@@ -136,7 +136,7 @@ struct Stream abstract
     virtual size_t read( void *out_buf, size_t readCount ) throw( ... );
     virtual size_t write( const void *in_buf, size_t writeCount ) throw( ... );
 
-    virtual void skip( size_t skipCount ) throw( ... );
+    virtual void skip( int64 skipCount ) throw( ... );
 
     // More advanced methods.
     virtual int64 tell( void ) const;

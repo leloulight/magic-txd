@@ -321,7 +321,7 @@ struct bmpImagingEnv : public imagingFormatExtension
     void SerializeImage( Interface *engineInterface, Stream *outputStream, const imagingLayerTraversal& inputPixels ) const override
     {
         // Calculate the file size.
-        int64 actualFileSize = sizeof( bmpFileHeader );
+        DWORD actualFileSize = sizeof( bmpFileHeader );
 
         // After the file header is an info header.
         actualFileSize += sizeof( bmpInfoHeader );

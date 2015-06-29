@@ -24,7 +24,7 @@ eTexNativeCompatibility xboxNativeTextureTypeProvider::IsCompatibleTextureBlock(
             // Here we can check the platform descriptor, since we know it is unique.
             uint32 platformDescriptor = texNativeImageBlock.readUInt32();
 
-            if ( platformDescriptor == PLATFORM_XBOX )
+            if ( platformDescriptor == NATIVE_TEXTURE_XBOX )
             {
                 texCompat = RWTEXCOMPAT_ABSOLUTE;
             }
@@ -75,7 +75,7 @@ void xboxNativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, P
         try
         {
             // First comes the platform id.
-            texImageDataBlock.writeUInt32( PLATFORM_XBOX );
+            texImageDataBlock.writeUInt32( NATIVE_TEXTURE_XBOX );
 
             // Write the header.
             uint32 mipmapCount = platformTex->mipmaps.size();

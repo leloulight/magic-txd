@@ -25,6 +25,7 @@
     <ConfigurationType>Application</ConfigurationType>
     <IntermediateDirectory>release\</IntermediateDirectory>
     <PrimaryOutput>Test1</PrimaryOutput>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <PlatformToolSet>v120</PlatformToolSet>
@@ -61,7 +62,7 @@
       <AssemblerListingLocation>
       </AssemblerListingLocation>
       <BrowseInformation>false</BrowseInformation>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ExceptionHandling>Sync</ExceptionHandling>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <Optimization>MaxSpeed</Optimization>
@@ -75,6 +76,11 @@
       <WarningLevel>Level1</WarningLevel>
       <AdditionalIncludeDirectories>../../include/;../../vendor/Qt5.4/include/QtWidgets/;../../vendor/Qt5.4/include/;../../vendor/Qt5.4/include/QtCore/;../../vendor/Qt5.4/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../rwlib/vendor/eirrepo/sdk/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
     </ClCompile>
     <Link>
       <AdditionalDependencies>glu32.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;qtmain.lib;Qt5Core.lib;Qt5Widgets.lib;Qt5Gui.lib;rwtools_2013.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -90,6 +96,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <IgnoreSpecificDefaultLibraries>LIBCMT;LIBCMTD</IgnoreSpecificDefaultLibraries>
+      <ProgramDatabaseFile>$(OutDir)$(TargetName)_2013.pdb</ProgramDatabaseFile>
     </Link>
     <Midl>
       <DefaultCharType>Unsigned</DefaultCharType>
@@ -134,6 +141,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <IgnoreSpecificDefaultLibraries>LIBCMT;LIBCMTD</IgnoreSpecificDefaultLibraries>
+      <ProgramDatabaseFile>$(OutDir)$(TargetName)_2013.pdb</ProgramDatabaseFile>
     </Link>
     <Midl>
       <DefaultCharType>Unsigned</DefaultCharType>

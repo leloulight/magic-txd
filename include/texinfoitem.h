@@ -69,7 +69,18 @@ public:
             }
 
             // After that how many mipmap levels we have.
-            textureInfo += " " + QString::number( rasterInfo->getMipmapCount() ) + " levels";
+            rw::uint32 mipCount = rasterInfo->getMipmapCount();
+
+            textureInfo += " " + QString::number( mipCount );
+
+            if ( mipCount == 1 )
+            {
+                textureInfo += " level";
+            }
+            else
+            {
+                textureInfo += " levels";
+            }
         }
 
         this->texNameLabel->setText( tr( this->rwTextureHandle->GetName().c_str() ) );

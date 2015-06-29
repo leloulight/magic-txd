@@ -413,6 +413,8 @@ inline void compressTexelsUsingDXT(
 
     uint32 y = 0;
 
+    colorModelDispatcher <const void> fetchSrcDispatch( texelSource, rasterFormat, colorOrder, itemDepth, paletteData, maxpalette, paletteType );
+
     for ( uint32 y_block = 0; y_block < heightBlocks; y_block++, y += 4 )
     {
         uint32 x = 0;
@@ -440,11 +442,7 @@ inline void compressTexelsUsingDXT(
                     {
                         uint32 colorIndex = PixelFormat::coord2index( targetX, targetY, mipWidth );
 
-                        browsetexelcolor(
-                            texelSource, paletteType, paletteData, maxpalette,
-                            colorIndex, rasterFormat, colorOrder, itemDepth,
-                            r, g, b, a
-                        );
+                        fetchSrcDispatch.getRGBA( colorIndex, r, g, b, a );
                     }
 
                     inColor.red = r;

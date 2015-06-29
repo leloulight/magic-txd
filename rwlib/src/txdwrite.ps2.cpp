@@ -768,7 +768,7 @@ void ps2NativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, Pl
 
         try
         {
-            texNativeMasterBlock.writeUInt32( PLATFORM_PS2FOURCC );
+            texNativeMasterBlock.writeUInt32( PS2_FOURCC );
 
             texFormatInfo formatInfo;
             formatInfo.set( *theTexture );

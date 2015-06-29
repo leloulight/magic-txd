@@ -19,7 +19,7 @@ size_t Stream::write( const void *in_buf, size_t writeCount ) throw( ... )
     return 0;
 }
 
-void Stream::skip( size_t skipCount ) throw( ... )
+void Stream::skip( int64 skipCount ) throw( ... )
 {
     throw RwStreamException( "stream skipping not supported" );
 }
@@ -65,7 +65,7 @@ struct FileStream : public Stream
     }
 
     // Stream methods.
-    size_t read( void *out_buf, size_t readCount )
+    size_t read( void *out_buf, size_t readCount ) override
     {
         size_t actualReadCount = 0;
 
@@ -77,7 +77,7 @@ struct FileStream : public Stream
         return actualReadCount;
     }
 
-    size_t write( const void *in_buf, size_t writeCount )
+    size_t write( const void *in_buf, size_t writeCount ) override
     {
         size_t actualWriteCount = 0;
 
@@ -89,16 +89,16 @@ struct FileStream : public Stream
         return actualWriteCount;
     }
 
-    void skip( size_t skipCount )
+    void skip( int64 skipCount ) override
     {
         if ( Interface *engineInterface = this->engineInterface )
         {
-            engineInterface->GetFileInterface()->SeekStream( this->file_handle, skipCount, SEEK_CUR );
+            engineInterface->GetFileInterface()->SeekStream( this->file_handle, (long)skipCount, SEEK_CUR );
         }
     }
 
     // Advanced functions.
-    int64 tell( void ) const
+    int64 tell( void ) const override
     {
         int64 curSeek = 0;
 
@@ -110,7 +110,7 @@ struct FileStream : public Stream
         return curSeek;
     }
 
-    void seek( int64 seek_off, eSeekMode seek_mode )
+    void seek( int64 seek_off, eSeekMode seek_mode ) override
     {
         if ( Interface *engineInterface = this->engineInterface )
         {
@@ -133,7 +133,7 @@ struct FileStream : public Stream
         }
     }
 
-    int64 size( void ) const
+    int64 size( void ) const override
     {
         int64 sizeOut = 0;
 
@@ -145,7 +145,7 @@ struct FileStream : public Stream
         return sizeOut;
     }
 
-    bool supportsSize( void ) const
+    bool supportsSize( void ) const override
     {
         return true;
     }
@@ -171,7 +171,7 @@ struct MemoryStream : public Stream
         return 0;
     }
 
-    void skip( size_t skipCount )
+    void skip( int64 skipCount )
     {
 
     }
@@ -234,7 +234,7 @@ struct CustomStream : public Stream
         return actualWriteCount;
     }
 
-    void skip( size_t skipCount )
+    void skip( int64 skipCount )
     {
         if ( customStreamInterface *streamProvider = this->streamProvider )
         {

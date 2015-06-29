@@ -1,7 +1,7 @@
 namespace rw
 {
 
-static inline bool getpaletteindex(
+AINLINE bool getpaletteindex(
     const void *texelSource, ePaletteType paletteType, uint32 maxpalette, uint32 itemDepth, uint32 colorIndex,
     uint8& paletteIndexOut
 )
@@ -57,7 +57,7 @@ static inline bool getpaletteindex(
     return couldResolveSource;
 }
 
-static inline bool browsetexelcolor(
+AINLINE bool browsetexelcolor(
     const void *texelSource, ePaletteType paletteType, const void *paletteData, uint32 maxpalette,
     uint32 colorIndex, eRasterFormat rasterFormat, eColorOrdering colorOrder, uint32 itemDepth,
     uint8& red, uint8& green, uint8& blue, uint8& alpha)
@@ -269,12 +269,12 @@ static inline bool browsetexelcolor(
     return hasColor;
 }
 
-static inline uint8 scalecolor(uint8 color, uint32 curMax, uint32 newMax)
+AINLINE uint8 scalecolor(uint8 color, uint32 curMax, uint32 newMax)
 {
     return (uint8)( (double)color / (double)curMax * (double)newMax );
 }
 
-static inline bool puttexelcolor(
+AINLINE bool puttexelcolor(
     void *texelDest,
     uint32 colorIndex, eRasterFormat rasterFormat, eColorOrdering colorOrder, uint32 itemDepth,
     uint8 red, uint8 green, uint8 blue, uint8 alpha
@@ -447,6 +447,274 @@ static inline bool puttexelcolor(
     return setColor;
 }
 
+template <typename texel_t>
+struct colorModelDispatcher
+{
+    // TODO: make every color request through this struct.
+
+    eRasterFormat rasterFormat;
+    eColorOrdering colorOrder;
+    uint32 depth;
+
+    texel_t *texelSource;
+
+    const void *paletteData;
+    uint32 paletteSize;
+    ePaletteType paletteType;
+
+    eColorModel usedColorModel;
+
+    AINLINE colorModelDispatcher( texel_t *texelSource, eRasterFormat rasterFormat, eColorOrdering colorOrder, uint32 depth, const void *paletteData, uint32 paletteSize, ePaletteType paletteType )
+    {
+        this->rasterFormat = rasterFormat;
+        this->colorOrder = colorOrder;
+        this->depth = depth;
+
+        this->texelSource = texelSource;
+       
+        this->paletteData = paletteData;
+        this->paletteSize = paletteSize;
+        this->paletteType = paletteType;
+
+        // Determine the color model of our requests.
+        if ( rasterFormat == RASTER_1555 ||
+             rasterFormat == RASTER_565 ||
+             rasterFormat == RASTER_4444 ||
+             rasterFormat == RASTER_8888 ||
+             rasterFormat == RASTER_888 ||
+             rasterFormat == RASTER_555 )
+        {
+            usedColorModel = COLORMODEL_RGBA;
+        }
+        else if ( rasterFormat == RASTER_LUM8 )
+        {
+            usedColorModel = COLORMODEL_LUMINANCE;
+        }
+        else if ( rasterFormat == RASTER_16 ||
+                  rasterFormat == RASTER_24 ||
+                  rasterFormat == RASTER_32 )
+        {
+            usedColorModel = COLORMODEL_DEPTH;
+        }
+        else
+        {
+            throw RwException( "unknown color model for color model dispatcher" );
+        }
+    }
+
+    AINLINE eColorModel getColorModel( void ) const
+    {
+        return this->usedColorModel;
+    }
+
+    AINLINE bool getRGBA( unsigned int index, uint8& red, uint8& green, uint8& blue, uint8& alpha ) const
+    {
+        eColorModel model = this->usedColorModel;
+
+        bool success = false;
+
+        if ( model == COLORMODEL_RGBA )
+        {
+            success =
+                browsetexelcolor(
+                    this->texelSource, this->paletteType, this->paletteData, this->paletteSize,
+                    index,
+                    this->rasterFormat, this->colorOrder, this->depth,
+                    red, green, blue, alpha
+                );
+        }
+        else if ( model == COLORMODEL_LUMINANCE )
+        {
+            uint8 lum;
+
+            success = this->getLuminance( index, lum );
+
+            if ( success )
+            {
+                red = lum;
+                green = lum;
+                blue = lum;
+                alpha = lum;
+            }
+        }
+        else
+        {
+            throw RwException( "tried to fetch RGBA from unsupported color model" );
+        }
+
+        return success;
+    }
+
+    AINLINE bool setRGBA( unsigned int index, uint8 red, uint8 green, uint8 blue, uint8 alpha ) const
+    {
+        eColorModel model = this->usedColorModel;
+
+        bool success = false;
+
+        if ( model == COLORMODEL_RGBA )
+        {
+            if ( this->paletteType != PALETTE_NONE )
+            {
+                throw RwException( "tried to set color to palette bitmap (unsupported)" );
+            }
+
+            success =
+                puttexelcolor(
+                    this->texelSource, index,
+                    this->rasterFormat, this->colorOrder, this->depth,
+                    red, green, blue, alpha
+                );
+        }
+        else
+        {
+            throw RwException( "tried to set RGBA to unsupported color model" );
+        }
+
+        return success;
+    }
+
+    AINLINE bool setLuminance( unsigned int index, uint8 lum ) const
+    {
+        eColorModel model = this->usedColorModel;
+
+        bool success = false;
+
+        if ( model == COLORMODEL_RGBA )
+        {
+            success = this->setRGBA( index, lum, lum, lum, 255 );
+        }
+        else if ( model == COLORMODEL_LUMINANCE )
+        {
+            eRasterFormat rasterFormat = this->rasterFormat;
+            uint32 depth = this->depth;
+            
+            const void *texelSource = this->texelSource;
+            
+            if ( rasterFormat == RASTER_LUM8 )
+            {
+                if ( depth == 8 )
+                {
+                    struct pixel_t
+                    {
+                        uint8 lum;
+                    };
+
+                    pixel_t *srcData = ( (pixel_t*)texelSource + index );
+
+                    srcData->lum = lum;
+
+                    success = true;
+                }
+            }
+        }
+        else
+        {
+            throw RwException( "tried to set luminance to unsupported color model" );
+        }
+
+        return success;
+    }
+
+    AINLINE bool getLuminance( unsigned int index, uint8& lum ) const
+    {
+        eColorModel model = this->usedColorModel;
+
+        bool success = false;
+
+        if ( model == COLORMODEL_LUMINANCE )
+        {
+            eRasterFormat rasterFormat = this->rasterFormat;
+            uint32 depth = this->depth;
+            
+            const void *texelSource = this->texelSource;
+            
+            if ( rasterFormat == RASTER_LUM8 )
+            {
+                if ( depth == 8 )
+                {
+                    struct pixel_t
+                    {
+                        uint8 lum;
+                    };
+
+                    pixel_t *srcData = ( (pixel_t*)texelSource + index );
+
+                    lum = srcData->lum;
+
+                    success = true;
+                }
+            }
+        }
+        else
+        {
+            throw RwException( "tried to get luminance from unsupported color model" );
+        }
+
+        return success;
+    }
+
+    AINLINE void setColor( unsigned int index, const abstractColorItem& colorItem ) const
+    {
+        eColorModel model = colorItem.model;
+
+        bool success = false;
+
+        if ( model == COLORMODEL_RGBA )
+        {
+            success = this->setRGBA( index, colorItem.rgbaColor.r, colorItem.rgbaColor.g, colorItem.rgbaColor.b, colorItem.rgbaColor.a );
+        }
+        else if ( model == COLORMODEL_LUMINANCE )
+        {
+            success = this->setLuminance( index, colorItem.lumColor );
+        }
+        else
+        {
+            throw RwException( "invalid color model in abstract color item" );
+        }
+    }
+
+    AINLINE void getColor( unsigned int index, abstractColorItem& colorItem ) const
+    {
+        eColorModel model = this->usedColorModel;
+
+        colorItem.model = model;
+
+        bool success = false;
+
+        if ( model == COLORMODEL_RGBA )
+        {
+            success = this->getRGBA( index, colorItem.rgbaColor.r, colorItem.rgbaColor.g, colorItem.rgbaColor.b, colorItem.rgbaColor.a );
+
+            if ( !success )
+            {
+                colorItem.rgbaColor.r = 0;
+                colorItem.rgbaColor.g = 0;
+                colorItem.rgbaColor.b = 0;
+                colorItem.rgbaColor.a = 0;
+            }
+        }
+        else if ( model == COLORMODEL_LUMINANCE )
+        {
+            success = this->getLuminance( index, colorItem.lumColor );
+
+            if ( !success )
+            {
+                colorItem.lumColor = 0;
+            }
+        }
+        else
+        {
+            throw RwException( "invalid color model for getting abstract color item" );
+        }
+    }
+
+    AINLINE void clearColor( unsigned int index )
+    {
+        // TODO.
+        this->setLuminance( index, 0 );
+    }
+};
+
 inline double unpackcolor( uint8 color )
 {
     return ( (double)color / 255.0 );
@@ -557,6 +825,8 @@ inline bool calculateHasAlpha( const pixelDataTraversal& pixelData )
 
     const pixelDataTraversal::mipmapResource& mipLayer = pixelData.mipmaps[ 0 ];
 
+    // We assume that the first mipmap shares the same qualities like any other mipmap.
+    // It is the base layer after all.
     return mipmapCalculateHasAlpha(
         mipLayer.mipWidth, mipLayer.mipHeight, mipLayer.width, mipLayer.height, mipLayer.texels, mipLayer.dataSize,
         pixelData.rasterFormat, pixelData.depth, pixelData.colorOrder,

@@ -33,7 +33,7 @@ void xboxNativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
             {
 	            uint32 platform = texImageDataBlock.readUInt32();
 
-	            if (platform != PLATFORM_XBOX)
+	            if (platform != NATIVE_TEXTURE_XBOX)
                 {
                     throw RwException( "invalid platform flag for XBOX texture native" );
                 }

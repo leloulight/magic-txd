@@ -275,6 +275,9 @@ struct Raster
     // Mipmap utilities.
     uint32 getMipmapCount( void ) const;
 
+    void clearMipmaps( void );
+    void generateMipmaps( uint32 maxMipmapCount, eMipmapGenerationMode mipGenMode = MIPMAPGEN_DEFAULT );
+
     // Data members.
     Interface *engineInterface;
 
@@ -329,10 +332,7 @@ struct TextureBase : public RwObject
     eRasterStageAddressMode GetVAddressing( void ) const        { return this->vAddressing; }
 
     void improveFiltering(void);
-
-    // Mipmap utilities.
-    void clearMipmaps( void );
-    void generateMipmaps( uint32 maxMipmapCount, eMipmapGenerationMode mipGenMode = MIPMAPGEN_DEFAULT );
+    void fixFiltering(void);
 
     void SetRaster( Raster *texRaster );
 

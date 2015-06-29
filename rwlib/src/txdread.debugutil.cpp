@@ -131,30 +131,19 @@ bool DebugDrawMipmaps( Interface *engineInterface, Raster *debugRaster, Bitmap& 
                 struct mipmapColorSourcePipeline : public Bitmap::sourceColorPipeline
                 {
                     uint32 mipWidth, mipHeight;
-                    uint32 depth;
-                    const void *texelSource;
-                    eRasterFormat rasterFormat;
-                    eColorOrdering colorOrder;
-                    const void *paletteData;
-                    uint32 paletteSize;
-                    ePaletteType paletteType;
+
+                    colorModelDispatcher <const void> fetchDispatch;
 
                     inline mipmapColorSourcePipeline(
                         uint32 mipWidth, uint32 mipHeight, uint32 depth,
                         const void *texelSource,
                         eRasterFormat rasterFormat, eColorOrdering colorOrder,
                         const void *paletteData, uint32 paletteSize, ePaletteType paletteType
-                    )
+                    ) :
+                    fetchDispatch( texelSource, rasterFormat, colorOrder, depth, paletteData, paletteSize, paletteType )
                     {
                         this->mipWidth = mipWidth;
                         this->mipHeight = mipHeight;
-                        this->depth = depth;
-                        this->texelSource = texelSource;
-                        this->rasterFormat = rasterFormat;
-                        this->colorOrder = colorOrder;
-                        this->paletteData = paletteData;
-                        this->paletteSize = paletteSize;
-                        this->paletteType = paletteType;
                     }
 
                     uint32 getWidth( void ) const
@@ -171,11 +160,7 @@ bool DebugDrawMipmaps( Interface *engineInterface, Raster *debugRaster, Bitmap& 
                     {
                         uint8 r, g, b, a;
 
-                        bool hasColor = browsetexelcolor(
-                            this->texelSource, this->paletteType, this->paletteData, this->paletteSize,
-                            colorIndex, this->rasterFormat, this->colorOrder, this->depth,
-                            r, g, b, a
-                        );
+                        bool hasColor = fetchDispatch.getRGBA( colorIndex, r, g, b, a );
 
                         if ( !hasColor )
                         {

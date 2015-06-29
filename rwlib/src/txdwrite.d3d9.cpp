@@ -27,7 +27,7 @@ eTexNativeCompatibility d3d9NativeTextureTypeProvider::IsCompatibleTextureBlock(
             // It can either be Direct3D 8 or Direct3D 9.
             uint32 platformDescriptor = texNativeImageBlock.readUInt32();
 
-            if ( platformDescriptor == 9 )
+            if ( platformDescriptor == PLATFORM_D3D9 )
             {
                 // Since Wardrum Studios has broken the platform descriptor rules, we can only say "maybe".
                 texCompat = RWTEXCOMPAT_MAYBE;
@@ -57,11 +57,8 @@ void d3d9NativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, P
 
     uint32 compressionType = platformTex->dxtCompression;
 
-    // If we want to be written, we must have a valid D3DFORMAT.
-    if ( !platformTex->hasD3DFormat )
-    {
-        throw RwException( "texture " + theTexture->GetName() + " has no representation in Direct3D 9" );
-    }
+    // Luckily, we figured out the problem that textures existed with no valid representation in Direct3D 9.
+    // This means that finally each texture has a valid D3DFORMAT field!
 
 	// Struct
 	{
@@ -72,7 +69,7 @@ void d3d9NativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, P
         try
         {
             d3d9::textureMetaHeaderStructGeneric metaHeader;
-            metaHeader.platformDescriptor = 9;
+            metaHeader.platformDescriptor = PLATFORM_D3D9;
             metaHeader.texFormat.set( *theTexture );
 
             // Correctly write the name strings (for safety).
@@ -98,7 +95,7 @@ void d3d9NativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, P
             metaHeader.hasAlpha = platformTex->hasAlpha;
             metaHeader.isCubeTexture = platformTex->isCubeTexture;
             metaHeader.autoMipMaps = platformTex->autoMipmaps;
-            metaHeader.isNotRwCompatible = ( compressionType != 0 );
+            metaHeader.isNotRwCompatible = ( platformTex->d3dRasterFormatLink == false );   // no valid link to RW original types.
             metaHeader.pad2 = 0;
 
             texNativeImageStruct.write( &metaHeader, sizeof(metaHeader) );
@@ -201,6 +198,13 @@ void d3d9NativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineIn
     // Determine the compression type.
     eCompressionType rwCompressionType = getD3DCompressionType( platformTex );
 
+    // We always have a D3DFORMAT. If we have no link to original RW types, then we cannot be pushed to RW.
+    // An exception case is the compression.
+    if ( platformTex->d3dRasterFormatLink == false && rwCompressionType == RWCOMPRESS_NONE )
+    {
+        throw RwException( "cannot fetch pixels from Direct3D 9 raster as it has no representation in RenderWare" );
+    }
+
     // Put ourselves into the pixelsOut struct!
     pixelsOut.rasterFormat = platformTex->rasterFormat;
     pixelsOut.depth = platformTex->depth;
@@ -243,7 +247,7 @@ void d3d9NativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineIn
 }
 
 inline void convertCompatibleRasterFormat(
-    eRasterFormat& rasterFormat, eColorOrdering& colorOrder, uint32& depth, ePaletteType paletteType
+    eRasterFormat& rasterFormat, eColorOrdering& colorOrder, uint32& depth, ePaletteType paletteType, D3DFORMAT& d3dFormatOut
 )
 {
     eRasterFormat srcRasterFormat = rasterFormat;
@@ -264,6 +268,8 @@ inline void convertCompatibleRasterFormat(
 
         // All palettes have RGBA color order.
         colorOrder = COLOR_RGBA;
+
+        d3dFormatOut = D3DFMT_P8;
     }
     else
     {
@@ -271,51 +277,82 @@ inline void convertCompatibleRasterFormat(
         {
             depth = 16;
             colorOrder = COLOR_BGRA;
+            d3dFormatOut = D3DFMT_A1R5G5B5;
         }
         else if ( srcRasterFormat == RASTER_565 )
         {
             depth = 16;
             colorOrder = COLOR_BGRA;
+            d3dFormatOut = D3DFMT_R5G6B5;
         }
         else if ( srcRasterFormat == RASTER_4444 )
         {
             depth = 16;
             colorOrder = COLOR_BGRA;
+            d3dFormatOut = D3DFMT_A4R4G4B4;
         }
         else if ( srcRasterFormat == RASTER_8888 )
         {
             depth = 32;
 
             // Can be both RGBA and BGRA.
-            if ( srcColorOrder != COLOR_RGBA ||
-                    srcColorOrder != COLOR_BGRA )
+            if ( srcColorOrder == COLOR_RGBA )
             {
+                d3dFormatOut = D3DFMT_A8B8G8R8;
+            }
+            else if ( srcColorOrder == COLOR_BGRA )
+            {
+                d3dFormatOut = D3DFMT_A8R8G8B8;
+            }
+            else
+            {
+                // We kinda force a color reordering here.
                 colorOrder = COLOR_BGRA;
+                d3dFormatOut = D3DFMT_A8R8G8B8;
             }
         }
         else if ( srcRasterFormat == RASTER_888 )
         {
             if ( srcColorOrder == COLOR_BGRA )
             {
-                if ( srcDepth != 24 && srcDepth != 32 )
+                if ( srcDepth == 24 )
                 {
+                    d3dFormatOut = D3DFMT_R8G8B8;
+                }
+                else if ( srcDepth == 32 )
+                {
+                    d3dFormatOut = D3DFMT_X8R8G8B8;
+                }
+                else
+                {
+                    // We force to adjust the depth.
                     depth = 32;
+                    d3dFormatOut = D3DFMT_X8R8G8B8;
                 }
             }
             else if ( srcColorOrder == COLOR_RGBA )
             {
                 depth = 32;
+                d3dFormatOut = D3DFMT_X8B8G8R8;
             }
             else
             {
+                // We force expanding to standard format.
                 depth = 32;
                 colorOrder = COLOR_BGRA;
+                d3dFormatOut = D3DFMT_X8R8G8B8;
             }
         }
         else if ( srcRasterFormat == RASTER_555 )
         {
             depth = 16;
             colorOrder = COLOR_BGRA;
+            d3dFormatOut = D3DFMT_X1R5G5B5;
+        }
+        else if ( srcRasterFormat == RASTER_LUM8 )
+        {
+            depth = 8;
+            d3dFormatOut = D3DFMT_L8;
         }
         else
         {
@@ -323,6 +360,7 @@ inline void convertCompatibleRasterFormat(
             rasterFormat = RASTER_8888;
             depth = 32;
             colorOrder = COLOR_BGRA;
+            d3dFormatOut = D3DFMT_A8R8G8B8;
         }
     }
 }
@@ -357,9 +395,11 @@ void d3d9NativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
 
     bool hasAlpha = pixelsIn.hasAlpha;
 
+    D3DFORMAT d3dTargetFormat = D3DFMT_UNKNOWN;
+
     if ( rwCompressionType == RWCOMPRESS_NONE )
     {
-        // TODO: actually, before we can acquire texels, we MUST make sure they are in
+        // Actually, before we can acquire texels, we MUST make sure they are in
         // a compatible format. If they are not, then we will most likely allocate
         // new pixel information, instead in a compatible format. The same has to be
         // made for the XBOX implementation.
@@ -368,7 +408,7 @@ void d3d9NativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
         // If we are on D3D, we have to avoid typical configurations that may come from
         // other hardware.
         convertCompatibleRasterFormat(
-            dstRasterFormat, dstColorOrder, dstDepth, srcPaletteType
+            dstRasterFormat, dstColorOrder, dstDepth, srcPaletteType, d3dTargetFormat
         );
  
         dxtType = 0;
@@ -377,30 +417,40 @@ void d3d9NativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
     {
         // TODO: do we properly handle DXT1 with alpha...?
 
+        d3dTargetFormat = D3DFMT_DXT1;
+
         dxtType = 1;
 
         dstRasterFormat = ( hasAlpha ) ? ( RASTER_1555 ) : ( RASTER_565 );
     }
     else if ( rwCompressionType == RWCOMPRESS_DXT2 )
     {
+        d3dTargetFormat = D3DFMT_DXT2;
+
         dxtType = 2;
 
         dstRasterFormat = RASTER_4444;
     }
     else if ( rwCompressionType == RWCOMPRESS_DXT3 )
     {
+        d3dTargetFormat = D3DFMT_DXT3;
+
         dxtType = 3;
 
         dstRasterFormat = RASTER_4444;
     }
     else if ( rwCompressionType == RWCOMPRESS_DXT4 )
     {
+        d3dTargetFormat = D3DFMT_DXT4;
+
         dxtType = 4;
         
         dstRasterFormat = RASTER_4444;
     }
     else if ( rwCompressionType == RWCOMPRESS_DXT5 )
     {
+        d3dTargetFormat = D3DFMT_DXT5;
+
         dxtType = 5;
 
         dstRasterFormat = RASTER_4444;
@@ -522,8 +572,12 @@ void d3d9NativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
         nativeTex->mipmaps[ n ] = newLayer;
     }
 
-    // We need to set the Direct3D format field.
-    nativeTex->updateD3DFormat();
+    // We need to set the Direct3D9 format field.
+    nativeTex->d3dFormat = d3dTargetFormat;
+
+    // Since we just accepted valid RW types into our native texture, of course we have
+    // a D3D raster format link!
+    nativeTex->d3dRasterFormatLink = true;
 
     // For now, we can always directly acquire pixels.
     feedbackOut.hasDirectlyAcquired = canDirectlyAcquire;
@@ -563,7 +617,7 @@ void d3d9NativeTextureTypeProvider::UnsetPixelDataFromTexture( Interface *engine
     // Reset general properties for cleanliness.
     nativeTex->rasterFormat = RASTER_DEFAULT;
     nativeTex->depth = 0;
-    nativeTex->hasD3DFormat = false;
+    nativeTex->d3dFormat = D3DFMT_UNKNOWN;
     nativeTex->dxtCompression = 0;
     nativeTex->hasAlpha = false;
     nativeTex->colorOrdering = COLOR_BGRA;
@@ -669,6 +723,11 @@ bool d3d9NativeTextureTypeProvider::GetMipmapLayer( Interface *engineInterface, 
 {
     NativeTextureD3D9 *nativeTex = (NativeTextureD3D9*)objMem;
 
+    if ( nativeTex->IsRWCompatible() == false )
+    {
+        throw RwException( "cannot fetch mipmap layer from Direct3D 9 native texture since it has an unknown D3DFORMAT" );
+    }
+
     d3d9MipmapManager mipMan( nativeTex );
 
     return
@@ -682,6 +741,11 @@ bool d3d9NativeTextureTypeProvider::GetMipmapLayer( Interface *engineInterface, 
 bool d3d9NativeTextureTypeProvider::AddMipmapLayer( Interface *engineInterface, void *objMem, const rawMipmapLayer& layerIn, acquireFeedback_t& feedbackOut )
 {
     NativeTextureD3D9 *nativeTex = (NativeTextureD3D9*)objMem;
+
+    if ( nativeTex->IsRWCompatible() == false )
+    {
+        throw RwException( "cannot add mipmap layers to Direct3D 9 native texture as it has an unknown D3DFORMAT" );
+    }
 
     d3d9MipmapManager mipMan( nativeTex );
 

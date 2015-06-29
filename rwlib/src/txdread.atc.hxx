@@ -2,6 +2,8 @@
 
 #include <ATI_compress.h>
 
+#define PLATFORM_ATC    11
+
 namespace rw
 {
 

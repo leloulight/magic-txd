@@ -27,7 +27,7 @@ eTexNativeCompatibility d3d8NativeTextureTypeProvider::IsCompatibleTextureBlock(
             // It can either be Direct3D 8 or Direct3D 9.
             uint32 platformDescriptor = texNativeImageBlock.readUInt32();
 
-            if ( platformDescriptor == 8 )
+            if ( platformDescriptor == PLATFORM_D3D8 )
             {
                 // This is a sure guess.
                 texCompat = RWTEXCOMPAT_ABSOLUTE;
@@ -82,7 +82,7 @@ void d3d8NativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, P
         try
         {
             d3d8::textureMetaHeaderStructGeneric metaHeader;
-            metaHeader.platformDescriptor = 8;
+            metaHeader.platformDescriptor = PLATFORM_D3D8;
             metaHeader.texFormat.set( *theTexture );
 
             // Correctly write the name strings (for safety).
@@ -302,6 +302,10 @@ inline void convertCompatibleRasterFormat(
         {
             depth = 16;
             colorOrder = COLOR_BGRA;
+        }
+        else if ( srcRasterFormat == RASTER_LUM8 )
+        {
+            depth = 8;
         }
         else
         {

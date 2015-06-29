@@ -45,12 +45,48 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // Set some typical engine properties.
     this->rwEngine->SetIgnoreSerializationBlockRegions( true );
+    this->rwEngine->SetIgnoreSecureWarnings( false );
 
     this->rwEngine->SetWarningLevel( 3 );
     this->rwEngine->SetWarningManager( &this->rwWarnMan );
 
     try
     {
+#if 0
+        // Test something.
+        rw::streamConstructionFileParam_t fileParam( "C:/Users/The_GTA/Desktop/image format samples/tga/monochrome.tga" );
+
+        rw::Stream *imgStream = this->rwEngine->CreateStream( rw::RWSTREAMTYPE_FILE, rw::RWSTREAMMODE_READONLY, &fileParam );
+
+        if ( imgStream )
+        {
+            rw::Bitmap theBmp;
+
+            bool success = rw::DeserializeImage( imgStream, theBmp );
+
+            if ( success )
+            {
+                // Put this into a new texture.
+                rw::Raster *newRaster = rw::CreateRaster( this->rwEngine );
+
+                if ( newRaster )
+                {
+                    newRaster->newNativeData( "Direct3D9" );
+
+                    newRaster->setImageData( theBmp );
+
+                    // Now lets generate mipmaps for it.
+                    newRaster->generateMipmaps( 9 );
+
+                    // Delete it again.
+                    rw::DeleteRaster( newRaster );
+                }
+            }
+
+            this->rwEngine->DeleteStream( imgStream );
+        }
+#endif
+
 	    /* --- Window --- */
         updateWindowTitle();
         setMinimumSize(380, 300);
@@ -493,6 +529,30 @@ void MainWindow::onTextureItemChanged(QListWidgetItem *listItem, QListWidgetItem
     this->currentSelectedTexture = texItem;
 
     this->updateTextureView();
+
+#if 0
+    // test.
+    if ( texItem )
+    {
+        rw::streamConstructionFileParam_t fileParam( "out.bmp" );
+
+        rw::Stream *outStream = this->rwEngine->CreateStream( rw::RWSTREAMTYPE_FILE, rw::RWSTREAMMODE_CREATE, &fileParam );
+
+        if ( outStream )
+        {
+            try
+            {
+                rw::SerializeImage( outStream, "BMP", texItem->GetTextureHandle()->GetRaster()->getBitmap() );
+            }
+            catch( rw::RwException& )
+            {
+                // Lalala...
+            }
+
+            this->rwEngine->DeleteStream( outStream );
+        }
+    }
+#endif
 }
 
 void MainWindow::updateTextureView( void )
@@ -506,26 +566,36 @@ void MainWindow::updateTextureView( void )
 		rw::Raster *rasterData = theTexture->GetRaster();
 		if (rasterData)
 		{
-			// Get a bitmap to the raster.
-			// This is a 2D color component surface.
-			rw::Bitmap rasterBitmap( 32, rw::RASTER_8888, rw::COLOR_BGRA );
-
-            if ( this->drawMipmapLayers )
+            try
             {
-                rasterBitmap.setBgColor( 1.0, 1.0, 1.0, 0.0 );
+			    // Get a bitmap to the raster.
+			    // This is a 2D color component surface.
+			    rw::Bitmap rasterBitmap( 32, rw::RASTER_8888, rw::COLOR_BGRA );
 
-                rw::DebugDrawMipmaps( this->rwEngine, rasterData, rasterBitmap );
+                if ( this->drawMipmapLayers )
+                {
+                    rasterBitmap.setBgColor( 1.0, 1.0, 1.0, 0.0 );
+
+                    rw::DebugDrawMipmaps( this->rwEngine, rasterData, rasterBitmap );
+                }
+                else
+                {
+                    rasterBitmap = rasterData->getBitmap();
+                }
+
+			    QImage texImage = convertRWBitmapToQImage( rasterBitmap );
+
+			    imageWidget->setPixmap(QPixmap::fromImage(texImage));
+			    imageWidget->setFixedSize(QSize(texImage.width(), texImage.height()));
+			    imageWidget->show();
             }
-            else
+            catch( rw::RwException& except )
             {
-                rasterBitmap = rasterData->getBitmap();
+                this->logWidget->addLogMessage( QString( "failed to get bitmap from texture: " ) + except.message.c_str(), LOGMSG_WARNING );
+
+                // We hide the image widget.
+                imageWidget->hide();
             }
-
-			QImage texImage = convertRWBitmapToQImage( rasterBitmap );
-
-			imageWidget->setPixmap(QPixmap::fromImage(texImage));
-			imageWidget->setFixedSize(QSize(texImage.width(), texImage.height()));
-			imageWidget->show();
 		}
     }
 }
@@ -560,8 +630,14 @@ void MainWindow::onSetupMipmapLayers( bool checked )
     {
         rw::TextureBase *texture = texInfo->GetTextureHandle();
 
-        // Generate mipmaps.
-        texture->generateMipmaps( 32, rw::MIPMAPGEN_DEFAULT );
+        // Generate mipmaps of raster.
+        if ( rw::Raster *texRaster = texture->GetRaster() )
+        {
+            texRaster->generateMipmaps( 32, rw::MIPMAPGEN_DEFAULT );
+
+            // Fix texture filtering modes.
+            texture->fixFiltering();
+        }
     }
 
     // Make sure we update the info.
@@ -578,8 +654,14 @@ void MainWindow::onClearMipmapLayers( bool checked )
     {
         rw::TextureBase *texture = texInfo->GetTextureHandle();
 
-        // Clear the mipmaps.
-        texture->clearMipmaps();
+        // Clear the mipmaps from the raster.
+        if ( rw::Raster *texRaster = texture->GetRaster() )
+        {
+            texRaster->clearMipmaps();
+
+            // Fix the filtering.
+            texture->fixFiltering();
+        }
     }
 
     // Update the info.
