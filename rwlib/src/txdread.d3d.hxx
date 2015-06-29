@@ -29,6 +29,7 @@ inline uint32 getD3DPaletteCount(ePaletteType paletteType)
 inline void getDefaultRasterFormatString( eRasterFormat rasterFormat, ePaletteType paletteType, eColorOrdering colorOrder, std::string& formatOut )
 {
     // Put info about pixel type.
+    bool isColorOrderImportant = false;
     {
         if ( rasterFormat == RASTER_DEFAULT )
         {
@@ -37,14 +38,20 @@ inline void getDefaultRasterFormatString( eRasterFormat rasterFormat, ePaletteTy
         else if ( rasterFormat == RASTER_1555 )
         {
             formatOut += "1555";
+
+            isColorOrderImportant = true;
         }
         else if ( rasterFormat == RASTER_565 )
         {
             formatOut += "565";
+
+            isColorOrderImportant = true;
         }
         else if ( rasterFormat == RASTER_4444 )
         {
             formatOut += "4444";
+
+            isColorOrderImportant = true;
         }
         else if ( rasterFormat == RASTER_LUM8 )
         {
@@ -53,10 +60,14 @@ inline void getDefaultRasterFormatString( eRasterFormat rasterFormat, ePaletteTy
         else if ( rasterFormat == RASTER_8888 )
         {
             formatOut += "8888";
+
+            isColorOrderImportant = true;
         }
         else if ( rasterFormat == RASTER_888 )
         {
             formatOut += "888";
+
+            isColorOrderImportant = true;
         }
         else if ( rasterFormat == RASTER_16 )
         {
@@ -73,6 +84,8 @@ inline void getDefaultRasterFormatString( eRasterFormat rasterFormat, ePaletteTy
         else if ( rasterFormat == RASTER_555 )
         {
             formatOut += "555";
+
+            isColorOrderImportant = true;
         }
         else
         {
@@ -98,6 +111,7 @@ inline void getDefaultRasterFormatString( eRasterFormat rasterFormat, ePaletteTy
     }
 
     // Put info about color order
+    if ( isColorOrderImportant )
     {
         if ( colorOrder == COLOR_RGBA )
         {

@@ -291,7 +291,7 @@ void Raster::generateMipmaps( uint32 maxMipmapCount, eMipmapGenerationMode mipGe
                         uint32 mipProcessWidth = curMipProcessWidth;
                         uint32 mipProcessHeight = curMipProcessHeight;
 
-                        performMipmapFiltering(
+                        bool couldPerform = performMipmapFiltering(
                             mipGenMode,
                             textureBitmap, srcColorModel,
                             mip_x * mipProcessWidth, mip_y * mipProcessHeight,
@@ -299,19 +299,29 @@ void Raster::generateMipmaps( uint32 maxMipmapCount, eMipmapGenerationMode mipGe
                             colorItem
                         );
 
-                        // Decide if we have alpha.
-                        if ( srcColorModel == COLORMODEL_RGBA )
-                        {
-                            if ( colorItem.rgbaColor.a != 255 )
-                            {
-                                hasAlpha = true;
-                            }
-                        }
-
                         // Put the color.
                         uint32 colorIndex = PixelFormat::coord2index( mip_x, mip_y, mipWidth );
 
-                        putDispatch.setColor( colorIndex, colorItem );
+                        if ( couldPerform == true )
+                        {
+                            // Decide if we have alpha.
+                            if ( srcColorModel == COLORMODEL_RGBA )
+                            {
+                                if ( colorItem.rgbaColor.a != 255 )
+                                {
+                                    hasAlpha = true;
+                                }
+                            }
+
+                            putDispatch.setColor( colorIndex, colorItem );
+                        }
+                        else
+                        {
+                            // We do have alpha.
+                            hasAlpha = true;
+
+                            putDispatch.clearColor( colorIndex );
+                        }
                     }
                 }
 
