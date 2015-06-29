@@ -467,10 +467,15 @@ void MainWindow::onOpenFile( bool checked )
                 }
                 else
                 {
+                    const char *objTypeName = this->rwEngine->GetObjectTypeName( parsedObject );
+
+                    this->txdLog->addLogMessage( QString( "found %1 but expected a texture dictionary" ).arg( objTypeName ), LOGMSG_WARNING );
+
                     // Get rid of the object that is not a TXD.
                     this->rwEngine->DeleteRwObject( parsedObject );
                 }
             }
+            // if parsedObject is NULL, the RenderWare implementation should have error'ed us already.
 
             // Remember to close the stream again.
             this->rwEngine->DeleteStream( txdFileStream );
