@@ -1,9 +1,6 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-// Update this string if there is a new version release :)
-#define MTXD_VERSION_STRING     "alpha"
-
 #include <QMainWindow>
 #include <QListWidget>
 #include <QFileInfo>
@@ -12,8 +9,10 @@
 
 #include <renderware.h>
 
+#include "defs.h"
+
 #include "texinfoitem.h"
-#include "txdlogwindow.h"
+#include "txdlog.h"
 #include "txdadddialog.h"
 
 class MainWindow : public QMainWindow
@@ -63,7 +62,7 @@ private:
 
         void OnWarning( const std::string& msg ) override
         {
-            this->mainWnd->logWidget->addLogMessage( msg.c_str(), LOGMSG_WARNING );
+			this->mainWnd->txdLog->addLogMessage(msg.c_str(), LOGMSG_WARNING);
         }
 
     private:
@@ -89,7 +88,7 @@ private:
     bool drawMipmapLayers;
 	bool showBackground;
 
-    TxdLogWindow *logWidget;    // log dock window where we notify the user about events
+	TxdLog *txdLog; // log management class
 };
 
 #endif // MAINWINDOW_H

@@ -95,6 +95,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	    /* --- List --- */
 	    QListWidget *listWidget = new QListWidget();
 	    listWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+		listWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
 	    //listWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
         connect( listWidget, &QListWidget::currentItemChanged, this, &MainWindow::onTextureItemChanged );
@@ -298,11 +299,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	    QWidget *window = new QWidget();
 	    window->setLayout(mainLayout);
 
-        TxdLogWindow *logWidget = new TxdLogWindow();
-
-        this->addDockWidget( Qt::DockWidgetArea::BottomDockWidgetArea, logWidget );
-
-        this->logWidget = logWidget;
+		this->txdLog = new TxdLog(this);
 
 	    setCentralWidget(window);
 
@@ -331,6 +328,8 @@ MainWindow::~MainWindow()
     rw::DeleteEngine( this->rwEngine );
 
     this->rwEngine = NULL;
+
+	delete txdLog;
 }
 
 void MainWindow::setCurrentTXD( rw::TexDictionary *txdObj )
@@ -421,6 +420,8 @@ void MainWindow::updateTextureMetaInfo( void )
 
 void MainWindow::onOpenFile( bool checked )
 {
+	this->txdLog->beforeTxdLoading();
+
     QString fileName = QFileDialog::getOpenFileName( this, tr( "Open TXD file..." ), QString(), tr( "RW Texture Archive (*.txd)" ) );
 
     if ( fileName.length() != 0 )
@@ -435,7 +436,7 @@ void MainWindow::onOpenFile( bool checked )
         // If the opening succeeded, process things.
         if ( txdFileStream )
         {
-            this->logWidget->addLogMessage( QString( "loading TXD: " ) + fileName );
+            this->txdLog->addLogMessage( QString( "loading TXD: " ) + fileName );
 
             // Parse the input file.
             rw::RwObject *parsedObject = NULL;
@@ -446,7 +447,7 @@ void MainWindow::onOpenFile( bool checked )
             }
             catch( rw::RwException& except )
             {
-                this->logWidget->addLogMessage( QString( "failed to load the TXD archive: %1" ).arg( except.message.c_str() ), LOGMSG_ERROR );
+				this->txdLog->addLogMessage(QString("failed to load the TXD archive: %1").arg(except.message.c_str()), LOGMSG_ERROR);
             }
 
             if ( parsedObject )
@@ -475,6 +476,8 @@ void MainWindow::onOpenFile( bool checked )
             this->rwEngine->DeleteStream( txdFileStream );
         }
     }
+
+	this->txdLog->afterTxdLoading();
 }
 
 void MainWindow::onCloseCurrent( bool checked )
@@ -591,7 +594,7 @@ void MainWindow::updateTextureView( void )
             }
             catch( rw::RwException& except )
             {
-                this->logWidget->addLogMessage( QString( "failed to get bitmap from texture: " ) + except.message.c_str(), LOGMSG_WARNING );
+				this->txdLog->addLogMessage(QString("failed to get bitmap from texture: ") + except.message.c_str(), LOGMSG_WARNING);
 
                 // We hide the image widget.
                 imageWidget->hide();
@@ -620,7 +623,7 @@ void MainWindow::onToggleShowBackground(bool checked)
 void MainWindow::onToggleShowLog( bool checked )
 {
     // Make sure the log is visible.
-    this->logWidget->show();
+	this->txdLog->show();
 }
 
 void MainWindow::onSetupMipmapLayers( bool checked )
@@ -691,7 +694,7 @@ void MainWindow::saveCurrentTXDAt( QString txdFullPath )
             }
             catch( rw::RwException& except )
             {
-                this->logWidget->addLogMessage( QString( "failed to save the TXD archive: %1" ).arg( except.message.c_str() ), LOGMSG_ERROR );
+				this->txdLog->addLogMessage(QString("failed to save the TXD archive: %1").arg(except.message.c_str()), LOGMSG_ERROR);
             }
 
             // Close the stream.
