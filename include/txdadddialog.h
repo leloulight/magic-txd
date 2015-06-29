@@ -8,6 +8,7 @@
 #include <QRadioButton>
 #include <QPushButton>
 #include <QCheckBox>
+#include <QPainter>
 
 class MainWindow;
 
