@@ -163,6 +163,7 @@
     <ClCompile Include="..\..\src\txdread.cpp" />
     <ClCompile Include="..\..\src\txdread.d3d8.cpp" />
     <ClCompile Include="..\..\src\txdread.d3d9.cpp" />
+    <ClCompile Include="..\..\src\txdread.d3d9.formats.cpp" />
     <ClCompile Include="..\..\src\txdread.debugutil.cpp" />
     <ClCompile Include="..\..\src\txdread.dxtmobile.cpp" />
     <ClCompile Include="..\..\src\txdread.mipmaps.cpp" />

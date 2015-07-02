@@ -1652,6 +1652,28 @@ bool ConvertRasterTo( Raster *theRaster, const char *nativeName )
     return conversionSuccess;
 }
 
+void* GetNativeTextureDriverInterface( Interface *engineInterface, const char *typeName )
+{
+    void *intf = NULL;
+
+    // Get the type that is associated with the given typeName.
+    RwTypeSystem::typeInfoBase *theType = GetNativeTextureType( engineInterface, typeName );
+
+    if ( theType )
+    {
+        // Ensure that we are a native texture type and get its manager.
+        nativeTextureStreamPlugin::nativeTextureCustomTypeInterface *nativeIntf = dynamic_cast <nativeTextureStreamPlugin::nativeTextureCustomTypeInterface*> ( theType->tInterface );
+
+        if ( nativeIntf )
+        {
+            // Get the interface pointer.
+            intf = nativeIntf->texTypeProvider->GetDriverNativeInterface();
+        }
+    }
+
+    return intf;
+}
+
 platformTypeNameList_t GetAvailableNativeTextureTypes( Interface *engineInterface )
 {
     platformTypeNameList_t registeredTypes;
@@ -2244,6 +2266,23 @@ void* Raster::getNativeInterface( void )
         return NULL;
 
     return texProvider->GetNativeInterface( platformTex );
+}
+
+void* Raster::getDriverNativeInterface( void )
+{
+    PlatformTexture *platformTex = this->platformData;
+
+    if ( !platformTex )
+        return NULL;
+
+    Interface *engineInterface = this->engineInterface;
+
+    const texNativeTypeProvider *texProvider = GetNativeTextureTypeProvider( engineInterface, platformTex );
+
+    if ( !texProvider )
+        return NULL;
+
+    return texProvider->GetDriverNativeInterface();
 }
 
 void Raster::optimizeForLowEnd(float quality)

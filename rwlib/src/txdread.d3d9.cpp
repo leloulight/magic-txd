@@ -154,6 +154,7 @@ void d3d9NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
                 }
                 // - Verify raster format.
                 bool d3dRasterFormatLink = false;
+                d3dpublic::nativeTextureFormatHandler *usedFormatHandler = NULL;
                 {
                     eColorOrdering colorOrder = COLOR_BGRA;
 
@@ -199,6 +200,7 @@ void d3d9NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
                         // Set it for clarity sake.
                         // We do not load entirely complaint to GTA:SA, because we give higher priority to the D3DFORMAT field.
                         // Even though we do that, it is preferable, since the driver implementation is more powerful than the RW original types.
+                        // TODO: add an interface property to enable GTA:SA-compliant loading behavior.
                         isD3DFORMATImportant = true;
 
                         if (d3dFormat == D3DFMT_A8R8G8B8)
@@ -330,12 +332,55 @@ void d3d9NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
                         // This is equivalent to the notion that we are a valid format.
                         if ( isValidFormat == false )
                         {
+                            // We actually only do this if we have the extended format range enabled.
+                            // TODO: make sure DK gets his converter weirdness sorted out.
+                            //if ( hasExpandedFormatRegion )
+                            {
+                                // We could have a native format handler that has been registered to us as plugin.
+                                // Try to look one up.
+                                // If we have one, then we are known anyway!
+                                d3dpublic::nativeTextureFormatHandler *formatHandler = this->GetFormatHandler( d3dFormat );
+
+                                if ( formatHandler )
+                                {
+                                    // Lets just use this.
+                                    usedFormatHandler = formatHandler;
+
+                                    // Just use default raster format.
+                                    d3dRasterFormat = RASTER_DEFAULT;
+
+                                    colorOrder = COLOR_BGRA;
+
+                                    // No required raster format.
+                                    isRasterFormatRequired = false;
+
+                                    isValidFormat = true;
+
+                                    if ( hasExpandedFormatRegion == false )
+                                    {
+                                        // We kinda have a broken texture here.
+                                        // This may not load on the GTA:SA engine.
+                                        engineInterface->PushWarning( "texture " + theTexture->GetName() + " has extended D3DFORMAT link but does not enable 'isNotRwCompatible'" );
+                                    }
+                                }
+                            }
+                        }
+
+                        // If everything else fails...
+                        if ( isValidFormat == false )
+                        {
                             // If the user wants to know about such things, notify him.
                             if ( engineIgnoreSecureWarnings == false )
                             {
                                 engineInterface->PushWarning( "texture " + theTexture->GetName() + " has an unknown D3DFORMAT link (" + std::to_string( (DWORD)d3dFormat ) + ")" );
 
                                 hasReportedStrongWarning = true;
+                            }
+
+                            // There is an even graver error if the extended format range has been left disabled.
+                            if ( hasExpandedFormatRegion == false )
+                            {
+                                engineInterface->PushWarning( "texture " + theTexture->GetName() + " has an unknown D3DFORMAT link but does not enable 'isNotRwCompatible'" );
                             }
                         }
                     }
@@ -397,6 +442,9 @@ void d3d9NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
 
                     // Store whether we have the D3D raster format link.
                     platformTex->d3dRasterFormatLink = d3dRasterFormatLink;
+
+                    // Maybe we have a format handler.
+                    platformTex->anonymousFormatLink = usedFormatHandler;
                 }
                 // - Verify depth.
                 {
@@ -549,6 +597,20 @@ void d3d9NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
                         if ( texDataSize == 0 )
                         {
                             isValidMipmap = false;
+                        }
+
+                        if ( isValidMipmap )
+                        {
+                            // If we have a format plugin, make sure we match its size.
+                            if ( usedFormatHandler != NULL )
+                            {
+                                uint32 shouldBeSize = usedFormatHandler->GetFormatTextureDataSize( texWidth, texHeight );
+
+                                if ( texDataSize != shouldBeSize )
+                                {
+                                    isValidMipmap = false;
+                                }
+                            }
                         }
                     }
 

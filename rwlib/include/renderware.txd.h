@@ -262,6 +262,7 @@ struct Raster
     const char* getNativeDataTypeName( void ) const;
 
     void* getNativeInterface( void );
+    void* getDriverNativeInterface( void );
 
     void getFormatString( char *buf, size_t bufSize, size_t& lengthOut ) const;
 
@@ -701,6 +702,13 @@ struct texNativeTypeProvider abstract
         return NULL;
     }
 
+    // Returns the native interface that is linked to all native textures of this texture native type.
+    // It should be a member of the manager struct.
+    virtual void*           GetDriverNativeInterface( void ) const
+    {
+        return NULL;
+    }
+
     virtual bool            GetDebugBitmap( Interface *engineInterface, void *objMem, Bitmap& drawTarget ) const
     {
         // Native textures type providers can override this method to provide visual insight into their structure.
@@ -739,12 +747,41 @@ bool RegisterNativeTextureType( Interface *engineInterface, const char *nativeNa
 bool UnregisterNativeTextureType( Interface *engineInterface, const char *nativeName );
 bool ConvertRasterTo( Raster *theRaster, const char *nativeName );
 
+void* GetNativeTextureDriverInterface( Interface *engineInterface, const char *nativeName );
+
 platformTypeNameList_t GetAvailableNativeTextureTypes( Interface *engineInterface );
 
 // Raster API.
 Raster* CreateRaster( Interface *engineInterface );
 Raster* AcquireRaster( Raster *theRaster );
 void DeleteRaster( Raster *theRaster );
+
+// Pixel manipulation API, exported for good compatibility.
+// Use this API if you are not sure how to map the raster format stuff properly.
+bool BrowseTexelRGBA(
+    const void *texelSource, uint32 texelIndex,
+    eRasterFormat rasterFormat, uint32 depth, eColorOrdering colorOrder, ePaletteType paletteType, const void *paletteData, uint32 paletteSize,
+    uint8& redOut, uint8& greenOut, uint8& blueOut, uint8& alphaOut
+);
+bool BrowseTexelLuminance(
+    const void *texelSource, uint32 texelIndex,
+    eRasterFormat rasterFormat, uint32 depth, ePaletteType paletteType, const void *paletteData, uint32 paletteSize,
+    uint8& lumOut
+);
+
+// Use this function to decide the functions you should use for color manipulation.
+eColorModel GetRasterFormatColorModel( eRasterFormat rasterFormat );
+
+bool PutTexelRGBA(
+    void *texelSource, uint32 texelIndex,
+    eRasterFormat rasterFormat, uint32 depth, eColorOrdering colorOrder,
+    uint8 red, uint8 green, uint8 blue, uint8 alpha
+);
+bool PutTexelLuminance(
+    void *texelSource, uint32 texelIndex,
+    eRasterFormat rasterFormat, uint32 depth,
+    uint8 lum
+);
 
 // Debug API.
 bool DebugDrawMipmaps( Interface *engineInterface, Raster *debugRaster, Bitmap& drawSurface );

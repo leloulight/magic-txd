@@ -447,6 +447,37 @@ AINLINE bool puttexelcolor(
     return setColor;
 }
 
+inline eColorModel getColorModelFromRasterFormat( eRasterFormat rasterFormat )
+{
+    eColorModel usedColorModel;
+
+    if ( rasterFormat == RASTER_1555 ||
+            rasterFormat == RASTER_565 ||
+            rasterFormat == RASTER_4444 ||
+            rasterFormat == RASTER_8888 ||
+            rasterFormat == RASTER_888 ||
+            rasterFormat == RASTER_555 )
+    {
+        usedColorModel = COLORMODEL_RGBA;
+    }
+    else if ( rasterFormat == RASTER_LUM8 )
+    {
+        usedColorModel = COLORMODEL_LUMINANCE;
+    }
+    else if ( rasterFormat == RASTER_16 ||
+                rasterFormat == RASTER_24 ||
+                rasterFormat == RASTER_32 )
+    {
+        usedColorModel = COLORMODEL_DEPTH;
+    }
+    else
+    {
+        throw RwException( "unknown color model for raster format" );
+    }
+
+    return usedColorModel;
+}
+
 template <typename texel_t>
 struct colorModelDispatcher
 {
@@ -477,29 +508,7 @@ struct colorModelDispatcher
         this->paletteType = paletteType;
 
         // Determine the color model of our requests.
-        if ( rasterFormat == RASTER_1555 ||
-             rasterFormat == RASTER_565 ||
-             rasterFormat == RASTER_4444 ||
-             rasterFormat == RASTER_8888 ||
-             rasterFormat == RASTER_888 ||
-             rasterFormat == RASTER_555 )
-        {
-            usedColorModel = COLORMODEL_RGBA;
-        }
-        else if ( rasterFormat == RASTER_LUM8 )
-        {
-            usedColorModel = COLORMODEL_LUMINANCE;
-        }
-        else if ( rasterFormat == RASTER_16 ||
-                  rasterFormat == RASTER_24 ||
-                  rasterFormat == RASTER_32 )
-        {
-            usedColorModel = COLORMODEL_DEPTH;
-        }
-        else
-        {
-            throw RwException( "unknown color model for color model dispatcher" );
-        }
+        this->usedColorModel = getColorModelFromRasterFormat( rasterFormat );
     }
 
     AINLINE eColorModel getColorModel( void ) const

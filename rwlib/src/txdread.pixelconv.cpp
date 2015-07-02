@@ -1075,4 +1075,46 @@ bool ConvertPixelDataDeferred( Interface *engineInterface, const pixelDataTraver
     return ConvertPixelData( engineInterface, dstPixels, pixFormat );
 }
 
+// Pixel manipulation API.
+bool BrowseTexelRGBA(
+    const void *texelSource, uint32 texelIndex,
+    eRasterFormat rasterFormat, uint32 depth, eColorOrdering colorOrder, ePaletteType paletteType, const void *paletteData, uint32 paletteSize,
+    uint8& redOut, uint8& greenOut, uint8& blueOut, uint8& alphaOut
+)
+{
+    return colorModelDispatcher <const void> ( texelSource, rasterFormat, colorOrder, depth, paletteData, paletteSize, paletteType ).getRGBA( texelIndex, redOut, greenOut, blueOut, alphaOut );
+}
+
+bool BrowseTexelLuminance(
+    const void *texelSource, uint32 texelIndex,
+    eRasterFormat rasterFormat, uint32 depth, ePaletteType paletteType, const void *paletteData, uint32 paletteSize,
+    uint8& lumOut
+)
+{
+    return colorModelDispatcher <const void> ( texelSource, rasterFormat, COLOR_RGBA, depth, paletteData, paletteSize, paletteType ).getLuminance( texelIndex, lumOut );
+}
+
+eColorModel GetRasterFormatColorModel( eRasterFormat rasterFormat )
+{
+    return getColorModelFromRasterFormat( rasterFormat );
+}
+
+bool PutTexelRGBA(
+    void *texelSource, uint32 texelIndex,
+    eRasterFormat rasterFormat, uint32 depth, eColorOrdering colorOrder,
+    uint8 red, uint8 green, uint8 blue, uint8 alpha
+)
+{
+    return colorModelDispatcher <void> ( texelSource, rasterFormat, colorOrder, depth, NULL, 0, PALETTE_NONE ).setRGBA( texelIndex, red, green, blue, alpha );
+}
+
+bool PutTexelLuminance(
+    void *texelSource, uint32 texelIndex,
+    eRasterFormat rasterFormat, uint32 depth,
+    uint8 lum
+)
+{
+    return colorModelDispatcher <void> ( texelSource, rasterFormat, COLOR_RGBA, depth, NULL, 0, PALETTE_NONE ).setLuminance( texelIndex, lum );
+}
+
 }

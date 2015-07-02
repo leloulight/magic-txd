@@ -52,6 +52,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     try
     {
+        // Initialize our native formats.
+        this->initializeNativeFormats();
+
 #if 0
         // Test something.
         rw::streamConstructionFileParam_t fileParam( "C:/Users/The_GTA/Desktop/image format samples/tga/monochrome.tga" );
@@ -323,6 +326,9 @@ MainWindow::~MainWindow()
 
         this->currentTXD = NULL;
     }
+
+    // Shutdown the native format handlers.
+    this->shutdownNativeFormats();
 
     // Destroy the engine again.
     rw::DeleteEngine( this->rwEngine );

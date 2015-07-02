@@ -150,6 +150,7 @@ struct NativeTextureD3D9 : public d3dpublic::d3dNativeTextureInterface
         this->autoMipmaps = false;
         this->d3dFormat = D3DFMT_A8R8G8B8;
         this->d3dRasterFormatLink = false;
+        this->anonymousFormatLink = NULL;
         this->dxtCompression = 0;
         this->rasterType = 4;
         this->hasAlpha = true;
@@ -196,6 +197,7 @@ struct NativeTextureD3D9 : public d3dpublic::d3dNativeTextureInterface
         this->autoMipmaps =         right.autoMipmaps;
         this->d3dFormat =           right.d3dFormat;
         this->d3dRasterFormatLink = right.d3dRasterFormatLink;
+        this->anonymousFormatLink = right.anonymousFormatLink;
         this->dxtCompression =      right.dxtCompression;
         this->rasterType =          right.rasterType;
         this->hasAlpha =            right.hasAlpha;
@@ -253,6 +255,8 @@ public:
 
     bool d3dRasterFormatLink;
 
+    d3dpublic::nativeTextureFormatHandler *anonymousFormatLink;
+
     inline bool IsRWCompatible( void ) const
     {
         // This function returns whether we can push our data to the RW implementation.
@@ -265,7 +269,7 @@ public:
     eColorOrdering colorOrdering;
 };
 
-struct d3d9NativeTextureTypeProvider : public texNativeTypeProvider
+struct d3d9NativeTextureTypeProvider : public texNativeTypeProvider, d3dpublic::d3dNativeTextureDriverInterface
 {
     void ConstructTexture( Interface *engineInterface, void *objMem, size_t memSize )
     {
@@ -341,6 +345,15 @@ struct d3d9NativeTextureTypeProvider : public texNativeTypeProvider
         return (void*)nativeAPI;
     }
 
+    void* GetDriverNativeInterface( void ) const
+    {
+        d3dpublic::d3dNativeTextureDriverInterface *nativeDriver = (d3dpublic::d3dNativeTextureDriverInterface*)this;
+
+        // We do export a public driver API.
+        // It is the most direct way to address the D3D9 native texture environment.
+        return nativeDriver;
+    }
+
     void GetTextureInfo( Interface *engineInterface, void *objMem, nativeTextureBatchedInfo& infoOut );
     void GetTextureFormatString( Interface *engineInterface, void *objMem, char *buf, size_t bufLen, size_t& lengthOut ) const;
 
@@ -370,6 +383,38 @@ struct d3d9NativeTextureTypeProvider : public texNativeTypeProvider
         // We are the Direct3D 9 driver.
         return 2;
     }
+
+    // PUBLIC API begin
+
+    d3dpublic::nativeTextureFormatHandler* GetFormatHandler( D3DFORMAT format ) const
+    {
+        for ( nativeFormatExtensions_t::const_iterator iter = this->formatExtensions.cbegin(); iter != this->formatExtensions.cend(); iter++ )
+        {
+            const nativeFormatExtension& ext = *iter;
+
+            if ( ext.theFormat == format )
+            {
+                return ext.handler;
+            }
+        }
+
+        return NULL;
+    }
+
+    bool RegisterFormatHandler( DWORD format, d3dpublic::nativeTextureFormatHandler *handler );
+    bool UnregisterFormatHandler( DWORD format );
+
+    struct nativeFormatExtension
+    {
+        D3DFORMAT theFormat;
+        d3dpublic::nativeTextureFormatHandler *handler;
+    };
+
+    typedef std::list <nativeFormatExtension> nativeFormatExtensions_t;
+
+    nativeFormatExtensions_t formatExtensions;
+
+    // PUBLIC API end
 
     inline void Initialize( Interface *engineInterface )
     {

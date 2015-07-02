@@ -25,6 +25,11 @@ public:
     MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
+private:
+    void initializeNativeFormats( void );
+    void shutdownNativeFormats( void );
+
+public:
     void setCurrentTXD( rw::TexDictionary *txdObj );
 
     void updateWindowTitle( void );
