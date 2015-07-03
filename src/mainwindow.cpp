@@ -475,11 +475,11 @@ void MainWindow::onOpenFile( bool checked )
     if ( fileName.length() != 0 )
     {
         // We got a file name, try to load that TXD file into our editor.
-        std::string ansiFileName = fileName.toStdString().c_str();
+        std::wstring unicodeFileName = fileName.toStdWString();
 
-        rw::streamConstructionFileParam_t fileOpenParam( ansiFileName.c_str() );
+        rw::streamConstructionFileParamW_t fileOpenParam( unicodeFileName.c_str() );
 
-        rw::Stream *txdFileStream = this->rwEngine->CreateStream( rw::RWSTREAMTYPE_FILE, rw::RWSTREAMMODE_READONLY, &fileOpenParam );
+        rw::Stream *txdFileStream = this->rwEngine->CreateStream( rw::RWSTREAMTYPE_FILE_W, rw::RWSTREAMMODE_READONLY, &fileOpenParam );
 
         // If the opening succeeded, process things.
         if ( txdFileStream )
@@ -708,11 +708,11 @@ void MainWindow::saveCurrentTXDAt( QString txdFullPath )
     if ( rw::TexDictionary *currentTXD = this->currentTXD )
     {
         // We serialize what we have at the location we loaded the TXD from.
-        std::string ansiFullPath = txdFullPath.toStdString();
+        std::wstring unicodeFullPath = txdFullPath.toStdWString();
 
-        rw::streamConstructionFileParam_t fileOpenParam( ansiFullPath.c_str() );
+        rw::streamConstructionFileParamW_t fileOpenParam( unicodeFullPath.c_str() );
 
-        rw::Stream *newTXDStream = this->rwEngine->CreateStream( rw::RWSTREAMTYPE_FILE, rw::RWSTREAMMODE_CREATE, &fileOpenParam );
+        rw::Stream *newTXDStream = this->rwEngine->CreateStream( rw::RWSTREAMTYPE_FILE_W, rw::RWSTREAMMODE_CREATE, &fileOpenParam );
 
         if ( newTXDStream )
         {
@@ -805,11 +805,11 @@ void MainWindow::onExportTexture( bool checked )
             if ( finalFilePath.length() != 0 )
             {
                 // Try to open that file for writing.
-                std::string ansiImagePath = finalFilePath.toStdString();
+                std::wstring unicodeImagePath = finalFilePath.toStdWString();
                 
-                rw::streamConstructionFileParam_t fileParam( ansiImagePath.c_str() );
+                rw::streamConstructionFileParamW_t fileParam( unicodeImagePath.c_str() );
 
-                rw::Stream *imageStream = this->rwEngine->CreateStream( rw::RWSTREAMTYPE_FILE, rw::RWSTREAMMODE_CREATE, &fileParam );
+                rw::Stream *imageStream = this->rwEngine->CreateStream( rw::RWSTREAMTYPE_FILE_W, rw::RWSTREAMMODE_CREATE, &fileParam );
 
                 if ( imageStream )
                 {

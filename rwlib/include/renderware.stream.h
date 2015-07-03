@@ -6,6 +6,7 @@
 enum eBuiltinStreamType
 {
     RWSTREAMTYPE_FILE,
+    RWSTREAMTYPE_FILE_W,
     RWSTREAMTYPE_MEMORY,
     RWSTREAMTYPE_CUSTOM
 };
@@ -34,6 +35,17 @@ struct streamConstructionFileParam_t : public streamConstructionParam_t
     }
 
     const char *filename;
+};
+
+struct streamConstructionFileParamW_t : public streamConstructionParam_t
+{
+    inline streamConstructionFileParamW_t( const wchar_t *filename )
+    {
+        this->dwSize = sizeof( *this );
+        this->filename = filename;
+    }
+
+    const wchar_t *filename;
 };
 
 struct streamConstructionMemoryParam_t : public streamConstructionParam_t

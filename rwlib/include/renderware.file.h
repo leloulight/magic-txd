@@ -6,6 +6,8 @@ struct FileInterface abstract
     virtual filePtr_t       OpenStream          ( const char *streamPath, const char *streamMode ) = 0;
     virtual void            CloseStream         ( filePtr_t ptr ) = 0;
 
+    virtual filePtr_t       OpenStreamW         ( const wchar_t *streamPath, const wchar_t *streamMode ) = 0;
+
     virtual size_t          ReadStream          ( filePtr_t ptr, void *outBuf, size_t readCount ) = 0;
     virtual size_t          WriteStream         ( filePtr_t ptr, const void *outBuf, size_t writeCount ) = 0;
     

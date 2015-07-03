@@ -11,42 +11,47 @@ namespace rw
 // The default file interface.
 struct ANSIFileInterface : public FileInterface
 {
-    filePtr_t   OpenStream( const char *streamPath, const char *streamMode )
+    filePtr_t   OpenStream( const char *streamPath, const char *streamMode ) override
     {
         return (filePtr_t)fopen( streamPath, streamMode );
     }
 
-    void    CloseStream( filePtr_t ptr )
+    void    CloseStream( filePtr_t ptr ) override
     {
         fclose( (FILE*)ptr );
     }
 
-    size_t  ReadStream( filePtr_t ptr, void *outBuf, size_t readCount )
+    filePtr_t   OpenStreamW( const wchar_t *streamPath, const wchar_t *streamMode ) override
+    {
+        return (filePtr_t)_wfopen( streamPath, streamMode );
+    }
+
+    size_t  ReadStream( filePtr_t ptr, void *outBuf, size_t readCount ) override
     {
         return fread( outBuf, 1, readCount, (FILE*)ptr );
     }
 
-    size_t  WriteStream( filePtr_t ptr, const void *inBuf, size_t writeCount )
+    size_t  WriteStream( filePtr_t ptr, const void *inBuf, size_t writeCount ) override
     {
         return fwrite( inBuf, 1, writeCount, (FILE*)ptr );
     }
 
-    bool    SeekStream( filePtr_t ptr, long streamOffset, int type )
+    bool    SeekStream( filePtr_t ptr, long streamOffset, int type ) override
     {
         return ( fseek( (FILE*)ptr, streamOffset, type ) == 0 );
     }
 
-    long    TellStream( filePtr_t ptr )
+    long    TellStream( filePtr_t ptr ) override
     {
         return ftell( (FILE*)ptr );
     }
 
-    bool    IsEOFStream( filePtr_t ptr )
+    bool    IsEOFStream( filePtr_t ptr ) override
     {
         return ( feof( (FILE*)ptr ) != 0 );
     }
 
-    long    SizeStream( filePtr_t ptr )
+    long    SizeStream( filePtr_t ptr ) override
     {
         struct stat stats;
 
@@ -58,7 +63,7 @@ struct ANSIFileInterface : public FileInterface
         return stats.st_size;
     }
 
-    void    FlushStream( filePtr_t ptr )
+    void    FlushStream( filePtr_t ptr ) override
     {
         fflush( (FILE*)ptr );
     }

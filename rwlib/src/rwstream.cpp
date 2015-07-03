@@ -470,56 +470,90 @@ Stream* Interface::CreateStream( eBuiltinStreamType streamType, eStreamMode stre
 
     if ( streamSysEnv )
     {
-        if ( streamType == RWSTREAMTYPE_FILE )
+        if ( streamType == RWSTREAMTYPE_FILE || streamType == RWSTREAMTYPE_FILE_W )
         {
-            if ( param->dwSize >= sizeof( streamConstructionFileParam_t ) )
+            FileInterface::filePtr_t fileHandle = NULL;
+
+            // Only proceed if we have a file stream type.
+            if ( RwTypeSystem::typeInfoBase *fileStreamTypeInfo = streamSysEnv->fileStreamTypeInfo )
             {
-                streamConstructionFileParam_t *file_param = (streamConstructionFileParam_t*)param;
-
-                // Only proceed if we have a file stream type.
-                if ( RwTypeSystem::typeInfoBase *fileStreamTypeInfo = streamSysEnv->fileStreamTypeInfo )
+                if ( streamType == RWSTREAMTYPE_FILE )
                 {
-                    // Dispatch the given stream mode into an ANSI descriptor.
-                    const char *ansi_mode = "";
+                    if ( param->dwSize >= sizeof( streamConstructionFileParam_t ) )
+                    {
+                        streamConstructionFileParam_t *file_param = (streamConstructionFileParam_t*)param;
 
-                    if ( streamMode == RWSTREAMMODE_READONLY )
-                    {
-                        ansi_mode = "rb";
-                    }
-                    else if ( streamMode == RWSTREAMMODE_READWRITE )
-                    {
-                        ansi_mode = "rb+";
-                    }
-                    else if ( streamMode == RWSTREAMMODE_WRITEONLY )
-                    {
-                        ansi_mode = "wb";
-                    }
-                    else if ( streamMode == RWSTREAMMODE_CREATE )
-                    {
-                        ansi_mode = "wb+";
-                    }
+                        // Dispatch the given stream mode into an ANSI descriptor.
+                        const char *ansi_mode = "";
 
-                    FileInterface::filePtr_t fileHandle = this->GetFileInterface()->OpenStream( file_param->filename, ansi_mode );
-
-                    if ( fileHandle )
-                    {
-                        GenericRTTI *rttiObj = this->typeSystem.Construct( this, fileStreamTypeInfo, NULL );
-
-                        if ( rttiObj )
+                        if ( streamMode == RWSTREAMMODE_READONLY )
                         {
-                            FileStream *fileStream = (FileStream*)RwTypeSystem::GetObjectFromTypeStruct( rttiObj );
-
-                            // Give the file handle to the stream.
-                            // It will take care of freeing that handle.
-                            fileStream->file_handle = fileHandle;
-
-                            outputStream = fileStream;
+                            ansi_mode = "rb";
+                        }
+                        else if ( streamMode == RWSTREAMMODE_READWRITE )
+                        {
+                            ansi_mode = "rb+";
+                        }
+                        else if ( streamMode == RWSTREAMMODE_WRITEONLY )
+                        {
+                            ansi_mode = "wb";
+                        }
+                        else if ( streamMode == RWSTREAMMODE_CREATE )
+                        {
+                            ansi_mode = "wb+";
                         }
 
-                        if ( outputStream == NULL )
+                        fileHandle = this->GetFileInterface()->OpenStream( file_param->filename, ansi_mode );
+                    }
+                }
+                else if ( streamType == RWSTREAMTYPE_FILE_W )
+                {
+                    if ( param->dwSize >= sizeof( streamConstructionFileParamW_t ) )
+                    {
+                        streamConstructionFileParamW_t *file_param = (streamConstructionFileParamW_t*)param;
+
+                        // Dispatch the given stream mode into an ANSI descriptor.
+                        const wchar_t *ansi_mode = L"";
+
+                        if ( streamMode == RWSTREAMMODE_READONLY )
                         {
-                            this->GetFileInterface()->CloseStream( fileHandle );
+                            ansi_mode = L"rb";
                         }
+                        else if ( streamMode == RWSTREAMMODE_READWRITE )
+                        {
+                            ansi_mode = L"rb+";
+                        }
+                        else if ( streamMode == RWSTREAMMODE_WRITEONLY )
+                        {
+                            ansi_mode = L"wb";
+                        }
+                        else if ( streamMode == RWSTREAMMODE_CREATE )
+                        {
+                            ansi_mode = L"wb+";
+                        }
+
+                        fileHandle = this->GetFileInterface()->OpenStreamW( file_param->filename, ansi_mode );
+                    }
+                }
+
+                if ( fileHandle )
+                {
+                    GenericRTTI *rttiObj = this->typeSystem.Construct( this, fileStreamTypeInfo, NULL );
+
+                    if ( rttiObj )
+                    {
+                        FileStream *fileStream = (FileStream*)RwTypeSystem::GetObjectFromTypeStruct( rttiObj );
+
+                        // Give the file handle to the stream.
+                        // It will take care of freeing that handle.
+                        fileStream->file_handle = fileHandle;
+
+                        outputStream = fileStream;
+                    }
+
+                    if ( outputStream == NULL )
+                    {
+                        this->GetFileInterface()->CloseStream( fileHandle );
                     }
                 }
             }
