@@ -218,12 +218,30 @@ MainWindow::MainWindow(QWidget *parent) :
 	    editMenu->addAction(actionSetupTxdVersion);
 
 	    QMenu *exportMenu = menu->addMenu(tr("&Export"));
-	    QAction *actionExportPNG = new QAction("&PNG", this);
-	    exportMenu->addAction(actionExportPNG);
-	    QAction *actionExportDDS = new QAction("&DDS", this);
-	    exportMenu->addAction(actionExportDDS);
-	    QAction *actionExportBMP = new QAction("&BMP", this);
-	    exportMenu->addAction(actionExportBMP);
+
+        this->addTextureFormatExportLinkToMenu( exportMenu, "PNG", "Portable Network Graphics" );
+        this->addTextureFormatExportLinkToMenu( exportMenu, "DDS", "Direct Draw Surface" );
+        this->addTextureFormatExportLinkToMenu( exportMenu, "BMP", "Raw Bitmap" );
+
+        // Add remaining formats that rwlib supports.
+        {
+            rw::registered_image_formats_t regFormats;
+            
+            rw::GetRegisteredImageFormats( this->rwEngine, regFormats );
+
+            for ( rw::registered_image_formats_t::const_iterator iter = regFormats.cbegin(); iter != regFormats.cend(); iter++ )
+            {
+                const rw::registered_image_format& theFormat = *iter;
+
+                if ( stricmp( theFormat.defaultExt, "PNG" ) != 0 &&
+                     stricmp( theFormat.defaultExt, "DDS" ) != 0 &&
+                     stricmp( theFormat.defaultExt, "BMP" ) != 0 )
+                {
+                    this->addTextureFormatExportLinkToMenu( exportMenu, theFormat.defaultExt, theFormat.formatName );
+                }
+            }
+        }
+
 	    QAction *actionExportTTXD = new QAction("&Text-based TXD", this);
 	    exportMenu->addAction(actionExportTTXD);
 	    exportMenu->addSeparator();
@@ -336,6 +354,30 @@ MainWindow::~MainWindow()
     this->rwEngine = NULL;
 
 	delete txdLog;
+}
+
+class TextureExportAction : public QAction
+{
+public:
+    TextureExportAction( QString defaultExt, QString formatName, QWidget *parent ) : QAction( QString( "&" ) + defaultExt, parent )
+    {
+        this->defaultExt = defaultExt;
+        this->formatName = formatName;
+    }
+
+    QString defaultExt;
+    QString formatName;
+};
+
+void MainWindow::addTextureFormatExportLinkToMenu( QMenu *theMenu, const char *defaultExt, const char *formatName )
+{
+    TextureExportAction *formatActionExport = new TextureExportAction( defaultExt, QString( formatName ), this );
+    theMenu->addAction( formatActionExport );
+
+    formatActionExport->setData( QString( defaultExt ) );
+
+    // Connect it to the export signal handler.
+    connect( formatActionExport, &QAction::triggered, this, &MainWindow::onExportTexture );
 }
 
 void MainWindow::setCurrentTXD( rw::TexDictionary *txdObj )
@@ -543,30 +585,6 @@ void MainWindow::onTextureItemChanged(QListWidgetItem *listItem, QListWidgetItem
     this->currentSelectedTexture = texItem;
 
     this->updateTextureView();
-
-#if 0
-    // test.
-    if ( texItem )
-    {
-        rw::streamConstructionFileParam_t fileParam( "out.bmp" );
-
-        rw::Stream *outStream = this->rwEngine->CreateStream( rw::RWSTREAMTYPE_FILE, rw::RWSTREAMMODE_CREATE, &fileParam );
-
-        if ( outStream )
-        {
-            try
-            {
-                rw::SerializeImage( outStream, "BMP", texItem->GetTextureHandle()->GetRaster()->getBitmap() );
-            }
-            catch( rw::RwException& )
-            {
-                // Lalala...
-            }
-
-            this->rwEngine->DeleteStream( outStream );
-        }
-    }
-#endif
 }
 
 void MainWindow::updateTextureView( void )
@@ -736,6 +754,86 @@ void MainWindow::onRequestSaveAsTXD( bool checked )
         if ( newSaveLocation.length() != 0 )
         {
             this->saveCurrentTXDAt( newSaveLocation );
+        }
+    }
+}
+
+static void serializeRaster( rw::Stream *outputStream, rw::Raster *texRaster, const char *method )
+{
+    // TODO: add DDS file writer functionality, by checking method for "DDS"
+
+    rw::Bitmap texImageData = texRaster->getBitmap();
+
+    // Serialize it.
+    bool success = rw::SerializeImage( outputStream, method, texImageData );
+
+    // TODO: maybe notify the user if serialization failed?
+}
+
+void MainWindow::onExportTexture( bool checked )
+{
+    // We are always sent by a QAction object.
+    TextureExportAction *senderAction = (TextureExportAction*)this->sender();
+
+    // Make sure we have selected a texture in the texture list.
+    // Get it.
+    TexInfoWidget *selectedTexture = this->currentSelectedTexture;
+
+    if ( selectedTexture != NULL )
+    {
+        rw::TextureBase *texHandle = selectedTexture->GetTextureHandle();
+
+        if ( texHandle )
+        {
+            const QString& exportFunction = senderAction->defaultExt;
+            const QString& formatName = senderAction->formatName;
+
+            std::string ansiExportFunction = exportFunction.toStdString();
+
+            const QString actualExt = exportFunction.toLower();
+            
+            // Construct a default filename for the object.
+            QString defaultFileName = QString( texHandle->GetName().c_str() ) + "." + actualExt;
+
+            // Request a filename and do the export.
+            QString finalFilePath =
+                QFileDialog::getSaveFileName(
+                    this, QString( "Save " ) + exportFunction + QString( " as..." ), defaultFileName,
+                    formatName + " (*." + actualExt + ")"
+                );
+
+            if ( finalFilePath.length() != 0 )
+            {
+                // Try to open that file for writing.
+                std::string ansiImagePath = finalFilePath.toStdString();
+                
+                rw::streamConstructionFileParam_t fileParam( ansiImagePath.c_str() );
+
+                rw::Stream *imageStream = this->rwEngine->CreateStream( rw::RWSTREAMTYPE_FILE, rw::RWSTREAMMODE_CREATE, &fileParam );
+
+                if ( imageStream )
+                {
+                    try
+                    {
+                        // Fetch a bitmap and serialize it.
+                        rw::Raster *texRaster = texHandle->GetRaster();
+
+                        if ( texRaster )
+                        {
+                            serializeRaster( imageStream, texRaster, ansiExportFunction.c_str() );
+                        }
+                    }
+                    catch( ... )
+                    {
+                        this->rwEngine->DeleteStream( imageStream );
+
+                        throw;
+                    }
+
+                    // Close the stream again.
+                    this->rwEngine->DeleteStream( imageStream );
+                }
+            }
         }
     }
 }

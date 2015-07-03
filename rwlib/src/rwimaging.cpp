@@ -631,6 +631,27 @@ bool UnregisterImagingFormat( Interface *engineInterface, imagingFormatExtension
     return success;
 }
 
+// Public function to get all registered imaging formats.
+void GetRegisteredImageFormats( Interface *engineInterface, registered_image_formats_t& formatsOut )
+{
+#ifdef RWLIB_INCLUDE_IMAGING
+    if ( const rwImagingEnv *imgEnv = GetImagingEnvironment( engineInterface ) )
+    {
+        // Loop through all formats and add their information.
+        for ( rwImagingEnv::formatList_t::const_iterator iter = imgEnv->registeredFormats.begin(); iter != imgEnv->registeredFormats.end(); iter++ )
+        {
+            const rwImagingEnv::registeredExtension& ext = (*iter).second;
+
+            registered_image_format formatInfo;
+            formatInfo.defaultExt = ext.defaultExt;
+            formatInfo.formatName = ext.formatName;
+
+            formatsOut.push_back( formatInfo );
+        }
+    }
+#endif //RWLIB_INCLUDE_IMAGING
+}
+
 // Imaging extensions.
 extern void registerTGAImagingExtension( void );
 extern void registerBMPImagingExtension( void );

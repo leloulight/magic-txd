@@ -56,6 +56,11 @@ public slots:
     void onRequestSaveTXD( bool checked );
     void onRequestSaveAsTXD( bool checked );
 
+    void onExportTexture( bool checked );
+
+protected:
+    void addTextureFormatExportLinkToMenu( QMenu *theMenu, const char *defaultExt, const char *formatName );
+
 private:
     class rwPublicWarningDispatcher : public rw::WarningManagerInterface
     {
