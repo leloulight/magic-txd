@@ -11,8 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{921DBD48-D09E-479E-BA9A-66472511E445}</ProjectGuid>
-    <RootNamespace>format_a8</RootNamespace>
+    <ProjectGuid>{1F80C2E2-0DE8-48F2-99E9-0176FA91B11B}</ProjectGuid>
+    <RootNamespace>format_v8u8</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -41,12 +41,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <TargetExt>.magf</TargetExt>
     <OutDir>$(SolutionDir)../../output/formats/</OutDir>
-    <TargetName>a8</TargetName>
+    <TargetName>v8u8</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <TargetExt>.magf</TargetExt>
     <OutDir>$(SolutionDir)../../output/formats/</OutDir>
-    <TargetName>a8_d</TargetName>
+    <TargetName>v8u8_d</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -54,6 +54,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)\..\..\magic_api\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <StructMemberAlignment>1Byte</StructMemberAlignment>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -69,6 +70,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)\..\..\magic_api\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <StructMemberAlignment>1Byte</StructMemberAlignment>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -79,7 +81,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\a8.cpp" />
+    <ClCompile Include="..\..\src\v8u8.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
