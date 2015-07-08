@@ -26,6 +26,8 @@ struct d3dNativeTextureInterface abstract
 */
 struct nativeTextureFormatHandler abstract
 {
+	virtual unsigned int GetD3DFormat(void) const = 0;
+
     virtual const char* GetFormatName( void ) const = 0;
 
     // Should return the size that a texture of width * height is supposed to have.
@@ -51,9 +53,9 @@ struct nativeTextureFormatHandler abstract
 
 struct d3dNativeTextureDriverInterface abstract
 {
-    // Registration routines for plugin D3DFORMAT handling.
-    virtual bool RegisterFormatHandler( DWORD format, nativeTextureFormatHandler *handler ) = 0;
-    virtual bool UnregisterFormatHandler( DWORD format ) = 0;
+	// Registration routines for plugin D3DFORMAT handling.
+	virtual bool RegisterFormatHandler(DWORD format, nativeTextureFormatHandler *handler) = 0;
+	virtual bool UnregisterFormatHandler(DWORD format) = 0;
 };
 
 };
