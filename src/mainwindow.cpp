@@ -56,9 +56,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     try
     {
-        // Initialize our native formats.
-        this->initializeNativeFormats();
-
+    
 #if 1
         // Test something.
         rw::streamConstructionFileParam_t fileParam( "C:/Users/The_GTA/Desktop/image format samples/png/graybird.png" );
@@ -115,6 +113,9 @@ MainWindow::MainWindow(QWidget *parent) :
         updateWindowTitle();
         setMinimumSize(380, 300);
 	    resize(900, 680);
+
+		/* --- Log --- */
+		this->txdLog = new TxdLog(this);
 
 	    /* --- List --- */
 	    QListWidget *listWidget = new QListWidget();
@@ -341,11 +342,12 @@ MainWindow::MainWindow(QWidget *parent) :
 	    QWidget *window = new QWidget();
 	    window->setLayout(mainLayout);
 
-		this->txdLog = new TxdLog(this);
-
 	    setCentralWidget(window);
 
 		imageWidget->hide();
+
+		// Initialize our native formats.
+		this->initializeNativeFormats();
     }
     catch( ... )
     {

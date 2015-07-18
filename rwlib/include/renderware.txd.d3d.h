@@ -29,6 +29,7 @@ struct d3dNativeTextureInterface abstract
 */
 struct nativeTextureFormatHandler abstract
 {
+	virtual unsigned int GetD3DFormat(void) const = 0;
     // Returns a zero-terminated c-string that is used when the format is described by RenderWare.
     virtual const char* GetFormatName( void ) const = 0;
 
@@ -55,9 +56,9 @@ struct nativeTextureFormatHandler abstract
 
 struct d3dNativeTextureDriverInterface abstract
 {
-    // Registration routines for plugin D3DFORMAT handling.
-    virtual bool RegisterFormatHandler( DWORD format, nativeTextureFormatHandler *handler ) = 0;
-    virtual bool UnregisterFormatHandler( DWORD format ) = 0;
+	// Registration routines for plugin D3DFORMAT handling.
+	virtual bool RegisterFormatHandler(DWORD format, nativeTextureFormatHandler *handler) = 0;
+	virtual bool UnregisterFormatHandler(DWORD format) = 0;
 };
 
 };

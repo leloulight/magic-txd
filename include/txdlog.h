@@ -157,6 +157,13 @@ public:
 		logWidget->hide();
 	}
 
+	void showError(QString msg)
+	{
+		addLogMessage(msg, LOGMSG_ERROR);
+		if (!logWidget->isVisible()) // not fure
+			logWidget->show();
+	}
+
 	void addLogMessage(QString msg, eLogMessageType msgType = LOGMSG_INFO)
 	{
 		QPixmap *pixmap;

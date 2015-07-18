@@ -15,6 +15,8 @@
 #include "txdlog.h"
 #include "txdadddialog.h"
 
+#include "MagicExport.h"
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
