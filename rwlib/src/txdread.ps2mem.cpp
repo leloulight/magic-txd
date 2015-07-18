@@ -1512,7 +1512,7 @@ bool NativeTexturePS2::getDebugBitmap( Bitmap& bmpOut ) const
             return 1;
         }
 
-        void fetchcolor( uint32 colorIndex, double& red, double& green, double& blue, double& alpha )
+        void fetchcolor( uint32 x, uint32 y, double& red, double& green, double& blue, double& alpha )
         {
             red = this->red;
             green = this->green;

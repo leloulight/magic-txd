@@ -38,6 +38,11 @@ struct bmpInfoHeader
 };
 #pragma pack(pop)
 
+inline uint32 getBMPTexelDataRowAlignment( void )
+{
+    return sizeof( DWORD );
+}
+
 struct bmpImagingEnv : public imagingFormatExtension
 {
     inline void Initialize( Interface *engineInterface )
@@ -87,7 +92,9 @@ struct bmpImagingEnv : public imagingFormatExtension
         // Alright, now just the raster data has to be valid.
         inputStream->seek( bmpStartOffset + header.bfOffBits, eSeekMode::RWSEEK_BEG );
 
-        uint32 imageDataSize = getRasterDataSize( infoHeader.biWidth * infoHeader.biHeight, infoHeader.biBitCount );
+        uint32 imageRowSize = getRasterDataRowSize( abs( infoHeader.biWidth ), infoHeader.biBitCount, getBMPTexelDataRowAlignment() );
+
+        uint32 imageDataSize = getRasterDataSizeByRowSize( imageRowSize, abs( infoHeader.biHeight ) );
 
         skipAvailable( inputStream, imageDataSize );
 
@@ -167,14 +174,29 @@ struct bmpImagingEnv : public imagingFormatExtension
 
         uint32 itemDepth;
 
-        if ( infoHeader.biBitCount == 4 || infoHeader.biBitCount == 8 )
+        if ( infoHeader.biBitCount == 1 )
+        {
+            throw RwException( "cannot read monochrome .bmp files" );
+
+#if 0
+            rasterFormat = RASTER_LUM8;
+            depth = 8;
+
+            itemDepth = 8;
+
+            hasRasterFormat = true;
+#endif
+        }
+        else if ( infoHeader.biBitCount == 4 || infoHeader.biBitCount == 8 )
         {
             rasterFormat = RASTER_8888;
             depth = 32;
 
             if ( infoHeader.biBitCount == 4 )
             {
-                paletteType = PALETTE_4BIT;
+                // I actually added support especially for palette data that has a different byte ordering.
+                // This feature is important. All native textures must be aware of it.
+                paletteType = PALETTE_4BIT_LSB;
 
                 itemDepth = 4;
             }
@@ -233,11 +255,16 @@ struct bmpImagingEnv : public imagingFormatExtension
                 throw RwException( "malformed .bmp; invalid palette item count" );
             }
 
-            uint32 paletteDataSize = getRasterDataSize( paletteSize, depth );
+            uint32 paletteDataSize = getPaletteDataSize( paletteSize, depth );
 
             checkAhead( inputStream, paletteDataSize );
 
             paletteData = engineInterface->PixelAllocate( paletteDataSize );
+
+            if ( paletteData == NULL )
+            {
+                throw RwException( "failed to allocate palette data for BMP deserialization" );
+            }
 
             try
             {
@@ -262,24 +289,59 @@ struct bmpImagingEnv : public imagingFormatExtension
             inputStream->seek( bitmapStartOffset + header.bfOffBits, eSeekMode::RWSEEK_BEG );
 
             // Now read the actual image data.
-            uint32 width = infoHeader.biWidth;
-            uint32 height = infoHeader.biHeight;
+            LONG bmpWidth = infoHeader.biWidth;
+            LONG bmpHeight = infoHeader.biHeight;
+
+            bool isUpsideDown = ( bmpHeight > 0 );
+
+            uint32 width = abs( bmpWidth );
+            uint32 height = abs( bmpHeight );
 
             uint32 itemCount = ( width * height );
 
-            uint32 imageDataSize = getRasterDataSize( itemCount, itemDepth );
+            // Calculate the image data size, which includes the padding bytes for each row.
+            const uint32 rowPadding = getBMPTexelDataRowAlignment();
+
+            const uint32 rowSize = getRasterDataRowSize( width, depth, rowPadding );
+
+            const uint32 imageDataSize = ( rowSize * height );
 
             checkAhead( inputStream, imageDataSize );
 
             void *texelData = engineInterface->PixelAllocate( imageDataSize );
 
+            int64 imageDataStartOffset = inputStream->tell();
+
             try
             {
-                size_t texelReadCount = inputStream->read( texelData, imageDataSize );
-
-                if ( texelReadCount != imageDataSize )
+                // Read all the rows.
+                for ( uint32 y = 0; y < height; y++ )
                 {
-                    throw RwException( "failed to read .bmp image data" );
+                    // Seek to the row.
+                    int64 seekPos;
+
+                    if ( isUpsideDown )
+                    {
+                        seekPos = rowSize * y;
+                    }
+                    else
+                    {
+                        seekPos = rowSize * ( height - y - 1 );
+                    }
+
+                    inputStream->seek( imageDataStartOffset + seekPos, RWSEEK_BEG );
+
+                    // Read only the part we are interested in, at the appropriate position.
+                    void *texelPosition = getTexelDataRow( texelData, rowSize, y );
+
+                    size_t readCountRow = inputStream->read( texelPosition, rowSize );
+
+                    if ( readCountRow != rowSize )
+                    {
+                        throw RwException( "failed to read .bmp image data rows" );
+                    }
+                        
+                    // Alright, we got the row. Lets continue.
                 }
             }
             catch( ... )
@@ -299,7 +361,8 @@ struct bmpImagingEnv : public imagingFormatExtension
 
             outputPixels.rasterFormat = rasterFormat;
             outputPixels.depth = depth;
-            outputPixels.colorOrder = COLOR_RGBA;
+            outputPixels.rowAlignment = rowPadding;
+            outputPixels.colorOrder = COLOR_BGRA;
             outputPixels.paletteType = paletteType;
             outputPixels.paletteData = paletteData;
             outputPixels.paletteSize = paletteSize;
@@ -320,53 +383,249 @@ struct bmpImagingEnv : public imagingFormatExtension
     
     void SerializeImage( Interface *engineInterface, Stream *outputStream, const imagingLayerTraversal& inputPixels ) const override
     {
-        // Calculate the file size.
-        DWORD actualFileSize = sizeof( bmpFileHeader );
-
-        // After the file header is an info header.
-        actualFileSize += sizeof( bmpInfoHeader );
-
-        // Now we should have a palette, if we are palettized.
-        ePaletteType srcPaletteType = inputPixels.paletteType;
-        uint32 srcPaletteSize = inputPixels.paletteSize;
-
-        uint32 srcDepth = inputPixels.depth;
-
-        if ( srcPaletteType != PALETTE_NONE )
-        {
-            actualFileSize += getRasterDataSize( srcPaletteSize, srcDepth );
-        }
-
-        DWORD rasterOffBits = actualFileSize;
-
-        // The last part is our image data.
-        uint32 srcDataSize = inputPixels.dataSize;
-
-        actualFileSize += srcDataSize;
-
-        // Lets push some data onto the disk.
-        bmpFileHeader header;
-        header.bfType = 'MB';
-        header.bfSize = actualFileSize;
-        header.bfReserved1 = 0;
-        header.bfReserved2 = 0;
-        header.bfOffBits = rasterOffBits;
-        
-        outputStream->write( &header, sizeof( header ) );
-
         uint32 mipWidth = inputPixels.mipWidth;
         uint32 mipHeight = inputPixels.mipHeight;
 
-        // Now write the info header.
-        bmpInfoHeader infoHeader;
-        infoHeader.biSize = sizeof( infoHeader );
-        infoHeader.biWidth = mipWidth;
-        infoHeader.biHeight = mipHeight;
-        infoHeader.biPlanes = 1;
+        uint32 layerWidth = inputPixels.layerWidth;
+        uint32 layerHeight = inputPixels.layerHeight;
 
-        // TODO.
+        // Determine the image format that we should output as.
+        eRasterFormat rasterFormat = inputPixels.rasterFormat;
+        uint32 depth = inputPixels.depth;
+        uint32 rowAlignment = inputPixels.rowAlignment;
+        eColorOrdering colorOrder = inputPixels.colorOrder;
+        ePaletteType paletteType = inputPixels.paletteType;
+        void *paletteData = inputPixels.paletteData;
+        uint32 paletteSize = inputPixels.paletteSize;
 
-        throw RwException( "cannot serialize .bmp yet" );
+        if ( inputPixels.compressionType != RWCOMPRESS_NONE )
+        {
+            throw RwException( "cannot serialize compressed pixel data in .bmp" );
+        }
+
+        eRasterFormat dstRasterFormat = rasterFormat;
+        uint32 dstDepth = depth;
+        eColorOrdering dstColorOrder = COLOR_BGRA;  // always.
+        ePaletteType dstPaletteType = paletteType;
+        void *dstPaletteData = paletteData;
+        uint32 dstPaletteSize = paletteSize;
+
+        uint32 colorUseCount = 0;
+
+        uint32 dstItemDepth = dstDepth;
+
+        if ( dstPaletteType != PALETTE_NONE )
+        {
+            if ( dstPaletteType == PALETTE_4BIT )
+            {
+                dstPaletteType = PALETTE_4BIT_LSB;
+            }
+            else if ( dstPaletteType != PALETTE_4BIT_LSB )
+            {
+                dstPaletteType = PALETTE_8BIT;
+            }
+
+            dstRasterFormat = RASTER_8888;
+            dstDepth = 32;
+
+            colorUseCount = dstPaletteSize;
+
+            if ( dstPaletteType == PALETTE_4BIT_LSB )
+            {
+                dstItemDepth = 4;
+            }
+            else if ( dstPaletteType == PALETTE_8BIT )
+            {
+                dstItemDepth = 8;
+            }
+            else
+            {
+                assert( 0 );
+            }
+
+            dstPaletteSize = getPaletteItemCount( dstPaletteType );
+        }
+        else
+        {
+            if ( dstRasterFormat == RASTER_565 )
+            {
+                dstDepth = 16;
+            }
+            else if ( dstRasterFormat == RASTER_888 )
+            {
+                if ( dstDepth != 24 )
+                {
+                    dstDepth = 24;
+                }
+            }
+            else
+            {
+                dstRasterFormat = RASTER_888;
+                dstDepth = 24;
+            }
+
+            colorUseCount = 0;
+
+            dstItemDepth = dstDepth;
+        }
+
+        // Convert the imaging layer to a proper format.
+        void *srcTexels = inputPixels.texelSource;
+
+        const uint32 rowPadding = getBMPTexelDataRowAlignment();
+
+        const uint32 dstRowSize = getRasterDataRowSize( mipWidth, dstItemDepth, rowPadding );
+
+        uint32 dstDataSize = getRasterDataSizeByRowSize( dstRowSize, mipHeight );
+
+        try
+        {
+            // Also re-encode the palette, if there is one.
+            uint32 palDataSize = 0;
+
+            if ( dstPaletteType != PALETTE_NONE )
+            {
+                palDataSize = getPaletteDataSize( dstPaletteSize, dstDepth );
+
+                if ( rasterFormat != dstRasterFormat || colorOrder != dstColorOrder ||
+                     dstPaletteType != paletteType || dstPaletteSize != paletteSize )
+                {
+                    uint32 srcPalRasterDepth = Bitmap::getRasterFormatDepth( rasterFormat );
+
+                    dstPaletteData = engineInterface->PixelAllocate( palDataSize );
+
+                    ConvertPaletteData(
+                        paletteData, dstPaletteData,
+                        paletteSize, dstPaletteSize,
+                        rasterFormat, colorOrder, srcPalRasterDepth,
+                        dstRasterFormat, dstColorOrder, dstDepth
+                    );
+                }
+            }
+
+            // Calculate the file size.
+            DWORD actualFileSize = sizeof( bmpFileHeader );
+
+            // After the file header is an info header.
+            actualFileSize += sizeof( bmpInfoHeader );
+
+            // Now we should have a palette, if we are palettized.
+            if ( dstPaletteType != PALETTE_NONE )
+            {
+                actualFileSize += palDataSize;
+            }
+
+            DWORD rasterOffBits = actualFileSize;
+
+            // The last part is our image data.
+            actualFileSize += dstDataSize;
+
+            // Lets push some data onto disk.
+            bmpFileHeader header;
+            header.bfType = 'MB';
+            header.bfSize = actualFileSize;
+            header.bfReserved1 = 0;
+            header.bfReserved2 = 0;
+            header.bfOffBits = rasterOffBits;
+        
+            outputStream->write( &header, sizeof( header ) );
+
+            const bool isUpsideDown = false;
+
+            // Now write the info header.
+            bmpInfoHeader infoHeader;
+            infoHeader.biSize = sizeof( infoHeader );
+            infoHeader.biWidth = layerWidth;
+            infoHeader.biHeight = layerHeight;      // we say it is an upside down BMP and write our data upside down.
+            infoHeader.biPlanes = 1;
+            infoHeader.biBitCount = dstItemDepth;
+            infoHeader.biCompression = 0;           // no compression.
+            infoHeader.biSizeImage = 0;             // not determined, can be produced automatically.
+            infoHeader.biXPelsPerMeter = 3780;      // ???
+            infoHeader.biYPelsPerMeter = 3780;
+            infoHeader.biClrUsed = colorUseCount;
+            infoHeader.biClrImportant = 0;          // all.
+
+            outputStream->write( &infoHeader, sizeof( infoHeader ) );
+
+            // If we are a palette .bmp, write the palette.
+            if ( dstPaletteType != PALETTE_NONE )
+            {
+                outputStream->write( dstPaletteData, palDataSize );
+            }
+
+            // Write the friggin raster data!
+            // We need to write in padded rows.
+            {
+                // Use a temporary buffer to transform to, as we write on a row-by-row basis.
+                void *tmpRow = engineInterface->PixelAllocate( dstRowSize );
+
+                if ( tmpRow == NULL )
+                {
+                    throw RwException( "failed to allocate transformation row for BMP serialization" );
+                }
+
+                try
+                {
+                    // Write the rows.
+                    for ( uint32 y = 0; y < mipHeight; y++ )
+                    {
+                        // Get the real row we should write.
+                        uint32 real_row = 0;
+
+                        if ( isUpsideDown )
+                        {
+                            real_row = y;
+                        }
+                        else
+                        {
+                            real_row = ( mipHeight - y - 1 );
+                        }
+
+                        // Write a row buffer.
+                        // We do not care about clearing the end of the buffer.
+                        moveTexels(
+                            srcTexels, tmpRow,
+                            0, real_row,
+                            0, 0,
+                            mipWidth, 1,
+                            mipWidth, mipHeight,
+                            rasterFormat, depth, rowAlignment, colorOrder, paletteType, paletteData, paletteSize,
+                            dstRasterFormat, dstItemDepth, rowPadding, dstColorOrder, dstPaletteType, dstPaletteData, dstPaletteSize
+                        );
+
+                        outputStream->write( tmpRow, dstRowSize );
+
+                        // We are done.
+                    }
+                }
+                catch( ... )
+                {
+                    engineInterface->PixelFree( tmpRow );
+
+                    throw;
+                }
+
+                engineInterface->PixelFree( tmpRow );
+            }
+        }
+        catch( ... )
+        {
+            // Since there was an error during writing the bitmap, we want to free
+            // resources and quit.
+            if ( paletteData != dstPaletteData )
+            {
+                engineInterface->PixelFree( dstPaletteData );
+            }
+
+            throw;
+        }
+
+        // Clear runtime information.
+        if ( paletteData != dstPaletteData )
+        {
+            engineInterface->PixelFree( dstPaletteData );
+        }
     }
 };
 

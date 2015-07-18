@@ -1,3 +1,6 @@
+#ifndef _PIXELFORMAT_INTERNAL_INCLUDE_
+#define _PIXELFORMAT_INTERNAL_INCLUDE_
+
 namespace rw
 {
 
@@ -11,15 +14,27 @@ AINLINE bool getpaletteindex(
 
     bool couldGetIndex = false;
 
-    if (paletteType == PALETTE_4BIT)
+    if (paletteType == PALETTE_4BIT ||
+        paletteType == PALETTE_4BIT_LSB)
     {
         if (itemDepth == 4)
         {
-            PixelFormat::palette4bit *srcData = (PixelFormat::palette4bit*)texelSource;
+            if (paletteType == PALETTE_4BIT_LSB)
+            {
+                PixelFormat::palette4bit_lsb *srcData = (PixelFormat::palette4bit_lsb*)texelSource;
 
-            srcData->getvalue(colorIndex, paletteIndex);
+                srcData->getvalue(colorIndex, paletteIndex);
 
-            couldGetIndex = true;
+                couldGetIndex = true;
+            }
+            else
+            {
+                PixelFormat::palette4bit *srcData = (PixelFormat::palette4bit*)texelSource;
+
+                srcData->getvalue(colorIndex, paletteIndex);
+
+                couldGetIndex = true;
+            }
         }
         else if (itemDepth == 8)
         {
@@ -57,6 +72,36 @@ AINLINE bool getpaletteindex(
     return couldResolveSource;
 }
 
+AINLINE void setpaletteindex(
+    void *dstTexels, uint32 itemIndex, uint32 dstDepth, ePaletteType dstPaletteType,
+    uint8 palIndex
+)
+{
+    if ( dstDepth == 4 )
+    {
+        if ( dstPaletteType == PALETTE_4BIT )
+        {
+            ( (PixelFormat::palette4bit*)dstTexels )->setvalue(itemIndex, palIndex);
+        }
+        else if ( dstPaletteType == PALETTE_4BIT_LSB )
+        {
+            ( (PixelFormat::palette4bit_lsb*)dstTexels )->setvalue(itemIndex, palIndex);
+        }
+        else
+        {
+            assert( 0 );
+        }
+    }
+    else if ( dstDepth == 8 )
+    {
+        ( (PixelFormat::palette8bit*)dstTexels )->setvalue(itemIndex, palIndex);
+    }
+    else
+    {
+        assert( 0 );
+    }
+}
+
 AINLINE bool browsetexelcolor(
     const void *texelSource, ePaletteType paletteType, const void *paletteData, uint32 maxpalette,
     uint32 colorIndex, eRasterFormat rasterFormat, eColorOrdering colorOrder, uint32 itemDepth,
@@ -74,7 +119,7 @@ AINLINE bool browsetexelcolor(
 
     uint8 prered, pregreen, preblue, prealpha;
 
-    if (paletteType == PALETTE_4BIT || paletteType == PALETTE_8BIT)
+    if (paletteType != PALETTE_NONE)
     {
         realTexelSource = paletteData;
 
@@ -487,22 +532,18 @@ struct colorModelDispatcher
     eColorOrdering colorOrder;
     uint32 depth;
 
-    texel_t *texelSource;
-
     const void *paletteData;
     uint32 paletteSize;
     ePaletteType paletteType;
 
     eColorModel usedColorModel;
 
-    AINLINE colorModelDispatcher( texel_t *texelSource, eRasterFormat rasterFormat, eColorOrdering colorOrder, uint32 depth, const void *paletteData, uint32 paletteSize, ePaletteType paletteType )
+    AINLINE colorModelDispatcher( eRasterFormat rasterFormat, eColorOrdering colorOrder, uint32 depth, const void *paletteData, uint32 paletteSize, ePaletteType paletteType )
     {
         this->rasterFormat = rasterFormat;
         this->colorOrder = colorOrder;
         this->depth = depth;
 
-        this->texelSource = texelSource;
-       
         this->paletteData = paletteData;
         this->paletteSize = paletteSize;
         this->paletteType = paletteType;
@@ -510,13 +551,20 @@ struct colorModelDispatcher
         // Determine the color model of our requests.
         this->usedColorModel = getColorModelFromRasterFormat( rasterFormat );
     }
+    
+private:
+    AINLINE colorModelDispatcher( const colorModelDispatcher& right )
+    {
+        throw RwException( "cloning color model dispatcher makes no sense" );
+    }
 
+public:
     AINLINE eColorModel getColorModel( void ) const
     {
         return this->usedColorModel;
     }
 
-    AINLINE bool getRGBA( unsigned int index, uint8& red, uint8& green, uint8& blue, uint8& alpha ) const
+    AINLINE bool getRGBA( texel_t *texelSource, unsigned int index, uint8& red, uint8& green, uint8& blue, uint8& alpha ) const
     {
         eColorModel model = this->usedColorModel;
 
@@ -526,7 +574,7 @@ struct colorModelDispatcher
         {
             success =
                 browsetexelcolor(
-                    this->texelSource, this->paletteType, this->paletteData, this->paletteSize,
+                    texelSource, this->paletteType, this->paletteData, this->paletteSize,
                     index,
                     this->rasterFormat, this->colorOrder, this->depth,
                     red, green, blue, alpha
@@ -536,7 +584,7 @@ struct colorModelDispatcher
         {
             uint8 lum;
 
-            success = this->getLuminance( index, lum );
+            success = this->getLuminance( texelSource, index, lum );
 
             if ( success )
             {
@@ -554,7 +602,7 @@ struct colorModelDispatcher
         return success;
     }
 
-    AINLINE bool setRGBA( unsigned int index, uint8 red, uint8 green, uint8 blue, uint8 alpha ) const
+    AINLINE bool setRGBA( texel_t *texelSource, unsigned int index, uint8 red, uint8 green, uint8 blue, uint8 alpha ) const
     {
         eColorModel model = this->usedColorModel;
 
@@ -569,7 +617,7 @@ struct colorModelDispatcher
 
             success =
                 puttexelcolor(
-                    this->texelSource, index,
+                    texelSource, index,
                     this->rasterFormat, this->colorOrder, this->depth,
                     red, green, blue, alpha
                 );
@@ -582,7 +630,7 @@ struct colorModelDispatcher
         return success;
     }
 
-    AINLINE bool setLuminance( unsigned int index, uint8 lum ) const
+    AINLINE bool setLuminance( texel_t *texelSource, unsigned int index, uint8 lum ) const
     {
         eColorModel model = this->usedColorModel;
 
@@ -590,14 +638,12 @@ struct colorModelDispatcher
 
         if ( model == COLORMODEL_RGBA )
         {
-            success = this->setRGBA( index, lum, lum, lum, 255 );
+            success = this->setRGBA( texelSource, index, lum, lum, lum, 255 );
         }
         else if ( model == COLORMODEL_LUMINANCE )
         {
             eRasterFormat rasterFormat = this->rasterFormat;
             uint32 depth = this->depth;
-            
-            const void *texelSource = this->texelSource;
             
             if ( rasterFormat == RASTER_LUM8 )
             {
@@ -624,7 +670,7 @@ struct colorModelDispatcher
         return success;
     }
 
-    AINLINE bool getLuminance( unsigned int index, uint8& lum ) const
+    AINLINE bool getLuminance( texel_t *texelSource, unsigned int index, uint8& lum ) const
     {
         eColorModel model = this->usedColorModel;
 
@@ -634,8 +680,6 @@ struct colorModelDispatcher
         {
             eRasterFormat rasterFormat = this->rasterFormat;
             uint32 depth = this->depth;
-            
-            const void *texelSource = this->texelSource;
             
             if ( rasterFormat == RASTER_LUM8 )
             {
@@ -662,7 +706,7 @@ struct colorModelDispatcher
         return success;
     }
 
-    AINLINE void setColor( unsigned int index, const abstractColorItem& colorItem ) const
+    AINLINE void setColor( texel_t *texelSource, unsigned int index, const abstractColorItem& colorItem ) const
     {
         eColorModel model = colorItem.model;
 
@@ -670,11 +714,11 @@ struct colorModelDispatcher
 
         if ( model == COLORMODEL_RGBA )
         {
-            success = this->setRGBA( index, colorItem.rgbaColor.r, colorItem.rgbaColor.g, colorItem.rgbaColor.b, colorItem.rgbaColor.a );
+            success = this->setRGBA( texelSource, index, colorItem.rgbaColor.r, colorItem.rgbaColor.g, colorItem.rgbaColor.b, colorItem.rgbaColor.a );
         }
         else if ( model == COLORMODEL_LUMINANCE )
         {
-            success = this->setLuminance( index, colorItem.lumColor );
+            success = this->setLuminance( texelSource, index, colorItem.lumColor );
         }
         else
         {
@@ -682,7 +726,7 @@ struct colorModelDispatcher
         }
     }
 
-    AINLINE void getColor( unsigned int index, abstractColorItem& colorItem ) const
+    AINLINE void getColor( texel_t *texelSource, unsigned int index, abstractColorItem& colorItem ) const
     {
         eColorModel model = this->usedColorModel;
 
@@ -692,7 +736,7 @@ struct colorModelDispatcher
 
         if ( model == COLORMODEL_RGBA )
         {
-            success = this->getRGBA( index, colorItem.rgbaColor.r, colorItem.rgbaColor.g, colorItem.rgbaColor.b, colorItem.rgbaColor.a );
+            success = this->getRGBA( texelSource, index, colorItem.rgbaColor.r, colorItem.rgbaColor.g, colorItem.rgbaColor.b, colorItem.rgbaColor.a );
 
             if ( !success )
             {
@@ -704,7 +748,7 @@ struct colorModelDispatcher
         }
         else if ( model == COLORMODEL_LUMINANCE )
         {
-            success = this->getLuminance( index, colorItem.lumColor );
+            success = this->getLuminance( texelSource, index, colorItem.lumColor );
 
             if ( !success )
             {
@@ -717,12 +761,88 @@ struct colorModelDispatcher
         }
     }
 
-    AINLINE void clearColor( unsigned int index )
+    AINLINE void clearColor( texel_t *texelSource, unsigned int index )
     {
         // TODO.
-        this->setLuminance( index, 0 );
+        this->setLuminance( texelSource, index, 0 );
     }
 };
+
+template <typename srcColorDispatcher, typename dstColorDispatcher>
+inline void copyTexelDataEx(
+    const void *srcTexels, void *dstTexels,
+    srcColorDispatcher& fetchDispatch, dstColorDispatcher& putDispatch,
+    uint32 srcWidth, uint32 srcHeight,
+    uint32 srcOffX, uint32 srcOffY,
+    uint32 dstOffX, uint32 dstOffY,
+    uint32 srcRowSize, uint32 dstRowSize
+)
+{
+    // If we are not a palette, then we have to process colors.
+    for ( uint32 row = 0; row < srcHeight; row++ )
+    {
+        const void *srcRow = getConstTexelDataRow( srcTexels, srcRowSize, row + srcOffY );
+        void *dstRow = getTexelDataRow( dstTexels, dstRowSize, row + dstOffY );
+
+        for ( uint32 col = 0; col < srcWidth; col++ )
+        {
+            abstractColorItem colorItem;
+
+            fetchDispatch.getColor( srcRow, col + srcOffX, colorItem );
+
+            // Just put the color inside.
+            putDispatch.setColor( dstRow, col + dstOffX, colorItem );
+        }
+    }
+}
+
+// Move color items from one array position to another array at position.
+AINLINE void moveTexels(
+    const void *srcTexels, void *dstTexels,
+    uint32 srcTexelX, uint32 srcTexelY, uint32 dstTexelX, uint32 dstTexelY,
+    uint32 texelCountX, uint32 texelCountY,
+    uint32 mipWidth, uint32 mipHeight,
+    eRasterFormat srcRasterFormat, uint32 srcItemDepth, uint32 srcRowAlignment, eColorOrdering srcColorOrder, ePaletteType srcPaletteType, const void *srcPaletteData, uint32 srcPaletteSize,
+    eRasterFormat dstRasterFormat, uint32 dstItemDepth, uint32 dstRowAlignment, eColorOrdering dstColorOrder, ePaletteType dstPaletteType, const void *dstPaletteData, uint32 dstPaletteSize
+)
+{
+    if ( srcPaletteType != PALETTE_NONE )
+    {
+        assert( dstPaletteType != PALETTE_NONE );
+
+        // Move palette texels.
+        ConvertPaletteDepthEx(
+            srcTexels, dstTexels,
+            srcTexelX, srcTexelY, dstTexelX, dstTexelY,
+            mipWidth, mipHeight,
+            texelCountX, texelCountY,
+            srcPaletteType, dstPaletteType,
+            srcPaletteSize,
+            srcItemDepth, dstItemDepth,
+            srcRowAlignment, dstRowAlignment
+        );
+    }
+    else
+    {
+        assert( dstPaletteType == PALETTE_NONE );
+
+        // Move color items.
+        colorModelDispatcher <const void> fetchDispatch( srcRasterFormat, srcColorOrder, srcItemDepth, NULL, 0, PALETTE_NONE );
+        colorModelDispatcher <void> putDispatch( dstRasterFormat, dstColorOrder, dstItemDepth, NULL, 0, PALETTE_NONE );
+
+        uint32 srcRowSize = getRasterDataRowSize( mipWidth, srcItemDepth, srcRowAlignment );
+        uint32 dstRowSize = getRasterDataRowSize( mipWidth, dstItemDepth, dstRowAlignment );
+
+        copyTexelDataEx(
+            srcTexels, dstTexels,
+            fetchDispatch, putDispatch,
+            texelCountX, texelCountY,
+            srcTexelX, srcTexelY,
+            dstTexelX, dstTexelY,
+            srcRowSize, dstRowSize
+        );
+    }
+}
 
 inline double unpackcolor( uint8 color )
 {
@@ -843,4 +963,75 @@ inline bool calculateHasAlpha( const pixelDataTraversal& pixelData )
     );
 }
 
+inline bool doesRasterFormatNeedConversion(
+    eRasterFormat srcRasterFormat, uint32 srcDepth, eColorOrdering srcColorOrder, ePaletteType srcPaletteType,
+    eRasterFormat dstRasterFormat, uint32 dstDepth, eColorOrdering dstColorOrder, ePaletteType dstPaletteType
+)
+{
+    // Returns true if the source raster format needs to be converted
+    // to become the destination raster format. This is useful if you want
+    // to directly acquire texels instead of passing them into a conversion
+    // routine.
+
+    if ( srcRasterFormat != dstRasterFormat || srcDepth != dstDepth || srcColorOrder != dstColorOrder || srcPaletteType != dstPaletteType )
+    {
+        return true;
+    }
+
+    // TODO: add optimizations to this decision making.
+    // Like RGBA8888 32bit can be directly acquired to RGB8888 32bit.
+
+    return false;
+}
+
+inline bool doesPixelDataNeedConversion(
+    const pixelDataTraversal& pixelData,
+    eRasterFormat srcRasterFormat, uint32 srcDepth, uint32 srcRowAlignment, eColorOrdering srcColorOrder, ePaletteType srcPaletteType,
+    eRasterFormat dstRasterFormat, uint32 dstDepth, uint32 dstRowAlignment, eColorOrdering dstColorOrder, ePaletteType dstPaletteType
+)
+{
+    // This function is supposed to decide whether the information stored in pixelData, which is
+    // reflected by the source format, requires expensive conversion to reach the destination format.
+    // pixelData is expected to be raw uncompressed texture data.
+    
+    // If the raster format has changed, there is no way around conversion.
+    if ( doesRasterFormatNeedConversion(
+             srcRasterFormat, srcDepth, srcColorOrder, srcPaletteType,
+             dstRasterFormat, dstDepth, dstColorOrder, dstPaletteType
+         ) )
+    {
+        return true;
+    }
+
+    // Then there is the possibility that the buffer has expanded, for any mipmap inside of pixelData.
+    // A conversion will properly fix that.
+    {
+        unsigned int numberOfMipmaps = pixelData.mipmaps.size();
+
+        for ( unsigned int n = 0; n < numberOfMipmaps; n++ )
+        {
+            const pixelDataTraversal::mipmapResource& mipLayer = pixelData.mipmaps[ n ];
+
+            bool doesRequireNewTexelBuffer =
+                shouldAllocateNewRasterBuffer(
+                    mipLayer.mipWidth,
+                    srcDepth, srcRowAlignment,
+                    dstDepth, dstRowAlignment
+                );
+
+            if ( doesRequireNewTexelBuffer )
+            {
+                // If we require a new texel buffer, we kinda have to convert stuff.
+                // The conversion routine is an all-in-one fix, that should not be called too often.
+                return true;
+            }
+        }
+    }
+
+    // We prefer if there is no conversion required.
+    return false;
+}
+
 };
+
+#endif //_PIXELFORMAT_INTERNAL_INCLUDE_

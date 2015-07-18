@@ -219,61 +219,29 @@ namespace ps2GSPixelEncodingFormats
     }
 
     inline static void permuteArray(
-        const void *srcToBePermuted, uint32 srcWidth, uint32 srcHeight, uint32 srcDepth, uint32 srcColumnWidth, uint32 srcColumnHeight,
-        void *dstTexels, uint32 dstWidth, uint32 dstHeight, uint32 dstDepth, uint32 dstColumnWidth, uint32 dstColumnHeight,
+        const void *srcToBePermuted, uint32 rawWidth, uint32 rawHeight, uint32 rawDepth, uint32 rawColumnWidth, uint32 rawColumnHeight,
+        void *dstTexels, uint32 packedWidth, uint32 packedHeight, uint32 packedDepth, uint32 packedColumnWidth, uint32 packedColumnHeight,
         uint32 colsWidth, uint32 colsHeight,
         const uint32 *permutationData_primCol, const uint32 *permutationData_secCol, uint32 permWidth, uint32 permHeight,
         uint32 permutationStride, uint32 permHoriSplit,
+        uint32 srcRowAlignment, uint32 dstRowAlignment,
         bool revert
         )
     {
         // Get the dimensions of a column as expressed in units of the permutation format.
-        uint32 permProcessColumnWidth = 0;
-        uint32 permProcessColumnHeight = 0;
+        uint32 permProcessColumnWidth = packedColumnWidth;
+        uint32 permProcessColumnHeight = packedColumnHeight;
 
-        uint32 permIterWidth = 0;
-        uint32 permIterHeight = 0;
+        uint32 permIterWidth = rawColumnWidth;
+        uint32 permIterHeight = rawColumnHeight;
 
-        uint32 permSourceWidth = 0;
-        uint32 permSourceHeight = 0;
+        uint32 permSourceWidth = rawWidth;
+        uint32 permSourceHeight = rawHeight;
 
-        uint32 packedTargetWidth = 0;
-        uint32 packedTargetHeight = 0;
+        uint32 packedTargetWidth = packedWidth;
+        uint32 packedTargetHeight = packedHeight;
 
-        uint32 permItemDepth = 0;
-
-        if ( !revert )
-        {
-            permIterWidth = srcColumnWidth;
-            permIterHeight = srcColumnHeight;
-
-            permProcessColumnWidth = dstColumnWidth;
-            permProcessColumnHeight = dstColumnHeight;
-
-            permItemDepth = srcDepth;
-
-            permSourceWidth = srcWidth;
-            permSourceHeight = srcHeight;
-
-            packedTargetWidth = dstWidth;
-            packedTargetHeight = dstHeight;
-        }
-        else
-        {
-            permIterWidth = dstColumnWidth;
-            permIterHeight = dstColumnHeight;
-
-            permProcessColumnWidth = srcColumnWidth;
-            permProcessColumnHeight = srcColumnHeight;
-
-            permItemDepth = dstDepth;
-
-            permSourceWidth = dstWidth;
-            permSourceHeight = dstHeight;
-
-            packedTargetWidth = srcWidth;
-            packedTargetHeight = srcHeight;
-        }
+        uint32 permItemDepth = rawDepth;
 
         uint32 packedTransformedColumnWidth = ( permProcessColumnWidth * permutationStride ) / permHoriSplit;
         uint32 packedTransformedColumnHeight = ( permProcessColumnHeight );
@@ -282,6 +250,24 @@ namespace ps2GSPixelEncodingFormats
 
         // Get the stride through the packed data in raw format.
         uint32 packedTransformedStride = ( packedTargetWidth * permutationStride );
+
+        // Determine the strides for both arrays.
+        uint32 srcStride, targetStride;
+
+        if ( !revert )
+        {
+            srcStride = permSourceWidth;
+            targetStride = packedTransformedStride;
+        }
+        else
+        {
+            srcStride = packedTransformedStride;
+            targetStride = permSourceWidth;
+        }
+
+        // Calculate the row sizes.
+        uint32 srcRowSize = getRasterDataRowSize( srcStride, permItemDepth, srcRowAlignment );
+        uint32 dstRowSize = getRasterDataRowSize( targetStride, permItemDepth, dstRowAlignment );
 
         // Permute the pixels.
         for ( uint32 colY = 0; colY < colsHeight; colY++ )
@@ -332,109 +318,33 @@ namespace ps2GSPixelEncodingFormats
                              target_pixel_xOff < packedTransformedStride &&
                              target_pixel_yOff < packedTransformedColumnHeight * colsHeight )
                         {
-                            // Get the array index into the arrays.
-                            uint32 srcArrayIndex;
-                            uint32 targetArrayIndex;
+                            // Determine the 2D array coordinates for source and destionation arrays.
+                            uint32 source_xOff, source_yOff;
+                            uint32 target_xOff, target_yOff;
 
                             if ( !revert )
                             {
-                                srcArrayIndex = ( source_pixel_yOff * permSourceWidth + source_pixel_xOff );
+                                source_xOff = source_pixel_xOff;
+                                source_yOff = source_pixel_yOff;
 
-                                targetArrayIndex = ( target_pixel_yOff * packedTransformedStride + target_pixel_xOff );
+                                target_xOff = target_pixel_xOff;
+                                target_yOff = target_pixel_yOff;
                             }
                             else
                             {
-                                targetArrayIndex = ( source_pixel_yOff * permSourceWidth + source_pixel_xOff );
+                                source_xOff = target_pixel_xOff;
+                                source_yOff = target_pixel_yOff;
 
-                                srcArrayIndex = ( target_pixel_yOff * packedTransformedStride + target_pixel_xOff );
+                                target_xOff = source_pixel_xOff;
+                                target_yOff = source_pixel_yOff;
                             }
 
-                            // Perform the texel movement.
-                            if (permItemDepth == 4)
-                            {
-                                PixelFormat::palette4bit *srcData = (PixelFormat::palette4bit*)srcToBePermuted;
+                            // Get the rows.
+                            const void *srcRow = getConstTexelDataRow( srcToBePermuted, srcRowSize, source_yOff );
+                            void *dstRow = getTexelDataRow( dstTexels, dstRowSize, target_yOff );
 
-                                // Get the src item.
-                                PixelFormat::palette4bit::trav_t travItem;
-
-                                srcData->getvalue(srcArrayIndex, travItem);
-
-                                // Put the dst item.
-                                PixelFormat::palette4bit *dstData = (PixelFormat::palette4bit*)dstTexels;
-
-                                dstData->setvalue(targetArrayIndex, travItem);
-                            }
-                            else if (permItemDepth == 8)
-                            {
-                                // Get the src item.
-                                PixelFormat::palette8bit *srcData = (PixelFormat::palette8bit*)srcToBePermuted;
-
-                                PixelFormat::palette8bit::trav_t travItem;
-
-                                srcData->getvalue(srcArrayIndex, travItem);
-
-                                // Put the dst item.
-                                PixelFormat::palette8bit *dstData = (PixelFormat::palette8bit*)dstTexels;
-
-                                dstData->setvalue(targetArrayIndex, travItem);
-                            }
-                            else if (permItemDepth == 16)
-                            {
-                                typedef PixelFormat::typedcolor <uint16> theColor;
-
-                                // Get the src item.
-                                theColor *srcData = (theColor*)srcToBePermuted;
-
-                                theColor::trav_t travItem;
-
-                                srcData->getvalue(srcArrayIndex, travItem);
-
-                                // Put the dst item.
-                                theColor *dstData = (theColor*)dstTexels;
-
-                                dstData->setvalue(targetArrayIndex, travItem);
-                            }
-                            else if (permItemDepth == 24)
-                            {
-                                struct colorStruct
-                                {
-                                    uint8 x, y, z;
-                                };
-
-                                typedef PixelFormat::typedcolor <colorStruct> theColor;
-
-                                // Get the src item.
-                                theColor *srcData = (theColor*)srcToBePermuted;
-
-                                theColor::trav_t travItem;
-
-                                srcData->getvalue(srcArrayIndex, travItem);
-
-                                // Put the dst item.
-                                theColor *dstData = (theColor*)dstTexels;
-
-                                dstData->setvalue(targetArrayIndex, travItem);
-                            }
-                            else if (permItemDepth == 32)
-                            {
-                                typedef PixelFormat::typedcolor <uint32> theColor;
-
-                                // Get the src item.
-                                theColor *srcData = (theColor*)srcToBePermuted;
-
-                                theColor::trav_t travItem;
-
-                                srcData->getvalue(srcArrayIndex, travItem);
-
-                                // Put the dst item.
-                                theColor *dstData = (theColor*)dstTexels;
-
-                                dstData->setvalue(targetArrayIndex, travItem);
-                            }
-                            else
-                            {
-                                assert(0);
-                            }
+                            // Move the data over.
+                            moveDataByDepth( dstRow, srcRow, permItemDepth, target_xOff, source_xOff );
                         }
                     }
                 }
@@ -462,63 +372,167 @@ namespace ps2GSPixelEncodingFormats
         return true;
     }
 
-    inline static void* unpackImageData(
+    inline static void* transformImageData(
         Interface *engineInterface,
-        eFormatEncodingType packedFormat, eFormatEncodingType rawFormat,
-        uint32 rawItemDepth,
-        const void *srcToBeDecoded, uint32 packedWidth, uint32 packedHeight,
-        uint32& dstDataSizeOut, uint32 dstWidth, uint32 dstHeight
+        eFormatEncodingType srcFormat, eFormatEncodingType dstFormat,
+        const void *srcToBeTransformed,
+        uint32 srcMipWidth, uint32 srcMipHeight,
+        uint32 srcRowAlignment, uint32 dstRowAlignment,
+        uint32& dstMipWidthInOut, uint32& dstMipHeightInOut,
+        uint32& dstDataSizeOut,
+        bool hasDestinationDimms = false
     )
     {
-        assert(rawFormat != FORMAT_UNKNOWN);
-        assert(packedFormat != FORMAT_UNKNOWN);
+        assert(srcFormat != FORMAT_UNKNOWN);
+        assert(dstFormat != FORMAT_UNKNOWN);
 
-        assert(rawFormat != packedFormat);
+        if ( srcFormat == dstFormat )
+        {
+            return NULL;
+        }
 
-        // Get the encoding properties of the source data.
+        // Decide whether its unpacking or packing.
+        bool isPack = isPackOperation( srcFormat, dstFormat );
+
+        // Packing is the operation of putting smaller data types into bigger data types.
+        // Since we define data structures to pack things, we use those both ways.
+
+        eFormatEncodingType rawFormat, packedFormat;
+
+        if ( isPack )
+        {
+            rawFormat = srcFormat;
+            packedFormat = dstFormat;
+        }
+        else
+        {
+
+            rawFormat = dstFormat;
+            packedFormat = srcFormat;
+        }
+
+        // We need to get the dimensions of the permutation.
+        // This is from the view of packing, so we use the format 'to be packed'.
+        uint32 permWidth, permHeight;
+
+        bool gotPermDimms = getPermutationDimensions(rawFormat, permWidth, permHeight);
+
+        assert( gotPermDimms == true );
+
+        // Calculate the permutation stride and the hori split.
+        uint32 rawDepth = getFormatEncodingDepth( rawFormat );
+        uint32 packedDepth = getFormatEncodingDepth( packedFormat );
+
+        uint32 permutationStride = ( packedDepth / rawDepth );
+
+        uint32 permHoriSplit = ( permutationStride / permWidth );
+
+        // Get the dimensions of the permutation area.
+        uint32 rawColumnWidth, rawColumnHeight;
         uint32 packedColumnWidth, packedColumnHeight;
 
-        bool gotPackedDimms = getEncodingFormatDimensions(packedFormat, packedColumnWidth, packedColumnHeight);
-
-        assert( gotPackedDimms == true );
-
-        uint32 packedDepth = getFormatEncodingDepth(packedFormat);
-
-        // Make sure the packed texture is a multiple of the column dimensions.
-        assert((packedWidth % packedColumnWidth) == 0);
-        assert((packedHeight % packedColumnHeight) == 0);
-
-        // Get the amount of columns from the packed image.
-        // This is how much memory the memory space sets available to us.
-        uint32 packedWidthColumnCount = ( packedWidth / packedColumnWidth );
-        uint32 packedHeightColumnCount = ( packedHeight / packedColumnHeight );
-
-        // Get the encoding properties of the target data.
-        uint32 rawColumnWidth, rawColumnHeight;
-
-        bool gotRawDimms = getEncodingFormatDimensions(rawFormat, rawColumnWidth, rawColumnHeight);
+        bool gotRawDimms = getEncodingFormatDimensions( rawFormat, rawColumnWidth, rawColumnHeight );
 
         assert( gotRawDimms == true );
 
-        uint32 rawDepth = rawItemDepth;//getFormatEncodingDepth(rawFormat);
+        bool gotPackedDimms = getEncodingFormatDimensions( packedFormat, packedColumnWidth, packedColumnHeight );
 
-        // Calculate the size of the destination data.
-        uint32 dstDataSize = getRasterDataSize( dstWidth * dstHeight, rawDepth );
+        assert( gotPackedDimms == true );
 
-        if ( dstDataSize == 0 )
-            return NULL;
+        // Calculate the dimensions.
+        uint32 rawWidth, rawHeight;
+        uint32 packedWidth, packedHeight;
 
-        // Allocate a buffer for the new permutation data.
-        void *dstTexels = engineInterface->PixelAllocate( dstDataSize );
+        uint32 columnWidthCount;
+        uint32 columnHeightCount;
 
-        if ( dstTexels )
+        if ( isPack )
+        {
+            rawWidth = srcMipWidth;
+            rawHeight = srcMipHeight;
+
+            // The raw image does not have to be big enough to fill the entire packed
+            // encoding.
+            uint32 expRawWidth = ALIGN_SIZE( rawWidth, rawColumnWidth );
+            uint32 expRawHeight = ALIGN_SIZE( rawHeight, rawColumnHeight );
+
+            columnWidthCount = ( expRawWidth / rawColumnWidth );
+            columnHeightCount = ( expRawHeight / rawColumnHeight );
+
+            if ( hasDestinationDimms )
+            {
+                packedWidth = dstMipWidthInOut;
+                packedHeight = dstMipHeightInOut;
+            }
+            else
+            {
+                packedWidth = ALIGN_SIZE( ( packedColumnWidth * columnWidthCount ) / permHoriSplit, packedColumnWidth );
+                packedHeight = ( packedColumnHeight * columnHeightCount );
+            }
+        }
+        else
+        {
+            packedWidth = srcMipWidth;
+            packedHeight = srcMipHeight;
+
+            // If texels are packed, they have to be properly formatted.
+            // Else there is a real problem.
+            assert((packedWidth % packedColumnWidth) == 0);
+            assert((packedHeight % packedColumnHeight) == 0);
+
+            columnWidthCount = ( packedWidth / packedColumnWidth );
+            columnHeightCount = ( packedHeight / packedColumnHeight );
+
+            if ( hasDestinationDimms )
+            {
+                rawWidth = dstMipWidthInOut;
+                rawHeight = dstMipHeightInOut;
+            }
+            else
+            {
+                rawWidth = ( ( rawColumnWidth * columnWidthCount ) * permHoriSplit );
+                rawHeight = ( rawColumnHeight * columnHeightCount );
+            }
+        }
+
+        // Determine the dimensions of the destination data.
+        // We could have them already.
+        uint32 dstMipWidth, dstMipHeight;
+
+        if ( isPack )
+        {
+            dstMipWidth = packedWidth;
+            dstMipHeight = packedHeight;
+        }
+        else
+        {
+            dstMipWidth = rawWidth;
+            dstMipHeight = rawHeight;
+        }
+
+        // Allocate the container for the destination tranformation.
+        uint32 dstFormatDepth;
+
+        if ( isPack )
+        {
+            dstFormatDepth = packedDepth;
+        }
+        else
+        {
+            dstFormatDepth = rawDepth;
+        }
+
+        uint32 dstRowSize = getRasterDataRowSize( dstMipWidth, dstFormatDepth, dstRowAlignment );
+
+        uint32 dstDataSize = getRasterDataSizeByRowSize( dstRowSize, dstMipHeight );
+
+        void *newtexels = engineInterface->PixelAllocate( dstDataSize );
+
+        if ( newtexels )
         {
             // Determine the encoding permutation.
             const uint32 *permutationData_primCol = NULL;
             const uint32 *permutationData_secCol = NULL;
-
-            uint32 permWidth = 0;
-            uint32 permHeight = 0;
 
             if (packedFormat == FORMAT_TEX32)
             {
@@ -532,40 +546,43 @@ namespace ps2GSPixelEncodingFormats
                     permutationData_primCol = psmt8_to_psmct32_prim;
                     permutationData_secCol = psmt8_to_psmct32_sec;
                 }
-
-                getPermutationDimensions(rawFormat, permWidth, permHeight);
             }
 
-            if ( permutationData_primCol != NULL && permutationData_secCol != NULL )
+            if (permutationData_primCol != NULL && permutationData_secCol != NULL)
             {
-                // Get the amount of raw texels that can be put into one packed texel.
-                uint32 permutationStride = ( packedDepth / rawDepth );
-
-                // Get the horizontal split count.
-                uint32 permHoriSplit = ( permutationStride / permWidth );
-
-                // Execute the permutation engine.
+                // Permute!
                 permuteArray(
-                    srcToBeDecoded, packedWidth, packedHeight, packedDepth, packedColumnWidth, packedColumnHeight,
-                    dstTexels, dstWidth, dstHeight, rawDepth, rawColumnWidth, rawColumnHeight,
-                    packedWidthColumnCount, packedHeightColumnCount,
-                    permutationData_primCol, permutationData_secCol, permWidth, permHeight,
+                    srcToBeTransformed, rawWidth, rawHeight, rawDepth, rawColumnWidth, rawColumnHeight,
+                    newtexels, packedWidth, packedHeight, packedDepth, packedColumnWidth, packedColumnHeight,
+                    columnWidthCount, columnHeightCount,
+                    permutationData_primCol, permutationData_secCol,
+                    permWidth, permHeight,
                     permutationStride, permHoriSplit,
-                    true
+                    srcRowAlignment, dstRowAlignment,
+                    !isPack
                 );
-
-                // Write the destination properties.
-                dstDataSizeOut = dstDataSize;
             }
             else
             {
-                engineInterface->PixelFree( dstTexels );
+                engineInterface->PixelFree( newtexels );
 
-                dstTexels = NULL;
+                newtexels = NULL;
             }
         }
 
-        return dstTexels;
+        if ( newtexels )
+        {
+            // Return the destination dimms.
+            if ( !hasDestinationDimms )
+            {
+                dstMipWidthInOut = dstMipWidth;
+                dstMipHeightInOut = dstMipHeight;
+            }
+
+            dstDataSizeOut = dstDataSize;
+        }
+
+        return newtexels;
     }
 
     inline static bool getPackedFormatDimensions(
@@ -574,13 +591,6 @@ namespace ps2GSPixelEncodingFormats
         uint32& packedWidthOut, uint32& packedHeightOut
     )
     {
-        if ( rawFormat == packedFormat )
-        {
-            packedWidthOut = rawWidth;
-            packedHeightOut = rawHeight;
-            return true;
-        }
-
         // Get the encoding properties of the source data.
         uint32 rawColumnWidth, rawColumnHeight;
 
@@ -620,176 +630,69 @@ namespace ps2GSPixelEncodingFormats
         uint32 packedWidth = ( rawWidthColumnCount * packedColumnWidth );
         uint32 packedHeight = ( rawHeightColumnCount * packedColumnHeight );
 
-        // Get permutation dimensions.
-        uint32 permWidth, permHeight;
-
-        eFormatEncodingType permFormat = FORMAT_UNKNOWN;
-
-        if ( rawDepth < packedDepth )
+        if ( rawFormat != packedFormat )
         {
-            permFormat = rawFormat;
-        }
-        else
-        {
-            permFormat = packedFormat;
-        }
+            // Get permutation dimensions.
+            uint32 permWidth, permHeight;
+
+            eFormatEncodingType permFormat = FORMAT_UNKNOWN;
+
+            if ( rawDepth < packedDepth )
+            {
+                permFormat = rawFormat;
+            }
+            else
+            {
+                permFormat = packedFormat;
+            }
         
-        bool gotPermDimms = getPermutationDimensions(permFormat, permWidth, permHeight);
+            bool gotPermDimms = getPermutationDimensions(permFormat, permWidth, permHeight);
 
-        if ( gotPermDimms == false )
-        {
-            return false;
-        }
+            if ( gotPermDimms == false )
+            {
+                return false;
+            }
 
-        // Get the amount of raw texels that can be put into one packed texel.
-        uint32 permutationStride;
+            // Get the amount of raw texels that can be put into one packed texel.
+            uint32 permutationStride;
 
-        if ( rawDepth < packedDepth )
-        {
-            permutationStride = ( packedDepth / rawDepth );
+            bool isPack = isPackOperation( rawFormat, packedFormat );
+
+            if ( isPack )
+            {
+                permutationStride = ( packedDepth / rawDepth );
+            }
+            else
+            {
+                permutationStride = ( rawDepth / packedDepth );
+            }
+
+            // Get the horizontal split count.
+            uint32 permHoriSplit = ( permutationStride / permWidth );
+
+            // Give the values to the runtime.
+            if ( isPack )
+            {
+                packedWidthOut = ( packedWidth / permHoriSplit );
+            }
+            else
+            {
+                packedWidthOut = ( packedWidth * permHoriSplit );
+            }
+            packedHeightOut = packedHeight;
         }
         else
         {
-            permutationStride = ( rawDepth / packedDepth );
+            // Just return what we have.
+            packedWidthOut = packedWidth;
+            packedHeightOut = packedHeight;
         }
-
-        // Get the horizontal split count.
-        uint32 permHoriSplit = ( permutationStride / permWidth );
-
-        // Give the values to the runtime.
-        if ( rawDepth < packedDepth )
-        {
-            packedWidthOut = ( packedWidth / permHoriSplit );
-        }
-        else
-        {
-            packedWidthOut = ( packedWidth * permHoriSplit );
-        }
-        packedHeightOut = packedHeight;
 
         // Make sure we align the packed coordinates.
         packedWidthOut = ALIGN_SIZE( packedWidthOut, packedColumnWidth );
         packedHeightOut = ALIGN_SIZE( packedHeightOut, packedColumnHeight );
 
         return true;
-    }
-
-    inline static void* packImageData(
-        Interface *engineInterface,
-        eFormatEncodingType rawFormat, eFormatEncodingType packedFormat,
-        uint32 rawItemDepth,
-        const void *srcToBeEncoded, uint32 srcWidth, uint32 srcHeight,
-        uint32& dstDataSizeOut, uint32& dstWidthOut, uint32& dstHeightOut
-    )
-    {
-        assert(rawFormat != FORMAT_UNKNOWN);
-        assert(packedFormat != FORMAT_UNKNOWN);
-
-        assert(rawFormat != packedFormat);
-
-        // Get the encoding properties of the source data.
-        uint32 rawColumnWidth, rawColumnHeight;
-
-        bool gotRawDimms = getEncodingFormatDimensions(rawFormat, rawColumnWidth, rawColumnHeight);
-
-        assert( gotRawDimms == true );
-
-        uint32 rawDepth = rawItemDepth;//getFormatEncodingDepth(rawFormat);
-
-        // Make sure the raw texture is a multiple of the column dimensions.
-        uint32 expSrcWidth = ALIGN_SIZE( srcWidth, rawColumnWidth );
-        uint32 expSrcHeight = ALIGN_SIZE( srcHeight, rawColumnHeight );
-
-        // Get the amount of columns from our source image.
-        // The encoded image must have the same amount of columns, after all.
-        uint32 rawWidthColumnCount = ( expSrcWidth / rawColumnWidth );
-        uint32 rawHeightColumnCount = ( expSrcHeight / rawColumnHeight );
-
-        // Get the encoding properties of the target data.
-        uint32 packedColumnWidth, packedColumnHeight;
-
-        bool gotPackedDimms = getEncodingFormatDimensions(packedFormat, packedColumnWidth, packedColumnHeight);
-
-        assert( gotPackedDimms == true );
-
-        uint32 packedDepth = getFormatEncodingDepth(packedFormat);
-
-        // Get permutation info.
-        uint32 permWidth = 0;
-        uint32 permHeight = 0;
-
-        bool gotPermDimms = getPermutationDimensions(rawFormat, permWidth, permHeight);
-
-        assert( gotPermDimms == true );
-
-        // Get the amount of raw texels that can be put into one packed texel.
-        uint32 permutationStride = ( packedDepth / rawDepth );
-
-        // Get the horizontal split count.
-        uint32 permHoriSplit = ( permutationStride / permWidth );
-
-        // Get the dimensions of the packed format.
-        // Since it has to have the same amount of columns, we multiply those column
-        // dimensions with the column counts.
-        uint32 packedWidth = ALIGN_SIZE( ( rawWidthColumnCount * packedColumnWidth ) / permHoriSplit, packedColumnWidth );
-        uint32 packedHeight = ( rawHeightColumnCount * packedColumnHeight );
-
-        // Calculate the size of the destination data.
-        uint32 dstDataSize = getRasterDataSize( packedWidth * packedHeight, packedDepth );
-
-        if ( dstDataSize == 0 )
-            return NULL;
-
-        // Allocate a buffer for the new permutation data.
-        void *dstTexels = engineInterface->PixelAllocate( dstDataSize );
-
-        if ( dstTexels )
-        {
-            // Determine the encoding permutation.
-            const uint32 *permutationData_primCol = NULL;
-            const uint32 *permutationData_secCol = NULL;
-
-            if (packedFormat == FORMAT_TEX32)
-            {
-                if (rawFormat == FORMAT_IDTEX4)
-                {
-                    permutationData_primCol = psmt4_to_psmct32_prim;
-                    permutationData_secCol = psmt4_to_psmct32_sec;
-                }
-                else if (rawFormat == FORMAT_IDTEX8 || rawFormat == FORMAT_IDTEX8_COMPRESSED)
-                {
-                    permutationData_primCol = psmt8_to_psmct32_prim;
-                    permutationData_secCol = psmt8_to_psmct32_sec;
-                }
-            }
-
-            if ( permutationData_primCol != NULL && permutationData_secCol != NULL )
-            {
-                // Execute the permutation engine.
-                permuteArray(
-                    srcToBeEncoded, srcWidth, srcHeight, rawDepth, rawColumnWidth, rawColumnHeight,
-                    dstTexels, packedWidth, packedHeight, packedDepth, packedColumnWidth, packedColumnHeight,
-                    rawWidthColumnCount, rawHeightColumnCount,
-                    permutationData_primCol, permutationData_secCol, permWidth, permHeight,
-                    permutationStride, permHoriSplit,
-                    false
-                );
-
-                // Write the destination properties.
-                dstDataSizeOut = dstDataSize;
-
-                dstWidthOut = packedWidth;
-                dstHeightOut = packedHeight;
-            }
-            else
-            {
-                engineInterface->PixelFree( dstTexels );
-
-                dstTexels = NULL;
-            }
-        }
-
-        return dstTexels;
     }
 };
 

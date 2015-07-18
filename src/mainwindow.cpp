@@ -22,6 +22,7 @@ MainWindow::MainWindow(QWidget *parent) :
     this->currentTXD = NULL;
     this->txdNameLabel = NULL;
     this->currentSelectedTexture = NULL;
+    this->txdLog = NULL;
 
     this->drawMipmapLayers = false;
 	this->showBackground = false;
@@ -50,14 +51,17 @@ MainWindow::MainWindow(QWidget *parent) :
     this->rwEngine->SetWarningLevel( 3 );
     this->rwEngine->SetWarningManager( &this->rwWarnMan );
 
+    this->rwEngine->SetDXTRuntime( rw::DXTRUNTIME_SQUISH );
+    this->rwEngine->SetPaletteRuntime( rw::PALRUNTIME_PNGQUANT );
+
     try
     {
         // Initialize our native formats.
         this->initializeNativeFormats();
 
-#if 0
+#if 1
         // Test something.
-        rw::streamConstructionFileParam_t fileParam( "C:/Users/The_GTA/Desktop/image format samples/tga/monochrome.tga" );
+        rw::streamConstructionFileParam_t fileParam( "C:/Users/The_GTA/Desktop/image format samples/png/graybird.png" );
 
         rw::Stream *imgStream = this->rwEngine->CreateStream( rw::RWSTREAMTYPE_FILE, rw::RWSTREAMMODE_READONLY, &fileParam );
 
@@ -69,6 +73,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
             if ( success )
             {
+#if 0
                 // Put this into a new texture.
                 rw::Raster *newRaster = rw::CreateRaster( this->rwEngine );
 
@@ -84,6 +89,22 @@ MainWindow::MainWindow(QWidget *parent) :
                     // Delete it again.
                     rw::DeleteRaster( newRaster );
                 }
+#endif
+
+#if 1
+                // Serialize it again.
+                rw::streamConstructionFileParam_t newFileparam( "out_test.png" );
+
+                rw::Stream *outStr = this->rwEngine->CreateStream( rw::RWSTREAMTYPE_FILE, rw::RWSTREAMMODE_CREATE, &newFileparam );
+
+                if ( outStr )
+                {
+                    // Do it.
+                    rw::SerializeImage( outStr, "PNG", theBmp );
+
+                    this->rwEngine->DeleteStream( outStr );
+                }
+#endif
             }
 
             this->rwEngine->DeleteStream( imgStream );
@@ -762,12 +783,8 @@ static void serializeRaster( rw::Stream *outputStream, rw::Raster *texRaster, co
 {
     // TODO: add DDS file writer functionality, by checking method for "DDS"
 
-    rw::Bitmap texImageData = texRaster->getBitmap();
-
     // Serialize it.
-    bool success = rw::SerializeImage( outputStream, method, texImageData );
-
-    // TODO: maybe notify the user if serialization failed?
+    texRaster->writeImage( outputStream, method );
 }
 
 void MainWindow::onExportTexture( bool checked )

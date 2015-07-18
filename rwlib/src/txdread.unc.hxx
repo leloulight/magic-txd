@@ -6,6 +6,20 @@
 namespace rw
 {
 
+inline uint32 getUNCTextureDataRowAlignment( void )
+{
+    // This texture format is pretty special. Since it is uncompressed it
+    // indeed does have a row alignment. But since it is most likely loaded
+    // by OpenGL, we cannot be sure about this row alignment.
+    // We define here that loaders must adhere to 4 bytes.
+    return 1;
+}
+
+inline uint32 getUNCRasterDataRowSize( uint32 width, uint32 depth )
+{
+    return getRasterDataRowSize( width, depth, getUNCTextureDataRowAlignment() );
+}
+
 struct NativeTextureMobileUNC
 {
     Interface *engineInterface;
@@ -157,6 +171,13 @@ struct uncNativeTextureTypeProvider : public texNativeTypeProvider
         const NativeTextureMobileUNC *nativeTex = (const NativeTextureMobileUNC*)objMem;
 
         return nativeTex->hasAlpha;
+    }
+
+    uint32 GetTextureDataRowAlignment( void ) const override
+    {
+        // Who would know something like this anyway? OpenGL can have many alignment sizes,
+        // one of 1, 2, 4 or 8. So I define this here, take it or leave it!
+        return 4;
     }
 
     uint32 GetDriverIdentifier( void *objMem ) const

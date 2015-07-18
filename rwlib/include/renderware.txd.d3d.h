@@ -14,6 +14,9 @@ inline uint32 GetAPIRevision( void )
 
 struct d3dNativeTextureInterface abstract
 {
+    // Returns the D3DFORMAT field of that native texture.
+    // Since every Direct3D 9 native texture must have a D3DFORMAT field, this will
+    // always return true.
     virtual bool GetD3DFormat( DWORD& d3dFormat ) const = 0;
 };
 
@@ -26,13 +29,14 @@ struct d3dNativeTextureInterface abstract
 */
 struct nativeTextureFormatHandler abstract
 {
+    // Returns a zero-terminated c-string that is used when the format is described by RenderWare.
     virtual const char* GetFormatName( void ) const = 0;
 
     // Should return the size that a texture of width * height is supposed to have.
     // The returned value is used to allocate the storage for the pixels you get in ConvertFromRW.
     virtual size_t GetFormatTextureDataSize( unsigned int width, unsigned int height ) const = 0;
 
-    // The raster format that this native texture has mapped as original RW type has to stay the same.
+    // The raster format that this native texture has mapped, as original RW type has to stay the same.
     virtual void GetTextureRWFormat( eRasterFormat& rasterFormatOut, unsigned int& depthOut, eColorOrdering& colorOrderOut ) const = 0;
 
     // Converts the D3DFORMAT anonymous data to RW original types and returns it.

@@ -13,6 +13,7 @@ struct imagingLayerTraversal
 
     eRasterFormat rasterFormat;
     uint32 depth;
+    uint32 rowAlignment;
     eColorOrdering colorOrder;
     ePaletteType paletteType;
     void *paletteData;
@@ -54,6 +55,14 @@ inline void checkAhead( Stream *stream, int64 count )
     if ( availableBytes < count )
     {
         throw RwException( "stream does not have required bytes" );
+    }
+}
+
+inline void putc_stream( rw::Stream *theStream, char val, size_t count )
+{
+    for ( size_t n = 0; n < count; n++ )
+    {
+        theStream->write( &val, 1 );
     }
 }
 

@@ -218,6 +218,7 @@ void Raster::generateMipmaps( uint32 maxMipmapCount, eMipmapGenerationMode mipGe
     textureBitmap.getSize( firstLevelWidth, firstLevelHeight );
 
     uint32 firstLevelDepth = textureBitmap.getDepth();
+    uint32 firstLevelRowAlignment = textureBitmap.getRowAlignment();
 
     eRasterFormat tmpRasterFormat = textureBitmap.getFormat();
     eColorOrdering tmpColorOrder = textureBitmap.getColorOrder();
@@ -261,9 +262,9 @@ void Raster::generateMipmaps( uint32 maxMipmapCount, eMipmapGenerationMode mipGe
             uint32 mipHeight = mipLevelGen.getLevelHeight();
 
             // Allocate the new bitmap.
-            uint32 texItemCount = ( mipWidth * mipHeight );
+            uint32 texRowSize = getRasterDataRowSize( mipWidth, firstLevelDepth, firstLevelRowAlignment );
 
-            uint32 texDataSize = getRasterDataSize( texItemCount, firstLevelDepth );
+            uint32 texDataSize = getRasterDataSizeByRowSize( texRowSize, mipHeight );
 
             void *newtexels = engineInterface->PixelAllocate( texDataSize );
 
@@ -276,12 +277,14 @@ void Raster::generateMipmaps( uint32 maxMipmapCount, eMipmapGenerationMode mipGe
                 // Process the pixels.
                 bool hasAlpha = false;
 
-                colorModelDispatcher <void> putDispatch( newtexels, tmpRasterFormat, tmpColorOrder, firstLevelDepth, NULL, 0, PALETTE_NONE );
+                colorModelDispatcher <void> putDispatch( tmpRasterFormat, tmpColorOrder, firstLevelDepth, NULL, 0, PALETTE_NONE );
 
                 eColorModel srcColorModel = textureBitmap.getColorModel();
                    
                 for ( uint32 mip_y = 0; mip_y < mipHeight; mip_y++ )
                 {
+                    void *dstRow = getTexelDataRow( newtexels, texRowSize, mip_y );
+
                     for ( uint32 mip_x = 0; mip_x < mipWidth; mip_x++ )
                     {
                         // Get the color for this pixel.
@@ -300,8 +303,6 @@ void Raster::generateMipmaps( uint32 maxMipmapCount, eMipmapGenerationMode mipGe
                         );
 
                         // Put the color.
-                        uint32 colorIndex = PixelFormat::coord2index( mip_x, mip_y, mipWidth );
-
                         if ( couldPerform == true )
                         {
                             // Decide if we have alpha.
@@ -313,14 +314,14 @@ void Raster::generateMipmaps( uint32 maxMipmapCount, eMipmapGenerationMode mipGe
                                 }
                             }
 
-                            putDispatch.setColor( colorIndex, colorItem );
+                            putDispatch.setColor( dstRow, mip_x, colorItem );
                         }
                         else
                         {
                             // We do have alpha.
                             hasAlpha = true;
 
-                            putDispatch.clearColor( colorIndex );
+                            putDispatch.clearColor( dstRow, mip_x );
                         }
                     }
                 }
@@ -339,6 +340,7 @@ void Raster::generateMipmaps( uint32 maxMipmapCount, eMipmapGenerationMode mipGe
 
                 rawMipLayer.rasterFormat = tmpRasterFormat;
                 rawMipLayer.depth = firstLevelDepth;
+                rawMipLayer.rowAlignment = firstLevelRowAlignment;
                 rawMipLayer.colorOrder = tmpColorOrder;
                 rawMipLayer.paletteType = PALETTE_NONE;
                 rawMipLayer.paletteData = NULL;

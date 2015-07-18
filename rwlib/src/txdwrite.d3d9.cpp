@@ -1,5 +1,7 @@
 #include <StdInc.h>
 
+#include "pixelformat.hxx"
+
 #include "txdread.d3d9.hxx"
 
 #include "streamutil.hxx"
@@ -111,9 +113,9 @@ void d3d9NativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, P
                 // Get the real data size of the palette.
                 uint32 palRasterDepth = Bitmap::getRasterFormatDepth(platformTex->rasterFormat);
 
-                uint32 paletteDataSize = getRasterDataSize( palItemCount, palRasterDepth );
+                uint32 paletteDataSize = getPaletteDataSize( palItemCount, palRasterDepth );
 
-                uint32 palByteWriteCount = writePartialBlockSafe(texNativeImageStruct, platformTex->palette, paletteDataSize, getRasterDataSize(reqPalCount, palRasterDepth));
+                uint32 palByteWriteCount = writePartialBlockSafe(texNativeImageStruct, platformTex->palette, paletteDataSize, getPaletteDataSize(reqPalCount, palRasterDepth));
         
                 assert( palByteWriteCount * 8 / palRasterDepth == reqPalCount );
 		    }
@@ -240,6 +242,7 @@ void d3d9NativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineIn
     // Put ourselves into the pixelsOut struct!
     pixelsOut.rasterFormat = dstRasterFormat;
     pixelsOut.depth = dstDepth;
+    pixelsOut.rowAlignment = getD3DTextureDataRowAlignment();
     pixelsOut.colorOrder = dstColorOrder;
     pixelsOut.paletteType = dstPaletteType;
     pixelsOut.paletteData = dstPaletteData;
@@ -280,7 +283,9 @@ void d3d9NativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineIn
                 mipHeight = layerHeight;
 
                 // Create a new storage pointer.
-                texelDataSize = getRasterDataSize( mipWidth * mipHeight, dstDepth );
+                uint32 rowSize = getD3DRasterDataRowSize( mipWidth, dstDepth );
+
+                texelDataSize = getRasterDataSizeByRowSize( rowSize, dstDepth );
 
                 void *newtexels = engineInterface->PixelAllocate( texelDataSize );
 
@@ -327,19 +332,27 @@ void d3d9NativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineIn
 }
 
 inline void convertCompatibleRasterFormat(
-    eRasterFormat& rasterFormat, eColorOrdering& colorOrder, uint32& depth, ePaletteType paletteType, D3DFORMAT& d3dFormatOut
+    eRasterFormat& rasterFormat, eColorOrdering& colorOrder, uint32& depth, ePaletteType& paletteType, D3DFORMAT& d3dFormatOut
 )
 {
     eRasterFormat srcRasterFormat = rasterFormat;
     eColorOrdering srcColorOrder = colorOrder;
     uint32 srcDepth = depth;
+    ePaletteType srcPaletteType = paletteType;
 
-    if ( paletteType != PALETTE_NONE )
+    if ( srcPaletteType != PALETTE_NONE )
     {
-        if ( paletteType == PALETTE_4BIT || paletteType == PALETTE_8BIT )
+        if ( srcPaletteType == PALETTE_4BIT || srcPaletteType == PALETTE_8BIT )
         {
             // We only support 8bit depth palette.
             depth = 8;
+        }
+        else if ( srcPaletteType == PALETTE_4BIT_LSB )
+        {
+            depth = 8;
+
+            // Make sure we reorder the palette.
+            paletteType = PALETTE_4BIT;
         }
         else
         {
@@ -458,6 +471,7 @@ void d3d9NativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
     // We need to ensure that the pixels we set to us are compatible.
     eRasterFormat srcRasterFormat = pixelsIn.rasterFormat;
     uint32 srcDepth = pixelsIn.depth;
+    uint32 srcRowAlignment = pixelsIn.rowAlignment;
     eColorOrdering srcColorOrder = pixelsIn.colorOrder;
     ePaletteType srcPaletteType = pixelsIn.paletteType;
     void *srcPaletteData = pixelsIn.paletteData;
@@ -465,7 +479,10 @@ void d3d9NativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
 
     eRasterFormat dstRasterFormat = srcRasterFormat;
     uint32 dstDepth = srcDepth;
+    uint32 dstRowAlignment = getD3DTextureDataRowAlignment();
     eColorOrdering dstColorOrder = srcColorOrder;
+
+    ePaletteType dstPaletteType = srcPaletteType;
 
     // Determine the compression type.
     uint32 dxtType;
@@ -475,6 +492,9 @@ void d3d9NativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
     bool hasAlpha = pixelsIn.hasAlpha;
 
     D3DFORMAT d3dTargetFormat = D3DFMT_UNKNOWN;
+
+    // Check whether we can directly acquire or have to allocate a new copy.
+    bool canDirectlyAcquire;
 
     if ( rwCompressionType == RWCOMPRESS_NONE )
     {
@@ -487,10 +507,17 @@ void d3d9NativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
         // If we are on D3D, we have to avoid typical configurations that may come from
         // other hardware.
         convertCompatibleRasterFormat(
-            dstRasterFormat, dstColorOrder, dstDepth, srcPaletteType, d3dTargetFormat
+            dstRasterFormat, dstColorOrder, dstDepth, dstPaletteType, d3dTargetFormat
         );
 
         dxtType = 0;
+
+        canDirectlyAcquire =
+            !doesPixelDataNeedConversion(
+                pixelsIn,
+                srcRasterFormat, srcDepth, srcRowAlignment, srcColorOrder, srcPaletteType,
+                dstRasterFormat, dstDepth, dstRowAlignment, dstColorOrder, dstPaletteType
+            );
     }
     else if ( rwCompressionType == RWCOMPRESS_DXT1 )
     {
@@ -501,6 +528,8 @@ void d3d9NativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
         dxtType = 1;
 
         dstRasterFormat = ( hasAlpha ) ? ( RASTER_1555 ) : ( RASTER_565 );
+
+        canDirectlyAcquire = true;
     }
     else if ( rwCompressionType == RWCOMPRESS_DXT2 )
     {
@@ -509,6 +538,8 @@ void d3d9NativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
         dxtType = 2;
 
         dstRasterFormat = RASTER_4444;
+
+        canDirectlyAcquire = true;
     }
     else if ( rwCompressionType == RWCOMPRESS_DXT3 )
     {
@@ -517,6 +548,8 @@ void d3d9NativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
         dxtType = 3;
 
         dstRasterFormat = RASTER_4444;
+
+        canDirectlyAcquire = true;
     }
     else if ( rwCompressionType == RWCOMPRESS_DXT4 )
     {
@@ -525,6 +558,8 @@ void d3d9NativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
         dxtType = 4;
         
         dstRasterFormat = RASTER_4444;
+
+        canDirectlyAcquire = true;
     }
     else if ( rwCompressionType == RWCOMPRESS_DXT5 )
     {
@@ -533,22 +568,12 @@ void d3d9NativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
         dxtType = 5;
 
         dstRasterFormat = RASTER_4444;
-    }
-    else
-    {
-        throw RwException( "unknown pixel compression type" );
-    }
 
-    // Check whether we can directly acquire or have to allocate a new copy.
-    bool canDirectlyAcquire;
-
-    if ( rwCompressionType != RWCOMPRESS_NONE || srcRasterFormat == dstRasterFormat && srcDepth == dstDepth && srcColorOrder == dstColorOrder )
-    {
         canDirectlyAcquire = true;
     }
     else
     {
-        canDirectlyAcquire = false;
+        throw RwException( "unknown pixel compression type" );
     }
 
     // If we have a palette, we must convert it aswell.
@@ -562,7 +587,7 @@ void d3d9NativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
             uint32 srcPalRasterDepth = Bitmap::getRasterFormatDepth( srcRasterFormat );
             uint32 dstPalRasterDepth = Bitmap::getRasterFormatDepth( dstRasterFormat );
 
-            uint32 palDataSize = getRasterDataSize( srcPaletteSize, dstPalRasterDepth );
+            uint32 palDataSize = getPaletteDataSize( srcPaletteSize, dstPalRasterDepth );
 
             dstPaletteData = engineInterface->PixelAllocate( palDataSize );
 
@@ -581,7 +606,7 @@ void d3d9NativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
     nativeTex->depth = dstDepth;
     nativeTex->palette = dstPaletteData;
     nativeTex->paletteSize = srcPaletteSize;
-    nativeTex->paletteType = srcPaletteType;
+    nativeTex->paletteType = dstPaletteType;
     nativeTex->colorOrdering = dstColorOrder;
     nativeTex->hasAlpha = hasAlpha;
 
@@ -630,8 +655,8 @@ void d3d9NativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
             ConvertMipmapLayer(
                 engineInterface,
                 srcLayer,
-                srcRasterFormat, srcDepth, srcColorOrder, srcPaletteType, srcPaletteData, srcPaletteSize,
-                dstRasterFormat, dstDepth, dstColorOrder, srcPaletteType,
+                srcRasterFormat, srcDepth, srcRowAlignment, srcColorOrder, srcPaletteType, srcPaletteData, srcPaletteSize,
+                dstRasterFormat, dstDepth, dstRowAlignment, dstColorOrder, dstPaletteType,
                 true,
                 dstTexels, dstDataSize
             );
@@ -728,6 +753,7 @@ struct d3d9MipmapManager
         const NativeTextureD3D9::mipmapLayer& mipLayer,
         uint32& widthOut, uint32& heightOut, uint32& layerWidthOut, uint32& layerHeightOut,
         eRasterFormat& dstRasterFormat, eColorOrdering& dstColorOrder, uint32& dstDepth,
+        uint32& dstRowAlignment,
         ePaletteType& dstPaletteType, void*& dstPaletteData, uint32& dstPaletteSize,
         eCompressionType& dstCompressionType, bool& hasAlpha,
         void*& dstTexelsOut, uint32& dstDataSizeOut,
@@ -758,7 +784,9 @@ struct d3d9MipmapManager
             formatHandler->GetTextureRWFormat( rasterFormat, depth, colorOrder );
 
             // Calculate the data size.
-            uint32 texDataSize = getRasterDataSize( mipWidth * mipHeight, depth );
+            uint32 rowSize = getD3DRasterDataRowSize( mipWidth, depth );
+
+            uint32 texDataSize = getRasterDataSizeByRowSize( rowSize, mipHeight );
 
             // Allocate new texels.
             void *newtexels = engineInterface->PixelAllocate( texDataSize );
@@ -820,6 +848,8 @@ struct d3d9MipmapManager
             dstDataSizeOut = mipLayer.dataSize;
         }
 
+        dstRowAlignment = getD3DTextureDataRowAlignment();
+
         hasAlpha = nativeTex->hasAlpha;
 
         isNewlyAllocatedOut = isNewlyAllocated;
@@ -831,6 +861,7 @@ struct d3d9MipmapManager
         NativeTextureD3D9::mipmapLayer& mipLayer,
         uint32 width, uint32 height, uint32 layerWidth, uint32 layerHeight, void *srcTexels, uint32 dataSize,
         eRasterFormat rasterFormat, eColorOrdering colorOrder, uint32 depth,
+        uint32 rowAlignment,
         ePaletteType paletteType, void *paletteData, uint32 paletteSize,
         eCompressionType compressionType, bool hasAlpha,
         bool& hasDirectlyAcquiredOut
@@ -885,8 +916,8 @@ struct d3d9MipmapManager
                 ConvertMipmapLayerNative(
                     engineInterface,
                     width, height, layerWidth, layerHeight, srcTexels, dataSize,
-                    rasterFormat, depth, colorOrder, paletteType, paletteData, paletteSize, compressionType,
-                    nativeTex->rasterFormat, nativeTex->depth, nativeTex->colorOrdering,
+                    rasterFormat, depth, rowAlignment, colorOrder, paletteType, paletteData, paletteSize, compressionType,
+                    nativeTex->rasterFormat, nativeTex->depth, getD3DTextureDataRowAlignment(), nativeTex->colorOrdering,
                     nativeTex->paletteType, nativeTex->palette, nativeTex->paletteSize,
                     getD3DCompressionType( nativeTex ),
                     false,

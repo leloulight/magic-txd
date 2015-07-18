@@ -7,6 +7,19 @@
 namespace rw
 {
 
+inline uint32 getPVRToolTextureDataRowAlignment( void )
+{
+    // Since PowerVR is a compressed format, there is no real row alignment.
+    // This row alignment is supposedly what the PowerVR encoding tool expects.
+    return 4;
+}
+
+inline uint32 getPVRExportTextureDataRowAlignment( void )
+{
+    // We return a size here that is preferred by the runtime.
+    return 4;
+}
+
 enum ePVRInternalFormat
 {
     GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG = 0x8C00,
@@ -177,6 +190,13 @@ struct pvrNativeTextureTypeProvider : public texNativeTypeProvider
         const NativeTexturePVR *nativeTex = (const NativeTexturePVR*)objMem;
 
         return nativeTex->hasAlpha;
+    }
+
+    uint32 GetTextureDataRowAlignment( void ) const override
+    {
+        // Once again, we are compressing our contents.
+        // Row alignment never plays a role here.
+        return 0;
     }
 
     uint32 GetDriverIdentifier( void *objMem ) const

@@ -170,7 +170,7 @@ struct NativeTextureD3D9 : public d3dpublic::d3dNativeTextureInterface
             {
                 uint32 palRasterDepth = Bitmap::getRasterFormatDepth(right.rasterFormat);
 
-                size_t wholeDataSize = getRasterDataSize( right.paletteSize, palRasterDepth );
+                size_t wholeDataSize = getPaletteDataSize( right.paletteSize, palRasterDepth );
 
 		        this->palette = engineInterface->PixelAllocate( wholeDataSize );
 
@@ -271,17 +271,17 @@ public:
 
 struct d3d9NativeTextureTypeProvider : public texNativeTypeProvider, d3dpublic::d3dNativeTextureDriverInterface
 {
-    void ConstructTexture( Interface *engineInterface, void *objMem, size_t memSize )
+    void ConstructTexture( Interface *engineInterface, void *objMem, size_t memSize ) override
     {
         new (objMem) NativeTextureD3D9( engineInterface );
     }
 
-    void CopyConstructTexture( Interface *engineInterface, void *objMem, const void *srcObjMem, size_t memSize )
+    void CopyConstructTexture( Interface *engineInterface, void *objMem, const void *srcObjMem, size_t memSize ) override
     {
         new (objMem) NativeTextureD3D9( *(const NativeTextureD3D9*)srcObjMem );
     }
     
-    void DestroyTexture( Interface *engineInterface, void *objMem, size_t memSize )
+    void DestroyTexture( Interface *engineInterface, void *objMem, size_t memSize ) override
     {
         ( *(NativeTextureD3D9*)objMem ).~NativeTextureD3D9();
     }
@@ -291,7 +291,7 @@ struct d3d9NativeTextureTypeProvider : public texNativeTypeProvider, d3dpublic::
     void SerializeTexture( TextureBase *theTexture, PlatformTexture *nativeTex, BlockProvider& outputProvider ) const;
     void DeserializeTexture( TextureBase *theTexture, PlatformTexture *nativeTex, BlockProvider& inputProvider ) const;
 
-    void GetPixelCapabilities( pixelCapabilities& capsOut ) const
+    void GetPixelCapabilities( pixelCapabilities& capsOut ) const override
     {
         capsOut.supportsDXT1 = true;
         capsOut.supportsDXT2 = true;
@@ -301,7 +301,7 @@ struct d3d9NativeTextureTypeProvider : public texNativeTypeProvider, d3dpublic::
         capsOut.supportsPalette = true;
     }
 
-    void GetStorageCapabilities( storageCapabilities& storeCaps ) const
+    void GetStorageCapabilities( storageCapabilities& storeCaps ) const override
     {
         storeCaps.pixelCaps.supportsDXT1 = true;
         storeCaps.pixelCaps.supportsDXT2 = true;
@@ -317,14 +317,14 @@ struct d3d9NativeTextureTypeProvider : public texNativeTypeProvider, d3dpublic::
     void SetPixelDataToTexture( Interface *engineInterface, void *objMem, const pixelDataTraversal& pixelsIn, acquireFeedback_t& feedbackOut );
     void UnsetPixelDataFromTexture( Interface *engineInterface, void *objMem, bool deallocate );
 
-    void SetTextureVersion( Interface *engineInterface, void *objMem, LibraryVersion version )
+    void SetTextureVersion( Interface *engineInterface, void *objMem, LibraryVersion version ) override
     {
         NativeTextureD3D9 *nativeTex = (NativeTextureD3D9*)objMem;
 
         nativeTex->texVersion = version;
     }
 
-    LibraryVersion GetTextureVersion( const void *objMem )
+    LibraryVersion GetTextureVersion( const void *objMem ) override
     {
         const NativeTextureD3D9 *nativeTex = (const NativeTextureD3D9*)objMem;
 
@@ -335,7 +335,7 @@ struct d3d9NativeTextureTypeProvider : public texNativeTypeProvider, d3dpublic::
     bool AddMipmapLayer( Interface *engineInterface, void *objMem, const rawMipmapLayer& layerIn, acquireFeedback_t& feedbackOut );
     void ClearMipmaps( Interface *engineInterface, void *objMem );
 
-    void* GetNativeInterface( void *objMem )
+    void* GetNativeInterface( void *objMem ) override
     {
         NativeTextureD3D9 *nativeTex = (NativeTextureD3D9*)objMem;
 
@@ -345,7 +345,7 @@ struct d3d9NativeTextureTypeProvider : public texNativeTypeProvider, d3dpublic::
         return (void*)nativeAPI;
     }
 
-    void* GetDriverNativeInterface( void ) const
+    void* GetDriverNativeInterface( void ) const override
     {
         d3dpublic::d3dNativeTextureDriverInterface *nativeDriver = (d3dpublic::d3dNativeTextureDriverInterface*)this;
 
@@ -357,28 +357,40 @@ struct d3d9NativeTextureTypeProvider : public texNativeTypeProvider, d3dpublic::
     void GetTextureInfo( Interface *engineInterface, void *objMem, nativeTextureBatchedInfo& infoOut );
     void GetTextureFormatString( Interface *engineInterface, void *objMem, char *buf, size_t bufLen, size_t& lengthOut ) const;
 
-    ePaletteType GetTexturePaletteType( const void *objMem )
+    ePaletteType GetTexturePaletteType( const void *objMem ) override
     {
         const NativeTextureD3D9 *nativeTex = (const NativeTextureD3D9*)objMem;
 
         return nativeTex->paletteType;
     }
 
-    bool IsTextureCompressed( const void *objMem )
+    bool IsTextureCompressed( const void *objMem ) override
     {
         const NativeTextureD3D9 *nativeTex = (const NativeTextureD3D9*)objMem;
 
         return ( nativeTex->dxtCompression != 0 );
     }
 
-    bool DoesTextureHaveAlpha( const void *objMem )
+    bool DoesTextureHaveAlpha( const void *objMem ) override
     {
         const NativeTextureD3D9 *nativeTex = (const NativeTextureD3D9*)objMem;
 
         return nativeTex->hasAlpha;
     }
 
-    uint32 GetDriverIdentifier( void *objMem ) const
+    uint32 GetTextureDataRowAlignment( void ) const override
+    {
+        // Direct3D 8 and 9 work with DWORD aligned texture data rows.
+        // We found this out when looking at the return values of GetLevelDesc.
+        // By the way, the way RenderWare reads texture data into memory is optimized and flawed.
+        // https://msdn.microsoft.com/en-us/library/windows/desktop/bb206357%28v=vs.85%29.aspx
+        // According to the docs, the alignment may always change, the driver has liberty to do anything.
+        // We just conform to what Rockstar and Criterion have thought about here, anyway.
+        // I believe that ATI and nVidia have recogized this issue and made sure the alignment is constant!
+        return getD3DTextureDataRowAlignment();
+    }
+
+    uint32 GetDriverIdentifier( void *objMem ) const override
     {
         // We are the Direct3D 9 driver.
         return 2;

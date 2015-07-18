@@ -1,5 +1,7 @@
 #include "StdInc.h"
 
+#include "pixelformat.hxx"
+
 #include "txdread.d3d.hxx"
 #include "txdread.unc.hxx"
 
@@ -138,6 +140,7 @@ void uncNativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineInt
 
     pixelsOut.rasterFormat = rasterFormat;
     pixelsOut.depth = depth;
+    pixelsOut.rowAlignment = getUNCTextureDataRowAlignment();
     pixelsOut.colorOrder = colorOrder;
 
     // We cannot have a palette in uncompressed rasters.
@@ -172,6 +175,8 @@ void uncNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInter
     uint32 requiredDepth;
     eColorOrdering requiredColorOrder;
 
+    uint32 requiredRowAlignment = getUNCTextureDataRowAlignment();
+
     getUNCRasterFormat( hasAlpha, requiredRasterFormat, requiredColorOrder, requiredDepth );
 
     // We cannot have any palette.
@@ -182,15 +187,17 @@ void uncNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInter
 
     eRasterFormat srcRasterFormat = pixelsIn.rasterFormat;
     uint32 srcDepth = pixelsIn.depth;
+    uint32 srcRowAlignment = pixelsIn.rowAlignment;
     eColorOrdering srcColorOrder = pixelsIn.colorOrder;
     ePaletteType srcPaletteType = pixelsIn.paletteType;
     void *srcPaletteData = pixelsIn.paletteData;
     uint32 srcPaletteSize = pixelsIn.paletteSize;
 
-    if ( requiredRasterFormat == srcRasterFormat &&
-         requiredDepth == srcDepth &&
-         requiredColorOrder == srcColorOrder &&
-         requiredPaletteType == srcPaletteType )
+    if ( !doesPixelDataNeedConversion(
+             pixelsIn,
+             srcRasterFormat, srcDepth, srcRowAlignment, srcColorOrder, srcPaletteType,
+             requiredRasterFormat, requiredDepth, requiredRowAlignment, requiredColorOrder, requiredPaletteType )
+        )
     {
         // We can directly take the pixels.
         hasConvertedTexels = false;
@@ -219,8 +226,8 @@ void uncNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInter
             ConvertMipmapLayer(
                 engineInterface,
                 mipLayer,
-                srcRasterFormat, srcDepth, srcColorOrder, srcPaletteType, srcPaletteData, srcPaletteSize,
-                requiredRasterFormat, requiredDepth, requiredColorOrder, requiredPaletteType,
+                srcRasterFormat, srcDepth, srcRowAlignment, srcColorOrder, srcPaletteType, srcPaletteData, srcPaletteSize,
+                requiredRasterFormat, requiredDepth, requiredRowAlignment, requiredColorOrder, requiredPaletteType,
                 true,
                 dstTexels, dstDataSize
             );
@@ -289,6 +296,7 @@ struct uncMipmapManager
         const NativeTextureMobileUNC::mipmapLayer& mipLayer,
         uint32& widthOut, uint32& heightOut, uint32& layerWidthOut, uint32& layerHeightOut,
         eRasterFormat& dstRasterFormat, eColorOrdering& dstColorOrder, uint32& dstDepth,
+        uint32& dstRowAlignment,
         ePaletteType& dstPaletteType, void*& dstPaletteData, uint32& dstPaletteSize,
         eCompressionType& dstCompressionType, bool& hasAlpha,
         void*& dstTexelsOut, uint32& dstDataSizeOut,
@@ -297,6 +305,8 @@ struct uncMipmapManager
     {
         // Just pass it along.
         getUNCRasterFormat( nativeTex->hasAlpha, dstRasterFormat, dstColorOrder, dstDepth );
+
+        dstRowAlignment = getUNCTextureDataRowAlignment();
 
         dstPaletteType = PALETTE_NONE;
         dstPaletteData = NULL;
@@ -322,6 +332,7 @@ struct uncMipmapManager
         NativeTextureMobileUNC::mipmapLayer& mipLayer,
         uint32 width, uint32 height, uint32 layerWidth, uint32 layerHeight, void *srcTexels, uint32 dataSize,
         eRasterFormat rasterFormat, eColorOrdering colorOrder, uint32 depth,
+        uint32 rowAlignment,
         ePaletteType paletteType, void *paletteData, uint32 paletteSize,
         eCompressionType compressionType, bool hasAlpha,
         bool& hasDirectlyAcquiredOut
@@ -338,8 +349,8 @@ struct uncMipmapManager
             ConvertMipmapLayerNative(
                 engineInterface,
                 width, height, layerWidth, layerHeight, srcTexels, dataSize,
-                rasterFormat, depth, colorOrder, paletteType, paletteData, paletteSize, compressionType,
-                texRasterFormat, texDepth, texColorOrder, PALETTE_NONE, NULL, 0, RWCOMPRESS_NONE,
+                rasterFormat, depth, rowAlignment, colorOrder, paletteType, paletteData, paletteSize, compressionType,
+                texRasterFormat, texDepth, getUNCTextureDataRowAlignment(), texColorOrder, PALETTE_NONE, NULL, 0, RWCOMPRESS_NONE,
                 false,
                 width, height,
                 srcTexels, dataSize

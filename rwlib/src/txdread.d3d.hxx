@@ -5,6 +5,19 @@
 namespace rw
 {
 
+inline uint32 getD3DTextureDataRowAlignment( void )
+{
+    // We somehow always align our texture data rows by DWORD.
+    // This is meant to speed up the access of rows, by the hardware driver.
+    // In Direct3D, valid values are 1, 2, 4, or 8.
+    return sizeof( DWORD );
+}
+
+inline uint32 getD3DRasterDataRowSize( uint32 texWidth, uint32 depth )
+{
+    return getRasterDataRowSize( texWidth, depth, getD3DTextureDataRowAlignment() );
+}
+
 inline uint32 getD3DPaletteCount(ePaletteType paletteType)
 {
     uint32 reqPalCount = 0;
@@ -96,7 +109,8 @@ inline void getDefaultRasterFormatString( eRasterFormat rasterFormat, ePaletteTy
     // Put info about palette type.
     if ( paletteType != PALETTE_NONE )
     {
-        if ( paletteType == PALETTE_4BIT )
+        if ( paletteType == PALETTE_4BIT ||
+             paletteType == PALETTE_4BIT_LSB )
         {
             formatOut += " PAL4";
         }

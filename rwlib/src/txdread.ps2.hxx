@@ -3,6 +3,25 @@
 namespace rw
 {
 
+inline uint32 getPS2TextureDataRowAlignment( void )
+{
+    // For compatibility reasons, we say that swizzled mipmap data has a row alignment of 1.
+    // It should not matter for any of the operations we do.
+    return 1;
+}
+
+inline uint32 getPS2ExportTextureDataRowAlignment( void )
+{
+    // This row alignment should be a framework friendly size.
+    // To make things most-compatible with Direct3D, a size of 4 is recommended.
+    return 4;
+}
+
+inline uint32 getPS2RasterDataRowSize( uint32 mipWidth, uint32 depth )
+{
+    return getRasterDataRowSize( mipWidth, depth, getPS2TextureDataRowAlignment() );
+}
+
 struct ps2GSRegisters
 {
     typedef unsigned long long ps2reg_t;
@@ -349,6 +368,75 @@ enum eFormatEncodingType
     FORMAT_TEX32
 };
 
+inline bool isPackOperation( eFormatEncodingType srcFormat, eFormatEncodingType dstFormat )
+{
+    if ( srcFormat == dstFormat )
+        return false;
+
+    if ( srcFormat == FORMAT_IDTEX4 )
+    {
+        if ( dstFormat == FORMAT_IDTEX8 ||
+             dstFormat == FORMAT_IDTEX8_COMPRESSED ||
+             dstFormat == FORMAT_TEX16 ||
+             dstFormat == FORMAT_TEX32 )
+        {
+            return true;
+        }
+    }
+    else if ( srcFormat == FORMAT_IDTEX8 )
+    {
+        if ( dstFormat == FORMAT_TEX16 ||
+             dstFormat == FORMAT_TEX32 )
+        {
+            return true;
+        }
+        else if ( dstFormat == FORMAT_IDTEX4 ||
+                  dstFormat == FORMAT_IDTEX8_COMPRESSED )
+        {
+            return false;
+        }
+    }
+    else if ( srcFormat == FORMAT_IDTEX8_COMPRESSED )
+    {
+        if ( dstFormat == FORMAT_TEX16 ||
+             dstFormat == FORMAT_TEX32 )
+        {
+            return true;
+        }
+        else if ( dstFormat == FORMAT_IDTEX4 ||
+                  dstFormat == FORMAT_IDTEX8_COMPRESSED )
+        {
+            return false;
+        }
+    }
+    else if ( srcFormat == FORMAT_TEX16 )
+    {
+        if ( dstFormat == FORMAT_IDTEX4 ||
+             dstFormat == FORMAT_IDTEX8 ||
+             dstFormat == FORMAT_IDTEX8_COMPRESSED )
+        {
+            return false;
+        }
+        else if ( dstFormat == FORMAT_TEX32 )
+        {
+            return true;
+        }
+    }
+    else if ( srcFormat == FORMAT_TEX32 )
+    {
+        if ( dstFormat == FORMAT_IDTEX4 ||
+             dstFormat == FORMAT_IDTEX8 ||
+             dstFormat == FORMAT_IDTEX8_COMPRESSED ||
+             dstFormat == FORMAT_TEX16 )
+        {
+            return false;
+        }
+    }
+
+    // If anything reaches this, then we have an unhandled situation.
+    return false;
+}
+
 inline static bool getMemoryLayoutFromTexelFormat(eFormatEncodingType encodingType, eMemoryLayoutType& memLayout)
 {
     eMemoryLayoutType theLayout;
@@ -638,11 +726,14 @@ struct NativeTexturePS2
 
         uint32 getDataSize( eFormatEncodingType swizzleEncodingType ) const
         {
+            // Since the texture dimension are power of two, this is actually correct.
+            // The PlayStation 2 does not use the row alignment concept anyway.
+            // Instead it has a special memory pattern that must be upkept.
             uint32 encodedTexItems = ( this->swizzleWidth * this->swizzleHeight );
 
             uint32 encodingDepth = getFormatEncodingDepth(swizzleEncodingType);
 
-			return ( encodedTexItems * encodingDepth/8 );
+			return ( ALIGN_SIZE( encodedTexItems * encodingDepth, 8u ) / 8 );
         }
 
         uint32 getStreamSize( bool requiresHeaders ) const
@@ -896,6 +987,14 @@ struct ps2NativeTextureTypeProvider : public texNativeTypeProvider
         return nativeTex->hasAlpha;
     }
 
+    uint32 GetTextureDataRowAlignment( void ) const override
+    {
+        // This is kind of a tricky one. I believe that PlayStation 2 native textures do not use
+        // any row alignment. I could be wrong tho. We are safe if we decide for 4 byte alignment.
+        // Just report back to us if there is any issue. :-)
+        return 4;
+    }
+
     uint32 GetDriverIdentifier( void *objMem ) const
     {
         // Always the generic PlayStation 2 driver.
@@ -1013,8 +1112,8 @@ inline void genpalettetexeldata(
     assert( itemCount != 0 );
     assert( texelItemCount != 0 );
 
-    uint32 srcDataSize = getRasterDataSize( itemCount, palDepth );
-    uint32 dstDataSize = getRasterDataSize( texelItemCount, palDepth );
+    uint32 srcDataSize = getPaletteDataSize( itemCount, palDepth );
+    uint32 dstDataSize = getPaletteDataSize( texelItemCount, palDepth );
 
     assert( srcDataSize != 0 );
     assert( dstDataSize != 0 );

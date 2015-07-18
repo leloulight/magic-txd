@@ -287,9 +287,29 @@ bool Interface::GetIgnoreSecureWarnings( void ) const
     return this->ignoreSecureWarnings;
 }
 
-void Interface::SetPaletteRuntime( ePaletteRuntimeType palRunType )
+bool Interface::SetPaletteRuntime( ePaletteRuntimeType palRunType )
 {
-    this->palRuntimeType = palRunType;
+    // Make sure we support this runtime.
+    bool success = false;
+
+    if ( palRunType == PALRUNTIME_NATIVE )
+    {
+        // We always support the native palette system.
+        this->palRuntimeType = palRunType;
+
+        success = true;
+    }
+#ifdef RWLIB_INCLUDE_LIBIMAGEQUANT
+    else if ( palRunType == PALRUNTIME_PNGQUANT )
+    {
+        // Depends on whether we compiled with support for it.
+        this->palRuntimeType = palRunType;
+
+        success = true;
+    }
+#endif //RWLIB_INCLUDE_LIBIMAGEQUANT
+
+    return success;
 }
 
 ePaletteRuntimeType Interface::GetPaletteRuntime( void ) const

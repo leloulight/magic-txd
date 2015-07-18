@@ -3,8 +3,6 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-#include <libimagequant.h>
-
 namespace rw
 {
 
@@ -861,7 +859,7 @@ struct palettizer
 
         uint32 palItemCount = texelElimData.size();
 
-        uint32 palDataSize = getRasterDataSize( palItemCount, palDepth );
+        uint32 palDataSize = getPaletteDataSize( palItemCount, palDepth );
 
         // Allocate a container for the palette.
         void *paletteData = engineInterface->PixelAllocate( palDataSize );
@@ -924,73 +922,69 @@ struct palettizer
 inline void nativePaletteRemap(
     Interface *engineInterface,
     palettizer& conv, ePaletteType convPaletteFormat, uint32 convItemDepth,
-    const void *texelSource, uint32 itemCount, ePaletteType srcPaletteType, const void *srcPaletteData, uint32 srcPaletteCount,
+    const void *texelSource, uint32 mipWidth, uint32 mipHeight,
+    ePaletteType srcPaletteType, const void *srcPaletteData, uint32 srcPaletteCount,
     eRasterFormat srcRasterFormat, eColorOrdering srcColorOrder, uint32 srcItemDepth,
+    uint32 srcRowAlignment, uint32 dstRowAlignment,
     void*& texelsOut, uint32& dataSizeOut
 )
 {
-    // Allocate appropriate memory.
-    size_t dataSize = 0;
-
-    if (convItemDepth == 4)
+    if ( convItemDepth != 4 && convItemDepth != 8 )
     {
-        dataSize = PixelFormat::palette4bit::sizeitems( itemCount );
-    }
-    else if (convItemDepth == 8)
-    {
-        dataSize = PixelFormat::palette8bit::sizeitems( itemCount );
-    }
-    else
-    {
+        // Unsupported depth.
         assert( 0 );
     }
 
-    void *newTexelData = engineInterface->PixelAllocate( dataSize );
+    uint32 srcRowSize = getRasterDataRowSize( mipWidth, srcItemDepth, srcRowAlignment );
 
-    colorModelDispatcher <const void> fetchDispatch( texelSource, srcRasterFormat, srcColorOrder, srcItemDepth, srcPaletteData, srcPaletteCount, srcPaletteType );
+    // Allocate appropriate memory.
+    uint32 dstRowSize = getRasterDataRowSize( mipWidth, convItemDepth, dstRowAlignment );
 
-    for ( uint32 colorIndex = 0; colorIndex < itemCount; colorIndex++ )
+    size_t dstDataSize = getRasterDataSizeByRowSize( dstRowSize, mipHeight );
+
+    void *newTexelData = engineInterface->PixelAllocate( dstDataSize );
+
+    colorModelDispatcher <const void> fetchDispatch( srcRasterFormat, srcColorOrder, srcItemDepth, srcPaletteData, srcPaletteCount, srcPaletteType );
+
+    for ( uint32 row = 0; row < mipHeight; row++ )
     {
-        // Browse each texel of the original image and link it to a palette entry.
-        uint8 red, green, blue, alpha;
-        bool hasColor = fetchDispatch.getRGBA(colorIndex, red, green, blue, alpha);
+        const void *srcRow = getConstTexelDataRow( texelSource, srcRowSize, row );
+        void *dstRow = getTexelDataRow( newTexelData, dstRowSize, row );
 
-        if ( !hasColor )
+        for ( uint32 col = 0; col < mipWidth; col++ )
         {
-            red = 0;
-            green = 0;
-            blue = 0;
-            alpha = 0;
-        }
+            // Browse each texel of the original image and link it to a palette entry.
+            uint8 red, green, blue, alpha;
+            bool hasColor = fetchDispatch.getRGBA(srcRow, col, red, green, blue, alpha);
 
-        uint32 paletteIndex = conv.getclosestlink(red, green, blue, alpha);
+            if ( !hasColor )
+            {
+                red = 0;
+                green = 0;
+                blue = 0;
+                alpha = 0;
+            }
 
-        // Store it in the palette data.
-        if (convItemDepth == 4)
-        {
-            ( (PixelFormat::palette4bit*)newTexelData )->setvalue(colorIndex, paletteIndex);
-        }
-        else if (convItemDepth == 8)
-        {
-            ( (PixelFormat::palette8bit*)newTexelData )->setvalue(colorIndex, paletteIndex);
-        }
-        else
-        {
-            assert( 0 );
+            uint32 paletteIndex = conv.getclosestlink(red, green, blue, alpha);
+
+            // Store it in the palette data.
+            setpaletteindex(dstRow, col, convItemDepth, convPaletteFormat, paletteIndex);
         }
     }
 
     // Give the parameters to the runtime.
     texelsOut = newTexelData;
-    dataSizeOut = dataSize;
+    dataSizeOut = dstDataSize;
 }
 
 // Mipmap remapping algorithm.
 inline void RemapMipmapLayer(
     Interface *engineInterface,
     eRasterFormat palRasterFormat, eColorOrdering palColorOrder,
-    const void *mipTexels, uint32 mipTexelCount, eRasterFormat mipRasterFormat, eColorOrdering mipColorOrder, uint32 mipDepth, ePaletteType mipPaletteType, const void *mipPaletteData, uint32 mipPaletteSize,
+    const void *mipTexels, uint32 mipWidth, uint32 mipHeight,
+    eRasterFormat mipRasterFormat, eColorOrdering mipColorOrder, uint32 mipDepth, ePaletteType mipPaletteType, const void *mipPaletteData, uint32 mipPaletteSize,
     const void *paletteData, uint32 paletteSize, uint32 convItemDepth, ePaletteType convPaletteType,
+    uint32 srcRowAlignment, uint32 dstRowAlignment,
     void*& dstTexels, uint32& dstTexelDataSize
 )
 {
@@ -1005,13 +999,13 @@ inline void RemapMipmapLayer(
 
     uint32 palItemDepth = Bitmap::getRasterFormatDepth(palRasterFormat);
 
-    colorModelDispatcher <const void> fetchPalDispatch( paletteData, palRasterFormat, palColorOrder, palItemDepth, NULL, 0, PALETTE_NONE );
+    colorModelDispatcher <const void> fetchPalDispatch( palRasterFormat, palColorOrder, palItemDepth, NULL, 0, PALETTE_NONE );
 
     for ( uint32 n = 0; n < paletteSize; n++ )
     {
         uint8 r, g, b, a;
 
-        bool hasColor = fetchPalDispatch.getRGBA(n, r, g, b, a);
+        bool hasColor = fetchPalDispatch.getRGBA(paletteData, n, r, g, b, a);
 
         if ( !hasColor )
         {
@@ -1037,8 +1031,9 @@ inline void RemapMipmapLayer(
     nativePaletteRemap(
         engineInterface,
         remapper, convPaletteType, convItemDepth,
-        mipTexels, mipTexelCount, mipPaletteType, mipPaletteData, mipPaletteSize,
+        mipTexels, mipWidth, mipHeight, mipPaletteType, mipPaletteData, mipPaletteSize,
         mipRasterFormat, mipColorOrder, mipDepth,
+        srcRowAlignment, dstRowAlignment,
         dstTexels, dstTexelDataSize
     );
 }

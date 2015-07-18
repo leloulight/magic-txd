@@ -1,8 +1,6 @@
 #include "StdInc.h"
 
 #include <cstring>
-#include <cstdlib>
-#include <fstream>
 #include <assert.h>
 #include <bitset>
 #define _USE_MATH_DEFINES
@@ -12,6 +10,8 @@
 #include <cmath>
 
 #include "pixelformat.hxx"
+
+#include "pixelutil.hxx"
 
 #include "txdread.d3d.hxx"
 
@@ -484,6 +484,7 @@ inline bool GetNativeTextureRawBitmapData(
 
         eRasterFormat rasterFormat = mipData.rasterFormat;
         uint32 depth = mipData.depth;
+        uint32 rowAlignment = mipData.rowAlignment;
         eColorOrdering colorOrder = mipData.colorOrder;
         ePaletteType paletteType = mipData.paletteType;
         void *paletteData = mipData.paletteData;
@@ -493,103 +494,128 @@ inline bool GetNativeTextureRawBitmapData(
 
         bool isNewlyAllocated = mipData.isNewlyAllocated;
 
-        // If we are not raw compressed yet, then we have to make us raw compressed.
-        if ( compressionType != RWCOMPRESS_NONE )
+        try
         {
-            // Compresion types do not support a valid source raster format.
-            // We should determine one.
-            eRasterFormat targetRasterFormat;
-            uint32 targetDepth;
-
-            if ( compressionType == RWCOMPRESS_DXT1 && mipData.hasAlpha == false )
+            // If we are not raw compressed yet, then we have to make us raw compressed.
+            if ( compressionType != RWCOMPRESS_NONE )
             {
-                targetRasterFormat = RASTER_888;
-                targetDepth = 32;
+                // Compresion types do not support a valid source raster format.
+                // We should determine one.
+                eRasterFormat targetRasterFormat;
+                uint32 targetDepth;
+                uint32 targetRowAlignment = 4;  // good measure.
+
+                if ( compressionType == RWCOMPRESS_DXT1 && mipData.hasAlpha == false )
+                {
+                    targetRasterFormat = RASTER_888;
+                    targetDepth = 32;
+                }
+                else
+                {
+                    targetRasterFormat = RASTER_8888;
+                    targetDepth = 32;
+                }
+
+                uint32 uncWidth, uncHeight;
+
+                void *dstTexels = NULL;
+                uint32 dstDataSize = 0;
+
+                bool doConvert =
+                    ConvertMipmapLayerNative(
+                        engineInterface,
+                        width, height, layerWidth, layerHeight, srcTexels, dataSize,
+                        rasterFormat, depth, rowAlignment, colorOrder, paletteType, paletteData, paletteSize, compressionType,
+                        targetRasterFormat, targetDepth, targetRowAlignment, colorOrder, paletteType, paletteData, paletteSize, RWCOMPRESS_NONE,
+                        false,
+                        uncWidth, uncHeight,
+                        dstTexels, dstDataSize
+                    );
+
+                if ( doConvert == false )
+                {
+                    // We prefer C++ exceptions over assertions.
+                    // This way, we actually handle mistakes that can always happen.
+                    throw RwException( "failed to convert fetched mipmap layer to uncompressed format" );
+                }
+
+                if ( isNewlyAllocated )
+                {
+                    engineInterface->PixelFree( srcTexels );
+                }
+
+                // Update stuff.
+                width = uncWidth;
+                height = uncHeight;
+
+                srcTexels = dstTexels;
+                dataSize = dstDataSize;
+
+                rasterFormat = targetRasterFormat;
+                depth = targetDepth;
+                rowAlignment = targetRowAlignment;
+
+                compressionType = RWCOMPRESS_NONE;
+
+                isNewlyAllocated = true;
             }
-            else
+
+            // Filter out palette if requested.
+            if ( paletteType != PALETTE_NONE && supportsPalette == false )
             {
-                targetRasterFormat = RASTER_8888;
-                targetDepth = 32;
+                uint32 palWidth, palHeight;
+
+                void *dstPalTexels = NULL;
+                uint32 dstPalDataSize = 0;
+
+                uint32 dstDepth = Bitmap::getRasterFormatDepth(rasterFormat);
+
+                bool hasConverted =
+                    ConvertMipmapLayerNative(
+                        engineInterface,
+                        width, height, layerWidth, layerHeight, srcTexels, dataSize,
+                        rasterFormat, depth, rowAlignment, colorOrder, paletteType, paletteData, paletteSize, compressionType,
+                        rasterFormat, dstDepth, rowAlignment, colorOrder, PALETTE_NONE, NULL, 0, compressionType,
+                        false,
+                        palWidth, palHeight,
+                        dstPalTexels, dstPalDataSize
+                    );
+
+                if ( isNewlyAllocated )
+                {
+                    engineInterface->PixelFree( srcTexels );
+                    engineInterface->PixelFree( paletteData );
+                }
+
+                width = palWidth;
+                height = palHeight;
+
+                srcTexels = dstPalTexels;
+                dataSize = dstPalDataSize;
+
+                depth = dstDepth;
+
+                paletteType = PALETTE_NONE;
+                paletteData = NULL;
+                paletteSize = 0;
+
+                isNewlyAllocated = true;
             }
-
-            uint32 uncWidth, uncHeight;
-
-            void *dstTexels = NULL;
-            uint32 dstDataSize = 0;
-
-            bool doConvert =
-                ConvertMipmapLayerNative(
-                    engineInterface,
-                    width, height, layerWidth, layerHeight, srcTexels, dataSize,
-                    rasterFormat, depth, colorOrder, paletteType, paletteData, paletteSize, compressionType,
-                    targetRasterFormat, targetDepth, colorOrder, paletteType, paletteData, paletteSize, RWCOMPRESS_NONE,
-                    false,
-                    uncWidth, uncHeight,
-                    dstTexels, dstDataSize
-                );
-
-            assert( doConvert == true );
-
-            if ( isNewlyAllocated )
-            {
-                engineInterface->PixelFree( srcTexels );
-            }
-
-            // Update stuff.
-            width = uncWidth;
-            height = uncHeight;
-
-            srcTexels = dstTexels;
-            dataSize = dstDataSize;
-
-            rasterFormat = targetRasterFormat;
-            depth = targetDepth;
-
-            compressionType = RWCOMPRESS_NONE;
-
-            isNewlyAllocated = true;
         }
-
-        // Filter out palette if requested.
-        if ( paletteType != PALETTE_NONE && supportsPalette == false )
+        catch( ... )
         {
-            uint32 palWidth, palHeight;
-
-            void *dstPalTexels = NULL;
-            uint32 dstPalDataSize = 0;
-
-            uint32 dstDepth = Bitmap::getRasterFormatDepth(rasterFormat);
-
-            bool hasConverted =
-                ConvertMipmapLayerNative(
-                    engineInterface,
-                    width, height, layerWidth, layerHeight, srcTexels, dataSize,
-                    rasterFormat, depth, colorOrder, paletteType, paletteData, paletteSize, compressionType,
-                    rasterFormat, dstDepth, colorOrder, PALETTE_NONE, NULL, 0, compressionType,
-                    false,
-                    palWidth, palHeight,
-                    dstPalTexels, dstPalDataSize
-                );
-
+            // If there was any error during conversion, we must clean up.
             if ( isNewlyAllocated )
             {
                 engineInterface->PixelFree( srcTexels );
-                engineInterface->PixelFree( paletteData );
+
+                if ( paletteData != NULL )
+                {
+                    engineInterface->PixelFree( paletteData );
+                }
             }
 
-            width = palWidth;
-            height = palHeight;
-
-            srcTexels = dstPalTexels;
-            dataSize = dstPalDataSize;
-
-            depth = dstDepth;
-
-            paletteType = PALETTE_NONE;
-            paletteData = NULL;
-            paletteSize = 0;
-
-            isNewlyAllocated = true;
+            throw;
         }
 
         // Put data into the output.
@@ -602,6 +628,7 @@ inline bool GetNativeTextureRawBitmapData(
         rawBitmapOut.isNewlyAllocated = isNewlyAllocated;
 
         rawBitmapOut.depth = depth;
+        rawBitmapOut.rowAlignment = rowAlignment;
         rawBitmapOut.rasterFormat = rasterFormat;
         rawBitmapOut.colorOrder = colorOrder;
         rawBitmapOut.paletteData = paletteData;
@@ -1269,130 +1296,6 @@ texNativeTypeProvider* GetNativeTextureTypeProvider( Interface *engineInterface,
     return platformData;
 }
 
-void pixelDataTraversal::FreePixels( Interface *engineInterface )
-{
-    if ( this->isNewlyAllocated )
-    {
-        uint32 mipmapCount = this->mipmaps.size();
-
-        for ( uint32 n = 0; n < mipmapCount; n++ )
-        {
-            mipmapResource& thisLayer = this->mipmaps[ n ];
-
-            if ( void *texels = thisLayer.texels )
-            {
-                engineInterface->PixelFree( texels );
-
-                thisLayer.texels = NULL;
-            }
-        }
-
-        this->mipmaps.clear();
-
-        if ( void *paletteData = this->paletteData )
-        {
-            engineInterface->PixelFree( paletteData );
-
-            this->paletteData = NULL;
-        }
-
-        this->isNewlyAllocated = false;
-    }
-}
-
-void pixelDataTraversal::CloneFrom( Interface *engineInterface, const pixelDataTraversal& right )
-{
-    // Free any previous data.
-    this->FreePixels( engineInterface );
-
-    // Clone parameters.
-    eRasterFormat rasterFormat = right.rasterFormat;
-
-    this->isNewlyAllocated = true;  // since we clone
-    this->rasterFormat = rasterFormat;
-    this->depth = right.depth;
-    this->colorOrder = right.colorOrder;
-
-    // Clone palette.
-    this->paletteType = right.paletteType;
-    
-    void *srcPaletteData = right.paletteData;
-    void *dstPaletteData = NULL;
-
-    uint32 dstPaletteSize = 0;
-
-    if ( srcPaletteData )
-    {
-        uint32 srcPaletteSize = right.paletteSize;  
-        
-        // Copy the palette texels.
-        uint32 palRasterDepth = Bitmap::getRasterFormatDepth( rasterFormat );
-
-        uint32 palDataSize = getRasterDataSize( srcPaletteSize, palRasterDepth );
-
-        dstPaletteData = engineInterface->PixelAllocate( palDataSize );
-
-        memcpy( dstPaletteData, srcPaletteData, palDataSize );
-
-        dstPaletteSize = srcPaletteSize;
-    }
-
-    this->paletteData = dstPaletteData;
-    this->paletteSize = dstPaletteSize;
-
-    // Clone mipmaps.
-    uint32 mipmapCount = right.mipmaps.size();
-
-    this->mipmaps.resize( mipmapCount );
-
-    for ( uint32 n = 0; n < mipmapCount; n++ )
-    {
-        const mipmapResource& srcLayer = right.mipmaps[ n ];
-
-        mipmapResource newLayer;
-
-        newLayer.width = srcLayer.width;
-        newLayer.height = srcLayer.height;
-
-        newLayer.mipWidth = srcLayer.mipWidth;
-        newLayer.mipHeight = srcLayer.mipHeight;
-
-        // Copy the mipmap layer texels.
-        uint32 mipDataSize = srcLayer.dataSize;
-
-        const void *srcTexels = srcLayer.texels;
-
-        void *newtexels = engineInterface->PixelAllocate( mipDataSize );
-
-        memcpy( newtexels, srcTexels, mipDataSize );
-
-        newLayer.texels = newtexels;
-        newLayer.dataSize = mipDataSize;
-
-        // Store this layer.
-        this->mipmaps[ n ] = newLayer;
-    }
-
-    // Clone non-trivial parameters.
-    this->compressionType = right.compressionType;
-    this->hasAlpha = right.hasAlpha;
-    this->autoMipmaps = right.autoMipmaps;
-    this->cubeTexture = right.cubeTexture;
-    this->rasterType = right.rasterType;
-}
-
-void pixelDataTraversal::mipmapResource::Free( Interface *engineInterface )
-{
-    // Free the data here, since we have the Interface struct defined.
-    if ( void *ourTexels = this->texels )
-    {
-        engineInterface->PixelFree( ourTexels );
-
-        // We have no more texels.
-        this->texels = NULL;
-    }
-}
-
 void CompatibilityTransformPixelData( Interface *engineInterface, pixelDataTraversal& pixelData, const pixelCapabilities& pixelCaps )
 {
     // Make sure the pixelData does not violate the capabilities struct.
@@ -1401,6 +1304,7 @@ void CompatibilityTransformPixelData( Interface *engineInterface, pixelDataTrave
     // First get the original parameters onto stack.
     eRasterFormat srcRasterFormat = pixelData.rasterFormat;
     uint32 srcDepth = pixelData.depth;
+    uint32 srcRowAlignment = pixelData.rowAlignment;
     eColorOrdering srcColorOrder = pixelData.colorOrder;
     ePaletteType srcPaletteType = pixelData.paletteType;
     void *srcPaletteData = pixelData.paletteData;
@@ -1410,68 +1314,22 @@ void CompatibilityTransformPixelData( Interface *engineInterface, pixelDataTrave
     uint32 srcMipmapCount = pixelData.mipmaps.size();
 
     // Now decide the target format depending on the capabilities.
-    eRasterFormat dstRasterFormat = srcRasterFormat;
-    uint32 dstDepth = srcDepth;
-    eColorOrdering dstColorOrder = srcColorOrder;
-    ePaletteType dstPaletteType = srcPaletteType;
-    void *dstPaletteData = srcPaletteData;
-    uint32 dstPaletteSize = srcPaletteSize;
-    eCompressionType dstCompressionType = srcCompressionType;
+    eRasterFormat dstRasterFormat;
+    uint32 dstDepth;
+    uint32 dstRowAlignment;
+    eColorOrdering dstColorOrder;
+    ePaletteType dstPaletteType;
+    void *dstPaletteData;
+    uint32 dstPaletteSize;
+    eCompressionType dstCompressionType;
 
-    bool hasBeenModded = false;
-
-    if ( dstCompressionType == RWCOMPRESS_DXT1 && pixelCaps.supportsDXT1 == false ||
-         dstCompressionType == RWCOMPRESS_DXT2 && pixelCaps.supportsDXT2 == false ||
-         dstCompressionType == RWCOMPRESS_DXT3 && pixelCaps.supportsDXT3 == false ||
-         dstCompressionType == RWCOMPRESS_DXT4 && pixelCaps.supportsDXT4 == false ||
-         dstCompressionType == RWCOMPRESS_DXT5 && pixelCaps.supportsDXT5 == false )
-    {
-        // Set proper decompression parameters.
-        uint32 dxtType;
-
-        bool isDXT = IsDXTCompressionType( dstCompressionType, dxtType );
-
-        assert( isDXT == true );
-
-        eRasterFormat targetRasterFormat = getDXTDecompressionRasterFormat( engineInterface, dxtType, pixelData.hasAlpha );
-
-        dstRasterFormat = targetRasterFormat;
-        dstDepth = Bitmap::getRasterFormatDepth( targetRasterFormat );
-        dstColorOrder = COLOR_BGRA;
-        dstPaletteType = PALETTE_NONE;
-        dstPaletteData = NULL;
-        dstPaletteSize = 0;
-
-        // We decompress stuff.
-        dstCompressionType = RWCOMPRESS_NONE;
-
-        hasBeenModded = true;
-    }
-
-    if ( hasBeenModded == false )
-    {
-        if ( dstPaletteType != PALETTE_NONE && pixelCaps.supportsPalette == false )
-        {
-            // We want to do things without a palette.
-            dstPaletteType = PALETTE_NONE;
-            dstPaletteSize = 0;
-            dstPaletteData = NULL;
-
-            dstDepth = Bitmap::getRasterFormatDepth(dstRasterFormat);
-
-            hasBeenModded = true;
-        }
-    }
-
-    // Check whether we even want an update.
-    bool wantsUpdate = false;
-
-    if ( srcRasterFormat != dstRasterFormat || dstDepth != srcDepth || dstColorOrder != srcColorOrder ||
-         dstPaletteType != srcPaletteType || dstPaletteData != srcPaletteData || dstPaletteSize != srcPaletteSize ||
-         dstCompressionType != srcCompressionType )
-    {
-        wantsUpdate = true;
-    }
+    bool wantsUpdate =
+        TransformDestinationRasterFormat(
+            engineInterface,
+            srcRasterFormat, srcDepth, srcRowAlignment, srcColorOrder, srcPaletteType, srcPaletteData, srcPaletteSize, srcCompressionType,
+            dstRasterFormat, dstDepth, dstRowAlignment, dstColorOrder, dstPaletteType, dstPaletteData, dstPaletteSize, dstCompressionType,
+            pixelCaps, pixelData.hasAlpha
+        );
 
     if ( wantsUpdate )
     {
@@ -1483,16 +1341,13 @@ void CompatibilityTransformPixelData( Interface *engineInterface, pixelDataTrave
 
             dstPixelFormat.rasterFormat = dstRasterFormat;
             dstPixelFormat.depth = dstDepth;
+            dstPixelFormat.rowAlignment = dstRowAlignment;
             dstPixelFormat.colorOrder = dstColorOrder;
             dstPixelFormat.paletteType = dstPaletteType;
             dstPixelFormat.compressionType = dstCompressionType;
 
             hasUpdated = ConvertPixelData( engineInterface, pixelData, dstPixelFormat );
         }
-
-        // If we want an update, we should get an update.
-        // Otherwise, ConvertPixelData is to blame.
-        assert( hasUpdated == true );
 
         // If we have updated at all, apply changes.
         if ( hasUpdated )
@@ -1634,6 +1489,8 @@ bool ConvertRasterTo( Raster *theRaster, const char *nativeName )
                         }
                         catch( ... )
                         {
+                            // We do not pass on exceptions.
+                            // Do not rely on this tho.
                             conversionSuccess = false;
                         }
 
@@ -1897,12 +1754,14 @@ void Raster::convertToFormat(eRasterFormat newFormat)
         eColorOrdering colorOrder = pixelData.colorOrder;
 
         bool isPaletteRaster = ( paletteType != PALETTE_NONE );
+        bool isCompressed = ( pixelData.compressionType != RWCOMPRESS_NONE );
 
-        if ( isPaletteRaster || newFormat != rasterFormat )
+        if ( isCompressed || isPaletteRaster || newFormat != rasterFormat )
         {
             pixelFormat dstFormat;
             dstFormat.rasterFormat = newFormat;
             dstFormat.depth = Bitmap::getRasterFormatDepth( newFormat );
+            dstFormat.rowAlignment = ( isCompressed ? 4 : pixelData.rowAlignment );
             dstFormat.colorOrder = colorOrder;
             dstFormat.paletteType = PALETTE_NONE;
             dstFormat.compressionType = RWCOMPRESS_NONE;
@@ -1955,6 +1814,7 @@ Bitmap Raster::getBitmap(void) const
             uint32 width;
             uint32 height;
             uint32 depth;
+            uint32 rowAlignment;
             eRasterFormat theFormat;
             eColorOrdering theOrder;
             
@@ -1975,6 +1835,7 @@ Bitmap Raster::getBitmap(void) const
                     height = rawBitmap.height;
                     texDataSize = rawBitmap.dataSize;
                     depth = rawBitmap.depth;
+                    rowAlignment = rawBitmap.rowAlignment;
                     theFormat = rawBitmap.rasterFormat;
                     theOrder = rawBitmap.colorOrder;
                     hasAllocatedNewPixelData = rawBitmap.isNewlyAllocated;
@@ -1986,13 +1847,11 @@ Bitmap Raster::getBitmap(void) const
             {
                 // Set the data into the bitmap.
                 resultBitmap.setImageData(
-                    pixelData, theFormat, theOrder, depth, width, height, texDataSize
+                    pixelData, theFormat, theOrder, depth, rowAlignment, width, height, texDataSize,
+                    ( hasAllocatedNewPixelData == true )
                 );
-
-                if ( hasAllocatedNewPixelData )
-                {
-                    engineInterface->PixelFree( pixelData );
-                }
+                
+                // We do not have to free the raw bitmap, because we assign it if it was stand-alone.
             }
         }
     }
@@ -2028,53 +1887,74 @@ void Raster::setImageData(const Bitmap& srcImage)
     }
 
     // Create a copy of the bitmap pixel data and put it into a traversal struct.
-    pixelDataTraversal::mipmapResource newLayer;
-
     void *dstTexels = srcImage.copyPixelData();
     uint32 dstDataSize = srcImage.getDataSize();
 
-    // Set the new texel data.
-    uint32 newWidth, newHeight;
-    uint32 newDepth = srcImage.getDepth();
-    eRasterFormat newFormat = srcImage.getFormat();
-    eColorOrdering newColorOrdering = srcImage.getColorOrder();
+    if ( dstTexels == NULL )
+    {
+        throw RwException( "failed to allocate copy of Bitmap texel data for Raster acquisition" );
+    }
 
-    srcImage.getSize( newWidth, newHeight );
-
-    newLayer.width = newWidth;
-    newLayer.height = newHeight;
-
-    // Since it is raw image data, layer dimm is same as regular dimm.
-    newLayer.mipWidth = newWidth;
-    newLayer.mipHeight = newHeight;
-
-    newLayer.texels = dstTexels;
-    newLayer.dataSize = dstDataSize;
+    // Only valid if the block below has not thrown an exception.
+    texNativeTypeProvider::acquireFeedback_t acquireFeedback;
 
     pixelDataTraversal pixelData;
 
-    pixelData.rasterFormat = newFormat;
-    pixelData.depth = newDepth;
-    pixelData.colorOrder = newColorOrdering;
+    try
+    {
+        pixelDataTraversal::mipmapResource newLayer;
 
-    pixelData.paletteType = PALETTE_NONE;
-    pixelData.paletteData = NULL;
-    pixelData.paletteSize = 0;
+        // Set the new texel data.
+        uint32 newWidth, newHeight;
+        uint32 newDepth = srcImage.getDepth();
+        uint32 newRowAlignment = srcImage.getRowAlignment();
+        eRasterFormat newFormat = srcImage.getFormat();
+        eColorOrdering newColorOrdering = srcImage.getColorOrder();
 
-    pixelData.compressionType = RWCOMPRESS_NONE;
+        srcImage.getSize( newWidth, newHeight );
 
-    pixelData.mipmaps.push_back( newLayer );
+        newLayer.width = newWidth;
+        newLayer.height = newHeight;
 
-    pixelData.isNewlyAllocated = true;
-    pixelData.hasAlpha = calculateHasAlpha( pixelData );
-    pixelData.rasterType = 4;   // Bitmap.
-    pixelData.autoMipmaps = false;
-    pixelData.cubeTexture = false;
+        // Since it is raw image data, layer dimm is same as regular dimm.
+        newLayer.mipWidth = newWidth;
+        newLayer.mipHeight = newHeight;
 
-    // Push the data to the texture.
-    texNativeTypeProvider::acquireFeedback_t acquireFeedback;
+        newLayer.texels = dstTexels;
+        newLayer.dataSize = dstDataSize;
 
-    texProvider->SetPixelDataToTexture( engineInterface, platformTex, pixelData, acquireFeedback );
+        pixelData.rasterFormat = newFormat;
+        pixelData.depth = newDepth;
+        pixelData.rowAlignment = newRowAlignment;
+        pixelData.colorOrder = newColorOrdering;
+
+        pixelData.paletteType = PALETTE_NONE;
+        pixelData.paletteData = NULL;
+        pixelData.paletteSize = 0;
+
+        pixelData.compressionType = RWCOMPRESS_NONE;
+
+        pixelData.mipmaps.push_back( newLayer );
+
+        pixelData.isNewlyAllocated = true;
+        pixelData.hasAlpha = calculateHasAlpha( pixelData );
+        pixelData.rasterType = 4;   // Bitmap.
+        pixelData.autoMipmaps = false;
+        pixelData.cubeTexture = false;
+
+        // We do not have to transform for capabilities, since the input is a raw mipmap layer.
+        // Raw texture data must be accepted by every native texture format.
+
+        // Push the data to the texture.
+        texProvider->SetPixelDataToTexture( engineInterface, platformTex, pixelData, acquireFeedback );
+    }
+    catch( ... )
+    {
+        // If the acquisition has failed, we have to bail.
+        pixelData.FreePixels( engineInterface );
+
+        throw;
+    }
 
     if ( acquireFeedback.hasDirectlyAcquired == false )
     {
@@ -2088,6 +1968,9 @@ void Raster::setImageData(const Bitmap& srcImage)
 
 void Raster::resize(uint32 width, uint32 height)
 {
+    // TODO: this routine is pretty cheap, for now.
+    // we should perform good math using downsampling and upsampling filters.
+
     Bitmap mainBitmap = this->getBitmap();
 
     Bitmap targetBitmap( mainBitmap.getDepth(), mainBitmap.getFormat(), mainBitmap.getColorOrder() );
@@ -2125,6 +2008,9 @@ void Raster::getSize(uint32& width, uint32& height) const
 
 void TextureBase::improveFiltering(void)
 {
+    // This routine scaled up the filtering settings of this texture.
+    // When rendered, this texture will appear smoother.
+
     // Handle stuff depending on our current settings.
     eRasterStageFilterMode currentFilterMode = this->filterMode;
 
@@ -2182,6 +2068,9 @@ void TextureBase::fixFiltering(void)
                 this->SetFilterMode( RWFILTER_LINEAR );
             }
         }
+
+        // TODO: if there is a filtering mode that does not make sense at all,
+        // how should we handle it?
     }
 }
 
@@ -2520,6 +2409,7 @@ void Raster::compress( float quality )
         pixelFormat targetPixelFormat;
         targetPixelFormat.rasterFormat = pixelData.rasterFormat;
         targetPixelFormat.depth = pixelData.depth;
+        targetPixelFormat.rowAlignment = 0;
         targetPixelFormat.colorOrder = pixelData.colorOrder;
         targetPixelFormat.paletteType = PALETTE_NONE;
         targetPixelFormat.compressionType = targetCompressionType;
@@ -2556,39 +2446,7 @@ void Raster::compress( float quality )
     }
 }
 
-void Raster::writeTGA(const char *path, bool optimized)
-{
-    // If optimized == true, then this routine will output files in a commonly unsupported format
-    // that is much smaller than in regular mode.
-    // Problem with TGA is that it is poorly supported by most of the applications out there.
-
-    Interface *engineInterface = this->engineInterface;
-
-    streamConstructionFileParam_t fileParam( path );
-
-    Stream *tgaStream = engineInterface->CreateStream( RWSTREAMTYPE_FILE, RWSTREAMMODE_READONLY, &fileParam );
-
-	if ( !tgaStream )
-    {
-        engineInterface->PushWarning( "not writing file: " + std::string( path ) );
-		return;
-	}
-
-    try
-    {
-        writeTGAStream(tgaStream, optimized);
-    }
-    catch( ... )
-    {
-        engineInterface->DeleteStream( tgaStream );
-
-        throw;
-    }
-
-	engineInterface->DeleteStream( tgaStream );
-}
-
-void Raster::writeTGAStream(Stream *tgaStream, bool optimized)
+void Raster::writeImage(Stream *outputStream, const char *method)
 {
     Interface *engineInterface = this->engineInterface;
 
@@ -2613,13 +2471,30 @@ void Raster::writeTGAStream(Stream *tgaStream, bool optimized)
 
     if ( !gotLayer )
     {
-        throw RwException( "failed to get mipmap layer zero data in TGA writing" );
+        throw RwException( "failed to get mipmap layer zero data in image writing" );
     }
 
-    // Push the mipmap to the imaging plugin.
-    bool successfullyStored = SerializeMipmapLayer( tgaStream, "TGA", rawLayer );
+    try
+    {
+        // Push the mipmap to the imaging plugin.
+        bool successfullyStored = SerializeMipmapLayer( outputStream, method, rawLayer );
 
-    // TODO: what to do with the bool?
+        if ( successfullyStored == false )
+        {
+            throw RwException( "failed to serialize mipmap layer" );
+        }
+    }
+    catch( ... )
+    {
+        if ( rawLayer.isNewlyAllocated )
+        {
+            engineInterface->PixelFree( rawLayer.mipData.texels );
+
+            rawLayer.mipData.texels = NULL;
+        }
+
+        throw;
+    }
 
     // Free raw bitmap resources.
     if ( rawLayer.isNewlyAllocated )
@@ -2627,6 +2502,110 @@ void Raster::writeTGAStream(Stream *tgaStream, bool optimized)
         engineInterface->PixelFree( rawLayer.mipData.texels );
 
         rawLayer.mipData.texels = NULL;
+    }
+}
+
+void Raster::readImage( rw::Stream *inputStream )
+{
+    Interface *engineInterface = this->engineInterface;
+
+    PlatformTexture *platformTex = this->platformData;
+
+    if ( platformTex == NULL )
+    {
+        throw RwException( "no native data" );
+    }
+
+    texNativeTypeProvider *texProvider = GetNativeTextureTypeProvider( engineInterface, platformTex );
+
+    if ( !texProvider )
+    {
+        throw RwException( "invalid native texture" );
+    }
+
+    // Attempt to get a mipmap layer from the stream.
+    rawMipmapLayer rawImagingLayer;
+
+    bool deserializeSuccess = DeserializeMipmapLayer( inputStream, rawImagingLayer );
+
+    if ( !deserializeSuccess )
+    {
+        throw RwException( "could not deserialize image in raster image read method" );
+    }
+
+    try
+    {
+        // Delete image data that was previously at the texture.
+        texProvider->UnsetPixelDataFromTexture( engineInterface, platformTex, true );
+    }
+    catch( ... )
+    {
+        // Free the raw mipmap layer.
+        engineInterface->PixelFree( rawImagingLayer.mipData.texels );
+
+        throw;
+    }
+
+    // Put the imaging layer into the pixel traversal struct.
+    pixelDataTraversal pixelData;
+
+    pixelData.mipmaps.resize( 1 );
+
+    pixelDataTraversal::mipmapResource& mipLayer = pixelData.mipmaps[ 0 ];
+
+    mipLayer.texels = rawImagingLayer.mipData.texels;
+    mipLayer.width = rawImagingLayer.mipData.width;
+    mipLayer.height = rawImagingLayer.mipData.height;
+    mipLayer.mipWidth = rawImagingLayer.mipData.mipWidth;
+    mipLayer.mipHeight = rawImagingLayer.mipData.mipHeight;
+    mipLayer.dataSize = rawImagingLayer.mipData.dataSize;
+
+    pixelData.rasterFormat = rawImagingLayer.rasterFormat;
+    pixelData.depth = rawImagingLayer.depth;
+    pixelData.rowAlignment = rawImagingLayer.rowAlignment;
+    pixelData.colorOrder = rawImagingLayer.colorOrder;
+    pixelData.paletteType = rawImagingLayer.paletteType;
+    pixelData.paletteData = rawImagingLayer.paletteData;
+    pixelData.paletteSize = rawImagingLayer.paletteSize;
+    pixelData.compressionType = rawImagingLayer.compressionType;
+
+    pixelData.hasAlpha = calculateHasAlpha( pixelData );
+    pixelData.autoMipmaps = false;
+    pixelData.cubeTexture = false;
+    pixelData.rasterType = 4;   // bitmap raster.
+
+    pixelData.isNewlyAllocated = true;
+
+    texNativeTypeProvider::acquireFeedback_t acquireFeedback;
+
+    try
+    {
+        // Make sure the pixel data is compatible.
+        pixelCapabilities acceptCaps;
+
+        texProvider->GetPixelCapabilities( acceptCaps );
+
+        CompatibilityTransformPixelData( engineInterface, pixelData, acceptCaps );
+
+        // Set this to the texture now.
+        texProvider->SetPixelDataToTexture( engineInterface, platformTex, pixelData, acquireFeedback );
+    }
+    catch( ... )
+    {
+        // We just free our shit.
+        pixelData.FreePixels( engineInterface );
+
+        throw;
+    }
+
+    if ( acquireFeedback.hasDirectlyAcquired == false )
+    {
+        // We need to release our pixels.
+        pixelData.FreePixels( engineInterface );
+    }
+    else
+    {
+        pixelData.DetachPixels();
     }
 }
 
@@ -2757,6 +2736,9 @@ extern void registerXBOXNativePlugin( void );
 
 void registerTXDPlugins( void )
 {
+    // First register the main serialization plugins.
+    // Those are responsible for detecting texture dictionaries and native textures in RW streams.
+    // The sub module plugins depend on those.
     texDictionaryStreamStore.RegisterPlugin( engineFactory );
     nativeTextureStreamStore.RegisterPlugin( engineFactory );
 

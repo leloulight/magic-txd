@@ -4,6 +4,8 @@
 
 #include "pixelformat.hxx"
 
+#include "pixelutil.hxx"
+
 #include "txdread.d3d.dxt.hxx"
 
 #include <PluginHelpers.h>
@@ -30,6 +32,7 @@ inline void CompatibilityTransformImagingLayer( Interface *engineInterface, cons
     // First get the original parameters onto stack.
     eRasterFormat srcRasterFormat = layer.rasterFormat;
     uint32 srcDepth = layer.depth;
+    uint32 srcRowAlignment = layer.rowAlignment;
     eColorOrdering srcColorOrder = layer.colorOrder;
     ePaletteType srcPaletteType = layer.paletteType;
     void *srcPaletteData = layer.paletteData;
@@ -37,68 +40,22 @@ inline void CompatibilityTransformImagingLayer( Interface *engineInterface, cons
     eCompressionType srcCompressionType = layer.compressionType;
 
     // Now decide the target format depending on the capabilities.
-    eRasterFormat dstRasterFormat = srcRasterFormat;
-    uint32 dstDepth = srcDepth;
-    eColorOrdering dstColorOrder = srcColorOrder;
-    ePaletteType dstPaletteType = srcPaletteType;
-    void *dstPaletteData = srcPaletteData;
-    uint32 dstPaletteSize = srcPaletteSize;
-    eCompressionType dstCompressionType = srcCompressionType;
+    eRasterFormat dstRasterFormat;
+    uint32 dstDepth;
+    uint32 dstRowAlignment;
+    eColorOrdering dstColorOrder;
+    ePaletteType dstPaletteType;
+    void *dstPaletteData;
+    uint32 dstPaletteSize;
+    eCompressionType dstCompressionType;
 
-    bool hasBeenModded = false;
-
-    if ( dstCompressionType == RWCOMPRESS_DXT1 && pixelCaps.supportsDXT1 == false ||
-         dstCompressionType == RWCOMPRESS_DXT2 && pixelCaps.supportsDXT2 == false ||
-         dstCompressionType == RWCOMPRESS_DXT3 && pixelCaps.supportsDXT3 == false ||
-         dstCompressionType == RWCOMPRESS_DXT4 && pixelCaps.supportsDXT4 == false ||
-         dstCompressionType == RWCOMPRESS_DXT5 && pixelCaps.supportsDXT5 == false )
-    {
-        // Set proper decompression parameters.
-        uint32 dxtType;
-
-        bool isDXT = IsDXTCompressionType( dstCompressionType, dxtType );
-
-        assert( isDXT == true );
-
-        eRasterFormat targetRasterFormat = getDXTDecompressionRasterFormat( engineInterface, dxtType, layer.hasAlpha );
-
-        dstRasterFormat = targetRasterFormat;
-        dstDepth = Bitmap::getRasterFormatDepth( targetRasterFormat );
-        dstColorOrder = COLOR_BGRA;
-        dstPaletteType = PALETTE_NONE;
-        dstPaletteData = NULL;
-        dstPaletteSize = 0;
-
-        // We decompress stuff.
-        dstCompressionType = RWCOMPRESS_NONE;
-
-        hasBeenModded = true;
-    }
-
-    if ( hasBeenModded == false )
-    {
-        if ( dstPaletteType != PALETTE_NONE && pixelCaps.supportsPalette == false )
-        {
-            // We want to do things without a palette.
-            dstPaletteType = PALETTE_NONE;
-            dstPaletteSize = 0;
-            dstPaletteData = NULL;
-
-            dstDepth = Bitmap::getRasterFormatDepth(dstRasterFormat);
-
-            hasBeenModded = true;
-        }
-    }
-
-    // Check whether we even want an update.
-    bool wantsUpdate = false;
-
-    if ( srcRasterFormat != dstRasterFormat || dstDepth != srcDepth || dstColorOrder != srcColorOrder ||
-         dstPaletteType != srcPaletteType || dstPaletteData != srcPaletteData || dstPaletteSize != srcPaletteSize ||
-         dstCompressionType != srcCompressionType )
-    {
-        wantsUpdate = true;
-    }
+    bool wantsUpdate =
+        TransformDestinationRasterFormat(
+            engineInterface,
+            srcRasterFormat, srcDepth, srcRowAlignment, srcColorOrder, srcPaletteType, srcPaletteData, srcPaletteSize, srcCompressionType,
+            dstRasterFormat, dstDepth, dstRowAlignment, dstColorOrder, dstPaletteType, dstPaletteData, dstPaletteSize, dstCompressionType,
+            pixelCaps, layer.hasAlpha
+         );
 
     uint32 srcMipWidth = layer.mipWidth;
     uint32 srcMipHeight = layer.mipHeight;
@@ -121,16 +78,16 @@ inline void CompatibilityTransformImagingLayer( Interface *engineInterface, cons
         {
             // Just convert.
             uint32 dstPlaneWidth, dstPlaneHeight;
-            void *dstTexels;
-            uint32 dstDataSize;
+            void *newtexels;
+            uint32 newdatasize;
 
             bool couldConvert = ConvertMipmapLayerNative(
                 engineInterface, layer.mipWidth, layer.mipHeight, layer.layerWidth, layer.layerHeight, layer.texelSource, layer.dataSize,
-                srcRasterFormat, srcDepth, srcColorOrder, srcPaletteType, srcPaletteData, srcPaletteSize, srcCompressionType,
-                dstRasterFormat, dstDepth, dstColorOrder, dstPaletteType, dstPaletteData, dstPaletteSize, dstCompressionType,
+                srcRasterFormat, srcDepth, srcRowAlignment, srcColorOrder, srcPaletteType, srcPaletteData, srcPaletteSize, srcCompressionType,
+                dstRasterFormat, dstDepth, dstRowAlignment, dstColorOrder, dstPaletteType, dstPaletteData, dstPaletteSize, dstCompressionType,
                 false,
                 dstPlaneWidth, dstPlaneHeight,
-                dstTexels, dstDataSize
+                newtexels, newdatasize
             );
 
             if ( couldConvert )
@@ -140,8 +97,8 @@ inline void CompatibilityTransformImagingLayer( Interface *engineInterface, cons
                 
                 // We assume the input layer is _never_ newly allocated.
                 // Now it is, tho. MAKE SURE you handle this right!
-                dstTexels = dstTexels;
-                dstDataSize = dstDataSize;
+                dstTexels = newtexels;
+                dstDataSize = newdatasize;
 
                 hasUpdated = true;
             }
@@ -150,15 +107,6 @@ inline void CompatibilityTransformImagingLayer( Interface *engineInterface, cons
         // If we want an update, we should get an update.
         // Otherwise, ConvertPixelData is to blame.
         assert( hasUpdated == true );
-
-        // If we have updated at all, apply changes.
-        if ( hasUpdated )
-        {
-            // We must have the correct parameters.
-            // Here we verify problematic parameters only.
-            // Params like rasterFormat are expected to be handled properly no matter what.
-            assert( layer.compressionType == dstCompressionType );
-        }
     }
 
     // Put data into the new struct.
@@ -171,6 +119,7 @@ inline void CompatibilityTransformImagingLayer( Interface *engineInterface, cons
 
     layerOut.rasterFormat = dstRasterFormat;
     layerOut.depth = dstDepth;
+    layerOut.rowAlignment = dstRowAlignment;
     layerOut.colorOrder = dstColorOrder;
     layerOut.paletteType = dstPaletteType;
     layerOut.paletteData = dstPaletteData;
@@ -310,7 +259,7 @@ struct rwImagingEnv
             try
             {
                 // Serialize the legit pixels.
-                fittingFormat->SerializeImage( engineInterface, outputStream, theLayer );
+                fittingFormat->SerializeImage( engineInterface, outputStream, layerPush );
             }
             catch( ... )
             {
@@ -368,6 +317,7 @@ bool DeserializeMipmapLayer( Stream *inputStream, rawMipmapLayer& rawLayer )
 
             rawLayer.rasterFormat = travData.rasterFormat;
             rawLayer.depth = travData.depth;
+            rawLayer.rowAlignment = travData.rowAlignment;
             rawLayer.colorOrder = travData.colorOrder;
             rawLayer.paletteType = travData.paletteType;
             rawLayer.paletteData = travData.paletteData;
@@ -405,6 +355,7 @@ bool SerializeMipmapLayer( Stream *outputStream, const char *formatDescriptor, c
 
         travData.rasterFormat = rawLayer.rasterFormat;
         travData.depth = rawLayer.depth;
+        travData.rowAlignment = rawLayer.rowAlignment;
         travData.colorOrder = rawLayer.colorOrder;
         travData.paletteType = rawLayer.paletteType;
         travData.paletteData = rawLayer.paletteData;
@@ -459,6 +410,8 @@ bool DeserializeImage( Stream *inputStream, Bitmap& outputPixels )
                     eColorOrdering dstColorOrder = COLOR_BGRA;
                     uint32 dstDepth = 32;
 
+                    uint32 dstRowAlignment = 4; // good measure.
+
                     uint32 dstPlaneWidth, dstPlaneHeight;
                     void *dstTexels = NULL;
                     uint32 dstDataSize = 0;
@@ -467,8 +420,8 @@ bool DeserializeImage( Stream *inputStream, Bitmap& outputPixels )
                         ConvertMipmapLayerNative(
                             engineInterface,
                             fetchedLayer.mipWidth, fetchedLayer.mipHeight, fetchedLayer.layerWidth, fetchedLayer.layerHeight, fetchedLayer.texelSource, fetchedLayer.dataSize,
-                            fetchedLayer.rasterFormat, fetchedLayer.depth, fetchedLayer.colorOrder, fetchedLayer.paletteType, fetchedLayer.paletteData, fetchedLayer.paletteSize, fetchedLayer.compressionType,
-                            dstRasterFormat, dstDepth, dstColorOrder, PALETTE_NONE, NULL, 0, RWCOMPRESS_NONE,
+                            fetchedLayer.rasterFormat, fetchedLayer.depth, fetchedLayer.rowAlignment, fetchedLayer.colorOrder, fetchedLayer.paletteType, fetchedLayer.paletteData, fetchedLayer.paletteSize, fetchedLayer.compressionType,
+                            dstRasterFormat, dstDepth, dstRowAlignment, dstColorOrder, PALETTE_NONE, NULL, 0, RWCOMPRESS_NONE,
                             false,
                             dstPlaneWidth, dstPlaneHeight,
                             dstTexels, dstDataSize
@@ -483,6 +436,7 @@ bool DeserializeImage( Stream *inputStream, Bitmap& outputPixels )
                     fetchedLayer.rasterFormat = dstRasterFormat;
                     fetchedLayer.colorOrder = dstColorOrder;
                     fetchedLayer.depth = dstDepth;
+                    fetchedLayer.rowAlignment = dstRowAlignment;
                     fetchedLayer.paletteType = PALETTE_NONE;
                     fetchedLayer.paletteData = NULL;
                     fetchedLayer.paletteSize = 0;
@@ -499,6 +453,62 @@ bool DeserializeImage( Stream *inputStream, Bitmap& outputPixels )
                     fetchedLayer.texelSource = dstTexels;
                     fetchedLayer.dataSize = dstDataSize;
                 }
+
+                // If we are a palette, we must unfold to non-palette.
+                // This is done by converting the image data to default raster representation.
+                if ( fetchedLayer.paletteType != PALETTE_NONE )
+                {
+                    eRasterFormat rasterFormat = fetchedLayer.rasterFormat;
+                    uint32 depth = fetchedLayer.depth;
+                    uint32 rowAlignment = fetchedLayer.rowAlignment;
+                    eColorOrdering colorOrder = fetchedLayer.colorOrder;
+
+                    ePaletteType paletteType = fetchedLayer.paletteType;
+                    void *paletteData = fetchedLayer.paletteData;
+                    uint32 paletteSize = fetchedLayer.paletteSize;
+
+                    void *srcTexels = fetchedLayer.texelSource;
+                    uint32 srcDataSize = fetchedLayer.dataSize;
+
+                    // Determine the default raster representation.
+                    uint32 dstItemDepth = Bitmap::getRasterFormatDepth( rasterFormat );
+
+                    uint32 dstPlaneWidth, dstPlaneHeight;
+                    void *newtexels = NULL;
+                    uint32 dstDataSize = 0;
+
+                    bool couldConvert =
+                        ConvertMipmapLayerNative(
+                            engineInterface, fetchedLayer.mipWidth, fetchedLayer.mipHeight, fetchedLayer.layerWidth, fetchedLayer.layerHeight,
+                            srcTexels, srcDataSize,
+                            rasterFormat, depth, rowAlignment, colorOrder, paletteType, paletteData, paletteSize, RWCOMPRESS_NONE,
+                            rasterFormat, dstItemDepth, rowAlignment, colorOrder, PALETTE_NONE, NULL, 0, RWCOMPRESS_NONE,
+                            false,
+                            dstPlaneWidth, dstPlaneHeight,
+                            newtexels, dstDataSize
+                        );
+
+                    if ( couldConvert == false )
+                    {
+                        throw RwException( "could not expand palette mipmap for Bitmap deserialization" );
+                    }
+
+                    // Free the old texels.
+                    engineInterface->PixelFree( srcTexels );
+                    engineInterface->PixelFree( paletteData );
+
+                    // The raster format has sligthly changed.
+                    fetchedLayer.depth = dstItemDepth;
+                    fetchedLayer.paletteType = PALETTE_NONE;
+                    fetchedLayer.paletteSize = 0;
+                    fetchedLayer.paletteData = NULL;
+
+                    // Store things into the mipmap layer.
+                    fetchedLayer.mipWidth = dstPlaneWidth;
+                    fetchedLayer.mipHeight = dstPlaneHeight;
+                    fetchedLayer.texelSource = newtexels;
+                    fetchedLayer.dataSize = dstDataSize;
+                }
             }
             catch( ... )
             {
@@ -513,10 +523,12 @@ bool DeserializeImage( Stream *inputStream, Bitmap& outputPixels )
                 throw;
             }
 
+            assert( fetchedLayer.paletteType == PALETTE_NONE );
+
             // Now nothing can go wrong anymore. Put things into the bitmap.
             outputPixels.setImageData(
                 fetchedLayer.texelSource,
-                fetchedLayer.rasterFormat, fetchedLayer.colorOrder, fetchedLayer.depth,
+                fetchedLayer.rasterFormat, fetchedLayer.colorOrder, fetchedLayer.depth, fetchedLayer.rowAlignment,
                 fetchedLayer.mipWidth, fetchedLayer.mipHeight, fetchedLayer.dataSize, true
             );
 
@@ -551,6 +563,7 @@ bool SerializeImage( Stream *outputStream, const char *formatDescriptor, const B
 
         texelData.rasterFormat = inputPixels.getFormat();
         texelData.depth = inputPixels.getDepth();
+        texelData.rowAlignment = inputPixels.getRowAlignment();
         texelData.colorOrder = inputPixels.getColorOrder();
 
         texelData.paletteType = PALETTE_NONE;
@@ -655,6 +668,7 @@ void GetRegisteredImageFormats( Interface *engineInterface, registered_image_for
 // Imaging extensions.
 extern void registerTGAImagingExtension( void );
 extern void registerBMPImagingExtension( void );
+extern void registerPNGImagingExtension( void );
 
 void registerImagingPlugin( void )
 {
@@ -664,6 +678,7 @@ void registerImagingPlugin( void )
     // TODO: register all extensions that use us.
     registerTGAImagingExtension();
     registerBMPImagingExtension();
+    registerPNGImagingExtension();
 #endif //RWLIB_INCLUDE_IMAGING
 }
 

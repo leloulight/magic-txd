@@ -62,6 +62,7 @@ bool DebugDrawMipmaps( Interface *engineInterface, Raster *debugRaster, Bitmap& 
             // Establish whether we have to convert the mipmaps.
             eRasterFormat srcRasterFormat = pixelData.rasterFormat;
             uint32 srcDepth = pixelData.depth;
+            uint32 srcRowAlignment = pixelData.rowAlignment;
             eColorOrdering srcColorOrder = pixelData.colorOrder;
             ePaletteType srcPaletteType = pixelData.paletteType;
             void *srcPaletteData = pixelData.paletteData;
@@ -70,6 +71,7 @@ bool DebugDrawMipmaps( Interface *engineInterface, Raster *debugRaster, Bitmap& 
 
             eRasterFormat reqRasterFormat = srcRasterFormat;
             uint32 reqDepth = srcDepth;
+            uint32 reqRowAlignment = srcRowAlignment;
             eColorOrdering reqColorOrder = srcColorOrder;
             eCompressionType reqCompressionType = RWCOMPRESS_NONE;
 
@@ -91,6 +93,7 @@ bool DebugDrawMipmaps( Interface *engineInterface, Raster *debugRaster, Bitmap& 
                 }
                 
                 reqColorOrder = COLOR_BGRA;
+                reqRowAlignment = 4;    // good measure.
             }
 
             // Draw them.
@@ -115,8 +118,8 @@ bool DebugDrawMipmaps( Interface *engineInterface, Raster *debugRaster, Bitmap& 
                         ConvertMipmapLayerNative(
                             engineInterface,
                             mipWidth, mipHeight, layerWidth, layerHeight, srcTexels, srcDataSize,
-                            srcRasterFormat, srcDepth, srcColorOrder, srcPaletteType, srcPaletteData, srcPaletteSize, srcCompressionType,
-                            reqRasterFormat, reqDepth, reqColorOrder, srcPaletteType, srcPaletteData, srcPaletteSize, reqCompressionType,
+                            srcRasterFormat, srcDepth, srcRowAlignment, srcColorOrder, srcPaletteType, srcPaletteData, srcPaletteSize, srcCompressionType,
+                            reqRasterFormat, reqDepth, reqRowAlignment, reqColorOrder, srcPaletteType, srcPaletteData, srcPaletteSize, reqCompressionType,
                             false,
                             mipWidth, mipHeight,
                             srcTexels, srcDataSize
@@ -130,20 +133,25 @@ bool DebugDrawMipmaps( Interface *engineInterface, Raster *debugRaster, Bitmap& 
                 // Fetch colors from this mipmap layer.
                 struct mipmapColorSourcePipeline : public Bitmap::sourceColorPipeline
                 {
-                    uint32 mipWidth, mipHeight;
+                    const void *texelSource;
+                    uint32 mipWidth, mipHeight; 
+                    uint32 rowSize;
 
                     colorModelDispatcher <const void> fetchDispatch;
 
                     inline mipmapColorSourcePipeline(
-                        uint32 mipWidth, uint32 mipHeight, uint32 depth,
+                        uint32 mipWidth, uint32 mipHeight, uint32 depth, uint32 rowAlignment,
                         const void *texelSource,
                         eRasterFormat rasterFormat, eColorOrdering colorOrder,
                         const void *paletteData, uint32 paletteSize, ePaletteType paletteType
                     ) :
-                    fetchDispatch( texelSource, rasterFormat, colorOrder, depth, paletteData, paletteSize, paletteType )
+                    fetchDispatch( rasterFormat, colorOrder, depth, paletteData, paletteSize, paletteType )
                     {
+                        this->texelSource = texelSource;
                         this->mipWidth = mipWidth;
                         this->mipHeight = mipHeight;
+
+                        this->rowSize = getRasterDataRowSize( mipWidth, depth, rowAlignment );
                     }
 
                     uint32 getWidth( void ) const
@@ -156,11 +164,13 @@ bool DebugDrawMipmaps( Interface *engineInterface, Raster *debugRaster, Bitmap& 
                         return this->mipHeight;
                     }
 
-                    void fetchcolor( uint32 colorIndex, double& red, double& green, double& blue, double& alpha )
+                    void fetchcolor( uint32 x, uint32 y, double& red, double& green, double& blue, double& alpha )
                     {
                         uint8 r, g, b, a;
 
-                        bool hasColor = fetchDispatch.getRGBA( colorIndex, r, g, b, a );
+                        const void *srcRow = getConstTexelDataRow( this->texelSource, this->rowSize, y );
+
+                        bool hasColor = fetchDispatch.getRGBA( srcRow, x, r, g, b, a );
 
                         if ( !hasColor )
                         {
@@ -178,7 +188,7 @@ bool DebugDrawMipmaps( Interface *engineInterface, Raster *debugRaster, Bitmap& 
                 };
 
                 mipmapColorSourcePipeline colorPipe(
-                    mipWidth, mipHeight, reqDepth,
+                    mipWidth, mipHeight, reqDepth, reqRowAlignment,
                     srcTexels,
                     reqRasterFormat, reqColorOrder,
                     srcPaletteData, srcPaletteSize, srcPaletteType

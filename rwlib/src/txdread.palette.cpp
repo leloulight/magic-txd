@@ -10,9 +10,15 @@
 
 #include "txdread.palette.hxx"
 
+#ifdef RWLIB_INCLUDE_LIBIMAGEQUANT
+// Include the libimagequant library headers.
+#include <libimagequant.h>
+#endif //RWLIB_INCLUDE_LIBIMAGEQUANT
+
 namespace rw
 {
 
+#ifdef RWLIB_INCLUDE_LIBIMAGEQUANT
 struct _fetch_texel_libquant_traverse
 {
     pixelDataTraversal *pixelData;
@@ -41,16 +47,19 @@ static void _fetch_image_data_libquant(liq_color row_out[], int row_index, int w
     void *palColors = pixelData->paletteData;
     uint32 palColorCount = pixelData->paletteSize;
 
-    colorModelDispatcher <const void> fetchDispatch( texelSource, rasterFormat, colorOrder, itemDepth, palColors, palColorCount, paletteType );
+    // Get the row of colors.
+    uint32 srcRowSize = getRasterDataRowSize( mipLayer.mipWidth, itemDepth, pixelData->rowAlignment );
+    
+    const void *srcRow = getConstTexelDataRow( texelSource, srcRowSize, row_index );
+
+    colorModelDispatcher <const void> fetchDispatch( rasterFormat, colorOrder, itemDepth, palColors, palColorCount, paletteType );
 
     for (int n = 0; n < width; n++)
     {
-        uint32 colorIndex = PixelFormat::coord2index(n, row_index, width);
-
         // Fetch the color.
         uint8 r, g, b, a;
 
-        fetchDispatch.getRGBA( colorIndex, r, g, b, a );
+        fetchDispatch.getRGBA( srcRow, n, r, g, b, a );
 
         // Store the color.
         liq_color& outColor = row_out[ n ];
@@ -60,6 +69,7 @@ static void _fetch_image_data_libquant(liq_color row_out[], int row_index, int w
         outColor.a = a;
     }
 }
+#endif //RWLIB_INCLUDE_LIBIMAGEQUANT
 
 // Custom algorithm for palettizing image data.
 // This routine is called by ConvertPixelData. It should not be called from anywhere else.
@@ -71,7 +81,9 @@ void PalettizePixelData( Interface *engineInterface, pixelDataTraversal& pixelDa
 
     ePaletteType convPaletteFormat = dstPixelFormat.paletteType;
 
-    if (convPaletteFormat != PALETTE_8BIT && convPaletteFormat != PALETTE_4BIT)
+    if (convPaletteFormat != PALETTE_8BIT &&
+        convPaletteFormat != PALETTE_4BIT &&
+        convPaletteFormat != PALETTE_4BIT_LSB)
     {
         throw RwException( "unknown palette type target in palettization routine" );
     }
@@ -87,18 +99,19 @@ void PalettizePixelData( Interface *engineInterface, pixelDataTraversal& pixelDa
     eRasterFormat srcRasterFormat = pixelData.rasterFormat;
     eColorOrdering srcColorOrder = pixelData.colorOrder;
     uint32 srcDepth = pixelData.depth;
+    uint32 srcRowAlignment = pixelData.rowAlignment;
 
     // Get the format that we want to output in.
     eRasterFormat dstRasterFormat = dstPixelFormat.rasterFormat;
     uint32 dstDepth = dstPixelFormat.depth;
     eColorOrdering dstColorOrder = dstPixelFormat.colorOrder;
+    uint32 dstRowAlignment = dstPixelFormat.rowAlignment;
 
     void *srcPaletteData = pixelData.paletteData;
     uint32 srcPaletteCount = pixelData.paletteSize;
 
     // Get palette maximums.
     uint32 maxPaletteEntries = 0;
-    uint8 newDepth = 0;
 
     bool hasValidPaletteTarget = false;
 
@@ -110,10 +123,16 @@ void PalettizePixelData( Interface *engineInterface, pixelDataTraversal& pixelDa
 
             hasValidPaletteTarget = true;
         }
+        else if (convPaletteFormat == PALETTE_4BIT || convPaletteFormat == PALETTE_4BIT_LSB)
+        {
+            maxPaletteEntries = 16;
+
+            hasValidPaletteTarget = true;
+        }
     }
     else if (dstDepth == 4)
     {
-        if (convPaletteFormat == PALETTE_4BIT || convPaletteFormat == PALETTE_8BIT)
+        if (convPaletteFormat == PALETTE_4BIT || convPaletteFormat == PALETTE_4BIT_LSB)
         {
             maxPaletteEntries = 16;
 
@@ -149,6 +168,8 @@ void PalettizePixelData( Interface *engineInterface, pixelDataTraversal& pixelDa
                 uint32 srcStride = mainLayer.width;
                 void *texelSource = mainLayer.texels;
 
+                uint32 srcRowSize = getRasterDataRowSize( srcWidth, srcDepth, srcRowAlignment );
+
 #if 0
                 // First define properties to use for linear elimination.
                 for (uint32 y = 0; y < srcHeight; y++)
@@ -171,17 +192,17 @@ void PalettizePixelData( Interface *engineInterface, pixelDataTraversal& pixelDa
                 conv.after_characterize();
 #endif
 
-                colorModelDispatcher <const void> fetchDispatch( texelSource, srcRasterFormat, srcColorOrder, srcDepth, srcPaletteData, srcPaletteCount, srcPaletteType );
+                colorModelDispatcher <const void> fetchDispatch( srcRasterFormat, srcColorOrder, srcDepth, srcPaletteData, srcPaletteCount, srcPaletteType );
 
                 // Linear eliminate.
                 for (uint32 y = 0; y < srcHeight; y++)
                 {
+                    const void *srcRow = getConstTexelDataRow( texelSource, srcRowSize, y );
+
                     for (uint32 x = 0; x < srcWidth; x++)
                     {
-                        uint32 colorIndex = PixelFormat::coord2index(x, y, srcStride);
-
                         uint8 red, green, blue, alpha;
-                        bool hasColor = fetchDispatch.getRGBA( colorIndex, red, green, blue, alpha );
+                        bool hasColor = fetchDispatch.getRGBA( srcRow, x, red, green, blue, alpha );
 
                         if ( hasColor )
                         {
@@ -213,8 +234,9 @@ void PalettizePixelData( Interface *engineInterface, pixelDataTraversal& pixelDa
                 nativePaletteRemap(
                     engineInterface,
                     conv, convPaletteFormat, dstDepth,
-                    texelSource, itemCount,
+                    texelSource, srcWidth, srcHeight,
                     srcPaletteType, srcPaletteData, srcPaletteCount, srcRasterFormat, srcColorOrder, srcDepth,
+                    srcRowAlignment, dstRowAlignment,
                     newTexelData, dataSize
                 );
 
@@ -244,6 +266,7 @@ void PalettizePixelData( Interface *engineInterface, pixelDataTraversal& pixelDa
 
             palettizeSuccess = true;
         }
+#ifdef RWLIB_INCLUDE_LIBIMAGEQUANT
         else if (useRuntime == PALRUNTIME_PNGQUANT)
         {
             liq_attr *quant_attr = liq_attr_create();
@@ -280,9 +303,9 @@ void PalettizePixelData( Interface *engineInterface, pixelDataTraversal& pixelDa
                     uint32 mipWidth = mipLayer.width;
                     uint32 mipHeight = mipLayer.height;
 
-                    uint32 palItemCount = ( mipWidth * mipHeight );
+                    size_t liqPaletteSize = ( mipWidth * mipHeight ) * sizeof(unsigned char);
 
-                    unsigned char *newPalItems = (unsigned char*)engineInterface->PixelAllocate( palItemCount );
+                    unsigned char *newPalItems = (unsigned char*)engineInterface->PixelAllocate( liqPaletteSize );
 
                     assert( newPalItems != NULL );
 
@@ -311,7 +334,7 @@ void PalettizePixelData( Interface *engineInterface, pixelDataTraversal& pixelDa
                     }
 
                     // Map it.
-                    liq_write_remapped_image( quant_result, srcImage, newPalItems, palItemCount );
+                    liq_write_remapped_image( quant_result, srcImage, newPalItems, liqPaletteSize );
 
                     // Delete image (if newly allocated)
                     if (newImage)
@@ -328,14 +351,14 @@ void PalettizePixelData( Interface *engineInterface, pixelDataTraversal& pixelDa
                         uint32 dataSize = 0;
                         void *newTexelArray = NULL;
 
-                        if (dstDepth == 4)
-                        {
-                            dataSize = PixelFormat::palette4bit::sizeitems( palItemCount );
-                        }
-                        else if (dstDepth == 8)
-                        {
-                            dataSize = palItemCount;
+                        uint32 dstRowSize = getRasterDataRowSize( mipWidth, dstDepth, dstRowAlignment );
 
+                        dataSize = getRasterDataSizeByRowSize( dstRowSize, mipHeight );
+
+                        if (dstDepth == 8 && dataSize == liqPaletteSize)
+                        {
+                            // If we have the same size as the liq palette index array,
+                            // we can simply use it.
                             newTexelArray = newPalItems;
 
                             hasUsedArray = true;
@@ -346,17 +369,16 @@ void PalettizePixelData( Interface *engineInterface, pixelDataTraversal& pixelDa
                             newTexelArray = engineInterface->PixelAllocate( dataSize );
 
                             // Copy over the items.
-                            for ( uint32 n = 0; n < palItemCount; n++ )
+                            for ( uint32 row = 0; row < mipHeight; row++ )
                             {
-                                uint32 resVal = newPalItems[ n ];
+                                const void *srcRow = getTexelDataRow( newPalItems, mipWidth, row );
+                                void *dstRow = getTexelDataRow( newTexelArray, dstRowSize, row );
 
-                                if (dstDepth == 4)
+                                for ( uint32 col = 0; col < mipWidth; col++ )
                                 {
-                                    ( (PixelFormat::palette4bit*)newTexelArray )->setvalue(n, resVal);
-                                }
-                                else if (dstDepth == 8)
-                                {
-                                    ( (PixelFormat::palette8bit*)newTexelArray)->setvalue(n, resVal);
+                                    uint8 resVal = *((unsigned char*)srcRow + col);
+
+                                    setpaletteindex(dstRow, col, dstDepth, convPaletteFormat, resVal);
                                 }
                             }
                         }
@@ -386,7 +408,7 @@ void PalettizePixelData( Interface *engineInterface, pixelDataTraversal& pixelDa
 
                     uint32 palDepth = Bitmap::getRasterFormatDepth(dstRasterFormat);
 
-                    uint32 palDataSize = getRasterDataSize( newPalItemCount, palDepth );
+                    uint32 palDataSize = getPaletteDataSize( newPalItemCount, palDepth );
 
                     void *newPalArray = engineInterface->PixelAllocate( palDataSize );
 
@@ -416,6 +438,7 @@ void PalettizePixelData( Interface *engineInterface, pixelDataTraversal& pixelDa
 
             palettizeSuccess = true;
         }
+#endif //RWLIB_INCLUDE_LIBIMAGEQUANT
         else
         {
             assert( 0 );
@@ -439,6 +462,12 @@ void PalettizePixelData( Interface *engineInterface, pixelDataTraversal& pixelDa
         if ( srcDepth != dstDepth )
         {
             pixelData.depth = dstDepth;
+        }
+
+        // We have a new row alignment, maybe.
+        if ( srcRowAlignment != dstRowAlignment )
+        {
+            pixelData.rowAlignment = dstRowAlignment;
         }
 
         // Notify the raster about its new format.
@@ -541,6 +570,7 @@ void Raster::convertToPalette( ePaletteType paletteType )
         pixelFormat targetPixelFormat;
         targetPixelFormat.rasterFormat = targetRasterFormat;
         targetPixelFormat.depth = dstDepth;
+        targetPixelFormat.rowAlignment = 4; // good measure.
         targetPixelFormat.colorOrder = pixelData.colorOrder;
         targetPixelFormat.paletteType = paletteType;
         targetPixelFormat.compressionType = RWCOMPRESS_NONE;

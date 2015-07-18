@@ -169,7 +169,7 @@ void pvrNativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture, 
                     // Verify the data size.
                     uint32 texItemCount = ( texWidth * texHeight );
 
-                    uint32 texReqDataSize = getRasterDataSize( texItemCount, texDepth );
+                    uint32 texReqDataSize = getPackedRasterDataSize( texItemCount, texDepth );
 
                     uint32 actualDataSize = mipDataSizes[ n ];
 

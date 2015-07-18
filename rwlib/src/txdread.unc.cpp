@@ -104,7 +104,7 @@ void uncNativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture, 
 
                 // This texture format is very primitive.
                 // It supports only RASTER_4444 textures with 16 depth.
-                // Everything that this format stores is already storable in the Direct3D platform.
+                // Everything that this format stores is already storable in the Direct3D 8/9 platform.
                 eRasterFormat rasterFormat;
                 uint32 depth;
                 eColorOrdering colorOrder;
@@ -164,9 +164,9 @@ void uncNativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture, 
                     newLayer.height = height;
 
                     // Calculate the size of this layer.
-                    uint32 texUnitCount = ( width * height );
+                    uint32 texRowSize = getUNCRasterDataRowSize( width, depth );
 
-                    uint32 texDataSize = getRasterDataSize( texUnitCount, depth );
+                    uint32 texDataSize = getRasterDataSizeByRowSize( texRowSize, height );
 
                     // Reduce the texture image data section remainder.
                     if ( remainingTexImageDataSize < texDataSize )

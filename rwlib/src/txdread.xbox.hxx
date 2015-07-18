@@ -5,6 +5,11 @@
 namespace rw
 {
 
+inline uint32 getXBOXTextureDataRowAlignment( void )
+{
+    return sizeof( DWORD );
+}
+
 struct NativeTextureXBOX
 {
     Interface *engineInterface;
@@ -41,7 +46,7 @@ struct NativeTextureXBOX
             {
                 uint32 palRasterDepth = Bitmap::getRasterFormatDepth(right.rasterFormat);
 
-                size_t wholeDataSize = getRasterDataSize( right.paletteSize, palRasterDepth );
+                size_t wholeDataSize = getPaletteDataSize( right.paletteSize, palRasterDepth );
 
 		        this->palette = engineInterface->PixelAllocate( wholeDataSize );
 
@@ -121,6 +126,7 @@ struct NativeTextureXBOX
         // Input.
         uint32 mipWidth, mipHeight;
         uint32 depth;
+        uint32 rowAlignment;
         void *texels;
         uint32 dataSize;
 
@@ -222,6 +228,13 @@ struct xboxNativeTextureTypeProvider : public texNativeTypeProvider
         const NativeTextureXBOX *nativeTex = (const NativeTextureXBOX*)objMem;
 
         return nativeTex->hasAlpha;
+    }
+
+    uint32 GetTextureDataRowAlignment( void ) const
+    {
+        // The XBOX is assumed to have the same row alignment like Direct3D 8.
+        // This means it is aligned to DWORD.
+        return getXBOXTextureDataRowAlignment();
     }
 
     uint32 GetDriverIdentifier( void *objMem ) const

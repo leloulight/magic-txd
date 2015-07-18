@@ -135,9 +135,9 @@ void xboxNativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, P
                 // Get the real data size of the palette.
                 uint32 palRasterDepth = Bitmap::getRasterFormatDepth(platformTex->rasterFormat);
 
-                uint32 paletteDataSize = getRasterDataSize( palItemCount, palRasterDepth );
+                uint32 paletteDataSize = getPaletteDataSize( palItemCount, palRasterDepth );
 
-                uint32 palByteWriteCount = writePartialBlockSafe(texImageDataBlock, platformTex->palette, paletteDataSize, getRasterDataSize(reqPalCount, palRasterDepth));
+                uint32 palByteWriteCount = writePartialBlockSafe(texImageDataBlock, platformTex->palette, paletteDataSize, getPaletteDataSize(reqPalCount, palRasterDepth));
         
                 assert( palByteWriteCount * 8 / palRasterDepth == reqPalCount );
             }

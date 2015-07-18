@@ -622,15 +622,13 @@ void NativeTexturePS2::UpdateStructure( Interface *engineInterface )
         eFormatEncodingType requiredFormat = this->getHardwareRequiredEncoding(version);
 
         // Get the format we should decode to.
-        eFormatEncodingType actualEncodingType = getFormatEncodingFromRasterFormat(rasterFormat, paletteType);
-
         eFormatEncodingType currentMipmapEncodingType = this->swizzleEncodingType;
 
         if ( requiredFormat == FORMAT_UNKNOWN )
         {
             throw RwException( "unknown swizzle encoding of PS2 texture" );
         }
-        if ( actualEncodingType == FORMAT_UNKNOWN )
+        if ( getFormatEncodingFromRasterFormat(rasterFormat, paletteType) == FORMAT_UNKNOWN )
         {
             throw RwException( "unknown image data encoding of PS2 texture" );
         }
@@ -647,8 +645,8 @@ void NativeTexturePS2::UpdateStructure( Interface *engineInterface )
             {
                 NativeTexturePS2::GSMipmap& mipLayer = this->mipmaps[ n ];
 
-                uint32 mipWidth = mipLayer.width;
-                uint32 mipHeight = mipLayer.height;
+                uint32 swizzleWidth = mipLayer.swizzleWidth;
+                uint32 swizzleHeight = mipLayer.swizzleHeight;
                 
                 uint32 packedWidth, packedHeight;
 
@@ -661,34 +659,15 @@ void NativeTexturePS2::UpdateStructure( Interface *engineInterface )
                 // TODO: need to straighten out the permutation engine again.
                 // But this can wait until a much further point in time.
 
-                if ( reqFormatDepth > currentEncodingDepth )
-                {
-                    newtexels =
-                        ps2GSPixelEncodingFormats::packImageData(
-                            engineInterface,
-                            currentMipmapEncodingType, requiredFormat,
-                            depth,
-                            srcTexels,
-                            mipWidth, mipHeight,
-                            newDataSize, packedWidth, packedHeight
-                        );
-                }
-                else
-                {
-                    newtexels =
-                        ps2GSPixelEncodingFormats::unpackImageData(
-                            engineInterface,
-                            currentMipmapEncodingType, requiredFormat,
-                            depth,
-                            srcTexels,
-                            mipLayer.swizzleWidth, mipLayer.swizzleHeight,
-                            newDataSize,
-                            mipWidth, mipHeight
-                        );
-
-                    packedWidth = mipWidth;
-                    packedHeight = mipHeight;
-                }
+                newtexels = ps2GSPixelEncodingFormats::transformImageData(
+                    engineInterface,
+                    currentMipmapEncodingType, requiredFormat,
+                    srcTexels, swizzleWidth, swizzleHeight,
+                    getPS2TextureDataRowAlignment(), getPS2TextureDataRowAlignment(),
+                    packedWidth, packedHeight,
+                    newDataSize,
+                    false
+                );
 
                 assert( newtexels != NULL );
 

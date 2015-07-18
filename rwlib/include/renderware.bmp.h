@@ -1,6 +1,80 @@
-inline uint32 getRasterDataSize( uint32 itemCount, uint32 depth )
+inline uint32 getRasterDataRowSizeAligned( uint32 rowSize, uint32 alignment )
 {
-    return ALIGN_SIZE( itemCount * depth, 8u ) / 8u;
+    if ( alignment != 0 )
+    {
+        return ALIGN_SIZE( rowSize, alignment );
+    }
+
+    return rowSize;
+}
+
+inline uint32 getRasterDataRawRowSize( uint32 planeWidth, uint32 depth )
+{
+    return ( ALIGN_SIZE( planeWidth * depth, 8u ) / 8u );
+}
+
+inline uint32 getRasterDataRowSize( uint32 planeWidth, uint32 depth, uint32 alignment )
+{
+    uint32 rowSizeWithoutPadding = getRasterDataRawRowSize( planeWidth, depth );
+
+    return getRasterDataRowSizeAligned( rowSizeWithoutPadding, alignment );
+}
+
+inline uint32 getRasterDataSizeByRowSize( uint32 rowSize, uint32 height )
+{
+    return ( rowSize * height );
+}
+
+inline uint32 getPaletteRowAlignment( void )
+{
+    return 0;
+}
+
+inline uint32 getPaletteDataSize( uint32 paletteCount, uint32 depth )
+{
+    return getRasterDataRowSize( paletteCount, depth, getPaletteRowAlignment() );
+}
+
+inline uint32 getPackedRasterDataSize( uint32 itemCount, uint32 depth )
+{
+    return ( ALIGN_SIZE( itemCount * depth, 8u ) / 8u );
+}
+
+inline void* getTexelDataRow( void *texelData, uint32 rowSize, uint32 n )
+{
+    return (char*)texelData + rowSize * n;
+}
+
+inline const void* getConstTexelDataRow( const void *texelData, uint32 rowSize, uint32 n )
+{
+    return (const char*)texelData + rowSize * n;
+}
+
+inline bool shouldAllocateNewRasterBuffer( uint32 mipWidth, uint32 srcDepth, uint32 srcRowAlignment, uint32 dstDepth, uint32 dstRowAlignment )
+{
+    // If the depth changed, an item will take a different amount of space.
+    // This means that items cannot be placed at the positions where they belong to (swapping) so get off.
+    if ( srcDepth != dstDepth )
+    {
+        return true;
+    }
+
+    // Assuming the depth is the same, then the alignment may change the size of the resulting
+    // texel data. If it does, then we have to reallocate.
+    if ( srcRowAlignment != dstRowAlignment )
+    {
+        uint32 rowSizeWithoutPadding = getRasterDataRawRowSize( mipWidth, srcDepth );   // depth is the same!
+
+        uint32 srcRowSize = getRasterDataRowSizeAligned( rowSizeWithoutPadding, srcRowAlignment );
+        uint32 dstRowSize = getRasterDataRowSizeAligned( rowSizeWithoutPadding, dstRowAlignment );
+
+        if ( srcRowSize != dstRowSize )
+        {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 enum eColorModel
@@ -32,6 +106,8 @@ struct Bitmap
         this->width = 0;
         this->height = 0;
         this->depth = 32;
+        this->rowAlignment = 4; // good measure.
+        this->rowSize = 0;
         this->rasterFormat = RASTER_8888;
         this->texels = NULL;
         this->dataSize = 0;
@@ -49,6 +125,8 @@ struct Bitmap
         this->width = 0;
         this->height = 0;
         this->depth = depth;
+        this->rowAlignment = 4;
+        this->rowSize = 0;
         this->rasterFormat = theFormat;
         this->texels = NULL;
         this->dataSize = 0;
@@ -67,6 +145,8 @@ private:
         this->width = right.width;
         this->height = right.height;
         this->depth = right.depth;
+        this->rowAlignment = right.rowAlignment;
+        this->rowSize = right.rowSize;
         this->rasterFormat = right.rasterFormat;
 
         // Copy texels.
@@ -103,6 +183,8 @@ private:
         this->width = right.width;
         this->height = right.height;
         this->depth = right.depth;
+        this->rowAlignment = right.rowAlignment;
+        this->rowSize = right.rowSize;
         this->rasterFormat = right.rasterFormat;
 
         // Move over texels.
@@ -182,18 +264,20 @@ public:
         return theDepth;
     }
 
-    inline static uint32 getRasterImageDataSize( uint32 width, uint32 height, uint32 depth )
+    inline static uint32 getRasterImageDataSize( uint32 width, uint32 height, uint32 depth, uint32 rowAlignment )
     {
-        uint32 imageItemCount = ( width * height );
+        uint32 rowSize = getRasterDataRowSize( width, depth, rowAlignment );
 
-        return getRasterDataSize( imageItemCount, depth );
+        return getRasterDataSizeByRowSize( rowSize, height );
     }
 
-    inline void setImageData( void *theTexels, eRasterFormat theFormat, eColorOrdering colorOrder, uint32 depth, uint32 width, uint32 height, uint32 dataSize, bool assignData = false )
+    inline void setImageData( void *theTexels, eRasterFormat theFormat, eColorOrdering colorOrder, uint32 depth, uint32 rowAlignment, uint32 width, uint32 height, uint32 dataSize, bool assignData = false )
     {
         this->width = width;
         this->height = height;
         this->depth = depth;
+        this->rowAlignment = rowAlignment;
+        this->rowSize = getRasterDataRowSize( width, depth, rowAlignment );
         this->rasterFormat = theFormat;
 
         // Deallocate texels if we already have some.
@@ -226,11 +310,13 @@ public:
         this->colorOrder = colorOrder;
     }
 
-    inline void setImageData( void *theTexels, eRasterFormat theFormat, eColorOrdering colorOrder, uint32 depth, uint32 width, uint32 height )
+    inline void setImageDataSimple( void *theTexels, eRasterFormat theFormat, eColorOrdering colorOrder, uint32 depth, uint32 rowAlignment, uint32 width, uint32 height )
     {
-        uint32 dataSize = getRasterImageDataSize( width, height, depth );
+        uint32 rowSize = getRasterDataRowSize( width, depth, rowAlignment );
 
-        setImageData( theTexels, theFormat, colorOrder, depth, width, height, dataSize );
+        uint32 dataSize = getRasterDataSizeByRowSize( rowSize, height );
+
+        setImageData( theTexels, theFormat, colorOrder, depth, rowAlignment, width, height, dataSize );
     }
 
     void setSize( uint32 width, uint32 height );
@@ -239,6 +325,11 @@ public:
     {
         width = this->width;
         height = this->height;
+    }
+
+    inline uint32 getRowAlignment( void ) const
+    {
+        return this->rowAlignment;
     }
 
     inline void enlargePlane( uint32 reqWidth, uint32 reqHeight )
@@ -348,7 +439,7 @@ public:
         virtual uint32 getWidth( void ) const = 0;
         virtual uint32 getHeight( void ) const = 0;
 
-        virtual void fetchcolor( uint32 colorIndex, double& red, double& green, double& blue, double& alpha ) = 0;
+        virtual void fetchcolor( uint32 x, uint32 y, double& red, double& green, double& blue, double& alpha ) = 0;
     };
 
     void draw(
@@ -365,6 +456,8 @@ public:
 private:
     uint32 width, height;
     uint32 depth;
+    uint32 rowAlignment;
+    uint32 rowSize;
     eRasterFormat rasterFormat;
     void *texels;
     uint32 dataSize;

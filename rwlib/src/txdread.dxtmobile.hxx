@@ -91,17 +91,17 @@ struct NativeTextureMobileDXT
 
 struct dxtMobileNativeTextureTypeProvider : public texNativeTypeProvider
 {
-    void ConstructTexture( Interface *engineInterface, void *objMem, size_t memSize )
+    void ConstructTexture( Interface *engineInterface, void *objMem, size_t memSize ) override
     {
         new (objMem) NativeTextureMobileDXT( engineInterface );
     }
 
-    void CopyConstructTexture( Interface *engineInterface, void *objMem, const void *srcObjMem, size_t memSize )
+    void CopyConstructTexture( Interface *engineInterface, void *objMem, const void *srcObjMem, size_t memSize ) override
     {
         new (objMem) NativeTextureMobileDXT( *(const NativeTextureMobileDXT*)srcObjMem );
     }
     
-    void DestroyTexture( Interface *engineInterface, void *objMem, size_t memSize )
+    void DestroyTexture( Interface *engineInterface, void *objMem, size_t memSize ) override
     {
         ( *(NativeTextureMobileDXT*)objMem ).~NativeTextureMobileDXT();
     }
@@ -111,7 +111,7 @@ struct dxtMobileNativeTextureTypeProvider : public texNativeTypeProvider
     void SerializeTexture( TextureBase *theTexture, PlatformTexture *nativeTex, BlockProvider& outputProvider ) const;
     void DeserializeTexture( TextureBase *theTexture, PlatformTexture *nativeTex, BlockProvider& inputProvider ) const;
 
-    void GetPixelCapabilities( pixelCapabilities& capsOut ) const
+    void GetPixelCapabilities( pixelCapabilities& capsOut ) const override
     {
         capsOut.supportsDXT1 = true;
         capsOut.supportsDXT2 = false;
@@ -121,7 +121,7 @@ struct dxtMobileNativeTextureTypeProvider : public texNativeTypeProvider
         capsOut.supportsPalette = true;
     }
 
-    void GetStorageCapabilities( storageCapabilities& storeCaps ) const
+    void GetStorageCapabilities( storageCapabilities& storeCaps ) const override
     {
         storeCaps.pixelCaps.supportsDXT1 = true;
         storeCaps.pixelCaps.supportsDXT2 = false;
@@ -137,14 +137,14 @@ struct dxtMobileNativeTextureTypeProvider : public texNativeTypeProvider
     void SetPixelDataToTexture( Interface *engineInterface, void *objMem, const pixelDataTraversal& pixelsIn, acquireFeedback_t& feedbackOut );
     void UnsetPixelDataFromTexture( Interface *engineInterface, void *objMem, bool deallocate );
 
-    void SetTextureVersion( Interface *engineInterface, void *objMem, LibraryVersion version )
+    void SetTextureVersion( Interface *engineInterface, void *objMem, LibraryVersion version ) override
     {
         NativeTextureMobileDXT *nativeTex = (NativeTextureMobileDXT*)objMem;
 
         nativeTex->texVersion = version;
     }
 
-    LibraryVersion GetTextureVersion( const void *objMem )
+    LibraryVersion GetTextureVersion( const void *objMem ) override
     {
         const NativeTextureMobileDXT *nativeTex = (const NativeTextureMobileDXT*)objMem;
 
@@ -158,24 +158,31 @@ struct dxtMobileNativeTextureTypeProvider : public texNativeTypeProvider
     void GetTextureInfo( Interface *engineInterface, void *objMem, nativeTextureBatchedInfo& infoOut );
     void GetTextureFormatString( Interface *engineInterface, void *objMem, char *buf, size_t bufLen, size_t& lengthOut ) const;
 
-    ePaletteType GetTexturePaletteType( const void *objMem )
+    ePaletteType GetTexturePaletteType( const void *objMem ) override
     {
         return PALETTE_NONE;
     }
 
-    bool IsTextureCompressed( const void *objMem )
+    bool IsTextureCompressed( const void *objMem ) override
     {
         return true;
     }
 
-    bool DoesTextureHaveAlpha( const void *objMem )
+    bool DoesTextureHaveAlpha( const void *objMem ) override
     {
         const NativeTextureMobileDXT *nativeTex = (const NativeTextureMobileDXT*)objMem;
 
         return nativeTex->hasAlpha;
     }
 
-    uint32 GetDriverIdentifier( void *objMem ) const
+    uint32 GetTextureDataRowAlignment( void ) const override
+    {
+        // Row alignment of raw data does not really matter.
+        // We will compress to DXT anyway.
+        return 0;
+    }
+
+    uint32 GetDriverIdentifier( void *objMem ) const override
     {
         // This was never defined.
         return 0;

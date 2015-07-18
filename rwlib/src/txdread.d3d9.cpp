@@ -488,7 +488,7 @@ void d3d9NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
 
                     assert( palDepth != 0 );
 
-                    size_t paletteDataSize = getRasterDataSize( reqPalItemCount, palDepth );
+                    size_t paletteDataSize = getPaletteDataSize( reqPalItemCount, palDepth );
 
                     // Check whether we have palette data in the stream.
                     texNativeImageStruct.check_read_ahead( paletteDataSize );
@@ -573,17 +573,19 @@ void d3d9NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
 
                     if ( d3dRasterFormatLink == true )
                     {
-                        uint32 texItemCount = ( texWidth * texHeight );
-
                         uint32 actualDataSize = 0;
 
                         if (dxtCompression != 0)
                         {
+                            uint32 texItemCount = ( texWidth * texHeight );
+
                             actualDataSize = getDXTRasterDataSize(dxtCompression, texItemCount);
                         }
                         else
                         {
-                            actualDataSize = getRasterDataSize(texItemCount, depth);
+                            uint32 rowSize = getD3DRasterDataRowSize( texWidth, depth );
+
+                            actualDataSize = getRasterDataSizeByRowSize(rowSize, texHeight);
                         }
 
                         if (actualDataSize != texDataSize)

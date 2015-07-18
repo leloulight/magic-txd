@@ -26,6 +26,7 @@ struct d3dMipmapManager
         const NativeTextureD3D::mipmapLayer& mipLayer,
         uint32& widthOut, uint32& heightOut, uint32& layerWidthOut, uint32& layerHeightOut,
         eRasterFormat& dstRasterFormat, eColorOrdering& dstColorOrder, uint32& dstDepth,
+        uint32& dstRowAlignment,
         ePaletteType& dstPaletteType, void*& dstPaletteData, uint32& dstPaletteSize,
         eCompressionType& dstCompressionType, bool& hasAlpha,
         void*& dstTexelsOut, uint32& dstDataSizeOut,
@@ -40,6 +41,7 @@ struct d3dMipmapManager
         NativeTextureD3D::mipmapLayer& mipLayer,
         uint32 width, uint32 height, uint32 layerWidth, uint32 layerHeight, void *srcTexels, uint32 dataSize,
         eRasterFormat rasterFormat, eColorOrdering colorOrder, uint32 depth,
+        uint32 rowAlignment,
         ePaletteType paletteType, void *paletteData, uint32 paletteSize,
         eCompressionType compressionType, bool hasAlpha,
         bool& hasDirectlyAcquiredOut
@@ -68,6 +70,7 @@ inline bool virtualGetMipmapLayer(
     eRasterFormat rasterFormat;
     eColorOrdering colorOrder;
     uint32 depth;
+    uint32 rowAlignment;
 
     ePaletteType paletteType;
     void *paletteData;
@@ -88,6 +91,7 @@ inline bool virtualGetMipmapLayer(
         mipLayer,
         mipWidth, mipHeight, layerWidth, layerHeight,
         rasterFormat, colorOrder, depth,
+        rowAlignment,
         paletteType, paletteData, paletteSize,
         compressionType, hasAlpha,
         texels, dataSize,
@@ -103,7 +107,7 @@ inline bool virtualGetMipmapLayer(
 
             uint32 palRasterDepth = Bitmap::getRasterFormatDepth( rasterFormat );
 
-            uint32 palDataSize = getRasterDataSize( paletteSize, palRasterDepth );
+            uint32 palDataSize = getPaletteDataSize( paletteSize, palRasterDepth );
 
             paletteData = engineInterface->PixelAllocate( palDataSize );
 
@@ -113,6 +117,7 @@ inline bool virtualGetMipmapLayer(
 
     layerOut.rasterFormat = rasterFormat;
     layerOut.depth = depth;
+    layerOut.rowAlignment = rowAlignment;
     layerOut.colorOrder = colorOrder;
 
     layerOut.paletteType = paletteType;
@@ -206,6 +211,7 @@ inline bool virtualAddMipmapLayer(
                 newLayer,
                 layerIn.mipData.width, layerIn.mipData.height, layerIn.mipData.mipWidth, layerIn.mipData.mipHeight, layerIn.mipData.texels, layerIn.mipData.dataSize,
                 layerIn.rasterFormat, layerIn.colorOrder, layerIn.depth,
+                layerIn.rowAlignment,
                 layerIn.paletteType, layerIn.paletteData, layerIn.paletteSize,
                 layerIn.compressionType, layerIn.hasAlpha,
                 hasDirectlyAcquired

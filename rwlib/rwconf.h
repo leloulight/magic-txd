@@ -22,4 +22,9 @@
 #define RWLIB_INCLUDE_JPEG_IMAGING
 #define RWLIB_INCLUDE_GIF_IMAGING
 
+// Define this if you want to enable the "libimagequant" library for palletizing
+// image data. This is highly recommended, as that library produces high
+// quality color-mapped images.
+#define RWLIB_INCLUDE_LIBIMAGEQUANT
+
 #endif //_RENDERWARE_CONFIGURATION_

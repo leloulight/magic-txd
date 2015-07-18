@@ -1,9 +1,12 @@
 namespace PixelFormat
 {   
+#if 0
     AINLINE uint32 coord2index(uint32 x, uint32 y, uint32 stride)
     {
+        // TODO: this is a cancerous function, remove it.
         return ( y * stride + x );
     }
+#endif
 
     struct palette4bit
     {
@@ -15,15 +18,55 @@ namespace PixelFormat
 
         typedef uint8 trav_t;
 
-        static AINLINE uint32 sizeitems( size_t itemCount )
+        AINLINE data* findpalette(uint32 index) const
         {
-            return ALIGN_SIZE( itemCount, (size_t)2 ) / 2;
+            uint32 dataIndex = ( index / 2 );
+
+            return ( (data*)this + dataIndex );
         }
 
-        static AINLINE palette4bit* allocate( size_t itemCount )
+        AINLINE void setvalue(uint32 index, trav_t palette)
         {
-            return (palette4bit*)new uint8[ sizeitems( itemCount ) ];
+            uint32 indexSelector = ( index % 2 );
+
+            data *theData = findpalette(index);
+
+            if ( indexSelector == 0 )
+            {
+                theData->fp_index = palette;
+            }
+            else if ( indexSelector == 1 )
+            {
+                theData->sp_index = palette;
+            }
         }
+
+        AINLINE void getvalue(uint32 index, trav_t& palette) const
+        {
+            uint32 indexSelector = ( index % 2 );
+
+            const data *theData = findpalette(index);
+
+            if ( indexSelector == 0 )
+            {
+                palette = theData->fp_index;
+            }
+            else if ( indexSelector == 1 )
+            {
+                palette = theData->sp_index;
+            }
+        }
+    };
+
+    struct palette4bit_lsb
+    {
+        struct data
+        {
+            uint8 sp_index : 4;
+            uint8 fp_index : 4;
+        };
+
+        typedef uint8 trav_t;
 
         AINLINE data* findpalette(uint32 index) const
         {
@@ -74,16 +117,6 @@ namespace PixelFormat
 
         typedef uint8 trav_t;
 
-        static AINLINE uint32 sizeitems( size_t itemCount )
-        {
-            return ( itemCount * sizeof(uint8) );
-        }
-
-        static AINLINE palette8bit* allocate( size_t itemCount )
-        {
-            return (palette8bit*)new uint8[ sizeitems( itemCount ) ];
-        }
-
         AINLINE data* findpalette(uint32 index) const
         {
             return ( (data*)this + index );
@@ -108,16 +141,6 @@ namespace PixelFormat
     struct typedcolor
     {
         typedef pixelstruct trav_t;
-
-        static AINLINE uint32 sizeitems( size_t itemCount )
-        {
-            return ( itemCount * sizeof( itemCount ) );
-        }
-
-        static AINLINE typedcolor* allocate( size_t itemCount )
-        {
-            return (typedcolor*)new uint8[ sizeitems( itemCount ) ];
-        }
 
         AINLINE pixelstruct* finddata(uint32 index) const
         {

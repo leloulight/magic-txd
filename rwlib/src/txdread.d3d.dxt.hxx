@@ -1,3 +1,6 @@
+#ifndef _RENDERWARE_D3D_DXT_NATIVE_
+#define _RENDERWARE_D3D_DXT_NATIVE_
+
 // DXT specific stuff.
 #include <squish.h>
 
@@ -132,7 +135,7 @@ inline bool decompressDXTBlock(
                 {
                     PixelFormat::pixeldata32bit& pixelOut = colorsOut[ y_block ][ x_block ];
 
-                    uint32 coordIndex = PixelFormat::coord2index( x_block, y_block, 4 );
+                    uint32 coordIndex = ( y_block * 4 + x_block );
 
                     uint32 colorIndex = indices[ coordIndex ];
 
@@ -201,7 +204,7 @@ inline bool decompressDXTBlock(
                 {
                     PixelFormat::pixeldata32bit& pixelOut = colorsOut[ y_block ][ x_block ];
 
-                    uint32 coordIndex = PixelFormat::coord2index( x_block, y_block, 4 );
+                    uint32 coordIndex = ( y_block * 4 + x_block );
 
                     uint32 colorIndex = indices[ coordIndex ];
 
@@ -290,7 +293,7 @@ inline bool decompressDXTBlock(
                 {
                     PixelFormat::pixeldata32bit& pixelOut = colorsOut[ y_block ][ x_block ];
 
-                    uint32 coordIndex = PixelFormat::coord2index( x_block, y_block, 4 );
+                    uint32 coordIndex = ( y_block * 4 + x_block );
 
                     uint32 colorIndex = indices[ coordIndex ];
 
@@ -389,7 +392,7 @@ inline uint32 getDXTRasterDataSize(uint32 dxtType, uint32 texUnitCount)
 
 inline void compressTexelsUsingDXT(
     Interface *engineInterface,
-    uint32 dxtType, const void *texelSource, uint32 mipWidth, uint32 mipHeight,
+    uint32 dxtType, const void *texelSource, uint32 mipWidth, uint32 mipHeight, uint32 rowAlignment,
     eRasterFormat rasterFormat, const void *paletteData, ePaletteType paletteType, uint32 maxpalette, eColorOrdering colorOrder, uint32 itemDepth,
     void*& texelsOut, uint32& dataSizeOut,
     uint32& realWidthOut, uint32& realHeightOut
@@ -399,11 +402,12 @@ inline void compressTexelsUsingDXT(
     uint32 alignedMipWidth = ALIGN_SIZE( mipWidth, 4u );
     uint32 alignedMipHeight = ALIGN_SIZE( mipHeight, 4u );
 
-    uint32 texUnitCount = ( alignedMipWidth * alignedMipHeight );
-
-    uint32 dxtDataSize = getDXTRasterDataSize(dxtType, texUnitCount);
+    uint32 dxtDataSize = getDXTRasterDataSize(dxtType, ( alignedMipWidth * alignedMipHeight ) );
 
     void *dxtArray = engineInterface->PixelAllocate( dxtDataSize );
+
+    // Calculate the row size of the source texture.
+    uint32 rawRowSize = getRasterDataRowSize( mipWidth, itemDepth, rowAlignment );
 
     // Loop across the image.
     uint32 compressedBlockCount = 0;
@@ -413,7 +417,7 @@ inline void compressTexelsUsingDXT(
 
     uint32 y = 0;
 
-    colorModelDispatcher <const void> fetchSrcDispatch( texelSource, rasterFormat, colorOrder, itemDepth, paletteData, maxpalette, paletteType );
+    colorModelDispatcher <const void> fetchSrcDispatch( rasterFormat, colorOrder, itemDepth, paletteData, maxpalette, paletteType );
 
     for ( uint32 y_block = 0; y_block < heightBlocks; y_block++, y += 4 )
     {
@@ -440,9 +444,9 @@ inline void compressTexelsUsingDXT(
 
                     if ( targetX < mipWidth && targetY < mipHeight )
                     {
-                        uint32 colorIndex = PixelFormat::coord2index( targetX, targetY, mipWidth );
+                        const void *rowData = getConstTexelDataRow( texelSource, rawRowSize, targetY );
 
-                        fetchSrcDispatch.getRGBA( colorIndex, r, g, b, a );
+                        fetchSrcDispatch.getRGBA( rowData, targetX, r, g, b, a );
                     }
 
                     inColor.red = r;
@@ -588,3 +592,5 @@ inline eRasterFormat getDXTDecompressionRasterFormat( Interface *engineInterface
 }
 
 }
+
+#endif //_RENDERWARE_D3D_DXT_NATIVE_

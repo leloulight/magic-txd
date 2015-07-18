@@ -216,7 +216,7 @@ static inline void unswizzleXboxBlock
 
 inline void performXBOXSwizzle(
     const void *srcData, void *outData,
-    uint32 mipWidth, uint32 mipHeight, uint32 depth,
+    uint32 mipWidth, uint32 mipHeight, uint32 depth, uint32 rowAlignment,
     bool isUnswizzle
 )
 {
@@ -282,7 +282,7 @@ inline void performXBOXSwizzle(
     {
         Swizzler swizzler( mipWidth, mipHeight, 0 );
 
-        uint32 texelCount = ( mipWidth * mipHeight );
+        uint32 srcRowSize = getRasterDataRowSize( mipWidth, depth, rowAlignment );
 
         swizzler.SetV( 0 );
 
@@ -294,45 +294,58 @@ inline void performXBOXSwizzle(
             {
                 SWIZNUM swizzleIndex = swizzler.Get2D();
 
-                uint32 colorIndex = PixelFormat::coord2index( x, y, mipWidth );
+                // Transform it to x and y components.
+                uint32 swizzleX = ( swizzleIndex % mipWidth );
+                uint32 swizzleY = ( swizzleIndex / mipWidth );
 
                 // Decide which index to use for which array.
-                uint32 srcIndex, dstIndex;
+                uint32 srcX, srcY;
+                uint32 dstX, dstY;
 
                 if ( isUnswizzle )
                 {
-                    srcIndex = swizzleIndex;
-                    dstIndex = colorIndex;
+                    srcX = swizzleX;
+                    srcY = swizzleY;
+                    dstX = x;
+                    dstY = y;
                 }
                 else
                 {
-                    srcIndex = colorIndex;
-                    dstIndex = swizzleIndex;
+                    srcX = x;
+                    srcY = y;
+                    dstX = swizzleX;
+                    dstY = swizzleY;
                 }
 
-                if ( dstIndex < texelCount )
+                if ( dstX < mipWidth && dstY < mipHeight )
                 {
+                    void *dstRow = getTexelDataRow( outData, srcRowSize, dstY );
+
                     if ( depth == 4 )
                     {
                         PixelFormat::palette4bit::trav_t travItem = 0;
 
-                        if ( srcIndex < texelCount )
+                        if ( srcX < mipWidth && srcY < mipHeight )
                         {
-                            ( (const PixelFormat::palette4bit*)srcData )->getvalue(srcIndex, travItem);
+                            const void *srcRow = getConstTexelDataRow( srcData, srcRowSize, srcY );
+
+                            ( (const PixelFormat::palette4bit*)srcRow )->getvalue(srcX, travItem);
                         }
 
-                        ( (PixelFormat::palette4bit*)outData )->setvalue(dstIndex, travItem);
+                        ( (PixelFormat::palette4bit*)dstRow )->setvalue(dstX, travItem);
                     }
                     else if ( depth == 8 )
                     {
                         PixelFormat::palette8bit::trav_t travItem = 0;
 
-                        if ( srcIndex < texelCount )
+                        if ( srcX < mipWidth && srcY < mipHeight )
                         {
-                            ( (const PixelFormat::palette8bit*)srcData )->getvalue(srcIndex, travItem);
+                            const void *srcRow = getConstTexelDataRow( srcData, srcRowSize, srcY );
+
+                            ( (const PixelFormat::palette8bit*)srcRow )->getvalue(srcX, travItem);
                         }
 
-                        ( (PixelFormat::palette8bit*)outData )->setvalue(dstIndex, travItem);
+                        ( (PixelFormat::palette8bit*)dstRow )->setvalue(dstX, travItem);
                     }
                     else if ( depth == 16 )
                     {
@@ -340,12 +353,14 @@ inline void performXBOXSwizzle(
 
                         theColorType::trav_t travItem = 0;
 
-                        if ( srcIndex < texelCount )
+                        if ( srcX < mipWidth && srcY < mipHeight )
                         {
-                            ( (const theColorType*)srcData )->getvalue(srcIndex, travItem);
+                            const void *srcRow = getConstTexelDataRow( srcData, srcRowSize, srcY );
+
+                            ( (const theColorType*)srcRow )->getvalue(srcX, travItem);
                         }
 
-                        ( (theColorType*)outData )->setvalue(dstIndex, travItem);
+                        ( (theColorType*)dstRow )->setvalue(dstX, travItem);
                     }
                     else if ( depth == 24 )
                     {
@@ -358,9 +373,11 @@ inline void performXBOXSwizzle(
 
                         theColorType::trav_t travItem;
 
-                        if ( srcIndex < texelCount )
+                        if ( srcX < mipWidth && srcY < mipHeight )
                         {
-                            ( (const theColorType*)srcData )->getvalue(srcIndex, travItem);
+                            const void *srcRow = getConstTexelDataRow( srcData, srcRowSize, srcY );
+
+                            ( (const theColorType*)srcRow )->getvalue(srcX, travItem);
                         }
                         else
                         {
@@ -369,7 +386,7 @@ inline void performXBOXSwizzle(
                             travItem.z = 0;
                         }
 
-                        ( (theColorType*)outData )->setvalue(dstIndex, travItem);
+                        ( (theColorType*)dstRow )->setvalue(dstX, travItem);
                     }
                     else if ( depth == 32 )
                     {
@@ -377,12 +394,14 @@ inline void performXBOXSwizzle(
 
                         theColorType::trav_t travItem = 0;
 
-                        if ( srcIndex < texelCount )
+                        if ( srcX < mipWidth && srcY < mipHeight )
                         {
-                            ( (const theColorType*)srcData )->getvalue(srcIndex, travItem);
+                            const void *srcRow = getConstTexelDataRow( srcData, srcRowSize, srcY );
+
+                            ( (const theColorType*)srcRow )->getvalue(srcX, travItem);
                         }
 
-                        ( (theColorType*)outData )->setvalue(dstIndex, travItem);
+                        ( (theColorType*)dstRow )->setvalue(dstX, travItem);
                     }
                 }
             }
@@ -395,11 +414,10 @@ void NativeTextureXBOX::swizzleMipmap( Interface *engineInterface, swizzleMipmap
 {
     // We are a raw raster; take care about swizzling.
     uint32 depth = pixelData.depth;
+    uint32 rowAlignment = pixelData.rowAlignment;
     
     uint32 mipWidth = pixelData.mipWidth;
     uint32 mipHeight = pixelData.mipHeight;
-
-    uint32 texelCount = ( mipWidth * mipHeight );
 
     // The dataSize will not change.
     uint32 dataSize = pixelData.dataSize;
@@ -413,7 +431,7 @@ void NativeTextureXBOX::swizzleMipmap( Interface *engineInterface, swizzleMipmap
     performXBOXSwizzle(
         srcTexels, newtexels,
         mipWidth, mipHeight,
-        depth,
+        depth, rowAlignment,
         false
     );
 
@@ -428,11 +446,10 @@ void NativeTextureXBOX::unswizzleMipmap( Interface *engineInterface, swizzleMipm
 {
     // unswizzle the mipmap layer.
     uint32 depth = pixelData.depth;
+    uint32 rowAlignment = pixelData.rowAlignment;
     
     uint32 mipWidth = pixelData.mipWidth;
     uint32 mipHeight = pixelData.mipHeight;
-
-    uint32 texelCount = ( mipWidth * mipHeight );
 
     // The dataSize will not change.
     uint32 dataSize = pixelData.dataSize;
@@ -446,7 +463,7 @@ void NativeTextureXBOX::unswizzleMipmap( Interface *engineInterface, swizzleMipm
     performXBOXSwizzle(
         srcTexels, newtexels,
         mipWidth, mipHeight,
-        depth,
+        depth, rowAlignment,
         true
     );
 

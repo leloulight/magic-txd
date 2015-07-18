@@ -170,7 +170,7 @@ inline void DecompressPVRMipmap(
     Interface *engineInterface,
     uint32 mipWidth, uint32 mipHeight, uint32 layerWidth, uint32 layerHeight, const void *srcTexels,
     eRasterFormat pvrRasterFormat, uint32 pvrDepth, eColorOrdering pvrColorOrder,
-    eRasterFormat targetRasterFormat, uint32 targetDepth, eColorOrdering targetColorOrder,
+    eRasterFormat targetRasterFormat, uint32 targetDepth, uint32 targetRowAlignment, eColorOrdering targetColorOrder,
     const pvrtexture::PixelType& pvrSrcPixelType, const pvrtexture::PixelType& pvrDstPixelType,
     void*& dstTexelsOut, uint32& dstDataSizeOut
 )
@@ -191,47 +191,66 @@ inline void DecompressPVRMipmap(
     uint32 srcDataSize = pvrSourceTexture.getDataSize();
     
     // Create a new raw texture of the layer dimensions.
-    uint32 texelUnitCount = ( layerWidth * layerHeight );
+    uint32 dstRowSize = getRasterDataRowSize( layerWidth, targetDepth, targetRowAlignment );
 
-    uint32 dstDataSize = getRasterDataSize( texelUnitCount, targetDepth );
+    uint32 dstDataSize = getRasterDataSizeByRowSize( dstRowSize, layerHeight );
 
     uint32 pvrWidth = pvrSourceTexture.getWidth();
     uint32 pvrHeight = pvrSourceTexture.getHeight();
+
+    uint32 pvrRowSize = getRasterDataRowSize( pvrWidth, pvrDepth, getPVRToolTextureDataRowAlignment() );
 
     const void *srcTexelPtr = pvrSourceTexture.getDataPtr();
 
     // Allocate new texels.
     void *dstTexels = engineInterface->PixelAllocate( dstDataSize );
 
-    colorModelDispatcher <const void> fetchDispatch( srcTexelPtr, pvrRasterFormat, pvrColorOrder, pvrDepth, NULL, 0, PALETTE_NONE );
-    colorModelDispatcher <void> putDispatch( dstTexels, targetRasterFormat, targetColorOrder, targetDepth, NULL, 0, PALETTE_NONE );
-
-    for ( uint32 y = 0; y < pvrHeight; y++ )
+    try
     {
-        for ( uint32 x = 0; x < pvrWidth; x++ )
+        colorModelDispatcher <const void> fetchDispatch( pvrRasterFormat, pvrColorOrder, pvrDepth, NULL, 0, PALETTE_NONE );
+        colorModelDispatcher <void> putDispatch( targetRasterFormat, targetColorOrder, targetDepth, NULL, 0, PALETTE_NONE );
+
+        for ( uint32 y = 0; y < layerHeight; y++ )
         {
-            uint8 r, g, b, a;
+            const void *srcRow = NULL;
 
-            uint32 pvrColorIndex = PixelFormat::coord2index(x, y, pvrWidth);
-
-            bool hasColor = fetchDispatch.getRGBA( pvrColorIndex, r, g, b, a );
-            
-            if ( !hasColor )
+            if ( y < pvrHeight )
             {
-                r = 0;
-                g = 0;
-                b = 0;
-                a = 0;
+                srcRow = getConstTexelDataRow( srcTexelPtr, pvrRowSize, y );
             }
 
-            if ( x < layerWidth && y < layerHeight )
-            {
-                // Put the color in the correct format.
-                uint32 dstColorIndex = PixelFormat::coord2index(x, y, layerWidth);
+            void *dstRow = getTexelDataRow( dstTexels, dstRowSize, y );
 
-                putDispatch.setRGBA( dstColorIndex, r, g, b, a );
+            for ( uint32 x = 0; x < layerWidth; x++ )
+            {
+                uint8 r, g, b, a;
+
+                bool hasColor = false;
+
+                if ( x < pvrWidth )
+                {
+                    hasColor = fetchDispatch.getRGBA( srcRow, x, r, g, b, a );
+                }
+            
+                if ( !hasColor )
+                {
+                    r = 0;
+                    g = 0;
+                    b = 0;
+                    a = 0;
+                }
+
+                // Put the color in the correct format.
+                putDispatch.setRGBA( dstRow, x, r, g, b, a );
             }
         }
+    }
+    catch( ... )
+    {
+        // If anything went wrong in the pixel fetching, we free our data.
+        engineInterface->PixelFree( dstTexels );
+
+        throw;
     }
 
     // Give things to the runtime.
@@ -271,6 +290,8 @@ void pvrNativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineInt
     eRasterFormat targetRasterFormat;
     uint32 targetDepth;
     eColorOrdering targetColorOrder;
+
+    uint32 targetRowAlignment = getPVRExportTextureDataRowAlignment();
 
     getPVRTargetRasterFormat( internalFormat, targetRasterFormat, targetDepth, targetColorOrder );
 
@@ -317,7 +338,7 @@ void pvrNativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineInt
                 engineInterface,
                 mipWidth, mipHeight, layerWidth, layerHeight, srcTexels,
                 RASTER_8888, 32, COLOR_RGBA,
-                targetRasterFormat, targetDepth, targetColorOrder,
+                targetRasterFormat, targetDepth, targetRowAlignment, targetColorOrder,
                 pvrSrcPixelType, pvrDstPixelType,
                 dstTexels, dstDataSize
             );
@@ -345,6 +366,7 @@ void pvrNativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineInt
     // Copy over general raster properties.
     pixelsOut.rasterFormat = targetRasterFormat;
     pixelsOut.depth = targetDepth;
+    pixelsOut.rowAlignment = targetRowAlignment;
     pixelsOut.colorOrder = targetColorOrder;
     pixelsOut.paletteType = PALETTE_NONE;
     pixelsOut.paletteData = NULL;
@@ -367,7 +389,7 @@ void pvrNativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineInt
 inline void CompressMipmapToPVR(
     Interface *engineInterface,
     uint32 mipWidth, uint32 mipHeight, const void *srcTexels,
-    eRasterFormat srcRasterFormat, uint32 srcDepth, eColorOrdering srcColorOrder, ePaletteType srcPaletteType, const void *srcPaletteData, uint32 srcPaletteSize,
+    eRasterFormat srcRasterFormat, uint32 srcDepth, uint32 srcRowAlignment, eColorOrdering srcColorOrder, ePaletteType srcPaletteType, const void *srcPaletteData, uint32 srcPaletteSize,
     eRasterFormat pvrRasterFormat, uint32 pvrDepth, eColorOrdering pvrColorOrder,
     const pvrtexture::PixelType pvrSrcPixelType, const pvrtexture::PixelType& pvrDstPixelType,
     uint32 pvrBlockWidth, uint32 pvrBlockHeight,
@@ -379,9 +401,13 @@ inline void CompressMipmapToPVR(
     // Create a PVR texture.
     using namespace pvrtexture;
 
+    uint32 srcRowSize = getRasterDataRowSize( mipWidth, srcDepth, srcRowAlignment );
+
     // We need to determine dimensions that the PVR texture has to use.
     uint32 pvrTexWidth = ALIGN_SIZE( mipWidth, pvrBlockWidth );
     uint32 pvrTexHeight = ALIGN_SIZE( mipHeight, pvrBlockHeight );
+
+    uint32 pvrRowSize = getRasterDataRowSize( pvrTexWidth, pvrDepth, getPVRToolTextureDataRowAlignment() );
 
     CPVRTextureHeader pvrHeader( pvrSrcPixelType.PixelTypeID, pvrTexHeight, pvrTexWidth );
 
@@ -390,22 +416,28 @@ inline void CompressMipmapToPVR(
 
     void *pvrDstBuf = pvrTexture.getDataPtr();
 
-    colorModelDispatcher <const void> fetchDispatch( srcTexels, srcRasterFormat, srcColorOrder, srcDepth, srcPaletteData, srcPaletteSize, srcPaletteType );
-    colorModelDispatcher <void> putDispatch( pvrDstBuf, pvrRasterFormat, pvrColorOrder, pvrDepth, NULL, 0, PALETTE_NONE );
+    colorModelDispatcher <const void> fetchDispatch( srcRasterFormat, srcColorOrder, srcDepth, srcPaletteData, srcPaletteSize, srcPaletteType );
+    colorModelDispatcher <void> putDispatch( pvrRasterFormat, pvrColorOrder, pvrDepth, NULL, 0, PALETTE_NONE );
 
     for ( uint32 y = 0; y < pvrTexHeight; y++ )
     {
+        void *dstRow = getTexelDataRow( pvrDstBuf, pvrRowSize, y );
+        const void *srcRow = NULL;
+
+        if ( y < mipHeight )
+        {
+            srcRow = getConstTexelDataRow( srcTexels, srcRowSize, y );
+        }
+
         for ( uint32 x = 0; x < pvrTexWidth; x++ )
         {
             bool hasColor = false;
 
             uint8 r, g, b, a;
 
-            if ( x < mipWidth && y < mipHeight )
+            if ( x < mipWidth )
             {
-                uint32 colorIndex = PixelFormat::coord2index(x, y, mipWidth);
-
-                hasColor = fetchDispatch.getRGBA( colorIndex, r, g, b, a );
+                hasColor = fetchDispatch.getRGBA( srcRow, x, r, g, b, a );
             }
 
             if ( !hasColor )
@@ -416,9 +448,7 @@ inline void CompressMipmapToPVR(
                 a = 0;
             }
 
-            uint32 pvrColorIndex = PixelFormat::coord2index(x, y, pvrTexWidth);
-
-            putDispatch.setRGBA( pvrColorIndex, r, g, b, a );
+            putDispatch.setRGBA( dstRow, x, r, g, b, a );
         }
     }
 
@@ -429,7 +459,7 @@ inline void CompressMipmapToPVR(
     assert( transcodeSuccess == true );
 
     // Copy the PowerVR pixels into a local array.
-    uint32 dstDataSize = getRasterDataSize(pvrTexWidth * pvrTexHeight, pvrBlockDepth);
+    uint32 dstDataSize = getPackedRasterDataSize(pvrTexWidth * pvrTexHeight, pvrBlockDepth);
 
     assert(dstDataSize <= pvrTexture.getDataSize());
 
@@ -471,9 +501,6 @@ void pvrNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInter
     // We can only accept raw bitmaps here.
     assert( pixelsIn.compressionType == RWCOMPRESS_NONE );
 
-    // Clear any image data that may have been there.
-    //pvrTex->clearImageData();
-
     // Give it common parameters.
     bool hasAlpha = pixelsIn.hasAlpha;
 
@@ -483,6 +510,7 @@ void pvrNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInter
     eRasterFormat srcRasterFormat = pixelsIn.rasterFormat;
     eColorOrdering srcColorOrder = pixelsIn.colorOrder;
     uint32 srcDepth = pixelsIn.depth;
+    uint32 srcRowAlignment = pixelsIn.rowAlignment;
 
     ePaletteType srcPaletteType = pixelsIn.paletteType;
     const void *paletteData = pixelsIn.paletteData;
@@ -571,7 +599,7 @@ void pvrNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInter
             CompressMipmapToPVR(
                 engineInterface,
                 mipWidth, mipHeight, srcTexels,
-                srcRasterFormat, srcDepth, srcColorOrder, srcPaletteType, paletteData, paletteSize,
+                srcRasterFormat, srcDepth, srcRowAlignment, srcColorOrder, srcPaletteType, paletteData, paletteSize,
                 RASTER_8888, 32, COLOR_RGBA,
                 pvrSrcPixelType, pvrDstPixelType,
                 pvrBlockWidth, pvrBlockHeight,
@@ -641,6 +669,7 @@ struct pvrMipmapManager
         const NativeTexturePVR::mipmapLayer& mipLayer,
         uint32& widthOut, uint32& heightOut, uint32& layerWidthOut, uint32& layerHeightOut,
         eRasterFormat& dstRasterFormat, eColorOrdering& dstColorOrder, uint32& dstDepth,
+        uint32& dstRowAlignment,
         ePaletteType& dstPaletteType, void*& dstPaletteData, uint32& dstPaletteSize,
         eCompressionType& dstCompressionType, bool& hasAlpha,
         void*& dstTexelsOut, uint32& dstDataSizeOut,
@@ -663,6 +692,8 @@ struct pvrMipmapManager
         eRasterFormat targetRasterFormat;
         uint32 targetDepth;
         eColorOrdering targetColorOrder;
+
+        uint32 targetRowAlignment = getPVRExportTextureDataRowAlignment();
 
         getPVRTargetRasterFormat( internalFormat, targetRasterFormat, targetDepth, targetColorOrder );
 
@@ -690,7 +721,7 @@ struct pvrMipmapManager
             engineInterface,
             mipWidth, mipHeight, layerWidth, layerHeight, srcTexels,
             RASTER_8888, 32, COLOR_RGBA,
-            targetRasterFormat, targetDepth, targetColorOrder,
+            targetRasterFormat, targetDepth, targetRowAlignment, targetColorOrder,
             pvrSrcPixelType, pvrDstPixelType,
             dstTexels, dstDataSize
         );
@@ -704,6 +735,7 @@ struct pvrMipmapManager
 
         dstRasterFormat = targetRasterFormat;
         dstDepth = targetDepth;
+        dstRowAlignment = targetRowAlignment;
         dstColorOrder = targetColorOrder;
 
         dstPaletteType = PALETTE_NONE;
@@ -726,6 +758,7 @@ struct pvrMipmapManager
         NativeTexturePVR::mipmapLayer& mipLayer,
         uint32 width, uint32 height, uint32 layerWidth, uint32 layerHeight, void *srcTexels, uint32 dataSize,
         eRasterFormat rasterFormat, eColorOrdering colorOrder, uint32 depth,
+        uint32 rowAlignment,
         ePaletteType paletteType, void *paletteData, uint32 paletteSize,
         eCompressionType compressionType, bool hasAlpha,
         bool& hasDirectlyAcquiredOut
@@ -744,13 +777,15 @@ struct pvrMipmapManager
             eRasterFormat targetRasterFormat = RASTER_8888;
             uint32 targetDepth = 32;
             eColorOrdering targetColorOrder = COLOR_RGBA;
+            
+            uint32 targetRowAlignment = 4;  // good measure.
 
             bool hasChanged =
                 ConvertMipmapLayerNative(
                     engineInterface,
                     width, height, layerWidth, layerHeight, srcTexels, dataSize,
-                    rasterFormat, depth, colorOrder, paletteType, paletteData, paletteSize, compressionType,
-                    targetRasterFormat, targetDepth, targetColorOrder, PALETTE_NONE, NULL, 0, RWCOMPRESS_NONE,
+                    rasterFormat, depth, rowAlignment, colorOrder, paletteType, paletteData, paletteSize, compressionType,
+                    targetRasterFormat, targetDepth, targetRowAlignment, targetColorOrder, PALETTE_NONE, NULL, 0, RWCOMPRESS_NONE,
                     false,
                     width, height,
                     srcTexels, dataSize
@@ -766,6 +801,7 @@ struct pvrMipmapManager
 
             rasterFormat = targetRasterFormat;
             depth = targetDepth;
+            rowAlignment = targetRowAlignment;
             colorOrder = targetColorOrder;
 
             paletteType = PALETTE_NONE;
@@ -806,7 +842,7 @@ struct pvrMipmapManager
         CompressMipmapToPVR(
             engineInterface,
             width, height, srcTexels,
-            rasterFormat, depth, colorOrder, paletteType, paletteData, paletteSize,
+            rasterFormat, depth, rowAlignment, colorOrder, paletteType, paletteData, paletteSize,
             RASTER_8888, 32, COLOR_RGBA,
             pvrSrcPixelType, pvrDstPixelType,
             pvrBlockWidth, pvrBlockHeight,

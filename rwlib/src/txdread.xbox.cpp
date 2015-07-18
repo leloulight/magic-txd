@@ -132,7 +132,7 @@ void xboxNativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
 
                     uint32 palDepth = Bitmap::getRasterFormatDepth( rasterFormat );
 
-                    uint32 paletteDataSize = getRasterDataSize( palItemCount, palDepth );
+                    uint32 paletteDataSize = getPaletteDataSize( palItemCount, palDepth );
 
                     // Do we have palette data in the stream?
                     texImageDataBlock.check_read_ahead( paletteDataSize );
@@ -218,11 +218,12 @@ void xboxNativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
                     newLayer.height = texHeight;
 
                     // Calculate the data size of this mipmap.
-                    uint32 texUnitCount = ( texWidth * texHeight );
                     uint32 texDataSize = 0;
 
                     if (dxtCompression != 0)
                     {
+                        uint32 texUnitCount = ( texWidth * texHeight );
+
                         uint32 dxtType = 0;
 
 	                    if (dxtCompression == 0xC)	// DXT1 (?)
@@ -255,7 +256,9 @@ void xboxNativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
                     else
                     {
                         // There should also be raw rasters supported.
-                        texDataSize = getRasterDataSize(texUnitCount, depth);
+                        uint32 rowSize = getD3DRasterDataRowSize( texWidth, depth );
+
+                        texDataSize = getRasterDataSizeByRowSize( rowSize, texHeight );
                     }
 
                     if ( remainingImageSectionData < texDataSize )
@@ -381,7 +384,7 @@ inline void copyPaletteData(
             // Create a new copy.
             uint32 palRasterDepth = Bitmap::getRasterFormatDepth( srcRasterFormat );
 
-            uint32 palDataSize = getRasterDataSize( dstPaletteSize, palRasterDepth );
+            uint32 palDataSize = getPaletteDataSize( dstPaletteSize, palRasterDepth );
 
             dstPaletteData = engineInterface->PixelAllocate( palDataSize );
 
@@ -434,6 +437,8 @@ inline eCompressionType getXBOXCompressionType( const NativeTextureXBOX *nativeT
 
 inline bool isXBOXTextureSwizzled( const NativeTextureXBOX *nativeTex )
 {
+    // TODO: maybe this is not entirely true.
+    // for now, it seems to be!
     return ( nativeTex->dxtCompression == 0 );
 }
 
@@ -514,6 +519,7 @@ void xboxNativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineIn
             swizzleTrav.mipWidth = mipWidth;
             swizzleTrav.mipHeight = mipHeight;
             swizzleTrav.depth = srcDepth;
+            swizzleTrav.rowAlignment = getXBOXTextureDataRowAlignment();
             swizzleTrav.texels = mipLayer.texels;
             swizzleTrav.dataSize = mipLayer.dataSize;
 
@@ -561,6 +567,7 @@ void xboxNativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineIn
     // Copy over general raster data.
     pixelsOut.rasterFormat = dstRasterFormat;
     pixelsOut.depth = dstDepth;
+    pixelsOut.rowAlignment = getXBOXTextureDataRowAlignment();
     pixelsOut.colorOrder = platformTex->colorOrder;
 
     pixelsOut.compressionType = rwCompressionType;
@@ -591,6 +598,7 @@ void xboxNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
     // We need to make sure that the raster data is compatible.
     eRasterFormat srcRasterFormat = pixelsIn.rasterFormat;
     uint32 srcDepth = pixelsIn.depth;
+    uint32 srcRowAlignment = pixelsIn.rowAlignment;
     eColorOrdering srcColorOrder = pixelsIn.colorOrder;
     ePaletteType srcPaletteType = pixelsIn.paletteType;
     void *srcPaletteData = pixelsIn.paletteData;
@@ -598,7 +606,10 @@ void xboxNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
 
     eRasterFormat dstRasterFormat = srcRasterFormat;
     uint32 dstDepth = pixelsIn.depth;
+    uint32 dstRowAlignment = getXBOXTextureDataRowAlignment();
     eColorOrdering dstColorOrder = srcColorOrder;
+
+    ePaletteType dstPaletteType = srcPaletteType;
 
     // Move over the texture data.
     eCompressionType rwCompressionType = pixelsIn.compressionType;
@@ -648,11 +659,18 @@ void xboxNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
     {
         // We need to verify that we have good raster properties.
         // Luckily, we only have to do this in this routine.
-        if ( srcPaletteType != PALETTE_NONE )
+        if ( dstPaletteType != PALETTE_NONE )
         {
-            if ( srcPaletteType == PALETTE_4BIT || srcPaletteType == PALETTE_8BIT )
+            if ( dstPaletteType == PALETTE_4BIT || dstPaletteType == PALETTE_8BIT )
             {
                 dstDepth = 8;
+            }
+            else if ( dstPaletteType == PALETTE_4BIT_LSB )
+            {
+                // We better remap it to the proper order.
+                dstDepth = 8;
+
+                dstPaletteType = PALETTE_4BIT;
             }
             else
             {
@@ -703,7 +721,12 @@ void xboxNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
 
     if ( canBeConverted )
     {
-        if ( srcRasterFormat != dstRasterFormat || srcDepth != dstDepth || srcColorOrder != dstColorOrder )
+        if ( doesPixelDataNeedConversion(
+                 pixelsIn,
+                 srcRasterFormat, srcDepth, srcRowAlignment, srcColorOrder, srcPaletteType,
+                 dstRasterFormat, dstDepth, dstRowAlignment, dstColorOrder, dstPaletteType
+             )
+           )
         {
             // If any format properity is different, we need to convert.
             requiresConversion = true;
@@ -745,8 +768,8 @@ void xboxNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
             ConvertMipmapLayer(
                 engineInterface,
                 srcLayer,
-                srcRasterFormat, srcDepth, srcColorOrder, srcPaletteType, srcPaletteData, srcPaletteSize,
-                dstRasterFormat, dstDepth, dstColorOrder, srcPaletteType,
+                srcRasterFormat, srcDepth, srcRowAlignment, srcColorOrder, srcPaletteType, srcPaletteData, srcPaletteSize,
+                dstRasterFormat, dstDepth, dstRowAlignment, dstColorOrder, dstPaletteType,
                 true,
                 dstTexels, dstDataSize
             );
@@ -763,10 +786,11 @@ void xboxNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
             swizzleTrav.mipWidth = mipWidth;
             swizzleTrav.mipHeight = mipHeight;
             swizzleTrav.depth = depth;
+            swizzleTrav.rowAlignment = dstRowAlignment;
             swizzleTrav.texels = dstTexels;
             swizzleTrav.dataSize = dstDataSize;
 
-            NativeTextureXBOX::unswizzleMipmap( engineInterface, swizzleTrav );
+            NativeTextureXBOX::swizzleMipmap( engineInterface, swizzleTrav );
 
             assert( swizzleTrav.texels != swizzleTrav.newtexels );
 
@@ -799,14 +823,11 @@ void xboxNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
     }
 
     // Also copy over the palette data.
-    ePaletteType dstPaletteType = PALETTE_NONE;
     void *dstPaletteData = NULL;
     uint32 dstPaletteSize = 0;
 
     if ( canHavePaletteData )
     {
-        dstPaletteType = srcPaletteType;
-
         if ( dstPaletteType != PALETTE_NONE )
         {
             dstPaletteSize = srcPaletteSize;
@@ -816,7 +837,7 @@ void xboxNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
                 // Create a new copy.
                 uint32 dstPalRasterDepth = Bitmap::getRasterFormatDepth( dstRasterFormat );
 
-                uint32 palDataSize = getRasterDataSize( dstPaletteSize, dstPalRasterDepth );
+                uint32 palDataSize = getPaletteDataSize( dstPaletteSize, dstPalRasterDepth );
 
                 dstPaletteData = engineInterface->PixelAllocate( palDataSize );
 
@@ -929,6 +950,7 @@ struct xboxMipmapManager
         const NativeTextureXBOX::mipmapLayer& mipLayer,
         uint32& widthOut, uint32& heightOut, uint32& layerWidthOut, uint32& layerHeightOut,
         eRasterFormat& dstRasterFormat, eColorOrdering& dstColorOrder, uint32& dstDepth,
+        uint32& dstRowAlignment,
         ePaletteType& dstPaletteType, void*& dstPaletteData, uint32& dstPaletteSize,
         eCompressionType& dstCompressionType, bool& hasAlpha,
         void*& dstTexelsOut, uint32& dstDataSizeOut,
@@ -959,6 +981,7 @@ struct xboxMipmapManager
             swizzleTrav.mipWidth = mipWidth;
             swizzleTrav.mipHeight = mipHeight;
             swizzleTrav.depth = depth;
+            swizzleTrav.rowAlignment = getXBOXTextureDataRowAlignment();
             swizzleTrav.texels = texels;
             swizzleTrav.dataSize = dataSize;
 
@@ -983,6 +1006,7 @@ struct xboxMipmapManager
         dstRasterFormat = nativeTex->rasterFormat;
         dstColorOrder = nativeTex->colorOrder;
         dstDepth = depth;
+        dstRowAlignment = getXBOXTextureDataRowAlignment();
 
         dstPaletteType = nativeTex->paletteType;
         dstPaletteData = nativeTex->palette;
@@ -1005,6 +1029,7 @@ struct xboxMipmapManager
         NativeTextureXBOX::mipmapLayer& mipLayer,
         uint32 width, uint32 height, uint32 layerWidth, uint32 layerHeight, void *srcTexels, uint32 dataSize,
         eRasterFormat rasterFormat, eColorOrdering colorOrder, uint32 depth,
+        uint32 rowAlignment,
         ePaletteType paletteType, void *paletteData, uint32 paletteSize,
         eCompressionType compressionType, bool hasAlpha,
         bool& hasDirectlyAcquiredOut
@@ -1020,8 +1045,8 @@ struct xboxMipmapManager
             bool hasChanged = ConvertMipmapLayerNative(
                 engineInterface,
                 width, height, layerWidth, layerHeight, srcTexels, dataSize,
-                rasterFormat, depth, colorOrder, paletteType, paletteData, paletteSize, compressionType,
-                nativeTex->rasterFormat, nativeTex->depth, nativeTex->colorOrder,
+                rasterFormat, depth, rowAlignment, colorOrder, paletteType, paletteData, paletteSize, compressionType,
+                nativeTex->rasterFormat, nativeTex->depth, getXBOXTextureDataRowAlignment(), nativeTex->colorOrder,
                 nativeTex->paletteType, nativeTex->palette, nativeTex->paletteSize,
                 getXBOXCompressionType( nativeTex ),
                 false,
@@ -1039,6 +1064,8 @@ struct xboxMipmapManager
 
             swizzleTrav.mipWidth = width;
             swizzleTrav.mipHeight = height;
+            swizzleTrav.depth = nativeTex->depth;
+            swizzleTrav.rowAlignment = getXBOXTextureDataRowAlignment();
             swizzleTrav.texels = srcTexels;
             swizzleTrav.dataSize = dataSize;
 

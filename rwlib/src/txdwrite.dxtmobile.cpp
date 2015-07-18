@@ -173,6 +173,7 @@ void dxtMobileNativeTextureTypeProvider::GetPixelDataFromTexture( Interface *eng
     // We have a compressed raster.
     pixelsOut.rasterFormat = RASTER_DEFAULT;
     pixelsOut.depth = 16;
+    pixelsOut.rowAlignment = 0; // compressed, so no row alignment.
     pixelsOut.colorOrder = COLOR_BGRA;
     pixelsOut.paletteType = PALETTE_NONE;
     pixelsOut.paletteData = NULL;
@@ -267,6 +268,7 @@ void dxtMobileNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engin
     eRasterFormat srcRasterFormat = pixelsIn.rasterFormat;
     eColorOrdering srcColorOrder = pixelsIn.colorOrder;
     uint32 srcDepth = pixelsIn.depth;
+    uint32 srcRowAlignment = pixelsIn.rowAlignment;
 
     ePaletteType srcPaletteType = pixelsIn.paletteType;
     const void *srcPaletteData = pixelsIn.paletteData;
@@ -301,14 +303,14 @@ void dxtMobileNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engin
             bool compressionSuccess = ConvertMipmapLayerNative(
                 engineInterface,
                 mipWidth, mipHeight, layerWidth, layerHeight, texels, dataSize,
-                srcRasterFormat, srcDepth, srcColorOrder, srcPaletteType, srcPaletteData, srcPaletteSize, rwCompressionType,
-                RASTER_DEFAULT, 16, COLOR_BGRA, srcPaletteType, srcPaletteData, srcPaletteSize, dstCompressionType,
+                srcRasterFormat, srcDepth, srcRowAlignment, srcColorOrder, srcPaletteType, srcPaletteData, srcPaletteSize, rwCompressionType,
+                RASTER_DEFAULT, 16, 0, COLOR_BGRA, srcPaletteType, srcPaletteData, srcPaletteSize, dstCompressionType,
                 false,
                 newWidth, newHeight,
                 dstTexels, dstDataSize
             );
 
-            assert( compressionSuccess == false );
+            assert( compressionSuccess == true );
 
             // Update properties.
             mipWidth = newWidth;
@@ -386,6 +388,7 @@ struct dxtMobileMipmapManager
         const NativeTextureMobileDXT::mipmapLayer& mipLayer,
         uint32& widthOut, uint32& heightOut, uint32& layerWidthOut, uint32& layerHeightOut,
         eRasterFormat& dstRasterFormat, eColorOrdering& dstColorOrder, uint32& dstDepth,
+        uint32& dstRowAlignment,
         ePaletteType& dstPaletteType, void*& dstPaletteData, uint32& dstPaletteSize,
         eCompressionType& dstCompressionType, bool& hasAlpha,
         void*& dstTexelsOut, uint32& dstDataSizeOut,
@@ -402,6 +405,7 @@ struct dxtMobileMipmapManager
         dstRasterFormat = RASTER_DEFAULT;
         dstColorOrder = COLOR_BGRA;
         dstDepth = 16;
+        dstRowAlignment = 0;    // compressed.
 
         dstPaletteType = PALETTE_NONE;
         dstPaletteData = NULL;
@@ -424,6 +428,7 @@ struct dxtMobileMipmapManager
         NativeTextureMobileDXT::mipmapLayer& mipLayer,
         uint32 width, uint32 height, uint32 layerWidth, uint32 layerHeight, void *srcTexels, uint32 dataSize,
         eRasterFormat rasterFormat, eColorOrdering colorOrder, uint32 depth,
+        uint32 rowAlignment,
         ePaletteType paletteType, void *paletteData, uint32 paletteSize,
         eCompressionType compressionType, bool hasAlpha,
         bool& hasDirectlyAcquiredOut
@@ -443,8 +448,8 @@ struct dxtMobileMipmapManager
                 ConvertMipmapLayerNative(
                     engineInterface,
                     width, height, layerWidth, layerHeight, srcTexels, dataSize,
-                    rasterFormat, depth, colorOrder, paletteType, paletteData, paletteSize, compressionType,
-                    RASTER_DEFAULT, 16, COLOR_BGRA, PALETTE_NONE, NULL, 0, rwCompressionType,
+                    rasterFormat, depth, rowAlignment, colorOrder, paletteType, paletteData, paletteSize, compressionType,
+                    RASTER_DEFAULT, 16, 0, COLOR_BGRA, PALETTE_NONE, NULL, 0, rwCompressionType,
                     false,
                     width, height,
                     srcTexels, dataSize

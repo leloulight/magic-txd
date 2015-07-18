@@ -48,6 +48,7 @@ struct rawBitmapFetchResult
     uint32 width, height;
     bool isNewlyAllocated;
     uint32 depth;
+    uint32 rowAlignment;
     eRasterFormat rasterFormat;
     eColorOrdering colorOrder;
     void *paletteData;
@@ -74,19 +75,33 @@ texNativeTypeProvider* GetNativeTextureTypeProvider( Interface *engineInterface,
 uint32 GetNativeTextureMipmapCount( Interface *engineInterface, PlatformTexture *nativeTexture, texNativeTypeProvider *texTypeProvider );
 
 // Quick palette depth remapper.
+void ConvertPaletteDepthEx(
+    const void *srcTexels, void *dstTexels,
+    uint32 srcTexelOffX, uint32 srcTexelOffY,
+    uint32 dstTexelOffX, uint32 dstTexelOffY,
+    uint32 texWidth, uint32 texHeight,
+    uint32 texProcessWidth, uint32 texProcessHeight,
+    ePaletteType srcPaletteType, ePaletteType dstPaletteType,
+    uint32 paletteSize,
+    uint32 srcDepth, uint32 dstDepth,
+    uint32 srcRowAlignment, uint32 dstRowAlignment
+);
+
 void ConvertPaletteDepth(
     const void *srcTexels, void *dstTexels,
-    uint32 texUnitCount,
-    ePaletteType srcPaletteType, uint32 srcPaletteSize,
-    uint32 srcDepth, uint32 dstDepth
+    uint32 texWidth, uint32 texHeight,
+    ePaletteType srcPaletteType, ePaletteType dstPaletteType,
+    uint32 paletteSize,
+    uint32 srcDepth, uint32 dstDepth,
+    uint32 srcRowAlignment, uint32 dstRowAlignment
 );
 
 // Private pixel manipulation API.
 void ConvertMipmapLayer(
     Interface *engineInterface,
     const pixelDataTraversal::mipmapResource& mipLayer,
-    eRasterFormat srcRasterFormat, uint32 srcDepth, eColorOrdering srcColorOrder, ePaletteType srcPaletteType, const void *srcPaletteData, uint32 srcPaletteSize,
-    eRasterFormat dstRasterFormat, uint32 dstDepth, eColorOrdering dstColorOrder, ePaletteType dstPaletteType,
+    eRasterFormat srcRasterFormat, uint32 srcDepth, uint32 srcRowAlignment, eColorOrdering srcColorOrder, ePaletteType srcPaletteType, const void *srcPaletteData, uint32 srcPaletteSize,
+    eRasterFormat dstRasterFormat, uint32 dstDepth, uint32 dstRowAlignment, eColorOrdering dstColorOrder, ePaletteType dstPaletteType,
     bool forceAllocation,
     void*& dstTexelsOut, uint32& dstDataSizeOut
 );
@@ -94,8 +109,8 @@ void ConvertMipmapLayer(
 bool ConvertMipmapLayerNative(
     Interface *engineInterface,
     uint32 mipWidth, uint32 mipHeight, uint32 layerWidth, uint32 layerHeight, void *srcTexels, uint32 srcDataSize,
-    eRasterFormat srcRasterFormat, uint32 srcDepth, eColorOrdering srcColorOrder, ePaletteType srcPaletteType, const void *srcPaletteData, uint32 srcPaletteSize, eCompressionType srcCompressionType,
-    eRasterFormat dstRasterFormat, uint32 dstDepth, eColorOrdering dstColorOrder, ePaletteType dstPaletteType, const void *dstPaletteData, uint32 dstPaletteSize, eCompressionType dstCompressionType,
+    eRasterFormat srcRasterFormat, uint32 srcDepth, uint32 srcRowAlignment, eColorOrdering srcColorOrder, ePaletteType srcPaletteType, const void *srcPaletteData, uint32 srcPaletteSize, eCompressionType srcCompressionType,
+    eRasterFormat dstRasterFormat, uint32 dstDepth, uint32 dstRowAlignment, eColorOrdering dstColorOrder, ePaletteType dstPaletteType, const void *dstPaletteData, uint32 dstPaletteSize, eCompressionType dstCompressionType,
     bool copyAnyway,
     uint32& dstPlaneWidthOut, uint32& dstPlaneHeightOut,
     void*& dstTexelsOut, uint32& dstDataSizeOut
@@ -104,8 +119,8 @@ bool ConvertMipmapLayerNative(
 bool ConvertMipmapLayerEx(
     Interface *engineInterface,
     const pixelDataTraversal::mipmapResource& mipLayer,
-    eRasterFormat srcRasterFormat, uint32 srcDepth, eColorOrdering srcColorOrder, ePaletteType srcPaletteType, const void *srcPaletteData, uint32 srcPaletteSize, eCompressionType srcCompressionType,
-    eRasterFormat dstRasterFormat, uint32 dstDepth, eColorOrdering dstColorOrder, ePaletteType dstPaletteType, const void *dstPaletteData, uint32 dstPaletteSize, eCompressionType dstCompressionType,
+    eRasterFormat srcRasterFormat, uint32 srcDepth, uint32 srcRowAlignment, eColorOrdering srcColorOrder, ePaletteType srcPaletteType, const void *srcPaletteData, uint32 srcPaletteSize, eCompressionType srcCompressionType,
+    eRasterFormat dstRasterFormat, uint32 dstDepth, uint32 dstRowAlignment, eColorOrdering dstColorOrder, ePaletteType dstPaletteType, const void *dstPaletteData, uint32 dstPaletteSize, eCompressionType dstCompressionType,
     bool copyAnyway,
     uint32& dstPlaneWidthOut, uint32& dstPlaneHeightOut,
     void*& dstTexelsOut, uint32& dstDataSizeOut
@@ -195,3 +210,174 @@ struct uniqueMap_t
         return targetIter->value;
     }
 };
+
+AINLINE void setDataByDepth( void *dstArrayData, rw::uint32 depth, rw::uint32 targetArrayIndex, rw::uint32 value )
+{
+    using namespace rw;
+
+    // Perform the texel set.
+    if (depth == 4)
+    {
+        // Get the src item.
+        PixelFormat::palette4bit::trav_t travItem = (PixelFormat::palette4bit::trav_t)value;
+
+        // Put the dst item.
+        PixelFormat::palette4bit *dstData = (PixelFormat::palette4bit*)dstArrayData;
+
+        dstData->setvalue(targetArrayIndex, travItem);
+    }
+    else if (depth == 8)
+    {
+        // Get the src item.
+        PixelFormat::palette8bit::trav_t travItem = (PixelFormat::palette8bit::trav_t)value;
+
+        // Put the dst item.
+        PixelFormat::palette8bit *dstData = (PixelFormat::palette8bit*)dstArrayData;
+
+        dstData->setvalue(targetArrayIndex, travItem);
+    }
+    else if (depth == 16)
+    {
+        typedef PixelFormat::typedcolor <uint16> theColor;
+
+        // Get the src item.
+        theColor::trav_t travItem = (theColor::trav_t)value;
+
+        // Put the dst item.
+        theColor *dstData = (theColor*)dstArrayData;
+
+        dstData->setvalue(targetArrayIndex, travItem);
+    }
+    else if (depth == 24)
+    {
+        struct colorStruct
+        {
+            inline colorStruct( uint32 val )
+            {
+                x = ( val & 0xFF );
+                y = ( val & 0xFF00 ) << 8;
+                z = ( val & 0xFF0000 ) << 16;
+            }
+
+            uint8 x, y, z;
+        };
+
+        typedef PixelFormat::typedcolor <colorStruct> theColor;
+
+        // Get the src item.
+        theColor::trav_t travItem = (theColor::trav_t)value;
+
+        // Put the dst item.
+        theColor *dstData = (theColor*)dstArrayData;
+
+        dstData->setvalue(targetArrayIndex, travItem);
+    }
+    else if (depth == 32)
+    {
+        typedef PixelFormat::typedcolor <uint32> theColor;
+
+        // Get the src item.
+        theColor::trav_t travItem = (theColor::trav_t)value;
+
+        // Put the dst item.
+        theColor *dstData = (theColor*)dstArrayData;
+
+        dstData->setvalue(targetArrayIndex, travItem);
+    }
+    else
+    {
+        throw RwException( "unknown bit depth for setting" );
+    }
+}
+
+AINLINE void moveDataByDepth( void *dstArrayData, const void *srcArrayData, rw::uint32 depth, rw::uint32 targetArrayIndex, rw::uint32 srcArrayIndex )
+{
+    using namespace rw;
+
+    // Perform the texel movement.
+    if (depth == 4)
+    {
+        PixelFormat::palette4bit *srcData = (PixelFormat::palette4bit*)srcArrayData;
+
+        // Get the src item.
+        PixelFormat::palette4bit::trav_t travItem;
+
+        srcData->getvalue(srcArrayIndex, travItem);
+
+        // Put the dst item.
+        PixelFormat::palette4bit *dstData = (PixelFormat::palette4bit*)dstArrayData;
+
+        dstData->setvalue(targetArrayIndex, travItem);
+    }
+    else if (depth == 8)
+    {
+        // Get the src item.
+        PixelFormat::palette8bit *srcData = (PixelFormat::palette8bit*)srcArrayData;
+
+        PixelFormat::palette8bit::trav_t travItem;
+
+        srcData->getvalue(srcArrayIndex, travItem);
+
+        // Put the dst item.
+        PixelFormat::palette8bit *dstData = (PixelFormat::palette8bit*)dstArrayData;
+
+        dstData->setvalue(targetArrayIndex, travItem);
+    }
+    else if (depth == 16)
+    {
+        typedef PixelFormat::typedcolor <uint16> theColor;
+
+        // Get the src item.
+        theColor *srcData = (theColor*)srcArrayData;
+
+        theColor::trav_t travItem;
+
+        srcData->getvalue(srcArrayIndex, travItem);
+
+        // Put the dst item.
+        theColor *dstData = (theColor*)dstArrayData;
+
+        dstData->setvalue(targetArrayIndex, travItem);
+    }
+    else if (depth == 24)
+    {
+        struct colorStruct
+        {
+            uint8 x, y, z;
+        };
+
+        typedef PixelFormat::typedcolor <colorStruct> theColor;
+
+        // Get the src item.
+        theColor *srcData = (theColor*)srcArrayData;
+
+        theColor::trav_t travItem;
+
+        srcData->getvalue(srcArrayIndex, travItem);
+
+        // Put the dst item.
+        theColor *dstData = (theColor*)dstArrayData;
+
+        dstData->setvalue(targetArrayIndex, travItem);
+    }
+    else if (depth == 32)
+    {
+        typedef PixelFormat::typedcolor <uint32> theColor;
+
+        // Get the src item.
+        theColor *srcData = (theColor*)srcArrayData;
+
+        theColor::trav_t travItem;
+
+        srcData->getvalue(srcArrayIndex, travItem);
+
+        // Put the dst item.
+        theColor *dstData = (theColor*)dstArrayData;
+
+        dstData->setvalue(targetArrayIndex, travItem);
+    }
+    else
+    {
+        throw RwException( "unknown bit depth for movement" );
+    }
+}

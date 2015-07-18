@@ -12,7 +12,7 @@ void Bitmap::setSize( uint32 width, uint32 height )
     uint32 oldHeight = this->height;
 
     // Allocate a new texel array.
-    uint32 dataSize = getRasterImageDataSize( width, height, this->depth );
+    uint32 dataSize = getRasterImageDataSize( width, height, this->depth, this->rowAlignment );
 
     void *oldTexels = this->texels;
     void *newTexels = NULL;
@@ -24,18 +24,30 @@ void Bitmap::setSize( uint32 width, uint32 height )
         eRasterFormat rasterFormat = this->rasterFormat;
         eColorOrdering colorOrder = this->colorOrder;
         uint32 rasterDepth = this->depth;
+        uint32 rowAlignment = this->rowAlignment;
 
         const uint8 srcBgRed = packcolor( this->bgRed );
         const uint8 srcBgGreen = packcolor( this->bgGreen );
         const uint8 srcBgBlue = packcolor( this->bgBlue );
         const uint8 srcBgAlpha = packcolor( this->bgAlpha );
 
-        colorModelDispatcher <const void> fetchDispatch( oldTexels, rasterFormat, colorOrder, rasterDepth, NULL, 0, PALETTE_NONE );
-        colorModelDispatcher <void> putDispatch( newTexels, rasterFormat, colorOrder, rasterDepth, NULL, 0, PALETTE_NONE );
+        colorModelDispatcher <const void> fetchDispatch( rasterFormat, colorOrder, rasterDepth, NULL, 0, PALETTE_NONE );
+        colorModelDispatcher <void> putDispatch( rasterFormat, colorOrder, rasterDepth, NULL, 0, PALETTE_NONE );
 
         // Do an image copy.
+        uint32 srcRowSize = this->rowSize;
+        uint32 newRowSize = getRasterDataRowSize( width, rasterDepth, rowAlignment );
+
         for ( uint32 y = 0; y < height; y++ )
         {
+            void *dstRow = getTexelDataRow( newTexels, newRowSize, y );
+            const void *srcRow = NULL;
+
+            if ( y < oldHeight )
+            {
+                srcRow = getConstTexelDataRow( oldTexels, srcRowSize, y );
+            }
+
             for ( uint32 x = 0; x < width; x++ )
             {
                 uint32 colorIndex = ( y * width + x );
@@ -46,15 +58,13 @@ void Bitmap::setSize( uint32 width, uint32 height )
                 uint8 srcAlpha = srcBgAlpha;
 
                 // Try to get a source color.
-                if ( oldTexels != NULL && x < oldWidth && y < oldHeight )
+                if ( srcRow != NULL && x < oldWidth )
                 {
-                    uint32 oldColorIndex = ( y * oldWidth + x );
-
-                    fetchDispatch.getRGBA( oldColorIndex, srcRed, srcGreen, srcBlue, srcAlpha );
+                    fetchDispatch.getRGBA( srcRow, x, srcRed, srcGreen, srcBlue, srcAlpha );
                 }
 
                 // Put it into the new storage.
-                putDispatch.setRGBA( colorIndex, srcRed, srcGreen, srcBlue, srcAlpha );
+                putDispatch.setRGBA( dstRow, x, srcRed, srcGreen, srcBlue, srcAlpha );
             }
         }
     }
@@ -62,7 +72,7 @@ void Bitmap::setSize( uint32 width, uint32 height )
     // Delete old data.
     if ( oldTexels )
     {
-        delete oldTexels;
+        delete [] oldTexels;
     }
 
     // Set new data.
@@ -70,17 +80,20 @@ void Bitmap::setSize( uint32 width, uint32 height )
     this->width = width;
     this->height = height;
     this->dataSize = dataSize;
+    this->rowSize = getRasterDataRowSize( width, this->depth, this->rowAlignment );
 }
 
 AINLINE void fetchpackedcolor(
-    void *texels, uint32 colorIndex, eRasterFormat theFormat, eColorOrdering colorOrder, uint32 itemDepth, double& redOut, double& greenOut, double& blueOut, double& alphaOut
+    const void *texels, uint32 x, uint32 y, eRasterFormat theFormat, eColorOrdering colorOrder, uint32 itemDepth, uint32 rowSize, double& redOut, double& greenOut, double& blueOut, double& alphaOut
 )
 {
-    colorModelDispatcher <const void> fetchDispatch( texels, theFormat, colorOrder, itemDepth, NULL, 0, PALETTE_NONE );
+    colorModelDispatcher <const void> fetchDispatch( theFormat, colorOrder, itemDepth, NULL, 0, PALETTE_NONE );
+
+    const void *srcRow = getConstTexelDataRow( texels, rowSize, y );
 
     uint8 sourceRedPacked, sourceGreenPacked, sourceBluePacked, sourceAlphaPacked;
     fetchDispatch.getRGBA(
-        colorIndex,
+        srcRow, x,
         sourceRedPacked, sourceGreenPacked, sourceBluePacked, sourceAlphaPacked
     );
 
@@ -138,7 +151,7 @@ AINLINE void getblendfactor(
 
 eColorModel Bitmap::getColorModel( void ) const
 {
-    return colorModelDispatcher <const void> ( NULL, this->rasterFormat, this->colorOrder, this->depth, NULL, 0, PALETTE_NONE ).getColorModel();
+    return getColorModelFromRasterFormat( this->rasterFormat );
 }
 
 bool Bitmap::browsecolor(uint32 x, uint32 y, uint8& redOut, uint8& greenOut, uint8& blueOut, uint8& alphaOut) const
@@ -147,12 +160,12 @@ bool Bitmap::browsecolor(uint32 x, uint32 y, uint8& redOut, uint8& greenOut, uin
 
     if ( x < this->width && y < this->height )
     {
-        uint32 colorIndex = PixelFormat::coord2index( x, y, this->width );
+        const void *srcRow = getConstTexelDataRow( this->texels, this->rowSize, y );
 
-        colorModelDispatcher <const void> fetchDispatch( this->texels, this->rasterFormat, this->colorOrder, this->depth, NULL, 0, PALETTE_NONE );
+        colorModelDispatcher <const void> fetchDispatch( this->rasterFormat, this->colorOrder, this->depth, NULL, 0, PALETTE_NONE );
 
         hasColor = fetchDispatch.getRGBA(
-            colorIndex,
+            srcRow, x,
             redOut, greenOut, blueOut, alphaOut
         );
     }
@@ -166,12 +179,12 @@ bool Bitmap::browselum(uint32 x, uint32 y, uint8& lum) const
 
     if ( x < this->width && y < this->height )
     {
-        uint32 colorIndex = PixelFormat::coord2index( x, y, this->width );
+        const void *srcRow = getConstTexelDataRow( this->texels, this->rowSize, y );
 
-        colorModelDispatcher <const void> fetchDispatch( this->texels, this->rasterFormat, this->colorOrder, this->depth, NULL, 0, PALETTE_NONE );
+        colorModelDispatcher <const void> fetchDispatch( this->rasterFormat, this->colorOrder, this->depth, NULL, 0, PALETTE_NONE );
 
         hasColor = fetchDispatch.getLuminance(
-            colorIndex,
+            srcRow, x,
             lum
         );
     }
@@ -185,12 +198,12 @@ bool Bitmap::browsecolorex(uint32 x, uint32 y, abstractColorItem& colorItem) con
 
     if ( x < this->width && y < this->height )
     {
-        uint32 colorIndex = PixelFormat::coord2index( x, y, this->width );
+        const void *srcRow = getConstTexelDataRow( this->texels, this->rowSize, y );
 
-        colorModelDispatcher <const void> fetchDispatch( this->texels, this->rasterFormat, this->colorOrder, this->depth, NULL, 0, PALETTE_NONE );
+        colorModelDispatcher <const void> fetchDispatch( this->rasterFormat, this->colorOrder, this->depth, NULL, 0, PALETTE_NONE );
 
         fetchDispatch.getColor(
-            colorIndex,
+            srcRow, x,
             colorItem
         );
 
@@ -209,6 +222,7 @@ void Bitmap::draw(
     uint32 ourWidth = this->width;
     uint32 ourHeight = this->height;
     uint32 ourDepth = this->depth;
+    uint32 ourRowSize = this->rowSize;
     void *ourTexels = this->texels;
     eRasterFormat ourFormat = this->rasterFormat;
     eColorOrdering ourOrder = this->colorOrder;
@@ -246,18 +260,16 @@ void Bitmap::draw(
                 double dstRed, dstGreen, dstBlue, dstAlpha;
 
                 // Fetch from "source".
-                uint32 srcColorIndex = ( sourceY * ourWidth + sourceX );
                 {
                     fetchpackedcolor(
-                        ourTexels, srcColorIndex, ourFormat, ourOrder, ourDepth,
+                        ourTexels, sourceX, sourceY, ourFormat, ourOrder, ourDepth, ourRowSize,
                         sourceRed, sourceGreen, sourceBlue, sourceAlpha
                     );
                 }
 
                 // Fetch from "destination".
-                uint32 dstColorIndex = ( targetY * theirWidth + targetX );
                 {
-                    colorSource.fetchcolor(dstColorIndex, dstRed, dstGreen, dstBlue, dstAlpha);
+                    colorSource.fetchcolor(targetX, targetY, dstRed, dstGreen, dstBlue, dstAlpha);
                 }
 
                 // Get the blend factors.
@@ -320,8 +332,10 @@ void Bitmap::draw(
 
                 // Write back the new color.
                 {
+                    void *dstRow = getTexelDataRow( ourTexels, ourRowSize, sourceY );
+
                     puttexelcolor(
-                        ourTexels, srcColorIndex, ourFormat, ourOrder, ourDepth,
+                        dstRow, sourceX, ourFormat, ourOrder, ourDepth,
                         packcolor( resRed ), packcolor( resGreen ), packcolor( resBlue ), packcolor( resAlpha )
                     );
                 }
@@ -344,6 +358,7 @@ void Bitmap::drawBitmap(
         uint32 theWidth;
         uint32 theHeight;
         uint32 theDepth;
+        uint32 rowSize;
         eRasterFormat theFormat;
         eColorOrdering theOrder;
         void *theTexels;
@@ -356,6 +371,8 @@ void Bitmap::drawBitmap(
             this->theFormat = bmp.getFormat();
             this->theOrder = bmp.getColorOrder();
             this->theTexels = bmp.texels;
+
+            this->rowSize = getRasterDataRowSize( this->theWidth, this->theDepth, bmp.getRowAlignment() );
         }
 
         uint32 getWidth( void ) const
@@ -368,10 +385,10 @@ void Bitmap::drawBitmap(
             return this->theHeight;
         }
 
-        void fetchcolor( uint32 colorIndex, double& red, double& green, double& blue, double& alpha )
+        void fetchcolor( uint32 x, uint32 y, double& red, double& green, double& blue, double& alpha )
         {
             fetchpackedcolor(
-                this->theTexels, colorIndex, this->theFormat, this->theOrder, this->theDepth, red, green, blue, alpha
+                this->theTexels, x, y, this->theFormat, this->theOrder, this->theDepth, this->rowSize, red, green, blue, alpha
             );
         }
     };

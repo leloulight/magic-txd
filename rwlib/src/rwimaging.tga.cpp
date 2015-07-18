@@ -37,39 +37,75 @@ struct TgaHeader
 };
 #pragma pack(pop)
 
+inline uint32 getTGATexelDataRowAlignment( void )
+{
+    // I believe that TGA image data is packed by bytes.
+    // The documentation does not mention anything!
+    return 1;
+}
+
+inline uint32 getTGARasterDataRowSize( uint32 width, uint32 depth )
+{
+    return getRasterDataRowSize( width, depth, getTGATexelDataRowAlignment() );
+}
+
 static void writeTGAPixels(
     Interface *engineInterface,
-    const void *texelSource, uint32 colorUnitCount,
-    eRasterFormat srcRasterFormat, uint32 srcItemDepth, ePaletteType srcPaletteType, const void *srcPaletteData, uint32 srcMaxPalette,
-    eRasterFormat dstRasterFormat, uint32 dstItemDepth,
-    eColorOrdering srcColorOrder,
+    const void *texelSource, uint32 texWidth, uint32 texHeight,
+    eRasterFormat srcRasterFormat, uint32 srcItemDepth, uint32 srcRowAlignment, ePaletteType srcPaletteType, const void *srcPaletteData, uint32 srcMaxPalette,
+    eRasterFormat dstRasterFormat, uint32 dstItemDepth, uint32 dstRowAlignment,
+    eColorOrdering srcColorOrder, eColorOrdering tgaColorOrder,
     Stream *tgaStream
 )
 {
-    // Check whether we need to create a TGA compatible color array.
-    if ( srcRasterFormat != dstRasterFormat || srcItemDepth != dstItemDepth || srcPaletteType != PALETTE_NONE || srcColorOrder != COLOR_BGRA )
+    // Get the row size of the source colors.
+    uint32 srcRowSize = getRasterDataRowSize( texWidth, srcItemDepth, srcRowAlignment );
+
+    if ( doesRasterFormatNeedConversion(
+             srcRasterFormat, srcItemDepth, srcColorOrder, srcPaletteType,
+             dstRasterFormat, dstItemDepth, tgaColorOrder, PALETTE_NONE
+         ) ||
+         shouldAllocateNewRasterBuffer( texWidth, srcItemDepth, srcRowAlignment, dstItemDepth, dstRowAlignment )
+       )
     {
         // Get the data size.
-        uint32 texelDataSize = getRasterDataSize(colorUnitCount, dstItemDepth);
+        uint32 tgaRowSize = getRasterDataRowSize( texWidth, dstItemDepth, dstRowAlignment );
+
+        uint32 texelDataSize = getRasterDataSizeByRowSize( tgaRowSize, texHeight );
 
         // Allocate a buffer for the fixed pixel data.
         void *tgaColors = engineInterface->PixelAllocate( texelDataSize );
 
-        colorModelDispatcher <const void> fetchDispatch( texelSource, srcRasterFormat, srcColorOrder, srcItemDepth, srcPaletteData, srcMaxPalette, srcPaletteType );
-        colorModelDispatcher <void> putDispatch( tgaColors, dstRasterFormat, COLOR_BGRA, dstItemDepth, NULL, 0, PALETTE_NONE );
-
-        for ( uint32 n = 0; n < colorUnitCount; n++ )
+        if ( tgaColors == NULL )
         {
-            // Grab the color.
-            abstractColorItem colorItem;
-
-            fetchDispatch.getColor(n, colorItem);
-
-            // Write it with correct ordering.
-            putDispatch.setColor(n, colorItem);
+            throw RwException( "failed to allocate texel buffer for TGA image data serialization" );
         }
 
-        tgaStream->write((const void*)tgaColors, texelDataSize);
+        try
+        {
+            // Transform the raw color data.
+            colorModelDispatcher <const void> fetchDispatch( srcRasterFormat, srcColorOrder, srcItemDepth, srcPaletteData, srcMaxPalette, srcPaletteType );
+            colorModelDispatcher <void> putDispatch( dstRasterFormat, tgaColorOrder, dstItemDepth, NULL, 0, PALETTE_NONE );
+
+            copyTexelDataEx(
+                texelSource, tgaColors,
+                fetchDispatch, putDispatch,
+                texWidth, texHeight,
+                0, 0,
+                0, 0,
+                srcRowSize, tgaRowSize
+            );
+
+            // Write the entire buffer at once.
+            tgaStream->write((const void*)tgaColors, texelDataSize);
+        }
+        catch( ... )
+        {
+            // If there was any error, screw it.
+            engineInterface->PixelFree( tgaColors );
+
+            throw;
+        }
 
         // Free memory.
         engineInterface->PixelFree( tgaColors );
@@ -77,7 +113,7 @@ static void writeTGAPixels(
     else
     {
         // Simply write the color source.
-        uint32 texelDataSize = getRasterDataSize(colorUnitCount, srcItemDepth);
+        uint32 texelDataSize = getRasterDataSizeByRowSize( srcRowSize, texHeight );
 
         tgaStream->write((const void*)texelSource, texelDataSize);
     }
@@ -169,13 +205,15 @@ struct tgaImagingExtension : public imagingFormatExtension
         // Read the palette stuff.
         if ( possibleHeader.ColorMapType == 1 )
         {
-            uint32 palDataSize = getRasterDataSize( possibleHeader.CMapLength, possibleHeader.CMapDepth );
+            uint32 palDataSize = getPaletteDataSize( possibleHeader.CMapLength, possibleHeader.CMapDepth );
 
             skipAvailable( inputStream, palDataSize );
         }
 
         // Now read the image data.
-        uint32 colorDataSize = getRasterDataSize( possibleHeader.Width * possibleHeader.Height, possibleHeader.PixelDepth );
+        uint32 tgaRowSize = getRasterDataRowSize( possibleHeader.Width, possibleHeader.PixelDepth, getTGATexelDataRowAlignment() );
+
+        uint32 colorDataSize = getRasterDataSizeByRowSize( tgaRowSize, possibleHeader.Height );
 
         skipAvailable( inputStream, colorDataSize );
 
@@ -282,7 +320,7 @@ struct tgaImagingExtension : public imagingFormatExtension
 
         if ( hasPalette )
         {
-            uint32 paletteDataSize = getRasterDataSize( paletteSize, dstDepth );
+            uint32 paletteDataSize = getPaletteDataSize( paletteSize, dstDepth );
 
             // Only save the palette if we really need it.
             if ( requiresPalette )
@@ -325,13 +363,18 @@ struct tgaImagingExtension : public imagingFormatExtension
             uint32 width = headerData.Width;
             uint32 height = headerData.Height;
 
-            uint32 itemCount = ( width * height );
+            uint32 tgaRowSize = getTGARasterDataRowSize( width, dstItemDepth );
 
-            uint32 rasterDataSize = getRasterDataSize( itemCount, dstItemDepth );
+            uint32 rasterDataSize = getRasterDataSizeByRowSize( tgaRowSize, height );
 
             checkAhead( inputStream, rasterDataSize );
 
             void *texelData = engineInterface->PixelAllocate( rasterDataSize );
+
+            if ( texelData == NULL )
+            {
+                throw RwException( "failed to allocate .tga image buffer" );
+            }
 
             try
             {
@@ -359,6 +402,7 @@ struct tgaImagingExtension : public imagingFormatExtension
             
             outputTexels.rasterFormat = dstRasterFormat;
             outputTexels.depth = dstDepth;
+            outputTexels.rowAlignment = getTGATexelDataRowAlignment();
             outputTexels.colorOrder = dstColorOrder;
             outputTexels.paletteType = dstPaletteType;
             outputTexels.paletteData = paletteData;
@@ -396,13 +440,18 @@ struct tgaImagingExtension : public imagingFormatExtension
         eRasterFormat srcRasterFormat = inputTexels.rasterFormat;
         ePaletteType srcPaletteType = inputTexels.paletteType;
         uint32 srcItemDepth = inputTexels.depth;
+        uint32 srcRowAlignment = inputTexels.rowAlignment;
 
         eRasterFormat dstRasterFormat;
         uint32 dstColorDepth;
         uint32 dstAlphaBits;
         bool hasDstRasterFormat = false;
 
+        uint32 dstItemDepth = srcItemDepth;
+
         ePaletteType dstPaletteType;
+
+        uint32 dstRowAlignment = getTGATexelDataRowAlignment();
 
         if ( !optimized )
         {
@@ -458,9 +507,26 @@ struct tgaImagingExtension : public imagingFormatExtension
 
                 hasDstRasterFormat = true;
             }
+            else
+            {
+                dstRasterFormat = RASTER_8888;
+                dstColorDepth = 32;
+                dstAlphaBits = 8;
 
-            // We palettize if present.
-            dstPaletteType = srcPaletteType;
+                hasDstRasterFormat = true;
+            }
+
+            if ( srcPaletteType != PALETTE_NONE )
+            {
+                // We palettize if present.
+                dstPaletteType = PALETTE_8BIT;
+                dstItemDepth = 8;
+            }
+            else
+            {
+                dstPaletteType = PALETTE_NONE;
+                dstItemDepth = dstColorDepth;
+            }
         }
 
         if ( !hasDstRasterFormat )
@@ -504,7 +570,7 @@ struct tgaImagingExtension : public imagingFormatExtension
 
             header.Width = width;
             header.Height = height;
-            header.PixelDepth = ( isPalette ? srcItemDepth : dstColorDepth );
+            header.PixelDepth = ( isPalette ? dstItemDepth : dstColorDepth );
 
             header.ImageDescriptor.numAttrBits = dstAlphaBits;
             header.ImageDescriptor.imageOrdering = 2;
@@ -522,34 +588,51 @@ struct tgaImagingExtension : public imagingFormatExtension
             {
                 writeTGAPixels(
                     engineInterface,
-                    paletteData, maxpalette,
-                    srcRasterFormat, pixelDepth, PALETTE_NONE, NULL, 0,
-                    dstRasterFormat, pixelDepth,
-                    colorOrder, outputStream
+                    paletteData, maxpalette, 1,
+                    srcRasterFormat, pixelDepth, getPaletteRowAlignment(), PALETTE_NONE, NULL, 0,
+                    dstRasterFormat, pixelDepth, getPaletteRowAlignment(),
+                    colorOrder, COLOR_BGRA,
+                    outputStream
                 );
             }
 
             // Now write image information.
             // If we are a palette, we simply write the color indice.
-            uint32 colorUnitCount = ( width * height );
-
             if (isPalette)
             {
                 assert( srcPaletteType != PALETTE_NONE );
 
                 // Write a fixed version of the palette indice.
-                uint32 texelDataSize = inputTexels.dataSize; // for palette items its the same size.
+                uint32 texelRowSize = getTGARasterDataRowSize( width, dstItemDepth );
+
+                uint32 texelDataSize = getRasterDataSizeByRowSize( texelRowSize, height );
 
                 void *fixedPalItems = engineInterface->PixelAllocate( texelDataSize );
 
-                ConvertPaletteDepth(
-                    texelSource, fixedPalItems,
-                    colorUnitCount,
-                    srcPaletteType, maxpalette,
-                    srcItemDepth, srcItemDepth
-                );
+                if ( fixedPalItems == NULL )
+                {
+                    throw RwException( "failed to allocate palette indice buffer" );
+                }
 
-                outputStream->write((const void*)fixedPalItems, texelDataSize);
+                try
+                {
+                    ConvertPaletteDepth(
+                        texelSource, fixedPalItems,
+                        width, height,
+                        srcPaletteType, dstPaletteType, maxpalette,
+                        srcItemDepth, dstItemDepth,
+                        srcRowAlignment, dstRowAlignment
+                    );
+
+                    outputStream->write((const void*)fixedPalItems, texelDataSize);
+                }
+                catch( ... )
+                {
+                    // We should always write exception safe code!
+                    engineInterface->PixelFree( fixedPalItems );
+
+                    throw;
+                }
 
                 // Clean up memory.
                 engineInterface->PixelFree( fixedPalItems );
@@ -558,10 +641,11 @@ struct tgaImagingExtension : public imagingFormatExtension
             {
                 writeTGAPixels(
                     engineInterface,
-                    texelSource, colorUnitCount,
-                    srcRasterFormat, srcItemDepth, srcPaletteType, paletteData, maxpalette,
-                    dstRasterFormat, dstColorDepth,
-                    colorOrder, outputStream
+                    texelSource, width, height,
+                    srcRasterFormat, srcItemDepth, srcRowAlignment, srcPaletteType, paletteData, maxpalette,
+                    dstRasterFormat, dstColorDepth, dstRowAlignment,
+                    colorOrder, COLOR_BGRA,
+                    outputStream
                 );
             }
         }

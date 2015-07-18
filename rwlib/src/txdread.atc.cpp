@@ -287,7 +287,7 @@ inline void DecompressATCMipmap(
     Interface *engineInterface,
     uint32 mipWidth, uint32 mipHeight, uint32 layerWidth, uint32 layerHeight, const void *srcTexels, uint32 srcDataSize,
     eRasterFormat atcRasterFormat, uint32 atcDepth, eColorOrdering atcColorOrder,
-    eRasterFormat targetRasterFormat, uint32 targetDepth, eColorOrdering targetColorOrder,
+    eRasterFormat targetRasterFormat, uint32 targetDepth, uint32 targetRowAlignment, eColorOrdering targetColorOrder,
     ATI_TC_FORMAT srcRasterATITCFormat, ATI_TC_FORMAT dstRasterATITCFormat,
     void*& dstTexelsOut, uint32& dstDataSizeOut
 )
@@ -319,31 +319,38 @@ inline void DecompressATCMipmap(
     void *dstTexels = dstTexture.pData;
     size_t dstDataSize = dstTexture.dwDataSize;
 
-    if ( atcRasterFormat != targetRasterFormat || atcDepth != targetDepth || atcColorOrder != targetColorOrder || mipWidth != layerWidth || mipHeight != layerHeight )
+    uint32 atcRowAlignment = getATCToolTextureDataRowAlignment();
+
+    bool needsNewBuffer = shouldAllocateNewRasterBuffer( mipWidth, atcDepth, atcRowAlignment, targetDepth, targetRowAlignment );
+
+    if ( atcRasterFormat != targetRasterFormat || needsNewBuffer || atcColorOrder != targetColorOrder || mipWidth != layerWidth || mipHeight != layerHeight )
     {
         void *atcTexels = dstTexels;
 
-        if ( atcDepth != targetDepth || mipWidth != layerWidth || mipHeight != layerHeight )
-        {
-            uint32 texelUnitCount = ( layerWidth * layerHeight );
+        uint32 atcRowSize = getRasterDataRowSize( mipWidth, atcDepth, atcRowAlignment );
 
-            dstDataSize = getRasterDataSize( texelUnitCount, targetDepth );
+        if ( needsNewBuffer || mipWidth != layerWidth || mipHeight != layerHeight )
+        {
+            dstDataSize = getRasterDataSizeByRowSize( atcRowSize, mipHeight );
 
             dstTexels = engineInterface->PixelAllocate( dstDataSize );
         }
 
-        colorModelDispatcher <const void> fetchSrcDispatch( atcTexels, atcRasterFormat, atcColorOrder, atcDepth, NULL, 0, PALETTE_NONE );
-        colorModelDispatcher <void> putDispatch( dstTexels, targetRasterFormat, targetColorOrder, targetDepth, NULL, 0, PALETTE_NONE );
+        uint32 dstRowSize = getRasterDataRowSize( mipWidth, targetDepth, targetRowAlignment );
+
+        colorModelDispatcher <const void> fetchSrcDispatch( atcRasterFormat, atcColorOrder, atcDepth, NULL, 0, PALETTE_NONE );
+        colorModelDispatcher <void> putDispatch( targetRasterFormat, targetColorOrder, targetDepth, NULL, 0, PALETTE_NONE );
 
         for ( uint32 y = 0; y < layerHeight; y++ )
         {
+            const void *srcRow = getConstTexelDataRow( atcTexels, atcRowSize, y );
+            void *dstRow = getTexelDataRow( dstTexels, dstRowSize, y );
+
             for ( uint32 x = 0; x < layerWidth; x++ )
             {
                 uint8 r, g, b, a;
 
-                uint32 srcColorIndex = PixelFormat::coord2index(x, y, mipWidth);
-
-                bool gotColor = fetchSrcDispatch.getRGBA( srcColorIndex, r, g, b, a );
+                bool gotColor = fetchSrcDispatch.getRGBA( srcRow, x, r, g, b, a );
 
                 if ( !gotColor )
                 {
@@ -353,9 +360,7 @@ inline void DecompressATCMipmap(
                     a = 0;
                 }
 
-                uint32 dstColorIndex = PixelFormat::coord2index(x, y, layerWidth);
-
-                putDispatch.setRGBA( dstColorIndex, r, g, b, a );
+                putDispatch.setRGBA( dstRow, x, r, g, b, a );
             }
         }
 
@@ -380,6 +385,8 @@ void atcNativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineInt
     eRasterFormat targetRasterFormat = RASTER_8888;
     uint32 targetDepth = 32;
     eColorOrdering targetColorOrder = COLOR_RGBA;
+
+    uint32 targetRowAlignment = getATCExportTextureDataRowAlignment();
 
     uint32 mipmapCount = nativeTex->mipmaps.size();
 
@@ -425,7 +432,7 @@ void atcNativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineInt
             engineInterface,
             mipWidth, mipHeight, layerWidth, layerHeight, mipLayer.texels, mipLayer.dataSize,
             atcRasterFormat, atcDepth, atcColorOrder,
-            targetRasterFormat, targetDepth, targetColorOrder,
+            targetRasterFormat, targetDepth, targetRowAlignment, targetColorOrder,
             srcRasterATITCFormat, dstRasterATITCFormat,
             mipTexels, texDataSize
         );
@@ -460,7 +467,7 @@ void atcNativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineInt
 inline void CompressMipmapToATC(
     Interface *engineInterface,
     uint32 mipWidth, uint32 mipHeight, const void *srcTexels,
-    eRasterFormat srcRasterFormat, uint32 srcDepth, eColorOrdering srcColorOrder, ePaletteType srcPaletteType, const void *srcPaletteData, uint32 srcPaletteSize,
+    eRasterFormat srcRasterFormat, uint32 srcDepth, uint32 srcRowAlignment, eColorOrdering srcColorOrder, ePaletteType srcPaletteType, const void *srcPaletteData, uint32 srcPaletteSize,
     eRasterFormat feedRasterFormat, uint32 feedDepth, eColorOrdering feedColorOrder,
     uint32 compressionBlockSize,
     ATI_TC_FORMAT srcTextureFormat, ATI_TC_FORMAT dstTextureFormat,
@@ -468,79 +475,128 @@ inline void CompressMipmapToATC(
     void*& dstTexelsOut, uint32& dstDataSizeOut
 )
 {
+    uint32 srcLayerRowSize = getRasterDataRowSize( mipWidth, srcDepth, srcRowAlignment );
+
     // Put this mipmap in a ATI_Compress compatible texture.
-    uint32 srcLayerTexUnitCount = ( mipWidth * mipHeight );
+    uint32 feedLayerTexRowSize = getRasterDataRowSize( mipWidth, feedDepth, getATCToolTextureDataRowAlignment() );
 
-    uint32 srcTextureDataSize = getRasterDataSize( srcLayerTexUnitCount, feedDepth );
+    uint32 feedTextureDataSize = getRasterDataSizeByRowSize( feedLayerTexRowSize, mipHeight );
 
-    void *feedTexels = engineInterface->PixelAllocate( srcTextureDataSize );
+    void *feedTexels = engineInterface->PixelAllocate( feedTextureDataSize );
 
-    colorModelDispatcher <const void> fetchDispatch( srcTexels, srcRasterFormat, srcColorOrder, srcDepth, srcPaletteData, srcPaletteSize, srcPaletteType );
-    colorModelDispatcher <void> putDispatch( feedTexels, feedRasterFormat, feedColorOrder, feedDepth, NULL, 0, PALETTE_NONE );
-
-    for ( uint32 index = 0; index < srcLayerTexUnitCount; index++ )
+    if ( feedTexels == NULL )
     {
-        uint8 r, g, b, a;
-
-        bool gotColor = fetchDispatch.getRGBA( index, r, g, b, a );
-
-        if ( !gotColor )
-        {
-            r = 0;
-            g = 0;
-            b = 0;
-            a = 0;
-        }
-
-        putDispatch.setRGBA( index, r, g, b, a );
+        throw RwException( "failed to allocate traversal texel buffer for ATC mipmap encoding" );
     }
 
-    // Determine the compressed texture dimensions.
-    uint32 compressWidth = ALIGN_SIZE( mipWidth, 4u );
-    uint32 compressHeight = ALIGN_SIZE( mipHeight, 4u );
+    void *outTexels = NULL;
+    uint32 outTexelsDataSize = 0;
+    uint32 outWidth, outHeight;
 
-    uint32 compressionBlockCount = ( compressWidth * compressHeight ) / 16;
-
-    // Allocate the output buffer.
-    size_t dstDataSize = ( compressionBlockCount * compressionBlockSize );
-
-    void *dstTexels = engineInterface->PixelAllocate( dstDataSize );
-
-    // Compress the texture now.
+    try
     {
-        ATI_TC_Texture srcTexture;
-        srcTexture.dwSize = sizeof( srcTexture );
-        srcTexture.dwWidth = mipWidth;
-        srcTexture.dwHeight = mipHeight;
-        srcTexture.dwPitch = 0;
-        srcTexture.format = srcTextureFormat;
-        srcTexture.dwDataSize = srcTextureDataSize;
-        srcTexture.pData = (ATI_TC_BYTE*)feedTexels;
+        colorModelDispatcher <const void> fetchDispatch( srcRasterFormat, srcColorOrder, srcDepth, srcPaletteData, srcPaletteSize, srcPaletteType );
+        colorModelDispatcher <void> putDispatch( feedRasterFormat, feedColorOrder, feedDepth, NULL, 0, PALETTE_NONE );
 
-        ATI_TC_Texture dstTexture;
-        dstTexture.dwSize = sizeof( dstTexture );
-        dstTexture.dwWidth = mipWidth;
-        dstTexture.dwHeight = mipHeight;
-        dstTexture.dwPitch = 0;
-        dstTexture.format = dstTextureFormat;
-        dstTexture.dwDataSize = dstDataSize;
-        dstTexture.pData = (ATI_TC_BYTE*)dstTexels;
+        for ( uint32 y = 0; y < mipHeight; y++ )
+        {
+            const void *srcRow = getConstTexelDataRow( srcTexels, srcLayerRowSize, y );
+            void *dstRow = getTexelDataRow( feedTexels, feedLayerTexRowSize, y );
 
-        // Do the conversion.
-        ATI_TC_ERROR atcErrorCode =
-            ATI_TC_ConvertTexture( &srcTexture, &dstTexture, NULL, NULL, NULL, NULL );
+            for ( uint32 x = 0; x < mipWidth; x++ )
+            {
+                uint8 r, g, b, a;
 
-        assert( atcErrorCode == ATI_TC_OK );
+                bool gotColor = fetchDispatch.getRGBA( srcRow, x, r, g, b, a );
+
+                if ( !gotColor )
+                {
+                    r = 0;
+                    g = 0;
+                    b = 0;
+                    a = 0;
+                }
+
+                putDispatch.setRGBA( dstRow, x, r, g, b, a );
+            }
+        }
+
+        // Determine the compressed texture dimensions.
+        uint32 compressWidth = ALIGN_SIZE( mipWidth, 4u );
+        uint32 compressHeight = ALIGN_SIZE( mipHeight, 4u );
+
+        uint32 compressionBlockCount = ( compressWidth * compressHeight ) / 16;
+
+        // Allocate the output buffer.
+        size_t dstDataSize = ( compressionBlockCount * compressionBlockSize );
+
+        void *dstTexels = engineInterface->PixelAllocate( dstDataSize );
+
+        if ( dstTexels == NULL )
+        {
+            throw RwException( "failed to allocate output texel buffer for ATC mipmap encoding" );
+        }
+
+        try
+        {
+            // Compress the texture now.
+            {
+                ATI_TC_Texture srcTexture;
+                srcTexture.dwSize = sizeof( srcTexture );
+                srcTexture.dwWidth = mipWidth;
+                srcTexture.dwHeight = mipHeight;
+                srcTexture.dwPitch = 0;
+                srcTexture.format = srcTextureFormat;
+                srcTexture.dwDataSize = feedTextureDataSize;
+                srcTexture.pData = (ATI_TC_BYTE*)feedTexels;
+
+                ATI_TC_Texture dstTexture;
+                dstTexture.dwSize = sizeof( dstTexture );
+                dstTexture.dwWidth = mipWidth;
+                dstTexture.dwHeight = mipHeight;
+                dstTexture.dwPitch = 0;
+                dstTexture.format = dstTextureFormat;
+                dstTexture.dwDataSize = dstDataSize;
+                dstTexture.pData = (ATI_TC_BYTE*)dstTexels;
+
+                // Do the conversion.
+                ATI_TC_ERROR atcErrorCode =
+                    ATI_TC_ConvertTexture( &srcTexture, &dstTexture, NULL, NULL, NULL, NULL );
+
+                if ( atcErrorCode != ATI_TC_OK )
+                {
+                    throw RwException( "unknown error in ATC mipmap encoding" );
+                }
+
+                // Return stuff.
+                outWidth = compressWidth;
+                outHeight = compressHeight;
+                outTexels = dstTexels;
+                outTexelsDataSize = dstDataSize;
+            }
+        }
+        catch( ... )
+        {
+            engineInterface->PixelFree( dstTexels );
+
+            throw;
+        }
+    }
+    catch( ... )
+    {
+        engineInterface->PixelFree( feedTexels );
+
+        throw;
     }
 
     // Free the feedTexture that was used as a proxy.
     engineInterface->PixelFree( feedTexels );
 
     // Give parameters to the runtime.
-    dstWidthOut = compressWidth;
-    dstHeightOut = compressHeight;
-    dstTexelsOut = dstTexels;
-    dstDataSizeOut = dstDataSize;
+    dstWidthOut = outWidth;
+    dstHeightOut = outHeight;
+    dstTexelsOut = outTexels;
+    dstDataSizeOut = outTexelsDataSize;
 }
 
 void atcNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInterface, void *objMem, const pixelDataTraversal& pixelsIn, acquireFeedback_t& feedbackOut )
@@ -556,6 +612,7 @@ void atcNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInter
     // Get the pixel properties onto stack, as we have to compress them.
     eRasterFormat srcRasterFormat = pixelsIn.rasterFormat;
     uint32 srcDepth = pixelsIn.depth;
+    uint32 srcRowAlignment = pixelsIn.rowAlignment;
     eColorOrdering srcColorOrder = pixelsIn.colorOrder;
     ePaletteType srcPaletteType = pixelsIn.paletteType;
     const void *srcPaletteData = pixelsIn.paletteData;
@@ -614,7 +671,7 @@ void atcNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInter
             CompressMipmapToATC(
                 engineInterface,
                 mipWidth, mipHeight, srcTexels,
-                srcRasterFormat, srcDepth, srcColorOrder, srcPaletteType, srcPaletteData, srcPaletteSize,
+                srcRasterFormat, srcDepth, srcRowAlignment, srcColorOrder, srcPaletteType, srcPaletteData, srcPaletteSize,
                 feedRasterFormat, feedDepth, feedColorOrder,
                 compressionBlockSize,
                 srcTextureFormat, dstTextureFormat,
@@ -691,6 +748,7 @@ struct atcMipmapManager
         const NativeTextureATC::mipmapLayer& mipLayer,
         uint32& widthOut, uint32& heightOut, uint32& layerWidthOut, uint32& layerHeightOut,
         eRasterFormat& dstRasterFormat, eColorOrdering& dstColorOrder, uint32& dstDepth,
+        uint32& dstRowAlignment,
         ePaletteType& dstPaletteType, void*& dstPaletteData, uint32& dstPaletteSize,
         eCompressionType& dstCompressionType, bool& hasAlpha,
         void*& dstTexelsOut, uint32& dstDataSizeOut,
@@ -713,6 +771,8 @@ struct atcMipmapManager
         uint32 targetDepth = 32;
         eColorOrdering targetColorOrder = COLOR_RGBA;
 
+        uint32 targetRowAlignment = getATCExportTextureDataRowAlignment();
+
         // We decompress the layer and give it as new texels.
         eRasterFormat atcRasterFormat;
         uint32 atcDepth;
@@ -732,7 +792,7 @@ struct atcMipmapManager
             engineInterface,
             mipWidth, mipHeight, layerWidth, layerHeight, srcTexels, srcDataSize,
             atcRasterFormat, atcDepth, atcColorOrder,
-            targetRasterFormat, targetDepth, targetColorOrder,
+            targetRasterFormat, targetDepth, targetRowAlignment, targetColorOrder,
             srcRasterATITCFormat, dstRasterATITCFormat,
             dstTexels, dstDataSize
         );
@@ -745,6 +805,7 @@ struct atcMipmapManager
 
         dstRasterFormat = targetRasterFormat;
         dstDepth = targetDepth;
+        dstRowAlignment = targetRowAlignment;
         dstColorOrder = targetColorOrder;
 
         dstPaletteType = PALETTE_NONE;
@@ -767,6 +828,7 @@ struct atcMipmapManager
         NativeTextureATC::mipmapLayer& mipLayer,
         uint32 width, uint32 height, uint32 layerWidth, uint32 layerHeight, void *srcTexels, uint32 dataSize,
         eRasterFormat rasterFormat, eColorOrdering colorOrder, uint32 depth,
+        uint32 rowAlignment,
         ePaletteType paletteType, void *paletteData, uint32 paletteSize,
         eCompressionType compressionType, bool hasAlpha,
         bool& hasDirectlyAcquiredOut
@@ -784,12 +846,14 @@ struct atcMipmapManager
             uint32 targetDepth = 32;
             eColorOrdering targetColorOrder = COLOR_BGRA;
 
+            uint32 targetRowAlignment = getATCToolTextureDataRowAlignment();
+
             bool hasChanged =
                 ConvertMipmapLayerNative(
                     engineInterface,
                     width, height, layerWidth, layerHeight, srcTexels, dataSize,
-                    rasterFormat, depth, colorOrder, paletteType, paletteData, paletteSize, compressionType,
-                    targetRasterFormat, targetDepth, targetColorOrder, PALETTE_NONE, NULL, 0, RWCOMPRESS_NONE,
+                    rasterFormat, depth, rowAlignment, colorOrder, paletteType, paletteData, paletteSize, compressionType,
+                    targetRasterFormat, targetDepth, targetRowAlignment, targetColorOrder, PALETTE_NONE, NULL, 0, RWCOMPRESS_NONE,
                     false,
                     width, height,
                     srcTexels, dataSize
@@ -806,6 +870,8 @@ struct atcMipmapManager
             rasterFormat = targetRasterFormat;
             depth = targetDepth;
             colorOrder = targetColorOrder;
+
+            rowAlignment = targetRowAlignment;
 
             paletteType = PALETTE_NONE;
             paletteData = NULL;
@@ -836,7 +902,7 @@ struct atcMipmapManager
         CompressMipmapToATC(
             engineInterface,
             width, height, srcTexels,
-            rasterFormat, depth, colorOrder, paletteType, paletteData, paletteSize,
+            rasterFormat, depth, rowAlignment, colorOrder, paletteType, paletteData, paletteSize,
             feedRasterFormat, feedDepth, feedColorOrder,
             compressionBlockSize,
             srcTextureFormat, dstTextureFormat,

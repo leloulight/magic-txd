@@ -41,7 +41,7 @@ struct NativeTextureD3D8
             {
                 uint32 palRasterDepth = Bitmap::getRasterFormatDepth(right.rasterFormat);
 
-                size_t wholeDataSize = getRasterDataSize( right.paletteSize, palRasterDepth );
+                size_t wholeDataSize = getPaletteDataSize( right.paletteSize, palRasterDepth );
 
 		        this->palette = engineInterface->PixelAllocate( wholeDataSize );
 
@@ -115,17 +115,17 @@ public:
 
 struct d3d8NativeTextureTypeProvider : public texNativeTypeProvider
 {
-    void ConstructTexture( Interface *engineInterface, void *objMem, size_t memSize )
+    void ConstructTexture( Interface *engineInterface, void *objMem, size_t memSize ) override
     {
         new (objMem) NativeTextureD3D8( engineInterface );
     }
 
-    void CopyConstructTexture( Interface *engineInterface, void *objMem, const void *srcObjMem, size_t memSize )
+    void CopyConstructTexture( Interface *engineInterface, void *objMem, const void *srcObjMem, size_t memSize ) override
     {
         new (objMem) NativeTextureD3D8( *(const NativeTextureD3D8*)srcObjMem );
     }
     
-    void DestroyTexture( Interface *engineInterface, void *objMem, size_t memSize )
+    void DestroyTexture( Interface *engineInterface, void *objMem, size_t memSize ) override
     {
         ( *(NativeTextureD3D8*)objMem ).~NativeTextureD3D8();
     }
@@ -135,7 +135,7 @@ struct d3d8NativeTextureTypeProvider : public texNativeTypeProvider
     void SerializeTexture( TextureBase *theTexture, PlatformTexture *nativeTex, BlockProvider& outputProvider ) const;
     void DeserializeTexture( TextureBase *theTexture, PlatformTexture *nativeTex, BlockProvider& inputProvider ) const;
 
-    void GetPixelCapabilities( pixelCapabilities& capsOut ) const
+    void GetPixelCapabilities( pixelCapabilities& capsOut ) const override
     {
         capsOut.supportsDXT1 = true;
         capsOut.supportsDXT2 = true;
@@ -145,7 +145,7 @@ struct d3d8NativeTextureTypeProvider : public texNativeTypeProvider
         capsOut.supportsPalette = true;
     }
 
-    void GetStorageCapabilities( storageCapabilities& storeCaps ) const
+    void GetStorageCapabilities( storageCapabilities& storeCaps ) const override
     {
         storeCaps.pixelCaps.supportsDXT1 = true;
         storeCaps.pixelCaps.supportsDXT2 = true;
@@ -161,14 +161,14 @@ struct d3d8NativeTextureTypeProvider : public texNativeTypeProvider
     void SetPixelDataToTexture( Interface *engineInterface, void *objMem, const pixelDataTraversal& pixelsIn, acquireFeedback_t& feedbackOut );
     void UnsetPixelDataFromTexture( Interface *engineInterface, void *objMem, bool deallocate );
 
-    void SetTextureVersion( Interface *engineInterface, void *objMem, LibraryVersion version )
+    void SetTextureVersion( Interface *engineInterface, void *objMem, LibraryVersion version ) override
     {
         NativeTextureD3D8 *nativeTex = (NativeTextureD3D8*)objMem;
 
         nativeTex->texVersion = version;
     }
 
-    LibraryVersion GetTextureVersion( const void *objMem )
+    LibraryVersion GetTextureVersion( const void *objMem ) override
     {
         const NativeTextureD3D8 *nativeTex = (const NativeTextureD3D8*)objMem;
 
@@ -179,7 +179,7 @@ struct d3d8NativeTextureTypeProvider : public texNativeTypeProvider
     bool AddMipmapLayer( Interface *engineInterface, void *objMem, const rawMipmapLayer& layerIn, acquireFeedback_t& feedbackOut );
     void ClearMipmaps( Interface *engineInterface, void *objMem );
 
-    void* GetNativeInterface( void *objMem )
+    void* GetNativeInterface( void *objMem ) override
     {
         // TODO.
         return NULL;
@@ -188,28 +188,35 @@ struct d3d8NativeTextureTypeProvider : public texNativeTypeProvider
     void GetTextureInfo( Interface *engineInterface, void *objMem, nativeTextureBatchedInfo& infoOut );
     void GetTextureFormatString( Interface *engineInterface, void *objMem, char *buf, size_t bufLen, size_t& lengthOut ) const;
 
-    ePaletteType GetTexturePaletteType( const void *objMem )
+    ePaletteType GetTexturePaletteType( const void *objMem ) override
     {
         const NativeTextureD3D8 *nativeTex = (const NativeTextureD3D8*)objMem;
 
         return nativeTex->paletteType;
     }
 
-    bool IsTextureCompressed( const void *objMem )
+    bool IsTextureCompressed( const void *objMem ) override
     {
         const NativeTextureD3D8 *nativeTex = (const NativeTextureD3D8*)objMem;
 
         return ( nativeTex->dxtCompression != 0 );
     }
 
-    bool DoesTextureHaveAlpha( const void *objMem )
+    bool DoesTextureHaveAlpha( const void *objMem ) override
     {
         const NativeTextureD3D8 *nativeTex = (const NativeTextureD3D8*)objMem;
 
         return nativeTex->hasAlpha;
     }
 
-    uint32 GetDriverIdentifier( void *objMem ) const
+    uint32 GetTextureDataRowAlignment( void ) const override
+    {
+        // Direct3D 8 and 9 work with DWORD aligned texture data rows.
+        // We found this out when looking at the return values of GetLevelDesc.
+        return getD3DTextureDataRowAlignment();
+    }
+
+    uint32 GetDriverIdentifier( void *objMem ) const override
     {
         // Direct3D 8 driver.
         return 1;

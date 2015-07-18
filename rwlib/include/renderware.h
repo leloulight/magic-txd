@@ -571,7 +571,7 @@ public:
 
     void                PushWarning             ( const std::string& message );
 
-    void                SetPaletteRuntime       ( ePaletteRuntimeType palRunType );
+    bool                SetPaletteRuntime       ( ePaletteRuntimeType palRunType );
     ePaletteRuntimeType GetPaletteRuntime       ( void ) const;
 
     void                    SetDXTRuntime       ( eDXTCompressionMethod dxtRunType );

@@ -117,11 +117,24 @@ inline bool isValidRasterFormat(eRasterFormat rasterFormat)
     return isValidRaster;
 }
 
+inline bool canRasterFormatHaveAlpha(eRasterFormat rasterFormat)
+{
+    if (rasterFormat == RASTER_1555 ||
+        rasterFormat == RASTER_4444 ||
+        rasterFormat == RASTER_8888 )
+    {
+        return true;
+    }
+    
+    return false;
+}
+
 enum ePaletteType
 {
     PALETTE_NONE,
     PALETTE_4BIT,
-    PALETTE_8BIT
+    PALETTE_8BIT,
+    PALETTE_4BIT_LSB    // same as 4BIT, but different addressing order
 };
 
 enum eColorOrdering
@@ -136,7 +149,8 @@ inline uint32 getPaletteItemCount( ePaletteType paletteType )
 {
     uint32 count = 0;
 
-    if ( paletteType == PALETTE_4BIT )
+    if ( paletteType == PALETTE_4BIT ||
+         paletteType == PALETTE_4BIT_LSB )
     {
         count = 16;
     }
@@ -245,8 +259,8 @@ struct Raster
     void SetEngineVersion( LibraryVersion version );
     LibraryVersion GetEngineVersion( void ) const;
 
-    void writeTGA(const char *path, bool optimized = false);
-    void writeTGAStream(Stream *tga, bool optimized = false);
+    void writeImage(rw::Stream *outputStream, const char *method);
+    void readImage(rw::Stream *inputStream);
 
     Bitmap getBitmap(void) const;
     void setImageData(const Bitmap& srcImage);
@@ -481,7 +495,7 @@ struct storageCapabilities
 
     pixelCapabilities pixelCaps;
 
-    bool isCompressedFormat;
+    bool isCompressedFormat;    // if true then this texture does not store raw texel data.
 };
 
 struct pixelFormat
@@ -490,6 +504,7 @@ struct pixelFormat
     {
         this->rasterFormat = RASTER_DEFAULT;
         this->depth = 0;
+        this->rowAlignment = 0;
         this->colorOrder = COLOR_RGBA;
         this->paletteType = PALETTE_NONE;
         this->compressionType = RWCOMPRESS_NONE;
@@ -497,6 +512,7 @@ struct pixelFormat
 
     eRasterFormat rasterFormat;
     uint32 depth;
+    uint32 rowAlignment;
     eColorOrdering colorOrder;
     ePaletteType paletteType;
     eCompressionType compressionType;
@@ -509,6 +525,7 @@ struct pixelDataTraversal
         this->isNewlyAllocated = false;
         this->rasterFormat = RASTER_DEFAULT;
         this->depth = 0;
+        this->rowAlignment = 0;
         this->colorOrder = COLOR_RGBA;
         this->paletteType = PALETTE_NONE;
         this->paletteData = NULL;
@@ -573,6 +590,7 @@ struct pixelDataTraversal
     bool isNewlyAllocated;          // counts for all mipmap layers and palette data.
     eRasterFormat rasterFormat;
     uint32 depth;
+    uint32 rowAlignment;
     eColorOrdering colorOrder;
     ePaletteType paletteType;
     void *paletteData;
@@ -610,6 +628,7 @@ struct rawMipmapLayer
 
     eRasterFormat rasterFormat;
     uint32 depth;
+    uint32 rowAlignment;
     eColorOrdering colorOrder;
     ePaletteType paletteType;
     void *paletteData;
@@ -693,6 +712,12 @@ struct texNativeTypeProvider abstract
     virtual bool            IsTextureCompressed( const void *objMem ) = 0;
 
     virtual bool            DoesTextureHaveAlpha( const void *objMem ) = 0;
+
+    // Returns the byte-sized alignment that is used for the rows of each uncompressed texture.
+    // It is expected that each pixel data coming out of this native texture conforms to this alignment.
+    // Also, RenderWare will make sure that each pixel data that is given to this native texture conforms to it aswell.
+    // It is recommended to align native textures to 4 bytes.
+    virtual uint32          GetTextureDataRowAlignment( void ) const = 0;
 
     // If you extend this method, your native texture can export a public API interface to the application.
     // This will be an optimized junction point between native internals and high level API, so use it with caution.
