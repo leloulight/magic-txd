@@ -74,7 +74,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level1</WarningLevel>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/Qt5.4/include/QtWidgets/;../../vendor/Qt5.4/include/;../../vendor/Qt5.4/include/QtCore/;../../vendor/Qt5.4/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../rwlib/vendor/eirrepo/sdk/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/Qt5.4/include/QtWidgets/;../../vendor/Qt5.4/include/;../../vendor/Qt5.4/include/QtCore/;../../vendor/Qt5.4/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../rwlib/vendor/eirrepo/sdk/;../../magic_api/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
@@ -130,7 +130,7 @@
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level1</WarningLevel>
       <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/Qt5.4/include/QtWidgets/;../../vendor/Qt5.4/include/;../../vendor/Qt5.4/include/QtCore/;../../vendor/Qt5.4/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../rwlib/vendor/eirrepo/sdk/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/Qt5.4/include/QtWidgets/;../../vendor/Qt5.4/include/;../../vendor/Qt5.4/include/QtCore/;../../vendor/Qt5.4/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../rwlib/vendor/eirrepo/sdk/;../../magic_api/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -184,6 +184,7 @@
     <ClInclude Include="..\..\include\defs.h" />
     <ClInclude Include="..\..\include\MagicExport.h" />
     <ClInclude Include="..\..\include\txdadddialog.h" />
+    <ClInclude Include="..\..\src\texformathelper.hxx" />
     <CustomBuild Include="../../include/mainwindow.h">
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">setlocal
 if errorlevel 1 goto VCEnd

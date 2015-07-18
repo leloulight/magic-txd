@@ -518,7 +518,7 @@ void MainWindow::onOpenFile( bool checked )
             }
             catch( rw::RwException& except )
             {
-				this->txdLog->addLogMessage(QString("failed to load the TXD archive: %1").arg(except.message.c_str()), LOGMSG_ERROR);
+				this->txdLog->showError(QString("failed to load the TXD archive: %1").arg(except.message.c_str()));
             }
 
             if ( parsedObject )
@@ -649,7 +649,7 @@ void MainWindow::updateTextureView( void )
 				this->txdLog->addLogMessage(QString("failed to get bitmap from texture: ") + except.message.c_str(), LOGMSG_WARNING);
 
                 // We hide the image widget.
-                imageWidget->hide();
+                this->clearViewImage();
             }
 		}
     }

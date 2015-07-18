@@ -101,6 +101,17 @@ private:
 	bool showBackground;
 
 	TxdLog *txdLog; // log management class
+
+    struct magf_extension
+    {
+        D3DFORMAT d3dformat;
+        HMODULE loadedLibrary;
+        void *handler;
+    };
+
+    typedef std::list <magf_extension> magf_formats_t;
+
+    magf_formats_t magf_formats;
 };
 
 #endif // MAINWINDOW_H

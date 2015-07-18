@@ -285,7 +285,7 @@ void d3d9NativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineIn
                 // Create a new storage pointer.
                 uint32 rowSize = getD3DRasterDataRowSize( mipWidth, dstDepth );
 
-                texelDataSize = getRasterDataSizeByRowSize( rowSize, dstDepth );
+                texelDataSize = getRasterDataSizeByRowSize( rowSize, mipHeight );
 
                 void *newtexels = engineInterface->PixelAllocate( texelDataSize );
 

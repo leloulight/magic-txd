@@ -1,7 +1,11 @@
 #include <d3d9.h>
 
+#ifndef MAGIC_CORE
+
 #define MAGICAPI extern "C" __declspec(dllexport)
 #define __MAGICCALL __cdecl
+
+#endif //MAGIC_CORE
 
 enum MAGIC_RASTER_FORMAT
 {
@@ -26,7 +30,8 @@ enum MAGIC_PALETTE_TYPE
 {
 	PALETTE_NONE,
 	PALETTE_4BIT,
-	PALETTE_8BIT
+	PALETTE_8BIT,
+    PALETTE_4BIT_LSB
 };
 
 /*
@@ -63,9 +68,13 @@ struct MagicFormat abstract
 		) const = 0;
 };
 
+#ifndef MAGIC_CORE
+
 __declspec(dllimport) bool __stdcall MagicPutTexelRGBA(void *texelSource, unsigned int texelIndex, MAGIC_RASTER_FORMAT rasterFormat, unsigned int depth,
 	MAGIC_COLOR_ORDERING colorOrder, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha);
 
 __declspec(dllimport) bool __stdcall MagicBrowseTexelRGBA(const void *texelSource, unsigned int texelIndex, MAGIC_RASTER_FORMAT rasterFormat,
 	unsigned int depth, MAGIC_COLOR_ORDERING colorOrder, MAGIC_PALETTE_TYPE paletteType, const void *paletteData, unsigned int paletteSize,
 	unsigned char& redOut, unsigned char& greenOut, unsigned char& blueOut, unsigned char& alphaOut);
+
+#endif //MAGIC_CORE

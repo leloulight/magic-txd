@@ -42,11 +42,13 @@
     <TargetExt>.magf</TargetExt>
     <OutDir>$(SolutionDir)../../output/formats/</OutDir>
     <TargetName>a4l4</TargetName>
+    <IntDir>$(SolutionDir)../../obj/formats/$(ProjectName)/win32_$(Configuration)_2013/</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <TargetExt>.magf</TargetExt>
-    <OutDir>$(SolutionDir)../../output/formats/</OutDir>
+    <OutDir>$(SolutionDir)../../output/formats_d/</OutDir>
     <TargetName>a4l4_d</TargetName>
+    <IntDir>$(SolutionDir)../../obj/formats/$(ProjectName)/win32_$(Configuration)_2013/</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
