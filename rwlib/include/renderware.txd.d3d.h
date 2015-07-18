@@ -29,8 +29,6 @@ struct d3dNativeTextureInterface abstract
 */
 struct nativeTextureFormatHandler abstract
 {
-	virtual unsigned int GetD3DFormat(void) const = 0;
-
     // Returns a zero-terminated c-string that is used when the format is described by RenderWare.
     virtual const char* GetFormatName( void ) const = 0;
 
@@ -43,13 +41,13 @@ struct nativeTextureFormatHandler abstract
 
     // Converts the D3DFORMAT anonymous data to RW original types and returns it.
     virtual void ConvertToRW(
-        const void *texData, unsigned int texMipWidth, unsigned int texMipHeight, size_t texDataSize,
+        const void *texData, unsigned int texMipWidth, unsigned int texMipHeight, size_t dstStride, size_t texDataSize,
         void *texOut    // preallocated memory.
     ) const = 0;
 
     // Converts original RW types into the D3DFORMAT plugin format.
     virtual void ConvertFromRW(
-        unsigned int texMipWidth, unsigned int texMipHeight,
+        unsigned int texMipWidth, unsigned int texMipHeight, size_t srcStride,
         const void *texelSource, eRasterFormat rasterFormat, unsigned int depth, eColorOrdering colorOrder, ePaletteType paletteType, const void *paletteData, unsigned int paletteSize,
         void *texOut    // preallocated memory.
     ) const = 0;

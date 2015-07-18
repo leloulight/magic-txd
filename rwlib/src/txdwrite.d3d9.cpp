@@ -283,9 +283,9 @@ void d3d9NativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineIn
                 mipHeight = layerHeight;
 
                 // Create a new storage pointer.
-                uint32 rowSize = getD3DRasterDataRowSize( mipWidth, dstDepth );
+                uint32 dstRowSize = getD3DRasterDataRowSize( mipWidth, dstDepth );
 
-                texelDataSize = getRasterDataSizeByRowSize( rowSize, mipHeight );
+                texelDataSize = getRasterDataSizeByRowSize( dstRowSize, mipHeight );
 
                 void *newtexels = engineInterface->PixelAllocate( texelDataSize );
 
@@ -293,7 +293,7 @@ void d3d9NativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineIn
                 {
                     // Ask the format handler to convert it to something useful.
                     useFormatHandler->ConvertToRW(
-                        srcTexels, mipWidth, mipHeight, texelDataSize,
+                        srcTexels, mipWidth, mipHeight, dstRowSize, texelDataSize,
                         newtexels
                     );
                 }
@@ -784,16 +784,19 @@ struct d3d9MipmapManager
             formatHandler->GetTextureRWFormat( rasterFormat, depth, colorOrder );
 
             // Calculate the data size.
-            uint32 rowSize = getD3DRasterDataRowSize( mipWidth, depth );
+            uint32 dstRowSize = getD3DRasterDataRowSize( mipWidth, depth );
 
-            uint32 texDataSize = getRasterDataSizeByRowSize( rowSize, mipHeight );
+            uint32 texDataSize = getRasterDataSizeByRowSize( dstRowSize, mipHeight );
 
             // Allocate new texels.
             void *newtexels = engineInterface->PixelAllocate( texDataSize );
             
             try
             {
-                formatHandler->ConvertToRW( mipLayer.texels, mipWidth, mipHeight, mipLayer.dataSize, newtexels );
+                formatHandler->ConvertToRW(
+                    mipLayer.texels, mipWidth, mipHeight, dstRowSize, mipLayer.dataSize,
+                    newtexels
+                );
             }
             catch( ... )
             {
@@ -878,6 +881,9 @@ struct d3d9MipmapManager
                 throw RwException( "cannot add mipmap layers to Direct3D 9 native texture as it has an unknown D3DFORMAT" );
             }
 
+            // Calculate the row stride that is required to iterate through the RW buffer rows.
+            uint32 srcRowSize = getRasterDataRowSize( width, depth, rowAlignment );
+
             // We create an encoding that is expected to be raw data.
             uint32 texDataSize = formatHandler->GetFormatTextureDataSize( width, height );
 
@@ -886,7 +892,11 @@ struct d3d9MipmapManager
             try
             {
                 // Request the plugin to create data for us.
-                formatHandler->ConvertFromRW( width, height, srcTexels, rasterFormat, depth, colorOrder, paletteType, paletteData, paletteSize, newtexels );
+                formatHandler->ConvertFromRW(
+                    width, height, srcRowSize,
+                    srcTexels, rasterFormat, depth, colorOrder, paletteType, paletteData, paletteSize,
+                    newtexels
+                );
             }
             catch( ... )
             {

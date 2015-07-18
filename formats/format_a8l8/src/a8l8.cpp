@@ -1,4 +1,6 @@
-#include "MagicFormats.h"
+#include <MagicFormats.h>
+
+#include <magfapi.h>
 
 inline unsigned char rgbToLuminance(unsigned char r, unsigned char g, unsigned char b)
 {
@@ -27,7 +29,7 @@ class FormatA8L8 : public MagicFormat
 
 	size_t GetFormatTextureDataSize(unsigned int width, unsigned int height) const override
 	{
-		return (width * height * sizeof(pixel_t));
+		return getD3DBitmapDataSize( width, height, 16 );
 	}
 
 	void GetTextureRWFormat(MAGIC_RASTER_FORMAT& rasterFormatOut, unsigned int& depthOut, MAGIC_COLOR_ORDERING& colorOrderOut) const
@@ -38,7 +40,7 @@ class FormatA8L8 : public MagicFormat
 	}
 
 	void ConvertToRW(
-		const void *texData, unsigned int texMipWidth, unsigned int texMipHeight, size_t texDataSize,
+		const void *texData, unsigned int texMipWidth, unsigned int texMipHeight, size_t dstRowStride, size_t texDataSize,
 		void *texOut
 		) const override
 	{
@@ -47,49 +49,57 @@ class FormatA8L8 : public MagicFormat
 		const MAGIC_COLOR_ORDERING colorOrder = COLOR_BGRA;
 
 		// do the conversion.
-		unsigned int texItemCount = (texMipWidth * texMipHeight);
+        size_t srcStride = getD3DBitmapStride(texMipWidth, 16);
 
-		const pixel_t *encodedColors = (pixel_t*)texData;
-
-		for (unsigned int n = 0; n < texItemCount; n++)
+		for (unsigned int row = 0; row < texMipHeight; row++)
 		{
-			// We are simply a pixel_t.
-			const pixel_t *theTexel = encodedColors + n;
+            const pixel_t *srcRow = (const pixel_t*)getD3DBitmapConstRow(texData, srcStride, row);
+            void *dstRow = getD3DBitmapRow(texOut, dstRowStride, row);
 
-			MagicPutTexelRGBA(texOut, n, rasterFormat, depth, colorOrder, theTexel->lum, theTexel->lum, theTexel->lum, theTexel->alpha);
+            for (unsigned int col = 0; col < texMipWidth; col++)
+            {
+			    // We are simply a pixel_t.
+			    const pixel_t *theTexel = srcRow + col;
+
+			    MagicPutTexelRGBA(dstRow, col, rasterFormat, depth, colorOrder, theTexel->lum, theTexel->lum, theTexel->lum, theTexel->alpha);
+            }
 		}
 
 		// Alright, we are done!
 	}
 
 	void ConvertFromRW(
-		unsigned int texMipWidth, unsigned int texMipHeight, const void *texelSource, MAGIC_RASTER_FORMAT rasterFormat, 
+		unsigned int texMipWidth, unsigned int texMipHeight, size_t srcRowStride, const void *texelSource, MAGIC_RASTER_FORMAT rasterFormat, 
 		unsigned int depth, MAGIC_COLOR_ORDERING colorOrder, MAGIC_PALETTE_TYPE paletteType, const void *paletteData, unsigned int paletteSize,
 		void *texOut
 		) const override
 	{
 		// We write stuff.
-		unsigned int texItemCount = (texMipWidth * texMipHeight);
+		size_t dstRowStride = getD3DBitmapStride(texMipWidth, 16);
 
-		pixel_t *encodedColors = (pixel_t*)texOut;
-
-		for (unsigned int n = 0; n < texItemCount; n++)
+		for (unsigned int row = 0; row < texMipHeight; row++)
 		{
-			// Get the color as RGBA and convert to closely matching luminance value.
-			unsigned char r, g, b, a;
+            const void *srcRowData = getD3DBitmapConstRow(texelSource, srcRowStride, row);
+            pixel_t *dstRowData = (pixel_t*)getD3DBitmapRow(texOut, dstRowStride, row);
 
-			MagicBrowseTexelRGBA(
-				texelSource, n,
-				rasterFormat, depth, colorOrder, paletteType, paletteData, paletteSize,
-				r, g, b, a
-				);
+            for (unsigned int col = 0; col < texMipWidth; col++)
+            {
+			    // Get the color as RGBA and convert to closely matching luminance value.
+			    unsigned char r, g, b, a;
 
-			unsigned char lumVal = rgbToLuminance(r, g, b);
+			    MagicBrowseTexelRGBA(
+				    srcRowData, col,
+				    rasterFormat, depth, colorOrder, paletteType, paletteData, paletteSize,
+				    r, g, b, a
+				    );
 
-			pixel_t *theTexel = (encodedColors + n);
+			    unsigned char lumVal = rgbToLuminance(r, g, b);
 
-			theTexel->lum = lumVal;
-			theTexel->alpha = a;
+			    pixel_t *theTexel = (dstRowData + col);
+
+			    theTexel->lum = lumVal;
+			    theTexel->alpha = a;
+            }
 		}
 
 		// Done!
@@ -100,7 +110,8 @@ class FormatA8L8 : public MagicFormat
 // that is bound natively by the library ;)
 static FormatA8L8 a8l8Format;
 
-MAGICAPI MagicFormat * __MAGICCALL GetFormatInstance()
+MAGICAPI MagicFormat * __MAGICCALL GetFormatInstance(unsigned int& versionOut)
 {
+    versionOut = MagicFormatAPIVersion();
 	return &a8l8Format;
 }

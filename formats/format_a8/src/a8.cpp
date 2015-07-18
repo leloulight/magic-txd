@@ -1,4 +1,6 @@
-#include "MagicFormats.h"
+#include <MagicFormats.h>
+
+#include <magfapi.h>
 
 class FormatA8 : public MagicFormat
 {
@@ -14,7 +16,7 @@ class FormatA8 : public MagicFormat
 
 	size_t GetFormatTextureDataSize(unsigned int width, unsigned int height) const override
 	{
-		return width * height;
+		return getD3DBitmapDataSize( width, height, 8 );
 	}
 
 	void GetTextureRWFormat(MAGIC_RASTER_FORMAT& rasterFormatOut, unsigned int& depthOut, MAGIC_COLOR_ORDERING& colorOrderOut) const
@@ -24,32 +26,45 @@ class FormatA8 : public MagicFormat
 		colorOrderOut = COLOR_BGRA;
 	}
 
-	void ConvertToRW(const void *texData, unsigned int texMipWidth, unsigned int texMipHeight, size_t texDataSize, void *texOut) const override
+	void ConvertToRW(const void *texData, unsigned int texMipWidth, unsigned int texMipHeight, size_t dstRowStride, size_t texDataSize, void *texOut) const override
 	{
-		unsigned int texItemCount = (texMipWidth * texMipHeight);
-		const unsigned char *encodedColors = (unsigned char*)texData;
-		for (unsigned int n = 0; n < texItemCount; n++)
-			MagicPutTexelRGBA(texOut, n, RASTER_8888, 32, COLOR_BGRA, 0, 0, 0, encodedColors[n]);
+        size_t stride = getD3DBitmapStride(texMipWidth, 8);
+		for ( unsigned int row = 0; row < texMipHeight; row++ )
+        {
+            const unsigned char *rowData = (unsigned char*)getD3DBitmapConstRow(texData, stride, row);
+            void *dstRowData = getD3DBitmapRow(texOut, dstRowStride, row);
+
+            for ( unsigned int col = 0; col < texMipWidth; col++ )
+            {
+			    MagicPutTexelRGBA(dstRowData, col, RASTER_8888, 32, COLOR_BGRA, 0, 0, 0, rowData[col]);
+            }
+        }
 	}
 
-	void ConvertFromRW(unsigned int texMipWidth, unsigned int texMipHeight, const void *texelSource, MAGIC_RASTER_FORMAT rasterFormat,
+	void ConvertFromRW(unsigned int texMipWidth, unsigned int texMipHeight, size_t srcRowStride, const void *texelSource, MAGIC_RASTER_FORMAT rasterFormat,
 		unsigned int depth, MAGIC_COLOR_ORDERING colorOrder, MAGIC_PALETTE_TYPE paletteType, const void *paletteData, unsigned int paletteSize,
 		void *texOut) const override
 	{
-		unsigned int texItemCount = (texMipWidth * texMipHeight);
-		unsigned char *encodedColors = (unsigned char *)texOut;
-		for (unsigned int n = 0; n < texItemCount; n++)
+        size_t stride = getD3DBitmapStride(texMipWidth, 8);
+		for (unsigned int row = 0; row < texMipHeight; row++)
 		{
-			unsigned char r, g, b, a;
-			MagicBrowseTexelRGBA(texelSource, n, rasterFormat, depth, colorOrder, paletteType, paletteData, paletteSize, r, g, b, a);
-			encodedColors[n] = a;
+            const void *srcRowData = getD3DBitmapConstRow(texelSource, srcRowStride, row);
+            unsigned char *dstRowData = (unsigned char*)getD3DBitmapRow(texOut, stride, row);
+
+            for (unsigned int col = 0; col < texMipWidth; col++)
+            {
+			    unsigned char r, g, b, a;
+			    MagicBrowseTexelRGBA(srcRowData, col, rasterFormat, depth, colorOrder, paletteType, paletteData, paletteSize, r, g, b, a);
+			    dstRowData[col] = a;
+            }
 		}
 	}
 };
 
 static FormatA8 a8Format;
 
-MAGICAPI MagicFormat * __MAGICCALL GetFormatInstance()
+MAGICAPI MagicFormat * __MAGICCALL GetFormatInstance(unsigned int& versionOut)
 {
+    versionOut = MagicFormatAPIVersion();
 	return &a8Format;
 }

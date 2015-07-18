@@ -10,18 +10,13 @@
 #define MAGF_FORMAT_DIR     L"formats_d"
 #endif
 
-typedef MagicFormat *(__cdecl* LPFNDLLFUNC1)();
+typedef MagicFormat *(__cdecl* LPFNDLLFUNC1)(unsigned int&);
 
 struct MagicFormat_Ver1handler : public rw::d3dpublic::nativeTextureFormatHandler
 {
     inline MagicFormat_Ver1handler( MagicFormat *handler )
     {
         this->libHandler = handler;
-    }
-
-    unsigned int    GetD3DFormat( void ) const override
-    {
-        return libHandler->GetD3DFormat();
     }
 
     const char*     GetFormatName( void ) const override
@@ -50,18 +45,18 @@ struct MagicFormat_Ver1handler : public rw::d3dpublic::nativeTextureFormatHandle
     }
 
     virtual void ConvertToRW(
-        const void *texData, unsigned int texMipWidth, unsigned int texMipHeight, size_t texDataSize,
+        const void *texData, unsigned int texMipWidth, unsigned int texMipHeight, size_t dstRowStride, size_t texDataSize,
         void *texOut
     ) const override
     {
         libHandler->ConvertToRW(
-            texData, texMipWidth, texMipHeight, texDataSize,
+            texData, texMipWidth, texMipHeight, dstRowStride, texDataSize,
             texOut
         );
     }
 
     virtual void ConvertFromRW(
-        unsigned int texMipWidth, unsigned int texMipHeight,
+        unsigned int texMipWidth, unsigned int texMipHeight, size_t srcRowStride,
         const void *texelSource, rw::eRasterFormat rasterFormat, unsigned int depth, rw::eColorOrdering colorOrder, rw::ePaletteType paletteType, const void *paletteData, unsigned int paletteSize,
         void *texOut
     ) const override
@@ -75,7 +70,8 @@ struct MagicFormat_Ver1handler : public rw::d3dpublic::nativeTextureFormatHandle
         MagicMapToVirtualPaletteType( paletteType, mpalettetype );
 
         libHandler->ConvertFromRW(
-            texMipWidth, texMipHeight, texelSource, mrasterformat, depth, mcolororder, mpalettetype, paletteData, paletteSize,
+            texMipWidth, texMipHeight, srcRowStride,
+            texelSource, mrasterformat, depth, mcolororder, mpalettetype, paletteData, paletteSize,
             texOut
         );
     }
@@ -105,6 +101,7 @@ void MainWindow::initializeNativeFormats( void )
 					wcscpy(filename, MAGF_FORMAT_DIR L"\\");
 					wcscat(filename, FindFileData.cFileName);
 					char message[512];
+                    message[ sizeof(message)-1 ] = '\0';
 					char pluginName[MAX_PATH];
 					wcstombs(pluginName, FindFileData.cFileName, MAX_PATH);
 					HMODULE hDLL = LoadLibrary(filename);
@@ -115,34 +112,45 @@ void MainWindow::initializeNativeFormats( void )
 						LPFNDLLFUNC1 func = (LPFNDLLFUNC1)GetProcAddress(hDLL, "GetFormatInstance");
 						if (func)
 						{
-							MagicFormat *handler = func();
+                            unsigned int magf_version = 0;
 
-                            MagicFormat_Ver1handler *vhandler = new MagicFormat_Ver1handler( handler );
+							MagicFormat *handler = func( magf_version );
 
-							bool hasRegistered = driverIntf->RegisterFormatHandler(handler->GetD3DFormat(), vhandler);
-
-                            if ( hasRegistered )
+                            // We must have correct ABI version to load.
+                            if ( magf_version == MagicFormatAPIVersion() )
                             {
-                                magf_extension reg_entry;
-                                reg_entry.d3dformat = handler->GetD3DFormat();
-                                reg_entry.loadedLibrary = hDLL;
-                                reg_entry.handler = vhandler;
+                                MagicFormat_Ver1handler *vhandler = new MagicFormat_Ver1handler( handler );
 
-                                this->magf_formats.push_back( reg_entry );
+							    bool hasRegistered = driverIntf->RegisterFormatHandler(handler->GetD3DFormat(), vhandler);
 
-                                success = true;
+                                if ( hasRegistered )
+                                {
+                                    magf_extension reg_entry;
+                                    reg_entry.d3dformat = handler->GetD3DFormat();
+                                    reg_entry.loadedLibrary = hDLL;
+                                    reg_entry.handler = vhandler;
 
-							    sprintf(message, "Loaded plugin %s (%s)", pluginName, handler->GetFormatName());
-							    this->txdLog->addLogMessage(message, LOGMSG_INFO);
+                                    this->magf_formats.push_back( reg_entry );
+
+                                    success = true;
+
+							        _snprintf(message, sizeof(message)-1, "Loaded plugin %s (%s)", pluginName, handler->GetFormatName());
+							        this->txdLog->addLogMessage(message, LOGMSG_INFO);
+                                }
+                                else
+                                {
+                                    delete vhandler;
+                                }
                             }
                             else
                             {
-                                delete vhandler;
+							    _snprintf(message, sizeof(message)-1, "Texture format plugin (%s) is incorrect version", pluginName);
+							    this->txdLog->showError(message);
                             }
 						}
 						else
 						{
-							sprintf(message, "Texture format plugin (%s) is corrupted", pluginName);
+							_snprintf(message, sizeof(message)-1, "Texture format plugin (%s) is corrupted", pluginName);
 							this->txdLog->showError(message);
 						}
 
@@ -153,7 +161,7 @@ void MainWindow::initializeNativeFormats( void )
 					}
 					else
 					{
-						sprintf(message, "Failed to load texture format plugin (%s)", pluginName);
+						_snprintf(message, sizeof(message)-1, "Failed to load texture format plugin (%s)", pluginName);
 						this->txdLog->showError(message);
 					}
 				}

@@ -1,4 +1,6 @@
-#include "MagicFormats.h"
+#include <MagicFormats.h>
+
+#include <magfapi.h>
 
 inline unsigned char rgbToLuminance(unsigned char r, unsigned char g, unsigned char b)
 {
@@ -27,7 +29,7 @@ class FormatA4L4 : public MagicFormat
 
 	size_t GetFormatTextureDataSize(unsigned int width, unsigned int height) const override
 	{
-		return width * height;
+		return getD3DBitmapDataSize( width, height, 8 );
 	}
 
 	void GetTextureRWFormat(MAGIC_RASTER_FORMAT& rasterFormatOut, unsigned int& depthOut, MAGIC_COLOR_ORDERING& colorOrderOut) const
@@ -37,39 +39,50 @@ class FormatA4L4 : public MagicFormat
 		colorOrderOut = COLOR_BGRA;
 	}
 
-	void ConvertToRW(const void *texData, unsigned int texMipWidth, unsigned int texMipHeight, size_t texDataSize, void *texOut) const override
+	void ConvertToRW(const void *texData, unsigned int texMipWidth, unsigned int texMipHeight, size_t dstRowStride, size_t texDataSize, void *texOut) const override
 	{
-		unsigned int texItemCount = (texMipWidth * texMipHeight);
-		const pixel_t *encodedColors = (pixel_t*)texData;
-		for (unsigned int n = 0; n < texItemCount; n++)
+        size_t stride = getD3DBitmapStride(texMipWidth, 8);
+		for (unsigned int row = 0; row < texMipHeight; row++)
 		{
-			const pixel_t *theTexel = encodedColors + n;
-			unsigned char lum = theTexel->lum * 17;
-			MagicPutTexelRGBA(texOut, n, RASTER_8888, 32, COLOR_BGRA, lum, lum, lum, theTexel->alpha * 17);
+            const pixel_t *rowData = (const pixel_t*)getD3DBitmapConstRow(texData, stride, row);
+            void *dstRow = getD3DBitmapRow(texOut, dstRowStride, row);
+
+            for (unsigned int col = 0; col < texMipWidth; col++)
+            {
+			    const pixel_t *theTexel = rowData + col;
+			    unsigned char lum = theTexel->lum * 17;
+			    MagicPutTexelRGBA(dstRow, col, RASTER_8888, 32, COLOR_BGRA, lum, lum, lum, theTexel->alpha * 17);
+            }
 		}
 	}
 
-	void ConvertFromRW(unsigned int texMipWidth, unsigned int texMipHeight, const void *texelSource, MAGIC_RASTER_FORMAT rasterFormat,
+	void ConvertFromRW(unsigned int texMipWidth, unsigned int texMipHeight, size_t srcRowStride, const void *texelSource, MAGIC_RASTER_FORMAT rasterFormat,
 		unsigned int depth, MAGIC_COLOR_ORDERING colorOrder, MAGIC_PALETTE_TYPE paletteType, const void *paletteData, unsigned int paletteSize,
 		void *texOut) const override
 	{
-		unsigned int texItemCount = (texMipWidth * texMipHeight);
-		pixel_t *encodedColors = (pixel_t*)texOut;
-		for (unsigned int n = 0; n < texItemCount; n++)
+        size_t stride = getD3DBitmapStride(texMipWidth, 8);
+		for (unsigned int row = 0; row < texMipHeight; row++)
 		{
-			unsigned char r, g, b, a;
-			MagicBrowseTexelRGBA(texelSource, n,rasterFormat, depth, colorOrder, paletteType, paletteData, paletteSize, r, g, b, a);
-			unsigned char lumVal = rgbToLuminance(r, g, b);
-			pixel_t *theTexel = (encodedColors + n);
-			theTexel->lum = lumVal / 17;
-			theTexel->alpha = a / 17;
+            const void *srcRow = getD3DBitmapConstRow(texelSource, srcRowStride, row);
+            pixel_t *dstRow = (pixel_t*)getD3DBitmapRow(texOut, stride, row);
+
+            for (unsigned int col = 0; col < texMipWidth; col++)
+            {
+			    unsigned char r, g, b, a;
+			    MagicBrowseTexelRGBA(srcRow, col, rasterFormat, depth, colorOrder, paletteType, paletteData, paletteSize, r, g, b, a);
+			    unsigned char lumVal = rgbToLuminance(r, g, b);
+			    pixel_t *theTexel = (dstRow + col);
+			    theTexel->lum = lumVal / 17;
+			    theTexel->alpha = a / 17;
+            }
 		}
 	}
 };
 
 static FormatA4L4 a4l4Format;
 
-MAGICAPI MagicFormat * __MAGICCALL GetFormatInstance()
+MAGICAPI MagicFormat * __MAGICCALL GetFormatInstance(unsigned int& versionOut)
 {
+    versionOut = MagicFormatAPIVersion();
 	return &a4l4Format;
 }

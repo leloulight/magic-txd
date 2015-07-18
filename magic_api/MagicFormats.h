@@ -7,6 +7,13 @@
 
 #endif //MAGIC_CORE
 
+inline unsigned int MagicFormatAPIVersion( void )
+{
+    // We are currently version 1 API.
+    // Update this whenever the ABI of the magf API changed!
+    return 1;
+}
+
 enum MAGIC_RASTER_FORMAT
 {
 	RASTER_DEFAULT,
@@ -40,6 +47,8 @@ It is required so that specific D3DFORMAT textures can be integrated into this R
 
 To use this interface you have to register it into the engine. The engine will then map D3DFORMAT to this interface.
 There can be only one handler for one D3DFORMAT type.
+
+Revision 1 ABI.
 */
 struct MagicFormat abstract
 {
@@ -56,13 +65,13 @@ struct MagicFormat abstract
 
 	// Converts the D3DFORMAT anonymous data to RW original types and returns it.
 	virtual void ConvertToRW(
-		const void *texData, unsigned int texMipWidth, unsigned int texMipHeight, size_t texDataSize,
+		const void *texData, unsigned int texMipWidth, unsigned int texMipHeight, size_t dstStride, size_t texDataSize,
 		void *texOut    // preallocated memory.
 		) const = 0;
 
 	// Converts original RW types into the D3DFORMAT plugin format.
 	virtual void ConvertFromRW(
-		unsigned int texMipWidth, unsigned int texMipHeight,
+		unsigned int texMipWidth, unsigned int texMipHeight, size_t srcStride,
 		const void *texelSource, MAGIC_RASTER_FORMAT rasterFormat, unsigned int depth, MAGIC_COLOR_ORDERING colorOrder, MAGIC_PALETTE_TYPE paletteType, const void *paletteData, unsigned int paletteSize,
 		void *texOut    // preallocated memory.
 		) const = 0;
