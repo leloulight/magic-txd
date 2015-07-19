@@ -12,21 +12,6 @@ RwInterfaceFactory_t engineFactory;
 
 Interface::Interface( void )
 {
-    // TEST.
-    endian::big_endian <unsigned int> val;
-
-    val = 1;
-    val = 0x10000;
-
-    if ( val == 0x10000 )
-    {
-        __asm int 3
-    }
-    else
-    {
-        __asm int 3
-    }
-
     // We set the version in a specialized constructor.
 
     // Set up the type system.

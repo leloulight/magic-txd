@@ -601,6 +601,8 @@ struct GIFtag_serialized
     {
         this->props = right.props;
         this->regs = right.regs;
+
+        return *this;
     }
 };
 
