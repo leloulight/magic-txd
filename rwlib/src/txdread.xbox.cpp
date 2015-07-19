@@ -68,7 +68,9 @@ void xboxNativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
                 }
 
                 // Read format info.
-                metaInfo.formatInfo.parse( *theTexture );
+                texFormatInfo formatInfo = metaInfo.formatInfo;
+
+                formatInfo.parse( *theTexture );
 
                 // Deconstruct the rasterFormat flags.
                 bool hasMipmaps = false;        // TODO: actually use this flag.

@@ -22,6 +22,11 @@ inline uint32 getPS2RasterDataRowSize( uint32 mipWidth, uint32 depth )
     return getRasterDataRowSize( mipWidth, depth, getPS2TextureDataRowAlignment() );
 }
 
+struct ps2MipmapTransmissionData
+{
+    uint16 destX, destY;
+};
+
 struct ps2GSRegisters
 {
     typedef unsigned long long ps2reg_t;
@@ -31,6 +36,11 @@ struct ps2GSRegisters
         inline TEX0_REG( void )
         {
             *(ps2reg_t*)this = 0L;
+        }
+
+        inline TEX0_REG( ps2reg_t val )
+        {
+            *(ps2reg_t*)this = val;
         }
 
         ps2reg_t textureBasePointer : 14;
@@ -55,6 +65,11 @@ struct ps2GSRegisters
         {
             return !( *this == right );
         }
+
+        inline operator ps2reg_t ( void ) const
+        {
+            return *(ps2reg_t*)this;
+        }
     };
 
     struct TEX1_REG
@@ -62,6 +77,11 @@ struct ps2GSRegisters
         inline TEX1_REG( void )
         {
             *(ps2reg_t*)this = 0L;
+        }
+
+        inline TEX1_REG( ps2reg_t val )
+        {
+            *(ps2reg_t*)this = val;
         }
 
         ps2reg_t lodCalculationModel : 1;
@@ -98,6 +118,11 @@ struct ps2GSRegisters
         {
             return !( *this == right );
         }
+
+        inline operator ps2reg_t ( void ) const
+        {
+            return *(ps2reg_t*)this;
+        }
     };
 
     struct MIPTBP1_REG
@@ -105,6 +130,11 @@ struct ps2GSRegisters
         inline MIPTBP1_REG( void )
         {
             *(ps2reg_t*)this = 0L;
+        }
+
+        inline MIPTBP1_REG( ps2reg_t val )
+        {
+            *(ps2reg_t*)this = val;
         }
 
         ps2reg_t textureBasePointer1 : 14;
@@ -133,6 +163,11 @@ struct ps2GSRegisters
         {
             return !( *this == right );
         }
+
+        inline operator ps2reg_t ( void ) const
+        {
+            return *(ps2reg_t*)this;
+        }
     };
 
     struct MIPTBP2_REG
@@ -140,6 +175,11 @@ struct ps2GSRegisters
         inline MIPTBP2_REG( void )
         {
             *(ps2reg_t*)this = 0L;
+        }
+
+        inline MIPTBP2_REG( ps2reg_t val )
+        {
+            *(ps2reg_t*)this = val;
         }
 
         ps2reg_t textureBasePointer4 : 14;
@@ -168,6 +208,11 @@ struct ps2GSRegisters
         {
             return !( *this == right );
         }
+
+        inline operator ps2reg_t ( void ) const
+        {
+            return *(ps2reg_t*)this;
+        }
     };
 
     struct TRXPOS_REG
@@ -175,6 +220,11 @@ struct ps2GSRegisters
         inline TRXPOS_REG( void )
         {
             this->qword = 0L;
+        }
+
+        inline TRXPOS_REG( ps2reg_t val )
+        {
+            this->qword = val;
         }
 
         union
@@ -195,6 +245,11 @@ struct ps2GSRegisters
                 ps2reg_t qword;
             };
         };
+
+        inline operator ps2reg_t ( void ) const
+        {
+            return *(ps2reg_t*)this;
+        }
     };
 
     struct TRXREG_REG
@@ -202,6 +257,11 @@ struct ps2GSRegisters
         inline TRXREG_REG( void )
         {
             this->qword = 0L;
+        }
+
+        inline TRXREG_REG( ps2reg_t val )
+        {
+            this->qword = val;
         }
 
         union
@@ -217,6 +277,11 @@ struct ps2GSRegisters
                 ps2reg_t qword;
             };
         };
+
+        inline operator ps2reg_t ( void ) const
+        {
+            return *(ps2reg_t*)this;
+        }
     };
 
     struct TRXDIR_REG
@@ -224,6 +289,11 @@ struct ps2GSRegisters
         inline TRXDIR_REG( void )
         {
             this->qword = 0L;
+        }
+
+        inline TRXDIR_REG( ps2reg_t val )
+        {
+            this->qword = val;
         }
 
         union
@@ -237,6 +307,11 @@ struct ps2GSRegisters
                 ps2reg_t qword;
             };
         };
+
+        inline operator ps2reg_t ( void ) const
+        {
+            return *(ps2reg_t*)this;
+        }
     };
 
     TEX0_REG tex0;
@@ -248,25 +323,25 @@ struct ps2GSRegisters
 
 struct textureMetaDataHeader
 {
-    uint32 width;
-    uint32 height;
-    uint32 depth;
-    uint32 rasterFormat;
+    endian::little_endian <uint32> width;
+    endian::little_endian <uint32> height;
+    endian::little_endian <uint32> depth;
+    endian::little_endian <uint32> rasterFormat;
 
-    ps2GSRegisters::TEX0_REG tex0;
-    ps2GSRegisters::TEX1_REG tex1;
+    endian::little_endian <ps2GSRegisters::ps2reg_t> tex0;
+    endian::little_endian <ps2GSRegisters::ps2reg_t> tex1;
 
-    ps2GSRegisters::MIPTBP1_REG miptbp1;
-    ps2GSRegisters::MIPTBP2_REG miptbp2;
+    endian::little_endian <ps2GSRegisters::ps2reg_t> miptbp1;
+    endian::little_endian <ps2GSRegisters::ps2reg_t> miptbp2;
 
-    uint32 dataSize;	// texels + header
-    uint32 paletteDataSize; // palette + header + unknowns
+    endian::little_endian <uint32> dataSize;	    // texels + header
+    endian::little_endian <uint32> paletteDataSize; // palette + header + unknowns
 
-    uint32 combinedGPUDataSize;
+    endian::little_endian <uint32> combinedGPUDataSize;
 
     // constant (sky mipmap val)
     // see http://www.gtamodding.com/wiki/Sky_Mipmap_Val_%28RW_Section%29
-    uint32 skyMipmapVal;
+    endian::little_endian <uint32> skyMipmapVal;
 };
 
 enum eGSRegister
@@ -469,14 +544,21 @@ inline static bool getMemoryLayoutFromTexelFormat(eFormatEncodingType encodingTy
 
 struct GIFtag
 {
-    unsigned long long nloop : 15;
-    unsigned long long eop : 1;
-    unsigned long long pad1 : 30;
-    unsigned long long pre : 1;
-    unsigned long long prim : 11;
-    unsigned long long flg : 2;
-    unsigned long long nreg : 4;
-    
+    union
+    {
+        struct
+        {
+            unsigned long long nloop : 15;
+            unsigned long long eop : 1;
+            unsigned long long pad1 : 30;
+            unsigned long long pre : 1;
+            unsigned long long prim : 11;
+            unsigned long long flg : 2;
+            unsigned long long nreg : 4;
+        };
+        unsigned long long props;
+    };
+
     unsigned long long regs;
 
     uint32 getRegisterID(uint32 i) const
@@ -497,6 +579,54 @@ struct GIFtag
         this->regs &= ~( 0xF << shiftPos );
 
         this->regs |= regContent >> shiftPos;
+    }
+};
+
+struct GIFtag_serialized
+{
+    endian::little_endian <unsigned long long> props;
+    endian::little_endian <unsigned long long> regs;
+
+    inline operator GIFtag ( void ) const
+    {
+        GIFtag result;
+
+        result.props = this->props;
+        result.regs = this->regs;
+
+        return result;
+    }
+
+    inline GIFtag_serialized& operator = ( const GIFtag& right )
+    {
+        this->props = right.props;
+        this->regs = right.regs;
+    }
+};
+
+struct regID_struct
+{
+    unsigned long long regID : 8;
+    unsigned long long pad1 : 56;
+
+    inline regID_struct( void )
+    {
+        // Do nothing.
+    }
+
+    inline regID_struct( unsigned long long item )
+    {
+        *(unsigned long long*)this = item;
+    }
+
+    inline void operator = ( unsigned long long right )
+    {
+        *(unsigned long long*)this = right;
+    }
+
+    inline unsigned long long toNumber( void ) const
+    {
+        return *(unsigned long long*)this;
     }
 };
 
@@ -743,9 +873,9 @@ struct NativeTexturePS2
             if ( requiresHeaders )
             {
                 streamSize += (
-                    sizeof(GIFtag) +
-                    this->storedRegs.size() * ( sizeof(unsigned long long) * 2 ) +
-                    sizeof(GIFtag)
+                    sizeof(GIFtag_serialized) +
+                    this->storedRegs.size() * ( sizeof(uint64) * 2 ) +
+                    sizeof(GIFtag_serialized)
                 );
             }
 

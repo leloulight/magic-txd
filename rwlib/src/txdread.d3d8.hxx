@@ -239,18 +239,18 @@ namespace d3d8
 #pragma pack(1)
 struct textureMetaHeaderStructGeneric
 {
-    uint32 platformDescriptor;
+    endian::little_endian <uint32> platformDescriptor;
 
-    rw::texFormatInfo texFormat;
+    rw::texFormatInfo_serialized texFormat;
     
     char name[32];
     char maskName[32];
 
-    uint32 rasterFormat;
-    uint32 hasAlpha;
+    endian::little_endian <uint32> rasterFormat;
+    endian::little_endian <uint32> hasAlpha;
 
-    uint16 width;
-    uint16 height;
+    endian::little_endian <uint16> width;
+    endian::little_endian <uint16> height;
     uint8 depth;
     uint8 mipmapCount;
     uint8 rasterType : 3;

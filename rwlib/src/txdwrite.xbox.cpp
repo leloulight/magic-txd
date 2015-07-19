@@ -83,7 +83,10 @@ void xboxNativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, P
                 textureMetaHeaderStructXbox metaInfo;
 
                 // Write addressing information.
-                metaInfo.formatInfo.set( *theTexture );
+                texFormatInfo infoOut;
+                infoOut.set( *theTexture );
+
+                metaInfo.formatInfo = infoOut;
 
                 // Write texture names.
                 // These need to be written securely.

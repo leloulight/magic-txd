@@ -41,12 +41,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(ProjectDir)..\..\lib\</OutDir>
     <IntDir>$(ProjectDir)..\..\obj\win32_$(Configuration)_2013\</IntDir>
-    <TargetName>libopenjpeg_2013</TargetName>
+    <TargetName>libopenjpeg_d_2013</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(ProjectDir)..\..\lib\</OutDir>
     <IntDir>$(ProjectDir)..\..\obj\win32_$(Configuration)_2013\</IntDir>
-    <TargetName>libopenjpeg_d_2013</TargetName>
+    <TargetName>libopenjpeg_2013</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

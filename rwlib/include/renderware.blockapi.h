@@ -135,28 +135,28 @@ public:
     template <typename structType>
     inline void writeStruct( const structType& theStruct )      { this->write( &theStruct, sizeof( theStruct ) ); }
 
-    inline void writeUInt8( uint8 val )             { this->writeStruct( val ); }
-    inline void writeUInt16( uint16 val )           { this->writeStruct( val ); }
-    inline void writeUInt32( uint32 val )           { this->writeStruct( val ); }
-    inline void writeUInt64( uint64 val )           { this->writeStruct( val ); }
+    inline void writeUInt8( endian::little_endian <uint8> val )     { this->writeStruct( val ); }
+    inline void writeUInt16( endian::little_endian <uint16> val )   { this->writeStruct( val ); }
+    inline void writeUInt32( endian::little_endian <uint32> val )   { this->writeStruct( val ); }
+    inline void writeUInt64( endian::little_endian <uint64> val )   { this->writeStruct( val ); }
 
-    inline void writeInt8( int8 val )               { this->writeStruct( val );}
-    inline void writeInt16( int16 val )             { this->writeStruct( val ); }
-    inline void writeInt32( int32 val )             { this->writeStruct( val ); }
-    inline void writeInt64( int64 val )             { this->writeStruct( val ); }
+    inline void writeInt8( endian::little_endian <int8> val )       { this->writeStruct( val );}
+    inline void writeInt16( endian::little_endian <int16> val )     { this->writeStruct( val ); }
+    inline void writeInt32( endian::little_endian <int32> val )     { this->writeStruct( val ); }
+    inline void writeInt64( endian::little_endian <int64> val )     { this->writeStruct( val ); }
 
     template <typename structType>
-    inline void readStruct( structType& outStruct )             { this->read( &outStruct, sizeof( outStruct ) ); }
+    inline void readStruct( structType& outStruct )                 { this->read( &outStruct, sizeof( outStruct ) ); }
 
-    inline uint8 readUInt8( void )                  { uint8 val; this->readStruct( val ); return val; }
-    inline uint16 readUInt16( void )                { uint16 val; this->readStruct( val ); return val; }
-    inline uint32 readUInt32( void )                { uint32 val; this->readStruct( val ); return val; }
-    inline uint64 readUInt64( void )                { uint64 val; this->readStruct( val ); return val; }
+    inline endian::little_endian <uint8> readUInt8( void )          { endian::little_endian <uint8> val; this->readStruct( val ); return val; }
+    inline endian::little_endian <uint16> readUInt16( void )        { endian::little_endian <uint16> val; this->readStruct( val ); return val; }
+    inline endian::little_endian <uint32> readUInt32( void )        { endian::little_endian <uint32> val; this->readStruct( val ); return val; }
+    inline endian::little_endian <uint64> readUInt64( void )        { endian::little_endian <uint64> val; this->readStruct( val ); return val; }
 
-    inline int8 readInt8( void )                    { int8 val; this->readStruct( val ); return val; }
-    inline int16 readInt16( void )                  { int16 val; this->readStruct( val ); return val; }
-    inline int32 readInt32( void )                  { int32 val; this->readStruct( val ); return val; }
-    inline int64 readInt64( void )                  { int64 val; this->readStruct( val ); return val; }
+    inline endian::little_endian <int8> readInt8( void )            { endian::little_endian <int8> val; this->readStruct( val ); return val; }
+    inline endian::little_endian <int16> readInt16( void )          { endian::little_endian <int16> val; this->readStruct( val ); return val; }
+    inline endian::little_endian <int32> readInt32( void )          { endian::little_endian <int32> val; this->readStruct( val ); return val; }
+    inline endian::little_endian <int64> readInt64( void )          { endian::little_endian <int64> val; this->readStruct( val ); return val; }
 
 protected:
     // Validation API.

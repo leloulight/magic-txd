@@ -2703,6 +2703,23 @@ void texFormatInfo::set(const TextureBase& inTex)
     this->pad1 = 0;
 }
 
+void texFormatInfo::writeToBlock(BlockProvider& outputProvider) const
+{
+    texFormatInfo_serialized serStruct;
+    serStruct.info = *(uint32*)this;
+
+    outputProvider.writeStruct( serStruct );
+}
+
+void texFormatInfo::readFromBlock(BlockProvider& inputProvider)
+{
+    texFormatInfo_serialized serStruct;
+    
+    inputProvider.readStruct( serStruct );
+
+    *(uint32*)this = serStruct.info;
+}
+
 void wardrumFormatInfo::parse(TextureBase& outTex) const
 {
     // Read our fields, which are from a binary stream.

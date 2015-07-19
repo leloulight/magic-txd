@@ -509,9 +509,12 @@ uint32 NativeTexturePS2::GSTexture::writeGIFPacket(
             regListTag.nloop = numRegs;
 
             // Write the tag.
-            outputProvider.write( &regListTag, sizeof(regListTag) );
+            GIFtag_serialized regListTag_ser;
+            regListTag_ser = regListTag;
 
-            writeCount += sizeof(regListTag);
+            outputProvider.write( &regListTag_ser, sizeof(regListTag_ser) );
+
+            writeCount += sizeof(regListTag_ser);
 
             for ( uint32 n = 0; n < numRegs; n++ )
             {
@@ -520,20 +523,14 @@ uint32 NativeTexturePS2::GSTexture::writeGIFPacket(
                 // Replace some registers that we need to update.
                 unsigned long long regContent = regInfo.content;
 
-                outputProvider.write( &regContent, sizeof(regContent) );
+                outputProvider.writeUInt64( regContent );
 
                 // Then write the register ID.
-                struct regID_struct
-                {
-                    unsigned long long regID : 8;
-                    unsigned long long pad1 : 56;
-                };
-
                 regID_struct regID;
                 regID.regID = regInfo.regID;
                 regID.pad1 = 0;
 
-                outputProvider.write( &regID, sizeof(regID) );
+                outputProvider.writeUInt64( regID.toNumber() );
             }
 
             writeCount += numRegs * ( sizeof(unsigned long long) * 2 );
@@ -551,9 +548,12 @@ uint32 NativeTexturePS2::GSTexture::writeGIFPacket(
             imgDataTag.nreg = 0;
             imgDataTag.nloop = ( this->dataSize / ( sizeof(unsigned long long) * 2 ) );
 
-            outputProvider.write( &imgDataTag, sizeof(imgDataTag) );
+            GIFtag imgDataTag_ser;
+            imgDataTag_ser = imgDataTag;
 
-            writeCount += sizeof(imgDataTag);
+            outputProvider.write( &imgDataTag_ser, sizeof(imgDataTag_ser) );
+
+            writeCount += sizeof(imgDataTag_ser);
         }
     }
 
@@ -752,7 +752,7 @@ void ps2NativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, Pl
             texFormatInfo formatInfo;
             formatInfo.set( *theTexture );
 
-            texNativeMasterBlock.write( &formatInfo, sizeof(formatInfo) );
+            formatInfo.writeToBlock( texNativeMasterBlock );
         }
         catch( ... )
         {

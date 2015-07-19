@@ -114,10 +114,12 @@ uint32 NativeTexturePS2::GSTexture::readGIFPacket(Interface *engineInterface, Bl
         try
         {
             {
-                GIFtag regListTag;
-                inputProvider.read( &regListTag, sizeof(regListTag) );
+                GIFtag_serialized regListTag_ser;
+                inputProvider.read( &regListTag_ser, sizeof(regListTag_ser) );
 
-                gif_readCount += sizeof(regListTag);
+                gif_readCount += sizeof(regListTag_ser);
+
+                GIFtag regListTag = regListTag_ser;
 
                 // If we have a register list, parse it.
                 if (regListTag.flg == 0)
@@ -144,18 +146,10 @@ uint32 NativeTexturePS2::GSTexture::readGIFPacket(Interface *engineInterface, Bl
                     for ( uint32 n = 0; n < numRegs; n++ )
                     {
                         // Read the register content.
-                        unsigned long long regContent;
-                        inputProvider.read( &regContent, sizeof(regContent) );
+                        uint64 regContent = inputProvider.readUInt64();
                         
                         // Read the register ID.
-                        struct regID_struct
-                        {
-                            unsigned long long regID : 8;
-                            unsigned long long pad1 : 56;
-                        };
-
-                        regID_struct regID;
-                        inputProvider.read( &regID, sizeof(regID_struct) );
+                        regID_struct regID = inputProvider.readUInt64();
 
                         // Put the register into the register storage.
                         GSRegInfo& regInfo = this->storedRegs[ n ];
@@ -174,10 +168,12 @@ uint32 NativeTexturePS2::GSTexture::readGIFPacket(Interface *engineInterface, Bl
 
             // Read the image data GIFtag.
             {
-                GIFtag imgDataTag;
-                inputProvider.read( &imgDataTag, sizeof(imgDataTag) );
+                GIFtag_serialized imgDataTag_ser;
+                inputProvider.read( &imgDataTag_ser, sizeof(imgDataTag_ser) );
 
-                gif_readCount += sizeof(imgDataTag);
+                gif_readCount += sizeof(imgDataTag_ser);
+
+                GIFtag imgDataTag = imgDataTag_ser;
 
                 // Verify that this is an image data tag.
                 if (imgDataTag.eop != false ||
@@ -190,7 +186,7 @@ uint32 NativeTexturePS2::GSTexture::readGIFPacket(Interface *engineInterface, Bl
                 }
 
                 // Verify the image data size.
-                if (imgDataTag.nloop != (this->dataSize / (sizeof(uint64) * 2)))
+                if (imgDataTag.nloop != (this->dataSize / (sizeof(unsigned long long) * 2)))
                 {
                     throw invalid_gif_exception();
                 }
@@ -343,10 +339,8 @@ void ps2NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture, 
                     throw RwException( "invalid platform for PS2 texture reading" );
                 }
 
-                uint32 engineWarningLevel = engineInterface->GetWarningLevel();
-
                 texFormatInfo formatInfo;
-                texNativeMasterHeader.read( &formatInfo, sizeof(formatInfo) );
+                formatInfo.readFromBlock( texNativeMasterHeader );
 
                 // Read texture format.
                 formatInfo.parse( *theTexture );
@@ -478,24 +472,30 @@ void ps2NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture, 
                 platformTex->depth = depth;
 
                 // Store unique parameters from the texture registers.
-                platformTex->gsParams.maxMIPLevel = textureMeta.tex1.maximumMIPLevel;
-                platformTex->gsParams.mtba = textureMeta.tex1.mtba;
-                platformTex->gsParams.textureFunction = textureMeta.tex0.texFunction;
-                platformTex->gsParams.lodCalculationModel = textureMeta.tex1.lodCalculationModel;
-                platformTex->gsParams.mmag = textureMeta.tex1.mmag;
-                platformTex->gsParams.mmin = textureMeta.tex1.mmin;
-                platformTex->gsParams.lodParamL = textureMeta.tex1.lodParamL;
-                platformTex->gsParams.lodParamK = textureMeta.tex1.lodParamK;
+                ps2GSRegisters::TEX0_REG tex0 = textureMeta.tex0;
+                ps2GSRegisters::TEX1_REG tex1 = textureMeta.tex1;
 
-                platformTex->gsParams.gsTEX1Unknown1 = textureMeta.tex1.unknown;
-                platformTex->gsParams.gsTEX1Unknown2 = textureMeta.tex1.unknown2;
+                ps2GSRegisters::MIPTBP1_REG miptbp1 = textureMeta.miptbp1;
+                ps2GSRegisters::MIPTBP2_REG miptbp2 = textureMeta.miptbp2;
+
+                platformTex->gsParams.maxMIPLevel = tex1.maximumMIPLevel;
+                platformTex->gsParams.mtba = tex1.mtba;
+                platformTex->gsParams.textureFunction = tex0.texFunction;
+                platformTex->gsParams.lodCalculationModel = tex1.lodCalculationModel;
+                platformTex->gsParams.mmag = tex1.mmag;
+                platformTex->gsParams.mmin = tex1.mmin;
+                platformTex->gsParams.lodParamL = tex1.lodParamL;
+                platformTex->gsParams.lodParamK = tex1.lodParamK;
+
+                platformTex->gsParams.gsTEX1Unknown1 = tex1.unknown;
+                platformTex->gsParams.gsTEX1Unknown2 = tex1.unknown2;
                 
                 // If we are on the GTA III engine, we need to store the recommended buffer base pointer.
                 LibraryVersion libVer = inputProvider.getBlockVersion();
 
                 if (libVer.rwLibMinor <= 3)
                 {
-                    platformTex->recommendedBufferBasePointer = textureMeta.tex0.textureBasePointer;
+                    platformTex->recommendedBufferBasePointer = tex0.textureBasePointer;
                 }
 
                 uint32 dataSize = textureMeta.dataSize;
@@ -768,28 +768,28 @@ void ps2NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture, 
                                 throw RwException( "invalid texture format" );
                             }
 
-                            if ( gpuData.tex0 != textureMeta.tex0 )
+                            if ( gpuData.tex0 != tex0 )
                             {
                                 if ( engineWarningLevel >= 3 )
                                 {
                                     engineInterface->PushWarning( "texture " + theTexture->GetName() + " has invalid TEX0 register" );
                                 }
                             }
-                            if ( gpuData.tex1 != textureMeta.tex1 )
+                            if ( gpuData.tex1 != tex1 )
                             {
                                 if ( engineWarningLevel >= 2 )
                                 {
                                     engineInterface->PushWarning( "texture " + theTexture->GetName() + " has invalid TEX1 register" );
                                 }
                             }
-                            if ( gpuData.miptbp1 != textureMeta.miptbp1 )
+                            if ( gpuData.miptbp1 != miptbp1 )
                             {
                                 if ( engineWarningLevel >= 1 )
                                 {
                                     engineInterface->PushWarning( "texture " + theTexture->GetName() + " has invalid MIPTBP1 register" );
                                 }
                             }
-                            if ( gpuData.miptbp2 != textureMeta.miptbp2 )
+                            if ( gpuData.miptbp2 != miptbp2 )
                             {
                                 if ( engineWarningLevel >= 1 )
                                 {

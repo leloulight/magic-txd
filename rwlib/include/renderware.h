@@ -243,55 +243,6 @@ struct LibraryVersion
 
 #pragma warning(pop)
 
-struct HeaderInfo
-{
-    // Packed library version.
-    struct PackedLibraryVersion
-    {
-        uint16 buildNumber;
-
-        uint16 packedMinor : 8;
-        uint16 pad : 2;
-        uint16 packedMajor : 6;
-    };
-
-private:
-	uint32 type;
-	uint32 length;
-
-    PackedLibraryVersion packedVersion;
-
-public:
-	void read(std::istream &rw);
-	uint32 write(std::ostream &rw);
-
-    void setVersion(const LibraryVersion& version);
-    LibraryVersion getVersion(void) const;
-
-    void setType(uint32 type)               { this->type = type; }
-    uint32 getType(void) const              { return this->type; }
-
-    void setLength(uint32 length)           { this->length = length; }
-    uint32 getLength(void) const            { return this->length; }
-};
-
-void ChunkNotFound(CHUNK_TYPE chunk, uint32 address);
-uint32 writeInt8(int8 tmp, std::ostream &rw);
-uint32 writeUInt8(uint8 tmp, std::ostream &rw);
-uint32 writeInt16(int16 tmp, std::ostream &rw);
-uint32 writeUInt16(uint16 tmp, std::ostream &rw);
-uint32 writeInt32(int32 tmp, std::ostream &rw);
-uint32 writeUInt32(uint32 tmp, std::ostream &rw);
-uint32 writeFloat32(float32 tmp, std::ostream &rw);
-int8 readInt8(std::istream &rw);
-uint8 readUInt8(std::istream &rw);
-int16 readInt16(std::istream &rw);
-uint16 readUInt16(std::istream &rw);
-int32 readInt32(std::istream &rw);
-uint32 readUInt32(std::istream &rw);
-float32 readFloat32(std::istream &rw);
-
-std::string getChunkName(uint32 i);
 /*
  * DFFs
  */
@@ -447,6 +398,7 @@ struct RwException
     std::string message;
 };
 
+#include "rwendian.h"
 #include "renderware.stream.h"
 #include "renderware.blockapi.h"
 #include "renderware.txd.h"

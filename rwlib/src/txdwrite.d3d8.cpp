@@ -85,7 +85,11 @@ void d3d8NativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, P
         {
             d3d8::textureMetaHeaderStructGeneric metaHeader;
             metaHeader.platformDescriptor = PLATFORM_D3D8;
-            metaHeader.texFormat.set( *theTexture );
+
+            texFormatInfo texFormat;
+            texFormat.set( *theTexture );
+
+            metaHeader.texFormat = texFormat;
 
             // Correctly write the name strings (for safety).
             // Even though we can read those name fields with zero-termination safety,

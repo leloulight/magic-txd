@@ -195,5 +195,8 @@ void MainWindow::shutdownNativeFormats( void )
             // Unload the library.
             FreeLibrary( ext.loadedLibrary );
         }
+
+        // Clear the list of resident formats.
+        this->magf_formats.clear();
     }
 }

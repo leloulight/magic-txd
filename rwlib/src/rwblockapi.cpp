@@ -1,13 +1,29 @@
 #include "StdInc.h"
 
+#include "streamutil.hxx"
+
 namespace rw
 {
 
 struct rwBlockHeader
 {
-    uint32 type;
-    uint32 length;
+    endian::little_endian <uint32> type;
+    endian::little_endian <uint32> length;
     HeaderInfo::PackedLibraryVersion libVer;
+};
+
+struct packedVersionStruct
+{
+    union
+    {
+        struct
+        {
+            uint16 packedMinor : 8;
+            uint16 pad : 2;
+            uint16 packedMajor : 6;
+        };
+        unsigned short libVer;
+    };
 };
 
 void HeaderInfo::read(std::istream& rw)
@@ -35,9 +51,14 @@ inline HeaderInfo::PackedLibraryVersion packVersion( LibraryVersion version )
     HeaderInfo::PackedLibraryVersion packedVersion;
 
     packedVersion.buildNumber = version.buildNumber;
-    packedVersion.packedMajor = version.rwLibMinor;
-    packedVersion.pad = 0;
-    packedVersion.packedMinor = version.rwRevMinor;
+
+    packedVersionStruct packVer;
+
+    packVer.packedMajor = version.rwLibMinor;
+    packVer.pad = 0;
+    packVer.packedMinor = version.rwRevMinor;
+
+    packedVersion.packedVer = packVer.libVer;
 
     return packedVersion;
 }
@@ -52,10 +73,14 @@ inline LibraryVersion unpackVersion( HeaderInfo::PackedLibraryVersion packedVers
     LibraryVersion outVer;
 
     outVer.buildNumber = packedVersion.buildNumber;
+
+    packedVersionStruct packVer;
+    packVer.libVer = packedVersion.packedVer;
+
     outVer.rwLibMajor = 3;
-    outVer.rwLibMinor = packedVersion.packedMajor;
+    outVer.rwLibMinor = packVer.packedMajor;
     outVer.rwRevMajor = 0;
-    outVer.rwRevMinor = packedVersion.packedMinor;
+    outVer.rwRevMinor = packVer.packedMinor;
 
     return outVer;
 }

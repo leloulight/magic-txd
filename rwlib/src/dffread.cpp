@@ -1,7 +1,8 @@
 #include <cmath>
 
 #include <StdInc.h>
-using namespace std;
+
+#include "streamutil.hxx"
 
 namespace rw {
 
@@ -9,7 +10,7 @@ namespace rw {
  * Clump
  */
 
-void Clump::read(istream& rw)
+void Clump::read(std::istream& rw)
 {
 	HeaderInfo header;
 
@@ -18,7 +19,7 @@ void Clump::read(istream& rw)
 
 	if (header.getType() != CHUNK_CLUMP)
     {
-		rw.seekg(header.getLength(), ios::cur);
+		rw.seekg(header.getLength(), std::ios::cur);
 		header.read(rw);
 
 		if (header.getType() != CHUNK_CLUMP)
@@ -34,7 +35,7 @@ void Clump::read(istream& rw)
 	if (header.getLength() == 0xC)
     {
 		numLights = readUInt32(rw);
-		rw.seekg(4, ios::cur); /* camera count, unused in gta */
+		rw.seekg(4, std::ios::cur); /* camera count, unused in gta */
 	}
 
 #if 0
@@ -84,13 +85,13 @@ void Clump::read(istream& rw)
 	readExtension(rw);
 }
 
-void Clump::readExtension(istream &rw)
+void Clump::readExtension(std::istream &rw)
 {
 	HeaderInfo header;
 
 	READ_HEADER(CHUNK_EXTENSION);
 
-	streampos end = rw.tellg();
+	std::streampos end = rw.tellg();
 	end += header.getLength();
 
 	while (rw.tellg() < end)
@@ -100,10 +101,10 @@ void Clump::readExtension(istream &rw)
 		switch (header.getType())
         {
 		case CHUNK_COLLISIONMODEL:
-			rw.seekg(header.getLength(), ios::cur);
+			rw.seekg(header.getLength(), std::ios::cur);
 			break;
 		default:
-			rw.seekg(header.getLength(), ios::cur);
+			rw.seekg(header.getLength(), std::ios::cur);
 			break;
 		}
 	}
@@ -157,7 +158,7 @@ void Clump::clear(void)
  * Atomic
  */
 
-void Atomic::read(istream &rw)
+void Atomic::read(std::istream &rw)
 {
 	HeaderInfo header;
 
@@ -166,18 +167,18 @@ void Atomic::read(istream &rw)
 	READ_HEADER(CHUNK_STRUCT);
 	frameIndex = readUInt32(rw);
 	geometryIndex = readUInt32(rw);
-	rw.seekg(8, ios::cur);	// constant
+	rw.seekg(8, std::ios::cur);	// constant
 
 	readExtension(rw);
 }
 
-void Atomic::readExtension(istream &rw)
+void Atomic::readExtension(std::istream &rw)
 {
 	HeaderInfo header;
 
 	READ_HEADER(CHUNK_EXTENSION);
 
-	streampos end = rw.tellg();
+	std::streampos end = rw.tellg();
 	end += header.getLength();
 
 	while (rw.tellg() < end)
@@ -205,47 +206,47 @@ void Atomic::readExtension(istream &rw)
 			pipelineSetVal = readUInt32(rw);
 			break;
 		default:
-			rw.seekg(header.getLength(), ios::cur);
+			rw.seekg(header.getLength(), std::ios::cur);
 			break;
 		}
 	}
 }
 
-void Atomic::dump(uint32 index, string ind)
+void Atomic::dump(uint32 index, std::string ind)
 {
-	cout << ind << "Atomic " << index << " {\n";
+	std::cout << ind << "Atomic " << index << " {\n";
 	ind += "  ";
 
-	cout << ind << "frameIndex: " << frameIndex << endl;
-	cout << ind << "geometryIndex: " << geometryIndex << endl;
+	std::cout << ind << "frameIndex: " << frameIndex << std::endl;
+	std::cout << ind << "geometryIndex: " << geometryIndex << std::endl;
 
 	if (hasRightToRender)
     {
-		cout << hex;
-		cout << ind << "Right to Render {\n";
-		cout << ind << ind << "val1: " << rightToRenderVal1<<endl;
-		cout << ind << ind << "val2: " << rightToRenderVal2<<endl;
-		cout << ind << "}\n";
-		cout << dec;
+		std::cout << std::hex;
+		std::cout << ind << "Right to Render {\n";
+		std::cout << ind << ind << "val1: " << rightToRenderVal1<<std::endl;
+		std::cout << ind << ind << "val2: " << rightToRenderVal2<<std::endl;
+		std::cout << ind << "}\n";
+		std::cout << std::dec;
 	}
 
 	if (hasParticles)
     {
-		cout << ind << "particlesVal: " << particlesVal << endl;
+		std::cout << ind << "particlesVal: " << particlesVal << std::endl;
     }
 
 	if (hasPipelineSet)
     {
-		cout << ind << "pipelineSetVal: " << pipelineSetVal << endl;
+		std::cout << ind << "pipelineSetVal: " << pipelineSetVal << std::endl;
     }
 
 	if (hasMaterialFx)
     {
-		cout << ind << "materialFxVal: " << materialFxVal << endl;
+		std::cout << ind << "materialFxVal: " << materialFxVal << std::endl;
     }
 
 	ind = ind.substr(0, ind.size()-2);
-	cout << ind << "}\n";
+	std::cout << ind << "}\n";
 }
 
 /*
@@ -253,21 +254,21 @@ void Atomic::dump(uint32 index, string ind)
  */
 
 // only reads part of the frame struct
-void Frame::readStruct(istream &rw)
+void Frame::readStruct(std::istream &rw)
 {
 	rw.read((char *) rotationMatrix, 9*sizeof(float32));
 	rw.read((char *) position, 3*sizeof(float32));
 	parent = readInt32(rw);
-	rw.seekg(4, ios::cur);	// matrix creation flag, unused
+	rw.seekg(4, std::ios::cur);	// matrix creation flag, unused
 }
 
-void Frame::readExtension(istream &rw)
+void Frame::readExtension(std::istream &rw)
 {
 	HeaderInfo header;
 
 	READ_HEADER(CHUNK_EXTENSION);
 
-	streampos end = rw.tellg();
+	std::streampos end = rw.tellg();
 	end += header.getLength();
 
 	while (rw.tellg() < end)
@@ -309,13 +310,13 @@ void Frame::readExtension(istream &rw)
 
 				if ( (flag&~0x3) != 0 )
                 {
-					cout << flag << endl;
+					std::cout << flag << std::endl;
                 }
 				hAnimBoneTypes.push_back(flag);
 			}
 			break;
 		default:
-			rw.seekg(header.getLength(), ios::cur);
+			rw.seekg(header.getLength(), std::ios::cur);
 			break;
 		}
 	}
@@ -323,42 +324,42 @@ void Frame::readExtension(istream &rw)
 //		cout << hAnimBoneId << " " << name << endl;
 }
 
-void Frame::dump(uint32 index, string ind)
+void Frame::dump(uint32 index, std::string ind)
 {
-	cout << ind << "Frame " << index << " {\n";
+	std::cout << ind << "Frame " << index << " {\n";
 	ind += "  ";
 
-	cout << ind << "rotationMatrix: ";
+	std::cout << ind << "rotationMatrix: ";
 
 	for ( uint32 i = 0; i < 9; i++ )
     {
-		cout << rotationMatrix[i] << " ";
+		std::cout << rotationMatrix[i] << " ";
     }
-	cout << endl;
+	std::cout << std::endl;
 
-	cout << ind << "position: ";
+	std::cout << ind << "position: ";
 
 	for ( uint32 i = 0; i < 3; i++ )
     {
-		cout << position[i] << " ";
+		std::cout << position[i] << " ";
     }
-	cout << endl;
+	std::cout << std::endl;
 
-	cout << ind << "parent: " << parent << endl;
+	std::cout << ind << "parent: " << parent << std::endl;
 
-	cout << ind << "name: " << name << endl;
+	std::cout << ind << "name: " << name << std::endl;
 
 	// TODO: hanim
 
 	ind = ind.substr(0, ind.size()-2);
-	cout << ind << "}\n";
+	std::cout << ind << "}\n";
 }
 
 /*
  * Geometry
  */
 
-void Geometry::read(istream &rw)
+void Geometry::read(std::istream &rw)
 {
 	HeaderInfo header;
 
@@ -378,14 +379,14 @@ void Geometry::read(istream &rw)
 	uint32 triangleCount = readUInt32(rw);
 	vertexCount = readUInt32(rw);
 
-	rw.seekg(4, ios::cur); /* number of morph targets, uninteresting */
+	rw.seekg(4, std::ios::cur); /* number of morph targets, uninteresting */
 
 	// skip light info
     LibraryVersion libVer = header.getVersion();
 
 	if (libVer.rwLibMinor <= 3)
     {
-		rw.seekg(12, ios::cur);
+		rw.seekg(12, std::ios::cur);
 	}
 
 	if (!hasNativeGeometry)
@@ -437,7 +438,7 @@ void Geometry::read(istream &rw)
 
 	READ_HEADER(CHUNK_STRUCT);
 	uint32 numMaterials = readUInt32(rw);
-	rw.seekg(numMaterials*4, ios::cur);	// constant
+	rw.seekg(numMaterials*4, std::ios::cur);	// constant
 
 #if 0
 
@@ -453,13 +454,13 @@ void Geometry::read(istream &rw)
 	readExtension(rw);
 }
 
-void Geometry::readExtension(istream &rw)
+void Geometry::readExtension(std::istream &rw)
 {
 	HeaderInfo header;
 
 	READ_HEADER(CHUNK_EXTENSION);
 
-	streampos end = rw.tellg();
+	std::streampos end = rw.tellg();
 	end += header.getLength();
 
 	while ( rw.tellg() < end )
@@ -508,7 +509,7 @@ void Geometry::readExtension(istream &rw)
 		}
         case CHUNK_NATIVEDATA:
         {
-			streampos beg = rw.tellg();
+			std::streampos beg = rw.tellg();
 
 			uint32 size = header.getLength();
 			LibraryVersion ver = header.getVersion();
@@ -519,7 +520,7 @@ void Geometry::readExtension(istream &rw)
             {
 				uint32 platform = readUInt32(rw);
 
-				rw.seekg(beg, ios::beg);
+				rw.seekg(beg, std::ios::beg);
 
 				if( platform == PLATFORM_PS2 )
                 {
@@ -531,12 +532,12 @@ void Geometry::readExtension(istream &rw)
                 }
 				else
                 {
-					cout << "unknown platform " << platform << endl;
+					std::cout << "unknown platform " << platform << std::endl;
                 }
             }
             else
             {
-				rw.seekg(beg, ios::beg);
+				rw.seekg(beg, std::ios::beg);
 				readOglNativeData(rw, size);
 			}
 			break;
@@ -559,7 +560,7 @@ void Geometry::readExtension(istream &rw)
 			if ( nightColors.size() != 0 )
             {
 				// native data also has them, so skip
-				rw.seekg(header.getLength() - sizeof(uint32), ios::cur);
+				rw.seekg(header.getLength() - sizeof(uint32), std::ios::cur);
 			}
             else
             {
@@ -584,10 +585,10 @@ void Geometry::readExtension(istream &rw)
         {
 			if ( hasNativeGeometry )
             {
-				streampos beg = rw.tellg();
-				rw.seekg(0x0c, ios::cur);
+				std::streampos beg = rw.tellg();
+				rw.seekg(0x0c, std::ios::cur);
 				uint32 platform = readUInt32(rw);
-				rw.seekg(beg, ios::beg);
+				rw.seekg(beg, std::ios::beg);
 //				streampos end = beg+header.length;
 
 				if ( platform == PLATFORM_OGL || platform == PLATFORM_PS2 )
@@ -602,9 +603,9 @@ void Geometry::readExtension(istream &rw)
 				}
                 else
                 {
-					cout << "skin: unknown platform " << platform << endl;
+					std::cout << "skin: unknown platform " << platform << std::endl;
 
-					rw.seekg( header.getLength(), ios::cur );
+					rw.seekg( header.getLength(), std::ios::cur );
 				}
 			}
             else
@@ -631,7 +632,7 @@ void Geometry::readExtension(istream &rw)
 					// skip 0xdeaddead
 					if (specialIndexCount == 0)
                     {
-						rw.seekg(4, ios::cur);
+						rw.seekg(4, std::ios::cur);
                     }
 
 					rw.read((char *)(&inverseMatrices[i*0x10]), 0x10*sizeof(float32));
@@ -640,26 +641,26 @@ void Geometry::readExtension(istream &rw)
 				// skip some zeroes
 				if( specialIndexCount != 0 )
                 {
-					rw.seekg(0x0C, ios::cur);
+					rw.seekg(0x0C, std::ios::cur);
                 }
 			}
 			break;
 		}
 		case CHUNK_ADCPLG:
 			/* only sa ps2, ignore (not very interesting anyway) */
-			rw.seekg(header.getLength(), ios::cur);
+			rw.seekg(header.getLength(), std::ios::cur);
 			break;
 		case CHUNK_2DFX:
-			rw.seekg(header.getLength(), ios::cur);
+			rw.seekg(header.getLength(), std::ios::cur);
 			break;
 		default:
-			rw.seekg(header.getLength(), ios::cur);
+			rw.seekg(header.getLength(), std::ios::cur);
 			break;
 		}
 	}
 }
 
-void Geometry::readNativeSkinMatrices(istream &rw)
+void Geometry::readNativeSkinMatrices(std::istream &rw)
 {
 	HeaderInfo header;
 
@@ -669,7 +670,7 @@ void Geometry::readNativeSkinMatrices(istream &rw)
 
 	if (platform != PLATFORM_PS2 && platform != PLATFORM_OGL)
     {
-		cerr << "format error: native skin not in ps2 or ogl format\n";
+		std::cerr << "format error: native skin not in ps2 or ogl format\n";
 		return;
 	}
 
@@ -691,22 +692,22 @@ void Geometry::readNativeSkinMatrices(istream &rw)
 	// skip unknowns
 	if ( specialIndexCount != 0 )
     {
-		rw.seekg(0x1C, ios::cur);
+		rw.seekg(0x1C, std::ios::cur);
     }
 }
 
-void Geometry::readMeshExtension(istream &rw)
+void Geometry::readMeshExtension(std::istream &rw)
 {
 	if ( meshExtension->unknown == 0 )
 		return;
 
-	rw.seekg(0x4, ios::cur);
+	rw.seekg(0x4, std::ios::cur);
 	uint32 vertexCount = readUInt32(rw);
-	rw.seekg(0xC, ios::cur);
+	rw.seekg(0xC, std::ios::cur);
 	uint32 faceCount = readUInt32(rw);
-	rw.seekg(0x8, ios::cur);
+	rw.seekg(0x8, std::ios::cur);
 	uint32 materialCount = readUInt32(rw);
-	rw.seekg(0x10, ios::cur);
+	rw.seekg(0x10, std::ios::cur);
 
 	/* vertices */
 	meshExtension->vertices.resize(3*vertexCount);
@@ -801,13 +802,13 @@ void Geometry::generateFaces(void)
 }
 
 // these hold the (temporary) cleaned up data
-static vector<float32>  vertices_new;
-static vector<float32>  normals_new;
-static vector<float32>  texCoords_new[8];
-static vector<uint8>    vertexColors_new;
-static vector<uint8>    nightColors_new;
-static vector<uint32>   vertexBoneIndices_new;
-static vector<float32>  vertexBoneWeights_new;
+static std::vector<float32>  vertices_new;
+static std::vector<float32>  normals_new;
+static std::vector<float32>  texCoords_new[8];
+static std::vector<uint8>    vertexColors_new;
+static std::vector<uint8>    nightColors_new;
+static std::vector<uint32>   vertexBoneIndices_new;
+static std::vector<float32>  vertexBoneWeights_new;
 
 // used only by Geometry::cleanUp()
 // adds new temporary vertex if it isn't already in the list
@@ -936,7 +937,7 @@ void Geometry::cleanUp(void)
 	vertexBoneIndices_new.clear();
 	vertexBoneWeights_new.clear();
 
-	vector<uint32> newIndices;
+	std::vector<uint32> newIndices;
 
 	// create new vertex list
 	for (uint32 i = 0; i < vertices.size()/3; i++)
@@ -988,47 +989,47 @@ void Geometry::cleanUp(void)
 	}
 }
 
-void Geometry::dump(uint32 index, string ind, bool detailed)
+void Geometry::dump(uint32 index, std::string ind, bool detailed)
 {
-	cout << ind << "Geometry " << index << " {\n";
+	std::cout << ind << "Geometry " << index << " {\n";
 	ind += "  ";
 
-	cout << ind << "flags: " << hex << flags << endl;
-	cout << ind << "numUVs: " << dec << numUVs << endl;
-	cout << ind << "hasNativeGeometry: " << hasNativeGeometry << endl;
-	cout << ind << "triangleCount: " << faces.size()/4 << endl;
-	cout << ind << "vertexCount: " << vertexCount << endl << endl;;
+	std::cout << ind << "flags: " << std::hex << flags << std::endl;
+	std::cout << ind << "numUVs: " << std::dec << numUVs << std::endl;
+	std::cout << ind << "hasNativeGeometry: " << hasNativeGeometry << std::endl;
+	std::cout << ind << "triangleCount: " << faces.size()/4 << std::endl;
+	std::cout << ind << "vertexCount: " << vertexCount << std::endl << std::endl;;
 
 	if (flags & FLAGS_PRELIT)
     {
-		cout << ind << "vertexColors {\n";
+		std::cout << ind << "vertexColors {\n";
 		ind += "  ";
 		if (!detailed)
         {
-			cout << ind << "skipping\n";
+			std::cout << ind << "skipping\n";
         }
 		else
         {
 			for (uint32 i = 0; i < vertexColors.size()/4; i++)
             {
-				cout << ind << int(vertexColors[i*4+0])<< ", "
+				std::cout << ind << int(vertexColors[i*4+0])<< ", "
 					<< int(vertexColors[i*4+1]) << ", "
 					<< int(vertexColors[i*4+2]) << ", "
-					<< int(vertexColors[i*4+3]) << endl;
+					<< int(vertexColors[i*4+3]) << std::endl;
             }
         }
 		ind = ind.substr(0, ind.size()-2);
-		cout << ind << "}\n\n";
+		std::cout << ind << "}\n\n";
 	}
 
 	if (flags & FLAGS_TEXTURED)
     {
-		cout << ind << "texCoords {\n";
+		std::cout << ind << "texCoords {\n";
 		ind += "  ";
 
 		if (!detailed)
         {
-			cout << ind << "skipping\n";
+			std::cout << ind << "skipping\n";
         }
 		else
         {
@@ -1036,23 +1037,23 @@ void Geometry::dump(uint32 index, string ind, bool detailed)
 
 			for (uint32 i = 0; i < texCoordSizeHalf; i++)
             {
-				cout << ind << texCoords[0][i*2+0]<< ", " << texCoords[0][i*2+1] << endl;
+				std::cout << ind << texCoords[0][i*2+0]<< ", " << texCoords[0][i*2+1] << std::endl;
             }
         }
 
 		ind = ind.substr(0, ind.size()-2);
-		cout << ind << "}\n\n";
+		std::cout << ind << "}\n\n";
 	}
 	if (flags & FLAGS_TEXTURED2)
     {
 		for ( uint32 j = 0; j < numUVs; j++ )
         {
-		    cout << ind << "texCoords " << j << " {\n";
+		    std::cout << ind << "texCoords " << j << " {\n";
 		    ind += "  ";
 
 		    if (!detailed)
             {
-			    cout << ind << "skipping\n";
+			    std::cout << ind << "skipping\n";
             }
 		    else
             {
@@ -1060,128 +1061,128 @@ void Geometry::dump(uint32 index, string ind, bool detailed)
 
 			    for ( uint32 i = 0; i < texCoordSizeHalf; i++ )
                 {
-				    cout << ind << texCoords[j][i*2+0]<< ", "
-					    << texCoords[j][i*2+1] << endl;
+				    std::cout << ind << texCoords[j][i*2+0]<< ", "
+					    << texCoords[j][i*2+1] << std::endl;
                 }
             }
 		    ind = ind.substr(0, ind.size()-2);
-		    cout << ind << "}\n\n";
+		    std::cout << ind << "}\n\n";
 		}
 	}
 
-	cout << ind << "faces {\n";
+	std::cout << ind << "faces {\n";
 	ind += "  ";
 
 	if ( !detailed )
     {
-		cout << ind << "skipping\n";
+		std::cout << ind << "skipping\n";
     }
 	else
     {
 		for ( uint32 i = 0; i < faces.size()/4; i++ )
         {
-			cout << ind << faces[i*4+0] << ", "
+			std::cout << ind << faces[i*4+0] << ", "
 			            << faces[i*4+1] << ", "
 			            << faces[i*4+2] << ", "
-			            << faces[i*4+3] << endl;
+			            << faces[i*4+3] << std::endl;
         }
     }
 	ind = ind.substr(0, ind.size()-2);
-	cout << ind << "}\n\n";
+	std::cout << ind << "}\n\n";
 
-	cout << ind << "boundingSphere: ";
+	std::cout << ind << "boundingSphere: ";
 	for ( uint32 i = 0; i < 4; i++ )
     {
-		cout << boundingSphere[i] << " ";
+		std::cout << boundingSphere[i] << " ";
     }
 
-	cout << endl << endl;
-	cout << ind << "hasPositions: " << hasPositions << endl;
-	cout << ind << "hasNormals: " << hasNormals << endl;
+	std::cout << std::endl << std::endl;
+	std::cout << ind << "hasPositions: " << hasPositions << std::endl;
+	std::cout << ind << "hasNormals: " << hasNormals << std::endl;
 
-	cout << ind << "vertices {\n";
+	std::cout << ind << "vertices {\n";
 	ind += "  ";
 
 	if ( !detailed )
     {
-		cout << ind << "skipping\n";
+		std::cout << ind << "skipping\n";
     }
 	else
     {
 		for ( uint32 i = 0; i < vertices.size()/3; i++ )
         {
-			cout << ind << vertices[i*3+0] << ", "
+			std::cout << ind << vertices[i*3+0] << ", "
 			            << vertices[i*3+1] << ", "
-			            << vertices[i*3+2] << endl;
+			            << vertices[i*3+2] << std::endl;
         }
     }
 
 	ind = ind.substr(0, ind.size()-2);
-	cout << ind << "}\n";
+	std::cout << ind << "}\n";
 
 	if (flags & FLAGS_NORMALS)
     {
-		cout << ind << "normals {\n";
+		std::cout << ind << "normals {\n";
 		ind += "  ";
 
 		if (!detailed)
         {
-			cout << ind << "skipping\n";
+			std::cout << ind << "skipping\n";
         }
 		else
         {
 			for (uint32 i = 0; i < normals.size()/3; i++)
             {
-				cout << ind << normals[i*3+0] << ", "
+				std::cout << ind << normals[i*3+0] << ", "
 					    << normals[i*3+1] << ", "
-					    << normals[i*3+2] << endl;
+					    << normals[i*3+2] << std::endl;
             }
         }
 
 		ind = ind.substr(0, ind.size()-2);
-		cout << ind << "}\n";
+		std::cout << ind << "}\n";
 	}
 
-	cout << endl << ind << "BinMesh {\n";
+	std::cout << std::endl << ind << "BinMesh {\n";
 	ind += "  ";
 
-	cout << ind << "faceType: " << faceType << endl;
-	cout << ind << "numIndices: " << numIndices << endl;
+	std::cout << ind << "faceType: " << faceType << std::endl;
+	std::cout << ind << "numIndices: " << numIndices << std::endl;
 
 	for ( uint32 i = 0; i < splits.size(); i++ )
     {
-		cout << endl << ind << "Split " << i << " {\n";
+		std::cout << std::endl << ind << "Split " << i << " {\n";
 		ind += "  ";
 
-		cout << ind << "matIndex: " << splits[i].matIndex << endl;
-		cout << ind << "numIndices: "<<splits[i].indices.size() << endl;
-		cout << ind << "indices {\n";
+		std::cout << ind << "matIndex: " << splits[i].matIndex << std::endl;
+		std::cout << ind << "numIndices: "<<splits[i].indices.size() << std::endl;
+		std::cout << ind << "indices {\n";
 
 		if( !detailed )
         {
-			cout << ind+"  skipping\n";
+			std::cout << ind+"  skipping\n";
         }
 		else
         {
 			for ( uint32 j = 0; j < splits[i].indices.size(); j++ )
             {
-				cout << ind + " " << splits[i].indices[j] << endl;
+				std::cout << ind + " " << splits[i].indices[j] << std::endl;
             }
         }
 
-		cout << ind << "}\n";
+		std::cout << ind << "}\n";
 		ind = ind.substr(0, ind.size()-2);
 
-		cout << ind << "}\n";
+		std::cout << ind << "}\n";
 	}
 
 	ind = ind.substr(0, ind.size()-2);
-	cout << ind << "}\n";
+	std::cout << ind << "}\n";
 
-	cout << endl << ind << "MaterialList {\n";
+	std::cout << std::endl << ind << "MaterialList {\n";
 	ind += "  ";
 
-	cout << ind << "numMaterials: " << materialList.size() << endl;
+	std::cout << ind << "numMaterials: " << materialList.size() << std::endl;
 
 #if 0
 
@@ -1193,17 +1194,17 @@ void Geometry::dump(uint32 index, string ind, bool detailed)
 #endif
 
 	ind = ind.substr(0, ind.size()-2);
-	cout << ind << "}\n";
+	std::cout << ind << "}\n";
 
 	ind = ind.substr(0, ind.size()-2);
-	cout << ind << "}\n";
+	std::cout << ind << "}\n";
 }
 
 /*
  * Material
  */
 
-void Material::read(istream &rw)
+void Material::read(std::istream &rw)
 {
 	HeaderInfo header;
 
@@ -1226,13 +1227,13 @@ void Material::read(istream &rw)
 	readExtension(rw);
 }
 
-void Material::readExtension(istream &rw)
+void Material::readExtension(std::istream &rw)
 {
 	HeaderInfo header;
 
 	READ_HEADER(CHUNK_EXTENSION);
 
-	streampos end = rw.tellg();
+	std::streampos end = rw.tellg();
 	end += header.getLength();
 
 	while (rw.tellg() < end)
@@ -1254,7 +1255,7 @@ void Material::readExtension(istream &rw)
 			switch (matFx->type) {
 			case MATFX_BUMPMAP: {
 //cout << filename << " BUMPMAP\n";
-				rw.seekg(4, ios::cur); // also MATFX_BUMPMAP
+				rw.seekg(4, std::ios::cur); // also MATFX_BUMPMAP
 				matFx->bumpCoefficient = readFloat32(rw);
 
 #if 0
@@ -1269,10 +1270,10 @@ void Material::readExtension(istream &rw)
 
 #endif
 
-				rw.seekg(4, ios::cur); // 0
+				rw.seekg(4, std::ios::cur); // 0
 				break;
 			} case MATFX_ENVMAP: {
-				rw.seekg(4, ios::cur); // also MATFX_ENVMAP
+				rw.seekg(4, std::ios::cur); // also MATFX_ENVMAP
 				matFx->envCoefficient = readFloat32(rw);
 
 #if 0
@@ -1287,10 +1288,10 @@ void Material::readExtension(istream &rw)
 
 #endif
 
-				rw.seekg(4, ios::cur); // 0
+				rw.seekg(4, std::ios::cur); // 0
 				break;
 			} case MATFX_BUMPENVMAP: {
-				rw.seekg(4, ios::cur); // MATFX_BUMPMAP
+				rw.seekg(4, std::ios::cur); // MATFX_BUMPMAP
 				matFx->bumpCoefficient = readFloat32(rw);
 
 #if 0
@@ -1314,7 +1315,7 @@ void Material::readExtension(istream &rw)
 				break;
 			} case MATFX_DUAL: {
 
-				rw.seekg(4, ios::cur); // also MATFX_DUAL
+				rw.seekg(4, std::ios::cur); // also MATFX_DUAL
 				matFx->srcBlend = (float32)readUInt32(rw);
 				matFx->destBlend = (float32)readUInt32(rw);
 
@@ -1330,8 +1331,8 @@ void Material::readExtension(istream &rw)
 				break;
 			} case MATFX_UVTRANSFORM: {
 
-				rw.seekg(4, ios::cur);//also MATFX_UVTRANSFORM
-				rw.seekg(4, ios::cur); // 0
+				rw.seekg(4, std::ios::cur);//also MATFX_UVTRANSFORM
+				rw.seekg(4, std::ios::cur); // 0
 				break;
 			} case MATFX_DUALUVTRANSFORM: {
 				// never observed in gta
@@ -1347,7 +1348,7 @@ void Material::readExtension(istream &rw)
 			reflectionChannelAmount[2] = readFloat32(rw);
 			reflectionChannelAmount[3] = readFloat32(rw);
 			reflectionIntensity = readFloat32(rw);
-			rw.seekg(4, ios::cur);
+			rw.seekg(4, std::ios::cur);
 			break;
 		case CHUNK_SPECULARMAT: {
 			hasSpecularMat = true;
@@ -1360,38 +1361,38 @@ void Material::readExtension(istream &rw)
 
 			specularName = name;
 
-			rw.seekg(4, ios::cur);
+			rw.seekg(4, std::ios::cur);
 
 			delete[] name;
 
 			break;
 		}
 		case CHUNK_UVANIMDICT:
-			rw.seekg(header.getLength(), ios::cur);
+			rw.seekg(header.getLength(), std::ios::cur);
 			break;
 		default:
-			rw.seekg(header.getLength(), ios::cur);
+			rw.seekg(header.getLength(), std::ios::cur);
 			break;
 		}
 	}
 }
 
-void Material::dump(uint32 index, string ind)
+void Material::dump(uint32 index, std::string ind)
 {
-	cout << ind << "Material " << index << " {\n";
+	std::cout << ind << "Material " << index << " {\n";
 	ind += "  ";
 
 	// unused
 //	cout << ind << "flags: " << hex << flags << endl;
-	cout << ind << "color: " << dec << int(color[0]) << " "
+	std::cout << ind << "color: " << std::dec << int(color[0]) << " "
 	                         << int(color[1]) << " "
 	                         << int(color[2]) << " "
-	                         << int(color[3]) << endl;
+	                         << int(color[3]) << std::endl;
 	// unused
 //	cout << ind << "unknown: " << hex << unknown << endl;
-	cout << ind << "surfaceProps: " << surfaceProps[0] << " "
+	std::cout << ind << "surfaceProps: " << surfaceProps[0] << " "
 	                                << surfaceProps[1] << " "
-	                                << surfaceProps[2] << endl;
+	                                << surfaceProps[2] << std::endl;
 
 #if 0
 	if(hasTex)
@@ -1403,39 +1404,39 @@ void Material::dump(uint32 index, string ind)
 
 	if(hasRightToRender)
     {
-		cout << hex;
-		cout << ind << "Right to Render {\n";
-		cout << ind+"  " << "val1: " << rightToRenderVal1<<endl;
-		cout << ind+"  " << "val2: " << rightToRenderVal2<<endl;
-		cout << ind << "}\n";
-		cout << dec;
+		std::cout << std::hex;
+		std::cout << ind << "Right to Render {\n";
+		std::cout << ind+"  " << "val1: " << rightToRenderVal1<<std::endl;
+		std::cout << ind+"  " << "val2: " << rightToRenderVal2<<std::endl;
+		std::cout << ind << "}\n";
+		std::cout << std::dec;
 	}
 
 	if(hasReflectionMat)
     {
-		cout << ind << "Reflection Material {\n";
-		cout << ind+"  " << "amount: "
+		std::cout << ind << "Reflection Material {\n";
+		std::cout << ind+"  " << "amount: "
 		     << reflectionChannelAmount[0] << " "
 		     << reflectionChannelAmount[1] << " "
 		     << reflectionChannelAmount[2] << " "
-		     << reflectionChannelAmount[3] << endl;
-		cout << ind+"  " << "intensity: " << reflectionIntensity << endl;
-		cout << ind << "}\n";
+		     << reflectionChannelAmount[3] << std::endl;
+		std::cout << ind+"  " << "intensity: " << reflectionIntensity << std::endl;
+		std::cout << ind << "}\n";
 	}
 
 	if(hasSpecularMat)
     {
-		cout << ind << "Specular Material {\n";
-		cout << ind+"  " << "level: " << specularLevel << endl;
-		cout << ind+"  " << "name: " << specularName << endl;
-		cout << ind << "}\n";
+		std::cout << ind << "Specular Material {\n";
+		std::cout << ind+"  " << "level: " << specularLevel << std::endl;
+		std::cout << ind+"  " << "name: " << specularName << std::endl;
+		std::cout << ind << "}\n";
 	}
 
 	ind = ind.substr(0, ind.size()-2);
-	cout << ind << "}\n";
+	std::cout << ind << "}\n";
 }
 
-void MatFx::dump(string ind)
+void MatFx::dump(std::string ind)
 {
 	static const char *names[] = {
 		"INVALID",
@@ -1447,26 +1448,26 @@ void MatFx::dump(string ind)
 		"MATFX_DUALUVTRANSFORM"
 	};
 
-	cout << ind << "MatFX {\n";
+	std::cout << ind << "MatFX {\n";
 	ind += "  ";
 
-	cout << ind << "type: " << names[type] << endl;
+	std::cout << ind << "type: " << names[type] << std::endl;
 
 	if ( type == MATFX_BUMPMAP || type == MATFX_BUMPENVMAP )
     {
-		cout << ind << "bumpCoefficient: " << bumpCoefficient << endl;
+		std::cout << ind << "bumpCoefficient: " << bumpCoefficient << std::endl;
     }
 	if ( type == MATFX_ENVMAP || type == MATFX_BUMPENVMAP )
     {
-		cout << ind << "envCoefficient: " << envCoefficient << endl;
+		std::cout << ind << "envCoefficient: " << envCoefficient << std::endl;
     }
 	if ( type == MATFX_DUAL )
     {
-		cout << ind << "srcBlend: " << srcBlend << endl;
-		cout << ind << "destBlend: " << destBlend << endl;
+		std::cout << ind << "srcBlend: " << srcBlend << std::endl;
+		std::cout << ind << "destBlend: " << destBlend << std::endl;
 	}
 
-	cout << ind << "textures: " << hasTex1 << " " << hasTex2 << " " << hasDualPassMap << endl;
+	std::cout << ind << "textures: " << hasTex1 << " " << hasTex2 << " " << hasDualPassMap << std::endl;
 
 #if 0
 
@@ -1486,7 +1487,7 @@ void MatFx::dump(string ind)
 #endif
 
 	ind = ind.substr(0, ind.size()-2);
-	cout << ind << "}\n";
+	std::cout << ind << "}\n";
 }
 
 MatFx::MatFx(void)
@@ -1499,7 +1500,7 @@ MatFx::MatFx(void)
  * Texture
  */
 
-void Texture::read(istream &rw)
+void Texture::read(std::istream &rw)
 {
 	HeaderInfo header;
 
@@ -1507,7 +1508,7 @@ void Texture::read(istream &rw)
 
 	READ_HEADER(CHUNK_STRUCT);
 	filterFlags = readUInt16(rw);
-	rw.seekg(2, ios::cur);
+	rw.seekg(2, std::ios::cur);
 
     // Read name
     {
@@ -1542,13 +1543,13 @@ void Texture::read(istream &rw)
 	readExtension(rw);
 }
 
-void Texture::readExtension(istream &rw)
+void Texture::readExtension(std::istream &rw)
 {
 	HeaderInfo header;
 
 	READ_HEADER(CHUNK_EXTENSION);
 
-	streampos end = rw.tellg();
+	std::streampos end = rw.tellg();
 	end += header.getLength();
 
 	while (rw.tellg() < end)
@@ -1559,10 +1560,10 @@ void Texture::readExtension(istream &rw)
         {
 		case CHUNK_SKYMIPMAP:
 			hasSkyMipmap = true;
-			rw.seekg(header.getLength(), ios::cur);
+			rw.seekg(header.getLength(), std::ios::cur);
 			break;
 		default:
-			rw.seekg(header.getLength(), ios::cur);
+			rw.seekg(header.getLength(), std::ios::cur);
 			break;
 		}
 	}
@@ -1570,15 +1571,15 @@ void Texture::readExtension(istream &rw)
 
 void Texture::dump(std::string ind)
 {
-	cout << ind << "Texture {\n";
+	std::cout << ind << "Texture {\n";
 	ind += "  ";
 
-	cout << ind << "filterFlags: " << hex << filterFlags << dec << endl;
-	cout << ind << "name: " << name << endl;
-	cout << ind << "maskName: " << maskName << endl;
+	std::cout << ind << "filterFlags: " << std::hex << filterFlags << std::dec << std::endl;
+	std::cout << ind << "name: " << name << std::endl;
+	std::cout << ind << "maskName: " << maskName << std::endl;
 
 	ind = ind.substr(0, ind.size()-2);
-	cout << ind << "}\n";
+	std::cout << ind << "}\n";
 }
 
 }

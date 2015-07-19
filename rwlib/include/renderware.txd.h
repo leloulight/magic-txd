@@ -58,14 +58,36 @@ private:
 public:
     void parse(TextureBase& theTexture) const;
     void set(const TextureBase& inTex);
+
+    void writeToBlock(BlockProvider& outputProvider) const;
+    void readFromBlock(BlockProvider& inputProvider);
+};
+
+struct texFormatInfo_serialized
+{
+    endian::little_endian <uint32> info;
+
+    inline operator texFormatInfo ( void ) const
+    {
+        texFormatInfo formatOut;
+
+        *(uint32*)&formatOut = info;
+
+        return formatOut;
+    }
+
+    inline void operator = ( const texFormatInfo& right )
+    {
+        info = *(uint32*)&right;
+    }
 };
 
 struct wardrumFormatInfo
 {
 private:
-    uint32 filterMode;
-    uint32 uAddressing;
-    uint32 vAddressing;
+    endian::little_endian <uint32> filterMode;
+    endian::little_endian <uint32> uAddressing;
+    endian::little_endian <uint32> vAddressing;
 
 public:
     void parse(TextureBase& theTexture) const;
@@ -73,11 +95,6 @@ public:
 };
 
 #include "renderware.txd.pixelformat.h"
-
-struct ps2MipmapTransmissionData
-{
-    uint16 destX, destY;
-};
 
 // Native GTA:SA feature map:
 // no RASTER_PAL4 support at all.

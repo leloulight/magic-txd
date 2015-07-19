@@ -220,7 +220,7 @@ namespace atitc
 #pragma pack(push, 1)
 struct textureNativeGenericHeader
 {
-    uint32 platformDescriptor;
+    endian::little_endian <uint32> platformDescriptor;
 
     wardrumFormatInfo formatInfo;
 
@@ -235,12 +235,12 @@ struct textureNativeGenericHeader
 
     uint8 pad2;
 
-    uint16 width, height;
+    endian::little_endian <uint16> width, height;
 
-    eATCInternalFormat internalFormat;
+    endian::little_endian <eATCInternalFormat> internalFormat;
 
-    uint32 imageSectionStreamSize;
-    uint32 unk2;
+    endian::little_endian <uint32> imageSectionStreamSize;
+    endian::little_endian <uint32> unk2;
 };
 #pragma pack(pop)
 };

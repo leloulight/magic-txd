@@ -15,26 +15,26 @@ namespace rw
 #pragma pack(push,1)
 struct bmpFileHeader
 {
-    WORD    bfType;
-    DWORD   bfSize;
-    WORD    bfReserved1;
-    WORD    bfReserved2;
-    DWORD   bfOffBits;
+    endian::little_endian <WORD>    bfType;
+    endian::little_endian <DWORD>   bfSize;
+    endian::little_endian <WORD>    bfReserved1;
+    endian::little_endian <WORD>    bfReserved2;
+    endian::little_endian <DWORD>   bfOffBits;
 };
 
 struct bmpInfoHeader
 {
-    DWORD      biSize;
-    LONG       biWidth;
-    LONG       biHeight;
-    WORD       biPlanes;
-    WORD       biBitCount;
-    DWORD      biCompression;
-    DWORD      biSizeImage;
-    LONG       biXPelsPerMeter;
-    LONG       biYPelsPerMeter;
-    DWORD      biClrUsed;
-    DWORD      biClrImportant;
+    endian::little_endian <DWORD>      biSize;
+    endian::little_endian <LONG>       biWidth;
+    endian::little_endian <LONG>       biHeight;
+    endian::little_endian <WORD>       biPlanes;
+    endian::little_endian <WORD>       biBitCount;
+    endian::little_endian <DWORD>      biCompression;
+    endian::little_endian <DWORD>      biSizeImage;
+    endian::little_endian <LONG>       biXPelsPerMeter;
+    endian::little_endian <LONG>       biYPelsPerMeter;
+    endian::little_endian <DWORD>      biClrUsed;
+    endian::little_endian <DWORD>      biClrImportant;
 };
 #pragma pack(pop)
 

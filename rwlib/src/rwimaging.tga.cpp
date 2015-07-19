@@ -16,17 +16,17 @@ namespace rw
 #pragma pack(push,1)
 struct TgaHeader
 {
-    BYTE IDLength;        /* 00h  Size of Image ID field */
-    BYTE ColorMapType;    /* 01h  Color map type */
-    BYTE ImageType;       /* 02h  Image type code */
-    WORD CMapStart;       /* 03h  Color map origin */
-    WORD CMapLength;      /* 05h  Color map length */
-    BYTE CMapDepth;       /* 07h  Depth of color map entries */
-    WORD XOffset;         /* 08h  X origin of image */
-    WORD YOffset;         /* 0Ah  Y origin of image */
-    WORD Width;           /* 0Ch  Width of image */
-    WORD Height;          /* 0Eh  Height of image */
-    BYTE PixelDepth;      /* 10h  Image pixel size */
+    endian::little_endian <BYTE> IDLength;        /* 00h  Size of Image ID field */
+    endian::little_endian <BYTE> ColorMapType;    /* 01h  Color map type */
+    endian::little_endian <BYTE> ImageType;       /* 02h  Image type code */
+    endian::little_endian <WORD> CMapStart;       /* 03h  Color map origin */
+    endian::little_endian <WORD> CMapLength;      /* 05h  Color map length */
+    endian::little_endian <BYTE> CMapDepth;       /* 07h  Depth of color map entries */
+    endian::little_endian <WORD> XOffset;         /* 08h  X origin of image */
+    endian::little_endian <WORD> YOffset;         /* 0Ah  Y origin of image */
+    endian::little_endian <WORD> Width;           /* 0Ch  Width of image */
+    endian::little_endian <WORD> Height;          /* 0Eh  Height of image */
+    endian::little_endian <BYTE> PixelDepth;      /* 10h  Image pixel size */
 
     struct
     {

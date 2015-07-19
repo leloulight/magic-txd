@@ -1,6 +1,9 @@
 #include <cstdio>
 
 #include <StdInc.h>
+
+#include "streamutil.hxx"
+
 using namespace std;
 
 namespace rw {

@@ -222,7 +222,7 @@ namespace pvr
 #pragma pack(1)
 struct textureMetaHeaderGeneric
 {
-    uint32 platformDescriptor;
+    endian::little_endian <uint32> platformDescriptor;
 
     wardrumFormatInfo formatInfo;
 
@@ -237,11 +237,11 @@ struct textureMetaHeaderGeneric
 
     uint8 pad2;
 
-    uint16 width, height;
+    endian::little_endian <uint16> width, height;
 
-    ePVRInternalFormat internalFormat;
-    uint32 imageDataStreamSize;
-    uint32 unk8;
+    endian::little_endian <ePVRInternalFormat> internalFormat;
+    endian::little_endian <uint32> imageDataStreamSize;
+    endian::little_endian <uint32> unk8;
 };
 #pragma pack()
 

@@ -3,6 +3,8 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include "streamutil.hxx"
+
 namespace rw
 {
 

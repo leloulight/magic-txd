@@ -90,7 +90,9 @@ void d3d9NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
                 }
 
                 // Read texture format.
-                metaHeader.texFormat.parse( *theTexture );
+                texFormatInfo texFormat = metaHeader.texFormat;
+
+                texFormat.parse( *theTexture );
 
                 // Deconstruct the format flags.
                 bool hasMipmaps = false;    // TODO: actually use this flag.

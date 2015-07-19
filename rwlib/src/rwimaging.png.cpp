@@ -28,32 +28,16 @@ inline uint32 getPNGRasterDataRowSize( uint32 width, uint32 depth )
 
 struct pngImagingExtension : public imagingFormatExtension
 {
-    typedef unsigned char png_uint32[4];
-
     struct png_chunk_header
     {
-        png_uint32 length;
-        png_uint32 type;
+        endian::big_endian <uint32> length;
+        endian::big_endian <uint32> type;
     };
 
     struct png_chunk_footer
     {
-        png_uint32 crc32;
+        endian::big_endian <uint32> crc32;
     };
-
-    static inline uint32 get_png_uint32( png_uint32 pngValue )
-    {
-#ifdef _WIN32
-        // I think Win32 platforms always are little endian?
-        return (uint32)(
-            (uint32)( pngValue[0] ) << 24 |
-            (uint32)( pngValue[1] ) << 16 |
-            (uint32)( pngValue[2] ) << 8 |
-            (uint32)( pngValue[3] ) << 0 );
-#else
-#error unknown platform.
-#endif
-    }
 
     bool IsStreamCompatible( Interface *engineInterface, Stream *inputStream ) const override
     {
@@ -94,7 +78,7 @@ struct pngImagingExtension : public imagingFormatExtension
             }
 
             // We need to read by the amount of the chunk length.
-            uint32 chunkLength = get_png_uint32( header.length );
+            uint32 chunkLength = header.length;
 
             // So lets just skip those bytes, assuming they are available.
             skipAvailable( inputStream, chunkLength );

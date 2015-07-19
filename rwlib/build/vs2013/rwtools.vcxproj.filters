@@ -117,6 +117,9 @@
     <ClInclude Include="..\..\src\pixelutil.hxx">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\rwendian.h">
+      <Filter>Include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\dffread.cpp" />
@@ -164,5 +167,6 @@
     <ClCompile Include="..\..\src\txdwrite.d3d8.cpp" />
     <ClCompile Include="..\..\src\txdread.d3d9.formats.cpp" />
     <ClCompile Include="..\..\src\rwimaging.png.cpp" />
+    <ClCompile Include="..\..\src\rwimaging.jpeg.cpp" />
   </ItemGroup>
 </Project>

@@ -2,6 +2,8 @@
 
 #include <cstring>
 
+#include "streamutil.hxx"
+
 using namespace std;
 
 namespace rw {

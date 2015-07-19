@@ -204,7 +204,7 @@ namespace mobile_dxt
 #pragma pack(push, 1)
 struct textureNativeGenericHeader
 {
-    uint32 platformDescriptor;
+    endian::little_endian <uint32> platformDescriptor;
 
     wardrumFormatInfo formatInfo;
 
@@ -219,12 +219,12 @@ struct textureNativeGenericHeader
 
     uint8 pad2;
 
-    uint16 width, height;
+    endian::little_endian <uint16> width, height;
 
-    eS3TCInternalFormat internalFormat;
+    endian::little_endian <eS3TCInternalFormat> internalFormat;
 
-    uint32 imageDataSectionSize;
-    uint32 unk3;
+    endian::little_endian <uint32> imageDataSectionSize;
+    endian::little_endian <uint32> unk3;
 };
 #pragma pack(pop)
 };

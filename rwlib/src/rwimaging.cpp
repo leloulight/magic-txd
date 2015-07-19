@@ -669,6 +669,7 @@ void GetRegisteredImageFormats( Interface *engineInterface, registered_image_for
 extern void registerTGAImagingExtension( void );
 extern void registerBMPImagingExtension( void );
 extern void registerPNGImagingExtension( void );
+extern void registerJPEGImagingExtension( void );
 
 void registerImagingPlugin( void )
 {
@@ -679,6 +680,7 @@ void registerImagingPlugin( void )
     registerTGAImagingExtension();
     registerBMPImagingExtension();
     registerPNGImagingExtension();
+    registerJPEGImagingExtension();
 #endif //RWLIB_INCLUDE_IMAGING
 }
 
