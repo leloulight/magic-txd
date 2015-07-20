@@ -59,7 +59,7 @@ MainWindow::MainWindow(QWidget *parent) :
     
 #if 1
         // Test something.
-        rw::streamConstructionFileParam_t fileParam( "C:/Users/The_GTA/Desktop/image format samples/png/graybird.png" );
+        rw::streamConstructionFileParam_t fileParam( "C:/Users/The_GTA/Desktop/image format samples/jpeg/lake.jpeg" );
 
         rw::Stream *imgStream = this->rwEngine->CreateStream( rw::RWSTREAMTYPE_FILE, rw::RWSTREAMMODE_READONLY, &fileParam );
 
@@ -91,14 +91,14 @@ MainWindow::MainWindow(QWidget *parent) :
 
 #if 1
                 // Serialize it again.
-                rw::streamConstructionFileParam_t newFileparam( "out_test.png" );
+                rw::streamConstructionFileParam_t newFileparam( "out_test.jpeg" );
 
                 rw::Stream *outStr = this->rwEngine->CreateStream( rw::RWSTREAMTYPE_FILE, rw::RWSTREAMMODE_CREATE, &newFileparam );
 
                 if ( outStr )
                 {
                     // Do it.
-                    rw::SerializeImage( outStr, "PNG", theBmp );
+                    rw::SerializeImage( outStr, "JPEG", theBmp );
 
                     this->rwEngine->DeleteStream( outStr );
                 }

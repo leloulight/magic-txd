@@ -367,6 +367,8 @@ struct bmpImagingEnv : public imagingFormatExtension
             outputPixels.paletteData = paletteData;
             outputPixels.paletteSize = paletteSize;
             outputPixels.compressionType = RWCOMPRESS_NONE;
+
+            outputPixels.hasAlpha = false;  // BMP never has alpha.
         }
         catch( ... )
         {
