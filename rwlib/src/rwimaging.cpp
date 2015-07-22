@@ -205,15 +205,10 @@ struct rwImagingEnv
             inputStream->seek( rasterStreamPos, eSeekMode::RWSEEK_BEG );
 
             // Fetch stuff.
-            try
             {
                 supportedExt->DeserializeImage( engineInterface, inputStream, fetchedLayer );
             }
-            catch( RwException& )
-            {
-                // The operation has failed, so we just yield.
-                return false;
-            }
+            // If an exception has been thrown, we just pass it along.
 
             // Give the layer to the runtime.
             layerOut = fetchedLayer;
@@ -254,8 +249,6 @@ struct rwImagingEnv
 
             CompatibilityTransformImagingLayer( engineInterface, theLayer, layerPush, imageCaps );
 
-            bool success = true;
-
             try
             {
                 // Serialize the legit pixels.
@@ -263,7 +256,13 @@ struct rwImagingEnv
             }
             catch( ... )
             {
-                success = false;
+                // Free any data, since we failed.
+                if ( theLayer.texelSource != layerPush.texelSource )
+                {
+                    engineInterface->PixelFree( layerPush.texelSource );
+                }
+
+                throw;
             }
 
             // If we allocated new pixels, free the new ones.
@@ -273,7 +272,7 @@ struct rwImagingEnv
             }
 
             // We could be successful, hopefully.
-            return success;
+            return true;
         }
 
         // Something must have failed.
@@ -670,6 +669,7 @@ extern void registerTGAImagingExtension( void );
 extern void registerBMPImagingExtension( void );
 extern void registerPNGImagingExtension( void );
 extern void registerJPEGImagingExtension( void );
+extern void registerTIFFImagingExtension( void );
 
 void registerImagingPlugin( void )
 {
@@ -681,6 +681,7 @@ void registerImagingPlugin( void )
     registerBMPImagingExtension();
     registerPNGImagingExtension();
     registerJPEGImagingExtension();
+    registerTIFFImagingExtension();
 #endif //RWLIB_INCLUDE_IMAGING
 }
 

@@ -53,7 +53,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/lpng/;../../vendor/libjpeg/src/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -65,9 +65,9 @@
       <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName)_2013.pch</PrecompiledHeaderOutputFile>
     </ClCompile>
     <Lib>
-      <AdditionalDependencies>libimagequant_d_2013.lib;squishd_2013.lib;ATI_Compress_MT.lib;PVRTexLib.lib;libpng_d_2013.lib;libjpeg_d_2013.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libimagequant_d_2013.lib;squishd_2013.lib;ATI_Compress_MT.lib;PVRTexLib.lib;libpng_d_2013.lib;libjpeg_d_2013.lib;libtiff_d_2013.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>..\..\vendor\libimagequant\lib\static;..\..\vendor\squish-1.11\lib\vs12;..\..\vendor\pvrtexlib\Windows_x86_32\Static;..\..\vendor\atitc\VS2010\MT Release\Win32;..\..\vendor\lpng\lib\static\;..\..\vendor\libjpeg\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\vendor\libimagequant\lib\static;..\..\vendor\squish-1.11\lib\vs12;..\..\vendor\pvrtexlib\Windows_x86_32\Static;..\..\vendor\atitc\VS2010\MT Release\Win32;..\..\vendor\lpng\lib\static\;..\..\vendor\libjpeg\lib\;..\..\vendor\libtiff\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>LIBCMT;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Lib>
     <ProjectReference>
@@ -81,7 +81,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/lpng/;../../vendor/libjpeg/src/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -92,9 +92,9 @@
       <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName)_2013.pch</PrecompiledHeaderOutputFile>
     </ClCompile>
     <Lib>
-      <AdditionalDependencies>libimagequant_2013.lib;squish_2013.lib;ATI_Compress_MT.lib;PVRTexLib.lib;libpng_2013.lib;libjpeg_2013.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libimagequant_2013.lib;squish_2013.lib;ATI_Compress_MT.lib;PVRTexLib.lib;libpng_2013.lib;libjpeg_2013.lib;libtiff_2013.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>..\..\vendor\libimagequant\lib\static;..\..\vendor\squish-1.11\lib\vs12;..\..\vendor\pvrtexlib\Windows_x86_32\Static;..\..\vendor\atitc\VS2010\MT Release\Win32;..\..\vendor\lpng\lib\static\;..\..\vendor\libjpeg\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\vendor\libimagequant\lib\static;..\..\vendor\squish-1.11\lib\vs12;..\..\vendor\pvrtexlib\Windows_x86_32\Static;..\..\vendor\atitc\VS2010\MT Release\Win32;..\..\vendor\lpng\lib\static\;..\..\vendor\libjpeg\lib\;..\..\vendor\libtiff\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <IgnoreSpecificDefaultLibraries>LIBCMT;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Lib>
@@ -161,6 +161,7 @@
     <ClCompile Include="..\..\src\rwimaging.jpeg.cpp" />
     <ClCompile Include="..\..\src\rwimaging.png.cpp" />
     <ClCompile Include="..\..\src\rwimaging.tga.cpp" />
+    <ClCompile Include="..\..\src\rwimaging.tiff.cpp" />
     <ClCompile Include="..\..\src\rwinterface.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>

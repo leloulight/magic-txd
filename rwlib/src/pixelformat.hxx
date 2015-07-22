@@ -802,8 +802,8 @@ AINLINE void moveTexels(
     uint32 srcTexelX, uint32 srcTexelY, uint32 dstTexelX, uint32 dstTexelY,
     uint32 texelCountX, uint32 texelCountY,
     uint32 mipWidth, uint32 mipHeight,
-    eRasterFormat srcRasterFormat, uint32 srcItemDepth, uint32 srcRowAlignment, eColorOrdering srcColorOrder, ePaletteType srcPaletteType, const void *srcPaletteData, uint32 srcPaletteSize,
-    eRasterFormat dstRasterFormat, uint32 dstItemDepth, uint32 dstRowAlignment, eColorOrdering dstColorOrder, ePaletteType dstPaletteType, const void *dstPaletteData, uint32 dstPaletteSize
+    eRasterFormat srcRasterFormat, uint32 srcItemDepth, uint32 srcRowAlignment, eColorOrdering srcColorOrder, ePaletteType srcPaletteType, uint32 srcPaletteSize,
+    eRasterFormat dstRasterFormat, uint32 dstItemDepth, uint32 dstRowAlignment, eColorOrdering dstColorOrder, ePaletteType dstPaletteType, uint32 dstPaletteSize
 )
 {
     if ( srcPaletteType != PALETTE_NONE )

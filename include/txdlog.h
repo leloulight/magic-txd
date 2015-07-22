@@ -133,6 +133,7 @@ public:
 		logWidget->setLayout(mainLayout);
 
 		// icons
+        // NOTE: the Qt libpng implementation complains about a "known invalid sRGB profile" here.
 		picWarning.load("resources/warning.png");
 		picError.load("resources/error.png");
 		picInfo.load("resources/info.png");

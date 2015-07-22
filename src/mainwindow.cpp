@@ -59,7 +59,7 @@ MainWindow::MainWindow(QWidget *parent) :
     
 #if 1
         // Test something.
-        rw::streamConstructionFileParam_t fileParam( "C:/Users/The_GTA/Desktop/image format samples/jpeg/lake.jpeg" );
+        rw::streamConstructionFileParam_t fileParam( "C:/Users/The_GTA/Desktop/image format samples/tiff/default.tif" );
 
         rw::Stream *imgStream = this->rwEngine->CreateStream( rw::RWSTREAMTYPE_FILE, rw::RWSTREAMMODE_READONLY, &fileParam );
 
@@ -91,14 +91,14 @@ MainWindow::MainWindow(QWidget *parent) :
 
 #if 1
                 // Serialize it again.
-                rw::streamConstructionFileParam_t newFileparam( "out_test.jpeg" );
+                rw::streamConstructionFileParam_t newFileparam( "out_test.tif" );
 
                 rw::Stream *outStr = this->rwEngine->CreateStream( rw::RWSTREAMTYPE_FILE, rw::RWSTREAMMODE_CREATE, &newFileparam );
 
                 if ( outStr )
                 {
                     // Do it.
-                    rw::SerializeImage( outStr, "JPEG", theBmp );
+                    rw::SerializeImage( outStr, "TIFF", theBmp );
 
                     this->rwEngine->DeleteStream( outStr );
                 }
@@ -804,54 +804,66 @@ void MainWindow::onExportTexture( bool checked )
 
         if ( texHandle )
         {
-            const QString& exportFunction = senderAction->defaultExt;
-            const QString& formatName = senderAction->formatName;
-
-            std::string ansiExportFunction = exportFunction.toStdString();
-
-            const QString actualExt = exportFunction.toLower();
-            
-            // Construct a default filename for the object.
-            QString defaultFileName = QString( texHandle->GetName().c_str() ) + "." + actualExt;
-
-            // Request a filename and do the export.
-            QString finalFilePath =
-                QFileDialog::getSaveFileName(
-                    this, QString( "Save " ) + exportFunction + QString( " as..." ), defaultFileName,
-                    formatName + " (*." + actualExt + ")"
-                );
-
-            if ( finalFilePath.length() != 0 )
+            try
             {
-                // Try to open that file for writing.
-                std::wstring unicodeImagePath = finalFilePath.toStdWString();
-                
-                rw::streamConstructionFileParamW_t fileParam( unicodeImagePath.c_str() );
+                const QString& exportFunction = senderAction->defaultExt;
+                const QString& formatName = senderAction->formatName;
 
-                rw::Stream *imageStream = this->rwEngine->CreateStream( rw::RWSTREAMTYPE_FILE_W, rw::RWSTREAMMODE_CREATE, &fileParam );
+                std::string ansiExportFunction = exportFunction.toStdString();
 
-                if ( imageStream )
+                const QString actualExt = exportFunction.toLower();
+            
+                // Construct a default filename for the object.
+                QString defaultFileName = QString( texHandle->GetName().c_str() ) + "." + actualExt;
+
+                // Request a filename and do the export.
+                QString finalFilePath =
+                    QFileDialog::getSaveFileName(
+                        this, QString( "Save " ) + exportFunction + QString( " as..." ), defaultFileName,
+                        formatName + " (*." + actualExt + ")"
+                    );
+
+                if ( finalFilePath.length() != 0 )
                 {
-                    try
-                    {
-                        // Fetch a bitmap and serialize it.
-                        rw::Raster *texRaster = texHandle->GetRaster();
+                    // Try to open that file for writing.
+                    std::wstring unicodeImagePath = finalFilePath.toStdWString();
+                
+                    rw::streamConstructionFileParamW_t fileParam( unicodeImagePath.c_str() );
 
-                        if ( texRaster )
+                    rw::Stream *imageStream = this->rwEngine->CreateStream( rw::RWSTREAMTYPE_FILE_W, rw::RWSTREAMMODE_CREATE, &fileParam );
+
+                    if ( imageStream )
+                    {
+                        try
                         {
-                            serializeRaster( imageStream, texRaster, ansiExportFunction.c_str() );
+                            // Fetch a bitmap and serialize it.
+                            rw::Raster *texRaster = texHandle->GetRaster();
+
+                            if ( texRaster )
+                            {
+                                serializeRaster( imageStream, texRaster, ansiExportFunction.c_str() );
+                            }
                         }
-                    }
-                    catch( ... )
-                    {
+                        catch( ... )
+                        {
+                            this->rwEngine->DeleteStream( imageStream );
+
+                            // Since we failed, we do not want that image stream anymore.
+                            _wremove( unicodeImagePath.c_str() );
+
+                            throw;
+                        }
+
+                        // Close the stream again.
                         this->rwEngine->DeleteStream( imageStream );
-
-                        throw;
                     }
-
-                    // Close the stream again.
-                    this->rwEngine->DeleteStream( imageStream );
                 }
+            }
+            catch( rw::RwException& except )
+            {
+                this->txdLog->showError( QString( "error during image output: " ) + except.message.c_str() );
+
+                // We proceed.
             }
         }
     }

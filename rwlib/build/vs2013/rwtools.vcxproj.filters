@@ -168,5 +168,6 @@
     <ClCompile Include="..\..\src\txdread.d3d9.formats.cpp" />
     <ClCompile Include="..\..\src\rwimaging.png.cpp" />
     <ClCompile Include="..\..\src\rwimaging.jpeg.cpp" />
+    <ClCompile Include="..\..\src\rwimaging.tiff.cpp" />
   </ItemGroup>
 </Project>

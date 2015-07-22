@@ -592,8 +592,8 @@ struct bmpImagingEnv : public imagingFormatExtension
                             0, 0,
                             mipWidth, 1,
                             mipWidth, mipHeight,
-                            rasterFormat, depth, rowAlignment, colorOrder, paletteType, paletteData, paletteSize,
-                            dstRasterFormat, dstItemDepth, rowPadding, dstColorOrder, dstPaletteType, dstPaletteData, dstPaletteSize
+                            rasterFormat, depth, rowAlignment, colorOrder, paletteType, paletteSize,
+                            dstRasterFormat, dstItemDepth, rowPadding, dstColorOrder, dstPaletteType, dstPaletteSize
                         );
 
                         outputStream->write( tmpRow, dstRowSize );

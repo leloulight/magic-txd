@@ -85,7 +85,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <MinimalRebuild>false</MinimalRebuild>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -117,7 +117,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <MinimalRebuild>false</MinimalRebuild>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>

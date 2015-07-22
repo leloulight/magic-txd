@@ -924,8 +924,8 @@ struct pngImagingExtension : public imagingFormatExtension
                                     0, 0,
                                     mipWidth, 1,
                                     mipWidth, mipHeight,
-                                    rasterFormat, depth, rowAlignment, colorOrder, paletteType, paletteData, paletteSize,
-                                    wantedRasterFormat, wantedItemDepth, getPNGTexelDataRowAlignment(), wantedColorOrder, paletteType, paletteData, paletteSize
+                                    rasterFormat, depth, rowAlignment, colorOrder, paletteType, paletteSize,
+                                    wantedRasterFormat, wantedItemDepth, getPNGTexelDataRowAlignment(), wantedColorOrder, paletteType, paletteSize
                                 );
 
                                 // Write our row.
