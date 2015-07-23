@@ -575,7 +575,7 @@ struct bmpImagingEnv : public imagingFormatExtension
                         // Get the real row we should write.
                         uint32 real_row = 0;
 
-                        if ( !isUpsideDown )
+                        if ( isUpsideDown )
                         {
                             real_row = y;
                         }

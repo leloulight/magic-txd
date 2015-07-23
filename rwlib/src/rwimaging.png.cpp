@@ -760,7 +760,7 @@ struct pngImagingExtension : public imagingFormatExtension
                 }
 
                 // Cache the row size.
-                size_t rowSizeSrc = getPNGRasterDataRowSize( mipWidth, depth );
+                size_t rowSizeSrc = getRasterDataRowSize( mipWidth, depth, rowAlignment );
 
                 // Check whether we need transformation of pixels before writing.
                 // If we do not, then writing can happen very fast.
