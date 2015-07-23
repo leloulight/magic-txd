@@ -44,15 +44,7 @@ TexAddDialog::TexAddDialog( MainWindow *mainWnd, QPixmap pixels )
             {
                 const std::string& platName = *iter;
 
-                if ( platName == "Direct3D" )
-                {
-                    platformComboBox->addItem( "Direct3D 8" );
-                    platformComboBox->addItem( "Direct3D 9" );
-                }
-                else
-                {
-                    platformComboBox->addItem( platName.c_str() );
-                }
+                platformComboBox->addItem( platName.c_str() );
             }
         }
             
@@ -100,7 +92,7 @@ TexAddDialog::TexAddDialog( MainWindow *mainWnd, QPixmap pixels )
             pixelFormatSelect->addItem( "RASTER_1555" );
             pixelFormatSelect->addItem( "RASTER_565" );
             pixelFormatSelect->addItem( "RASTER_4444" );
-            //pixelFormatSelect->addItem( "RASTER_LUM8" ); TODO
+            pixelFormatSelect->addItem( "RASTER_LUM8" );
             pixelFormatSelect->addItem( "RASTER_8888" );
             pixelFormatSelect->addItem( "RASTER_888" );
             pixelFormatSelect->addItem( "RASTER_555" );

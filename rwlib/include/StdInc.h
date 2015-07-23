@@ -34,6 +34,8 @@ struct EngineInterface : public Interface
     }
 };
 
+std::string GetRunningSoftwareInformation( Interface *engineInterface );
+
 // Factory for global RenderWare interfaces.
 typedef StaticPluginClassFactory <EngineInterface> RwInterfaceFactory_t;
 

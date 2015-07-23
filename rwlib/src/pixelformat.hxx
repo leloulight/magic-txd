@@ -591,7 +591,7 @@ public:
                 red = lum;
                 green = lum;
                 blue = lum;
-                alpha = lum;
+                alpha = 255;
             }
         }
         else

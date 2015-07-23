@@ -191,6 +191,7 @@
     <ClCompile Include="..\..\src\txdwrite.cpp" />
     <ClCompile Include="..\..\src\txdwrite.d3d8.cpp" />
     <ClCompile Include="..\..\src\txdwrite.d3d9.cpp" />
+    <ClCompile Include="..\..\src\txdwrite.d3d9.dds.cpp" />
     <ClCompile Include="..\..\src\txdwrite.dxtmobile.cpp" />
     <ClCompile Include="..\..\src\txdwrite.ps2.cpp" />
     <ClCompile Include="..\..\src\txdwrite.pvr.cpp" />

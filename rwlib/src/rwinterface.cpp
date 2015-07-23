@@ -42,6 +42,8 @@ Interface::Interface( void )
     this->dxtPackedDecompression = false;
 
     this->ignoreSerializationBlockRegions = false;
+
+    this->enableMetaDataTagging = true;
 }
 
 RwObject::RwObject( Interface *engineInterface, void *construction_params )
@@ -77,6 +79,87 @@ Interface::~Interface( void )
 void Interface::SetVersion( LibraryVersion version )
 {
     this->version = version;
+}
+
+void Interface::SetApplicationInfo( const softwareMetaInfo& metaInfo )
+{
+    if ( const char *appName = metaInfo.applicationName )
+    {
+        this->applicationName = appName;
+    }
+    else
+    {
+        this->applicationName.clear();
+    }
+
+    if ( const char *appVersion = metaInfo.applicationVersion )
+    {
+        this->applicationVersion = appVersion;
+    }
+    else
+    {
+        this->applicationVersion.clear();
+    }
+
+    if ( const char *desc = metaInfo.description )
+    {
+        this->applicationDescription = desc;
+    }
+    else
+    {
+        this->applicationDescription.clear();
+    }
+}
+
+void Interface::SetMetaDataTagging( bool enabled )
+{
+    // Meta data tagging is useful so that people will find you if they need to (debugging, etc).
+    this->enableMetaDataTagging = enabled;
+}
+
+bool Interface::GetMetaDataTagging( void ) const
+{
+    return this->enableMetaDataTagging;
+}
+
+std::string GetRunningSoftwareInformation( Interface *engineInterface )
+{
+    std::string infoOut;
+
+    // Only output anything if we enable meta data tagging.
+    if ( engineInterface->enableMetaDataTagging )
+    {
+        // First put the software name.
+        bool hasAppName = false;
+
+        if ( engineInterface->applicationName.length() != 0 )
+        {
+            infoOut += engineInterface->applicationName;
+
+            hasAppName = true;
+        }
+        else
+        {
+            infoOut += "RenderWare (generic)";
+        }
+
+        infoOut += " [rwver: " + engineInterface->GetVersion().toString() + "]";
+
+        if ( hasAppName )
+        {
+            if ( engineInterface->applicationVersion.length() != 0 )
+            {
+                infoOut += " version: " + engineInterface->applicationVersion;
+            }
+        }
+
+        if ( engineInterface->applicationDescription.length() != 0 )
+        {
+            infoOut += " " + engineInterface->applicationDescription;
+        }
+    }
+
+    return infoOut;
 }
 
 RwObject* Interface::ConstructRwObject( const char *typeName )

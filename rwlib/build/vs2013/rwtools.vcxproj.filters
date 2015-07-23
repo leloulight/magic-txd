@@ -169,5 +169,6 @@
     <ClCompile Include="..\..\src\rwimaging.png.cpp" />
     <ClCompile Include="..\..\src\rwimaging.jpeg.cpp" />
     <ClCompile Include="..\..\src\rwimaging.tiff.cpp" />
+    <ClCompile Include="..\..\src\txdwrite.d3d9.dds.cpp" />
   </ItemGroup>
 </Project>

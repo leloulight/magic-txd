@@ -390,6 +390,16 @@ struct d3d9NativeTextureTypeProvider : public texNativeTypeProvider, d3dpublic::
         return getD3DTextureDataRowAlignment();
     }
 
+    // We want to support output as DirectDraw Surface files, as they are pretty handy.
+    const char* GetNativeImageFormatExtension( void ) const override
+    {
+        return "DDS";
+    }
+
+    bool IsNativeImageFormat( Interface *engineInterface, Stream *inputStream ) const override;
+    void SerializeNativeImage( Interface *engineInterface, Stream *inputStream, void *objMem ) const override;
+    void DeserializeNativeImage( Interface *engineInterface, Stream *outputStream, void *objMem ) const override;
+
     uint32 GetDriverIdentifier( void *objMem ) const override
     {
         // We are the Direct3D 9 driver.

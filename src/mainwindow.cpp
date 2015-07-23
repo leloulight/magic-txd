@@ -54,61 +54,16 @@ MainWindow::MainWindow(QWidget *parent) :
     this->rwEngine->SetDXTRuntime( rw::DXTRUNTIME_SQUISH );
     this->rwEngine->SetPaletteRuntime( rw::PALRUNTIME_PNGQUANT );
 
+    // Give RenderWare some info about us!
+    rw::softwareMetaInfo metaInfo;
+    metaInfo.applicationName = "Magic.TXD";
+    metaInfo.applicationVersion = MTXD_VERSION_STRING;
+    metaInfo.description = "by DK22Pac and The_GTA (https://github.com/quiret/magic-txd)";
+
+    this->rwEngine->SetApplicationInfo( metaInfo );
+
     try
     {
-    
-#if 1
-        // Test something.
-        rw::streamConstructionFileParam_t fileParam( "C:/Users/The_GTA/Desktop/image format samples/tiff/default.tif" );
-
-        rw::Stream *imgStream = this->rwEngine->CreateStream( rw::RWSTREAMTYPE_FILE, rw::RWSTREAMMODE_READONLY, &fileParam );
-
-        if ( imgStream )
-        {
-            rw::Bitmap theBmp;
-
-            bool success = rw::DeserializeImage( imgStream, theBmp );
-
-            if ( success )
-            {
-#if 0
-                // Put this into a new texture.
-                rw::Raster *newRaster = rw::CreateRaster( this->rwEngine );
-
-                if ( newRaster )
-                {
-                    newRaster->newNativeData( "Direct3D9" );
-
-                    newRaster->setImageData( theBmp );
-
-                    // Now lets generate mipmaps for it.
-                    newRaster->generateMipmaps( 9 );
-
-                    // Delete it again.
-                    rw::DeleteRaster( newRaster );
-                }
-#endif
-
-#if 1
-                // Serialize it again.
-                rw::streamConstructionFileParam_t newFileparam( "out_test.tif" );
-
-                rw::Stream *outStr = this->rwEngine->CreateStream( rw::RWSTREAMTYPE_FILE, rw::RWSTREAMMODE_CREATE, &newFileparam );
-
-                if ( outStr )
-                {
-                    // Do it.
-                    rw::SerializeImage( outStr, "TIFF", theBmp );
-
-                    this->rwEngine->DeleteStream( outStr );
-                }
-#endif
-            }
-
-            this->rwEngine->DeleteStream( imgStream );
-        }
-#endif
-
 	    /* --- Window --- */
         updateWindowTitle();
         setMinimumSize(380, 300);
@@ -205,6 +160,9 @@ MainWindow::MainWindow(QWidget *parent) :
 	    QMenu *editMenu = menu->addMenu(tr("&Edit"));
 	    QAction *actionAdd = new QAction("&Add", this);
 	    editMenu->addAction(actionAdd);
+
+        connect( actionAdd, &QAction::triggered, this, &MainWindow::onAddTexture );
+
 	    QAction *actionReplace = new QAction("&Replace", this);
 	    editMenu->addAction(actionReplace);
 	    QAction *actionRemove = new QAction("&Remove", this);
@@ -260,6 +218,38 @@ MainWindow::MainWindow(QWidget *parent) :
                      stricmp( theFormat.defaultExt, "BMP" ) != 0 )
                 {
                     this->addTextureFormatExportLinkToMenu( exportMenu, theFormat.defaultExt, theFormat.formatName );
+                }
+
+                // We want to cache the available formats.
+                registered_image_format imgformat;
+
+                imgformat.formatName = theFormat.formatName;
+                imgformat.defaultExt = theFormat.defaultExt;
+                imgformat.isNativeFormat = false;
+
+                this->reg_img_formats.push_back( std::move( imgformat ) );
+            }
+
+            // Also add image formats from native texture types.
+            rw::platformTypeNameList_t platformTypes = rw::GetAvailableNativeTextureTypes( this->rwEngine );
+
+            for ( rw::platformTypeNameList_t::const_iterator iter = platformTypes.begin(); iter != platformTypes.end(); iter++ )
+            {
+                const std::string& nativeName = *iter;
+
+                // Check the driver for a native name.
+                const char *nativeExt = rw::GetNativeTextureImageFormatExtension( this->rwEngine, nativeName.c_str() );
+
+                if ( nativeExt )
+                {
+                    registered_image_format imgformat;
+
+                    imgformat.formatName = nativeExt;   // could improve this.
+                    imgformat.defaultExt = nativeExt;
+                    imgformat.isNativeFormat = true;
+                    imgformat.nativeType = nativeName;
+
+                    this->reg_img_formats.push_back( std::move( imgformat ) );
                 }
             }
         }
@@ -427,9 +417,21 @@ void MainWindow::setCurrentTXD( rw::TexDictionary *txdObj )
     {
         this->currentTXD = txdObj;
 
-        QListWidget *listWidget = this->textureListWidget;
+        this->updateTextureList();
+    }
+}
 
-		bool selected = false;
+void MainWindow::updateTextureList( void )
+{
+    rw::TexDictionary *txdObj = this->currentTXD;
+
+    QListWidget *listWidget = this->textureListWidget;
+
+    listWidget->clear();
+
+    if ( txdObj )
+    {
+	    bool selected = false;
 
 	    for ( rw::TexDictionary::texIter_t iter( txdObj->GetTextureIterator() ); iter.IsEnd() == false; iter.Increment() )
 	    {
@@ -439,12 +441,12 @@ void MainWindow::setCurrentTXD( rw::TexDictionary *txdObj )
 	        listWidget->addItem(item);
 	        listWidget->setItemWidget(item, new TexInfoWidget(texItem) );
 		    item->setSizeHint(QSize(listWidget->sizeHintForColumn(0), 54));
-			// select first item in a list
-			if (!selected)
-			{
-				item->setSelected(true);
-				selected = true;
-			}
+		    // select first item in a list
+		    if (!selected)
+		    {
+			    item->setSelected(true);
+			    selected = true;
+		    }
 	    }
     }
 }
@@ -627,7 +629,7 @@ void MainWindow::updateTextureView( void )
 			    // This is a 2D color component surface.
 			    rw::Bitmap rasterBitmap( 32, rw::RASTER_8888, rw::COLOR_BGRA );
 
-                if ( this->drawMipmapLayers )
+                if ( this->drawMipmapLayers && rasterData->getMipmapCount() > 1 )
                 {
                     rasterBitmap.setBgColor( 1.0, 1.0, 1.0, 0.0 );
 
@@ -787,6 +789,168 @@ static void serializeRaster( rw::Stream *outputStream, rw::Raster *texRaster, co
 
     // Serialize it.
     texRaster->writeImage( outputStream, method );
+}
+
+void MainWindow::onAddTexture( bool checked )
+{
+    // Allow importing of a texture.
+    rw::TexDictionary *currentTXD = this->currentTXD;
+
+    if ( currentTXD != NULL )
+    {
+        // Get the name of a texture to add.
+        // For that we want to construct a list of all possible image extensions.
+        QString imgExtensionSelect;
+
+        bool hasEntry = false;
+
+        const imageFormats_t& avail_formats = this->reg_img_formats;
+
+        // Add any image file.
+        if ( hasEntry )
+        {
+            imgExtensionSelect += ";;";
+        }
+
+        imgExtensionSelect += "Image file (";
+
+        bool hasExtEntry = false;
+
+        for ( imageFormats_t::const_iterator iter = avail_formats.begin(); iter != avail_formats.end(); iter++ )
+        {
+            if ( hasExtEntry )
+            {
+                imgExtensionSelect += ";";
+            }
+
+            const registered_image_format& entry = *iter;
+
+            imgExtensionSelect += QString( "*." ) + QString( entry.defaultExt.c_str() ).toLower();
+
+            hasExtEntry = true;
+        }
+
+        imgExtensionSelect += ")";
+
+        hasEntry = true;
+
+        for ( imageFormats_t::const_iterator iter = avail_formats.begin(); iter != avail_formats.end(); iter++ )
+        {
+            if ( hasEntry )
+            {
+                imgExtensionSelect += ";;";
+            }
+
+            const registered_image_format& entry = *iter;
+
+            imgExtensionSelect += QString( entry.formatName.c_str() ) + QString( " (*." ) + QString( entry.defaultExt.c_str() ).toLower() + QString( ")" );
+
+            hasEntry = true;
+        }
+
+        // Add any file.
+        if ( hasEntry )
+        {
+            imgExtensionSelect += ";;";
+        }
+
+        imgExtensionSelect += "Any file (*.*)";
+
+        hasEntry = true;
+
+        QString fileName = QFileDialog::getOpenFileName( this, "Import Texture...", QString(), imgExtensionSelect );
+
+        if ( fileName.length() != 0 )
+        {
+            // Determine the texture name.
+            QFileInfo fileInfo( fileName );
+
+            QString baseName = fileInfo.baseName();
+
+            if ( baseName.length() != 0 )
+            {
+                std::string ansiBaseName = baseName.toStdString();
+
+                // Open a stream to our image.
+                std::wstring unicodeFileName = fileName.toStdWString();
+
+                rw::streamConstructionFileParamW_t fileParam( unicodeFileName.c_str() );
+
+                rw::Stream *imageStream = this->rwEngine->CreateStream( rw::RWSTREAMTYPE_FILE_W, rw::RWSTREAMMODE_READONLY, &fileParam );
+
+                if ( imageStream != NULL )
+                {
+                    try
+                    {
+                        // Create a new raster and deserialize into it.
+                        rw::Raster *newRaster = rw::CreateRaster( this->rwEngine );
+
+                        if ( newRaster )
+                        {
+                            try
+                            {
+                                // Give the raster a platform.
+                                newRaster->newNativeData( "Direct3D9" );
+
+                                // Deserialize.
+                                newRaster->readImage( imageStream );
+
+                                // We want to create a texture and put it into our TXD.
+                                rw::TextureBase *newTexture = rw::CreateTexture( this->rwEngine, newRaster );
+
+                                if ( newTexture )
+                                {
+                                    // Give it a name.
+                                    newTexture->SetName( ansiBaseName.c_str() );
+
+                                    // Now put it into the TXD.
+                                    newTexture->AddToDictionary( currentTXD );
+
+                                    // Update the texture list.
+                                    this->updateTextureList();
+                                }
+                                else
+                                {
+                                    this->txdLog->showError( "failed to create texture" );
+                                }
+                            }
+                            catch( ... )
+                            {
+                                rw::DeleteRaster( newRaster );
+
+                                throw;
+                            }
+
+                            // We release our reference from the raster.
+                            rw::DeleteRaster( newRaster );
+                        }
+                        else
+                        {
+                            this->txdLog->showError( "failed to create raster object" );
+                        }
+                    }
+                    catch( rw::RwException& except )
+                    {
+                        this->txdLog->showError( QString( "failed to deserialize image: " ) + except.message.c_str() );
+
+                        // Continue.
+                    }
+                    catch( ... )
+                    {
+                        this->rwEngine->DeleteStream( imageStream );
+
+                        throw;
+                    }
+
+                    this->rwEngine->DeleteStream( imageStream );
+                }
+                else
+                {
+                    this->txdLog->showError( QString( "failed to open image stream" ) );
+                }
+            }
+        }
+    }
 }
 
 void MainWindow::onExportTexture( bool checked )

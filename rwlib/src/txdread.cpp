@@ -1531,6 +1531,28 @@ void* GetNativeTextureDriverInterface( Interface *engineInterface, const char *t
     return intf;
 }
 
+const char* GetNativeTextureImageFormatExtension( Interface *engineInterface, const char *typeName )
+{
+    const char *ext = NULL;
+
+    // Get the type that is associated with the given typeName.
+    RwTypeSystem::typeInfoBase *theType = GetNativeTextureType( engineInterface, typeName );
+
+    if ( theType )
+    {
+        // Ensure that we are a native texture type and get its manager.
+        nativeTextureStreamPlugin::nativeTextureCustomTypeInterface *nativeIntf = dynamic_cast <nativeTextureStreamPlugin::nativeTextureCustomTypeInterface*> ( theType->tInterface );
+
+        if ( nativeIntf )
+        {
+            // Get the interface pointer.
+            ext = nativeIntf->texTypeProvider->GetNativeImageFormatExtension();
+        }
+    }
+
+    return ext;
+}
+
 platformTypeNameList_t GetAvailableNativeTextureTypes( Interface *engineInterface )
 {
     platformTypeNameList_t registeredTypes;
@@ -2464,28 +2486,55 @@ void Raster::writeImage(Stream *outputStream, const char *method)
         throw RwException( "invalid native texture" );
     }
 
-    // Get the mipmap from layer 0.
-    rawMipmapLayer rawLayer;
+    bool hasSerialized = false;
 
-    bool gotLayer = texProvider->GetMipmapLayer( engineInterface, platformTex, 0, rawLayer );
+    // First we try to serialize in the native texture implementation format.
+    const char *nativeImageImplExt = texProvider->GetNativeImageFormatExtension();
 
-    if ( !gotLayer )
+    if ( nativeImageImplExt != NULL && stricmp( nativeImageImplExt, method ) == 0 )
     {
-        throw RwException( "failed to get mipmap layer zero data in image writing" );
+        // We want to serialize using this.
+        texProvider->SerializeNativeImage( engineInterface, outputStream, platformTex );
+
+        hasSerialized = true;
     }
 
-    try
+    // Last resort.
+    if ( !hasSerialized )
     {
-        // Push the mipmap to the imaging plugin.
-        bool successfullyStored = SerializeMipmapLayer( outputStream, method, rawLayer );
+        // Get the mipmap from layer 0.
+        rawMipmapLayer rawLayer;
 
-        if ( successfullyStored == false )
+        bool gotLayer = texProvider->GetMipmapLayer( engineInterface, platformTex, 0, rawLayer );
+
+        if ( !gotLayer )
         {
-            throw RwException( "failed to serialize mipmap layer" );
+            throw RwException( "failed to get mipmap layer zero data in image writing" );
         }
-    }
-    catch( ... )
-    {
+
+        try
+        {
+            // Push the mipmap to the imaging plugin.
+            bool successfullyStored = SerializeMipmapLayer( outputStream, method, rawLayer );
+
+            if ( successfullyStored == false )
+            {
+                throw RwException( "failed to serialize mipmap layer" );
+            }
+        }
+        catch( ... )
+        {
+            if ( rawLayer.isNewlyAllocated )
+            {
+                engineInterface->PixelFree( rawLayer.mipData.texels );
+
+                rawLayer.mipData.texels = NULL;
+            }
+
+            throw;
+        }
+
+        // Free raw bitmap resources.
         if ( rawLayer.isNewlyAllocated )
         {
             engineInterface->PixelFree( rawLayer.mipData.texels );
@@ -2493,15 +2542,7 @@ void Raster::writeImage(Stream *outputStream, const char *method)
             rawLayer.mipData.texels = NULL;
         }
 
-        throw;
-    }
-
-    // Free raw bitmap resources.
-    if ( rawLayer.isNewlyAllocated )
-    {
-        engineInterface->PixelFree( rawLayer.mipData.texels );
-
-        rawLayer.mipData.texels = NULL;
+        hasSerialized = true;
     }
 }
 
@@ -2523,89 +2564,130 @@ void Raster::readImage( rw::Stream *inputStream )
         throw RwException( "invalid native texture" );
     }
 
-    // Attempt to get a mipmap layer from the stream.
-    rawMipmapLayer rawImagingLayer;
+    bool hasDeserialized = false;
 
-    bool deserializeSuccess = DeserializeMipmapLayer( inputStream, rawImagingLayer );
+    // We could be a native image format.
+    const char *nativeImplExt = texProvider->GetNativeImageFormatExtension();
 
-    if ( !deserializeSuccess )
+    if ( nativeImplExt != NULL )
     {
-        throw RwException( "could not deserialize image in raster image read method" );
+        int64 curStreamPtr = inputStream->tell();
+
+        bool isOfFormat = false;
+
+        try
+        {
+            isOfFormat = texProvider->IsNativeImageFormat( engineInterface, inputStream );
+        }
+        catch( RwException& )
+        {
+            isOfFormat = false;
+        }
+
+        // Restore seek pointer.
+        inputStream->seek( curStreamPtr, RWSEEK_BEG );
+
+        if ( isOfFormat )
+        {
+            // Alright, we want to deserialize then.
+            // First clear the image data that might exist in our texture.
+            texProvider->UnsetPixelDataFromTexture( engineInterface, platformTex, true );
+
+            texProvider->DeserializeNativeImage( engineInterface, inputStream, platformTex );
+
+            hasDeserialized = true;
+        }
     }
 
-    try
+    // Last resort.
+    if ( !hasDeserialized )
     {
-        // Delete image data that was previously at the texture.
-        texProvider->UnsetPixelDataFromTexture( engineInterface, platformTex, true );
-    }
-    catch( ... )
-    {
-        // Free the raw mipmap layer.
-        engineInterface->PixelFree( rawImagingLayer.mipData.texels );
+        // Attempt to get a mipmap layer from the stream.
+        rawMipmapLayer rawImagingLayer;
 
-        throw;
-    }
+        bool deserializeSuccess = DeserializeMipmapLayer( inputStream, rawImagingLayer );
 
-    // Put the imaging layer into the pixel traversal struct.
-    pixelDataTraversal pixelData;
+        if ( !deserializeSuccess )
+        {
+            throw RwException( "could not deserialize image in raster image read method" );
+        }
 
-    pixelData.mipmaps.resize( 1 );
+        try
+        {
+            // Delete image data that was previously at the texture.
+            texProvider->UnsetPixelDataFromTexture( engineInterface, platformTex, true );
+        }
+        catch( ... )
+        {
+            // Free the raw mipmap layer.
+            engineInterface->PixelFree( rawImagingLayer.mipData.texels );
 
-    pixelDataTraversal::mipmapResource& mipLayer = pixelData.mipmaps[ 0 ];
+            throw;
+        }
 
-    mipLayer.texels = rawImagingLayer.mipData.texels;
-    mipLayer.width = rawImagingLayer.mipData.width;
-    mipLayer.height = rawImagingLayer.mipData.height;
-    mipLayer.mipWidth = rawImagingLayer.mipData.mipWidth;
-    mipLayer.mipHeight = rawImagingLayer.mipData.mipHeight;
-    mipLayer.dataSize = rawImagingLayer.mipData.dataSize;
+        // Put the imaging layer into the pixel traversal struct.
+        pixelDataTraversal pixelData;
 
-    pixelData.rasterFormat = rawImagingLayer.rasterFormat;
-    pixelData.depth = rawImagingLayer.depth;
-    pixelData.rowAlignment = rawImagingLayer.rowAlignment;
-    pixelData.colorOrder = rawImagingLayer.colorOrder;
-    pixelData.paletteType = rawImagingLayer.paletteType;
-    pixelData.paletteData = rawImagingLayer.paletteData;
-    pixelData.paletteSize = rawImagingLayer.paletteSize;
-    pixelData.compressionType = rawImagingLayer.compressionType;
+        pixelData.mipmaps.resize( 1 );
 
-    pixelData.hasAlpha = calculateHasAlpha( pixelData );
-    pixelData.autoMipmaps = false;
-    pixelData.cubeTexture = false;
-    pixelData.rasterType = 4;   // bitmap raster.
+        pixelDataTraversal::mipmapResource& mipLayer = pixelData.mipmaps[ 0 ];
 
-    pixelData.isNewlyAllocated = true;
+        mipLayer.texels = rawImagingLayer.mipData.texels;
+        mipLayer.width = rawImagingLayer.mipData.width;
+        mipLayer.height = rawImagingLayer.mipData.height;
+        mipLayer.mipWidth = rawImagingLayer.mipData.mipWidth;
+        mipLayer.mipHeight = rawImagingLayer.mipData.mipHeight;
+        mipLayer.dataSize = rawImagingLayer.mipData.dataSize;
 
-    texNativeTypeProvider::acquireFeedback_t acquireFeedback;
+        pixelData.rasterFormat = rawImagingLayer.rasterFormat;
+        pixelData.depth = rawImagingLayer.depth;
+        pixelData.rowAlignment = rawImagingLayer.rowAlignment;
+        pixelData.colorOrder = rawImagingLayer.colorOrder;
+        pixelData.paletteType = rawImagingLayer.paletteType;
+        pixelData.paletteData = rawImagingLayer.paletteData;
+        pixelData.paletteSize = rawImagingLayer.paletteSize;
+        pixelData.compressionType = rawImagingLayer.compressionType;
 
-    try
-    {
-        // Make sure the pixel data is compatible.
-        pixelCapabilities acceptCaps;
+        pixelData.hasAlpha = calculateHasAlpha( pixelData );
+        pixelData.autoMipmaps = false;
+        pixelData.cubeTexture = false;
+        pixelData.rasterType = 4;   // bitmap raster.
 
-        texProvider->GetPixelCapabilities( acceptCaps );
+        pixelData.isNewlyAllocated = true;
 
-        CompatibilityTransformPixelData( engineInterface, pixelData, acceptCaps );
+        texNativeTypeProvider::acquireFeedback_t acquireFeedback;
 
-        // Set this to the texture now.
-        texProvider->SetPixelDataToTexture( engineInterface, platformTex, pixelData, acquireFeedback );
-    }
-    catch( ... )
-    {
-        // We just free our shit.
-        pixelData.FreePixels( engineInterface );
+        try
+        {
+            // Make sure the pixel data is compatible.
+            pixelCapabilities acceptCaps;
 
-        throw;
-    }
+            texProvider->GetPixelCapabilities( acceptCaps );
 
-    if ( acquireFeedback.hasDirectlyAcquired == false )
-    {
-        // We need to release our pixels.
-        pixelData.FreePixels( engineInterface );
-    }
-    else
-    {
-        pixelData.DetachPixels();
+            CompatibilityTransformPixelData( engineInterface, pixelData, acceptCaps );
+
+            // Set this to the texture now.
+            texProvider->SetPixelDataToTexture( engineInterface, platformTex, pixelData, acquireFeedback );
+        }
+        catch( ... )
+        {
+            // We just free our shit.
+            pixelData.FreePixels( engineInterface );
+
+            throw;
+        }
+
+        if ( acquireFeedback.hasDirectlyAcquired == false )
+        {
+            // We need to release our pixels.
+            pixelData.FreePixels( engineInterface );
+        }
+        else
+        {
+            pixelData.DetachPixels();
+        }
+
+        hasDeserialized = true;
     }
 }
 

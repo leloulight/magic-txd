@@ -266,8 +266,8 @@ struct pngImagingExtension : public imagingFormatExtension
                     {
                         // We are a color image without palette and no alpha.
                         rasterFormat = RASTER_888;
-                        depth = 32;
-                        itemDepth = 32;
+                        depth = 24;
+                        itemDepth = 24;
 
                         // Always directly acquire.
                         directAcquireByPixelFormat = true;

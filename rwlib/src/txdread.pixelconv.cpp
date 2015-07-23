@@ -401,7 +401,7 @@ void ConvertPaletteDepth(
         texWidth, texHeight,
         srcPaletteType, dstPaletteType,
         paletteSize,
-        dstDepth, dstDepth,
+        srcDepth, dstDepth,
         srcRowAlignment, dstRowAlignment
     );
 }

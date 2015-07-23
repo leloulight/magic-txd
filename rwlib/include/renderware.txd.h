@@ -758,6 +758,29 @@ struct texNativeTypeProvider abstract
         return false;
     }
 
+    // Native formats often have a more common texture format that they can output to.
+    // We should allow them to implement one.
+    virtual const char*     GetNativeImageFormatExtension( void ) const
+    {
+        // Return a valid c-string if there is an implementation for this.
+        return NULL;
+    }
+
+    virtual bool            IsNativeImageFormat( Interface *engineInterface, Stream *outputStream ) const
+    {
+        return false;
+    }
+
+    virtual void            SerializeNativeImage( Interface *engineInterface, Stream *inputStream, void *objMem ) const
+    {
+        throw RwException( "native image format not implemented" );
+    }
+
+    virtual void            DeserializeNativeImage( Interface *engineInterface, Stream *outputSteam, void *objMem ) const
+    {
+        throw RwException( "native image format not implemente" );
+    }
+
     // Driver identification functions.
     virtual uint32          GetDriverIdentifier( void *objMem ) const
     {
@@ -790,6 +813,8 @@ bool UnregisterNativeTextureType( Interface *engineInterface, const char *native
 bool ConvertRasterTo( Raster *theRaster, const char *nativeName );
 
 void* GetNativeTextureDriverInterface( Interface *engineInterface, const char *nativeName );
+
+const char* GetNativeTextureImageFormatExtension( Interface *engineInterface, const char *nativeName );
 
 platformTypeNameList_t GetAvailableNativeTextureTypes( Interface *engineInterface );
 

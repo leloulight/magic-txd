@@ -536,15 +536,95 @@ struct tiffImagingExtension : public imagingFormatExtension
             uint16 *colormap_blue;
             uint16 num_extra_samples; uint16 *extra_sample_types;
             uint16 sample_count;
+            uint16 orientation;
 
-            TIFFGetField( tif, TIFFTAG_PHOTOMETRIC, &photometric_type );
-            TIFFGetField( tif, TIFFTAG_IMAGEWIDTH, &image_width );
-            TIFFGetField( tif, TIFFTAG_IMAGELENGTH, &image_length );
-            TIFFGetField( tif, TIFFTAG_BITSPERSAMPLE, &bits_per_sample );
-            TIFFGetField( tif, TIFFTAG_COMPRESSION, &compression );
-            TIFFGetField( tif, TIFFTAG_COLORMAP, &colormap_red, &colormap_green, &colormap_blue );
-            TIFFGetField( tif, TIFFTAG_EXTRASAMPLES, &num_extra_samples, &extra_sample_types );
-            TIFFGetField( tif, TIFFTAG_SAMPLESPERPIXEL, &sample_count );
+            // Get TIFF properties.
+            {
+                int photometricSuccess = TIFFGetField( tif, TIFFTAG_PHOTOMETRIC, &photometric_type );
+
+                if ( photometricSuccess != 1 )
+                {
+                    throw RwException( "failed to get photometric setting for TIFF" );
+                }
+
+                int imageWidthSuccess = TIFFGetField( tif, TIFFTAG_IMAGEWIDTH, &image_width );
+
+                if ( imageWidthSuccess != 1 )
+                {
+                    throw RwException( "failed to get image width setting for TIFF" );
+                }
+
+                int imageLengthSuccess = TIFFGetField( tif, TIFFTAG_IMAGELENGTH, &image_length );
+
+                if ( imageLengthSuccess != 1 )
+                {
+                    throw RwException( "failed to get image length setting for TIFF" );
+                }
+
+                int bitsPerSampleSuccess = TIFFGetField( tif, TIFFTAG_BITSPERSAMPLE, &bits_per_sample );
+
+                if ( bitsPerSampleSuccess != 1 )
+                {
+                    throw RwException( "failed to get sample depth for TIFF" );
+                }
+
+                int compressionSuccess = TIFFGetFieldDefaulted( tif, TIFFTAG_COMPRESSION, &compression );
+
+                if ( compressionSuccess != 1 )
+                {
+                    throw RwException( "failed to get compression property for TIFF" );
+                }
+
+                int colormapSuccess = TIFFGetField( tif, TIFFTAG_COLORMAP, &colormap_red, &colormap_green, &colormap_blue );
+
+                if ( colormapSuccess != 1 )
+                {
+                    // We simply have no colormap.
+                    colormap_red = NULL;
+                    colormap_green = NULL;
+                    colormap_blue = NULL;
+                }
+
+                int extrasamplesSuccess = TIFFGetField( tif, TIFFTAG_EXTRASAMPLES, &num_extra_samples, &extra_sample_types );
+
+                if ( extrasamplesSuccess != 1 )
+                {
+                    // No alpha.
+                    num_extra_samples = 0;
+                    extra_sample_types = NULL;
+                }
+
+                int samplesPerPixelSuccess = TIFFGetField( tif, TIFFTAG_SAMPLESPERPIXEL, &sample_count );
+
+                if ( samplesPerPixelSuccess != 1 )
+                {
+                    throw RwException( "failed to get the amount of samples per pixel for TIFF" );
+                }
+
+                int orientationSuccess = TIFFGetFieldDefaulted( tif, TIFFTAG_ORIENTATION, &orientation );
+
+                if ( orientationSuccess != 1 )
+                {
+                    throw RwException( "failed to get the orientation property for TIFF" );
+                }
+            }
+
+            // Check some obvious things.
+            // We do not accept corrupted data, basically.
+            if ( image_width == 0 || image_length == 0 )
+            {
+                throw RwException( "empty TIFF image (dimensions are zero)" );
+            }
+
+            if ( bits_per_sample == 0 )
+            {
+                throw RwException( "TIFF has zero sample depth" );
+            }
+
+            if ( sample_count == 0 )
+            {
+                throw RwException( "TIFF has no samples" );
+            }
 
             // Determine whether this TIFF has an alpha channel.
             bool tiff_has_alpha_channel = ( num_extra_samples == 1 && ( extra_sample_types[0] == 1 || extra_sample_types[0] == 2 ) );
@@ -564,94 +644,98 @@ struct tiffImagingExtension : public imagingFormatExtension
 
             eTIFF_ParseMode parseMode;
 
-            if ( photometric_type == PHOTOMETRIC_MINISWHITE ||
-                 photometric_type == PHOTOMETRIC_MINISBLACK )
+            // TODO: allow for direct acquisition even if the orientation is off.
+            if ( orientation == ORIENTATION_TOPLEFT )
             {
-                if ( bits_per_sample == 4 || bits_per_sample == 8 )
+                if ( photometric_type == PHOTOMETRIC_MINISWHITE ||
+                     photometric_type == PHOTOMETRIC_MINISBLACK )
                 {
-                    if ( num_extra_samples == 0 || tiff_has_alpha_channel )
+                    if ( bits_per_sample == 4 || bits_per_sample == 8 )
                     {
-                        if ( tiff_has_alpha_channel )
+                        if ( num_extra_samples == 0 || tiff_has_alpha_channel )
                         {
-                            // Need to store things in RGBA.
-                            dstRasterFormat = RASTER_8888;
-                            dstDepth = 32;
-
-                            // We have no known RW types representation,
-                        }
-                        else
-                        {
-                            // We store things in grayscale.
-                            dstRasterFormat = RASTER_LUM8;
-                            dstDepth = 8;
-
-                            if ( photometric_type == PHOTOMETRIC_MINISBLACK )
+                            if ( tiff_has_alpha_channel )
                             {
-                                tiffRasterFormat = RASTER_LUM8;
+                                // Need to store things in RGBA.
+                                dstRasterFormat = RASTER_8888;
+                                dstDepth = 32;
+
+                                // We have no known RW types representation,
+                            }
+                            else
+                            {
+                                // We store things in grayscale.
+                                dstRasterFormat = RASTER_LUM8;
+                                dstDepth = 8;
+
+                                if ( photometric_type == PHOTOMETRIC_MINISBLACK )
+                                {
+                                    tiffRasterFormat = RASTER_LUM8;
+                                    tiffDepth = 8;
+                                }
+                            }
+
+                            parseMode = TPARSEMODE_GRAYSCALE;
+                        }
+                    }
+                }
+                else if ( photometric_type == PHOTOMETRIC_RGB )
+                {
+                    if ( bits_per_sample == 8 )
+                    {
+                        if ( num_extra_samples == 0 || tiff_has_alpha_channel )
+                        {
+                            if ( tiff_has_alpha_channel )
+                            {
+                                dstRasterFormat = RASTER_8888;
+                                dstDepth = 32;
+
+                                tiffRasterFormat = RASTER_8888;
                                 tiffDepth = 8;
                             }
-                        }
-
-                        parseMode = TPARSEMODE_GRAYSCALE;
-                    }
-                }
-            }
-            else if ( photometric_type == PHOTOMETRIC_RGB )
-            {
-                if ( bits_per_sample == 8 )
-                {
-                    if ( num_extra_samples == 0 || tiff_has_alpha_channel )
-                    {
-                        if ( tiff_has_alpha_channel )
-                        {
-                            dstRasterFormat = RASTER_8888;
-                            dstDepth = 32;
-
-                            tiffRasterFormat = RASTER_8888;
-                            tiffDepth = 8;
-                        }
-                        else
-                        {
-                            dstRasterFormat = RASTER_888;
-                            dstDepth = 24;
-
-                            tiffRasterFormat = RASTER_888;
-                            tiffDepth = 24;
-                        }
-
-                        parseMode = TPARSEMODE_FULLCOLOR;
-                    }
-                }
-            }
-            else if ( photometric_type == PHOTOMETRIC_PALETTE )
-            {
-                if ( bits_per_sample == 4 || bits_per_sample == 8 )
-                {
-                    if ( colormap_red != NULL && colormap_green != NULL && colormap_blue != NULL )
-                    {
-                        // I am aware that palette alpha can be made on a per-texel basis here.
-                        // But this would be ridiculous. Fuck that.
-                        if ( num_extra_samples == 0 )
-                        {
-                            // We are a palette based image.
-                            dstRasterFormat = RASTER_888;
-                            dstDepth = bits_per_sample;
-
-                            if ( bits_per_sample == 4 )
+                            else
                             {
-                                dstPaletteType = PALETTE_4BIT;
-                            }
-                            else if ( bits_per_sample == 8 )
-                            {
-                                dstPaletteType = PALETTE_8BIT;
+                                dstRasterFormat = RASTER_888;
+                                dstDepth = 24;
+
+                                tiffRasterFormat = RASTER_888;
+                                tiffDepth = 24;
                             }
 
-                            dstPaletteSize = getPaletteItemCount( dstPaletteType );
+                            parseMode = TPARSEMODE_FULLCOLOR;
+                        }
+                    }
+                }
+                else if ( photometric_type == PHOTOMETRIC_PALETTE )
+                {
+                    if ( bits_per_sample == 4 || bits_per_sample == 8 )
+                    {
+                        if ( colormap_red != NULL && colormap_green != NULL && colormap_blue != NULL )
+                        {
+                            // I am aware that palette alpha can be made on a per-texel basis here.
+                            // But this would be ridiculous. Fuck that.
+                            if ( num_extra_samples == 0 )
+                            {
+                                // We are a palette based image.
+                                dstRasterFormat = RASTER_888;
+                                dstDepth = bits_per_sample;
 
-                            parseMode = TPARSEMODE_PALETTE;
+                                if ( bits_per_sample == 4 )
+                                {
+                                    dstPaletteType = PALETTE_4BIT;
+                                }
+                                else if ( bits_per_sample == 8 )
+                                {
+                                    dstPaletteType = PALETTE_8BIT;
+                                }
 
-                            tiffRasterFormat = RASTER_888;
-                            tiffDepth = 24;
+                                dstPaletteSize = getPaletteItemCount( dstPaletteType );
+
+                                parseMode = TPARSEMODE_PALETTE;
+
+                                tiffRasterFormat = RASTER_888;
+                                tiffDepth = 24;
+                            }
                         }
                     }
                 }
@@ -713,6 +797,11 @@ struct tiffImagingExtension : public imagingFormatExtension
                     {
                         // The known mappings should be good to read as scanlines.
                         tmsize_t scanline_size = TIFFScanlineSize( tif );
+
+                        if ( scanline_size == 0 )
+                        {
+                            throw RwException( "cannot read TIFF whose scanline size is zero" );
+                        }
 
                         // Check whether we can just directly read the scanlines into our destination buffer.
                         bool canTexelsDirectlyAcquire = false;
@@ -873,7 +962,7 @@ struct tiffImagingExtension : public imagingFormatExtension
                         // Hopefully this will solve all our problems!
                         
                         // We assume that libtiff can correctly output into our dst buffer.
-                        int tiffRGBAError = TIFFReadRGBAImage( tif, image_width, image_length, (uint32*)dstTexels );
+                        int tiffRGBAError = TIFFReadRGBAImageOriented( tif, image_width, image_length, (uint32*)dstTexels, ORIENTATION_TOPLEFT );
 
                         if ( tiffRGBAError != 1 )
                         {
@@ -1152,6 +1241,7 @@ struct tiffImagingExtension : public imagingFormatExtension
                 TIFFSetField( tif, TIFFTAG_EXTRASAMPLES, num_extra_samples, extra_sample_types );
                 TIFFSetField( tif, TIFFTAG_PHOTOMETRIC, photometric_type );
                 TIFFSetField( tif, TIFFTAG_BITSPERSAMPLE, bits_per_sample );
+                TIFFSetField( tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT );
 
                 if ( colormap_red != NULL && colormap_green != NULL && colormap_blue != NULL )
                 {

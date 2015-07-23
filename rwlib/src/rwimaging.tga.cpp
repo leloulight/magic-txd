@@ -230,6 +230,14 @@ struct tgaImagingExtension : public imagingFormatExtension
         capsOut.supportsPalette = true;
     }
 
+    enum eTGAOrientation
+    {
+        TGAORIENT_BOTTOMLEFT,
+        TGAORIENT_BOTTOMRIGHT,
+        TGAORIENT_TOPLEFT,
+        TGAORIENT_TOPRIGHT
+    };
+
     void DeserializeImage( Interface *engineInterface, Stream *inputStream, imagingLayerTraversal& outputTexels ) const override
     {
         // Read the header and decide about color format stuff.
@@ -307,6 +315,28 @@ struct tgaImagingExtension : public imagingFormatExtension
         {
             throw RwException( "unknown raster format mapping for .tga" );
         }
+        
+        // Make sure we set proper orientation.
+        eTGAOrientation tgaOrient = TGAORIENT_TOPLEFT;
+
+        uint32 serOrient = headerData.ImageDescriptor.imageOrdering;
+
+        if ( serOrient == 0 )
+        {
+            tgaOrient = TGAORIENT_BOTTOMLEFT;
+        }
+        else if ( serOrient == 1 )
+        {
+            tgaOrient = TGAORIENT_BOTTOMRIGHT;
+        }
+        else if ( serOrient == 2 )
+        {
+            tgaOrient = TGAORIENT_TOPLEFT;
+        }
+        else if ( serOrient == 3 )
+        {
+            tgaOrient = TGAORIENT_TOPRIGHT;
+        }
 
         // Skip the image id, if we have one.
         if ( headerData.IDLength != 0 )
@@ -359,6 +389,38 @@ struct tgaImagingExtension : public imagingFormatExtension
 
         try
         {
+            // The data can be oriented in four different ways, to the liking of the serializer.
+            // We should allow any orientation, but we only store in TOPLEFT.
+            bool flip_horizontal = false;
+            bool flip_vertical = false;
+
+            if ( tgaOrient == TGAORIENT_TOPLEFT )
+            {
+                flip_horizontal = false;
+                flip_vertical = false;
+            }
+            else if ( tgaOrient == TGAORIENT_TOPRIGHT )
+            {
+                flip_horizontal = true;
+                flip_vertical = false;
+            }
+            else if ( tgaOrient == TGAORIENT_BOTTOMLEFT )
+            {
+                flip_horizontal = false;
+                flip_vertical = true;
+            }
+            else if ( tgaOrient == TGAORIENT_BOTTOMRIGHT )
+            {
+                flip_horizontal = true;
+                flip_vertical = true;
+            }
+            else
+            {
+                assert( 0 );
+            }
+
+            bool canDirectlyAcquire = ( tgaOrient == TGAORIENT_TOPLEFT );
+
             // Now read the color/index data.
             uint32 width = headerData.Width;
             uint32 height = headerData.Height;
@@ -378,11 +440,84 @@ struct tgaImagingExtension : public imagingFormatExtension
 
             try
             {
-                size_t rasterReadCount = inputStream->read( texelData, rasterDataSize );
-
-                if ( rasterReadCount != rasterDataSize )
+                if ( canDirectlyAcquire )
                 {
-                    throw RwException( "failed to read .tga color/index data" );
+                    size_t rasterReadCount = inputStream->read( texelData, rasterDataSize );
+
+                    if ( rasterReadCount != rasterDataSize )
+                    {
+                        throw RwException( "failed to read .tga color/index data" );
+                    }
+                }
+                else
+                {
+                    // We require a temporary transformation buffer.
+                    void *rowbuf = engineInterface->PixelAllocate( tgaRowSize );
+
+                    if ( rowbuf == NULL )
+                    {
+                        throw RwException( "failed to allocate .tga auxiliary row buffer" );
+                    }
+
+                    try
+                    {
+                        // We have to read row by row and cell by cell, while transforming the texels.
+                        for ( uint32 srcRow = 0; srcRow < height; srcRow++ )
+                        {
+                            // Read the source row.
+                            uint32 rowReadCount = inputStream->read( rowbuf, tgaRowSize );
+
+                            if ( rowReadCount != tgaRowSize )
+                            {
+                                throw RwException( "incomplete TGA row read exception" );
+                            }
+
+                            // Get the actual destination row.
+                            uint32 dstRow;
+
+                            if ( flip_vertical )
+                            {
+                                dstRow = ( height - srcRow - 1 );
+                            }
+                            else
+                            {
+                                dstRow = srcRow;
+                            }
+
+                            void *dstRowData = getTexelDataRow( texelData, tgaRowSize, dstRow );
+
+                            for ( uint32 srcCol = 0; srcCol < width; srcCol++ )
+                            {
+                                // Get the source column.
+                                uint32 dstCol;
+
+                                if ( flip_horizontal )
+                                {
+                                    dstCol = ( width - srcCol - 1 );
+                                }
+                                else
+                                {
+                                    dstCol = srcCol;
+                                }
+
+                                // We dont have to transform items, so move by depth.
+                                moveDataByDepth(
+                                    dstRowData, rowbuf,
+                                    dstItemDepth,
+                                    dstCol, srcCol
+                                );
+                            }
+                        }
+                    }
+                    catch( ... )
+                    {
+                        engineInterface->PixelFree( rowbuf );
+
+                        throw;
+                    }
+
+                    // Free memory.
+                    engineInterface->PixelFree( rowbuf );
                 }
             }
             catch( ... )
@@ -542,7 +677,13 @@ struct tgaImagingExtension : public imagingFormatExtension
 
             bool isPalette = (dstPaletteType != PALETTE_NONE);
 
-            header.IDLength = 0;
+            // We want to write information about this software in the image id field.
+            std::string _software_info = GetRunningSoftwareInformation( engineInterface );
+
+            const char *image_id_data = _software_info.c_str();
+            size_t image_id_length = _software_info.length();
+
+            header.IDLength = image_id_length;
             header.ColorMapType = ( isPalette ? 1 : 0 );
             header.ImageType = ( isPalette ? 1 : 2 );
 
@@ -573,11 +714,17 @@ struct tgaImagingExtension : public imagingFormatExtension
             header.PixelDepth = ( isPalette ? dstItemDepth : dstColorDepth );
 
             header.ImageDescriptor.numAttrBits = dstAlphaBits;
-            header.ImageDescriptor.imageOrdering = 2;
+            header.ImageDescriptor.imageOrdering = 2;   // we store pixels in topleft ordering.
             header.ImageDescriptor.reserved = 0;
 
             // Write the header.
             outputStream->write((const void*)&header, sizeof(header));
+
+            // Write image ID stuff.
+            if ( image_id_length != 0 )
+            {
+                outputStream->write( image_id_data, image_id_length );
+            }
 
             const void *texelSource = inputTexels.texelSource;
             const void *paletteData = inputTexels.paletteData;

@@ -132,7 +132,7 @@ struct bmpImagingEnv : public imagingFormatExtension
             throw RwException( "invalid checksum for .bmp" );
         }
 
-        if ( header.bfReserved1 != 0 ||header.bfReserved2 != 0 )
+        if ( header.bfReserved1 != 0 || header.bfReserved2 != 0 )
         {
             throw RwException( "unknown bitmap extension; reserved not zero" );
         }
@@ -302,7 +302,7 @@ struct bmpImagingEnv : public imagingFormatExtension
             // Calculate the image data size, which includes the padding bytes for each row.
             const uint32 rowPadding = getBMPTexelDataRowAlignment();
 
-            const uint32 rowSize = getRasterDataRowSize( width, depth, rowPadding );
+            const uint32 rowSize = getRasterDataRowSize( width, itemDepth, rowPadding );
 
             const uint32 imageDataSize = ( rowSize * height );
 
@@ -320,7 +320,7 @@ struct bmpImagingEnv : public imagingFormatExtension
                     // Seek to the row.
                     int64 seekPos;
 
-                    if ( isUpsideDown )
+                    if ( !isUpsideDown )
                     {
                         seekPos = rowSize * y;
                     }
@@ -360,7 +360,7 @@ struct bmpImagingEnv : public imagingFormatExtension
             outputPixels.dataSize = imageDataSize;
 
             outputPixels.rasterFormat = rasterFormat;
-            outputPixels.depth = depth;
+            outputPixels.depth = itemDepth;
             outputPixels.rowAlignment = rowPadding;
             outputPixels.colorOrder = COLOR_BGRA;
             outputPixels.paletteType = paletteType;
@@ -575,7 +575,7 @@ struct bmpImagingEnv : public imagingFormatExtension
                         // Get the real row we should write.
                         uint32 real_row = 0;
 
-                        if ( isUpsideDown )
+                        if ( !isUpsideDown )
                         {
                             real_row = y;
                         }

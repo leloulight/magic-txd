@@ -33,6 +33,7 @@ private:
 
 public:
     void setCurrentTXD( rw::TexDictionary *txdObj );
+    void updateTextureList( void );
 
     void updateWindowTitle( void );
     void updateTextureMetaInfo( void );
@@ -58,6 +59,7 @@ public slots:
     void onRequestSaveTXD( bool checked );
     void onRequestSaveAsTXD( bool checked );
 
+    void onAddTexture( bool checked );
     void onExportTexture( bool checked );
 
 protected:
@@ -112,6 +114,20 @@ private:
     typedef std::list <magf_extension> magf_formats_t;
 
     magf_formats_t magf_formats;
+
+    // Cache of registered image formats and their interfaces.
+    struct registered_image_format
+    {
+        std::string formatName;
+        std::string defaultExt;
+
+        bool isNativeFormat;
+        std::string nativeType;
+    };
+
+    typedef std::list <registered_image_format> imageFormats_t;
+
+    imageFormats_t reg_img_formats;
 };
 
 #endif // MAINWINDOW_H

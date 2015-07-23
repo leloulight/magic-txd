@@ -413,6 +413,14 @@ struct WarningManagerInterface abstract
     virtual void OnWarning( const std::string& message ) = 0;
 };
 
+// Software meta information provider struct.
+struct softwareMetaInfo
+{
+    const char *applicationName;
+    const char *applicationVersion;
+    const char *description;
+};
+
 // Palettization configuration.
 enum ePaletteRuntimeType
 {
@@ -477,6 +485,11 @@ public:
     void                SetVersion              ( LibraryVersion version );
     LibraryVersion      GetVersion              ( void ) const     { return this->version; }
 
+    // Give details about the running application to RenderWare.
+    void                SetApplicationInfo      ( const softwareMetaInfo& metaInfo );
+    void                SetMetaDataTagging      ( bool enabled );
+    bool                GetMetaDataTagging      ( void ) const;
+
     void                SetFileInterface        ( FileInterface *fileIntf );
     FileInterface*      GetFileInterface        ( void );
 
@@ -538,6 +551,8 @@ public:
     void                SetIgnoreSerializationBlockRegions  ( bool doIgnore );
     bool                GetIgnoreSerializationBlockRegions  ( void ) const;
 
+    // DIRECT ACCESS TO THE FOLLING MEMBERS IF OFF-LIMITS TO APPLICATIONS!
+
     LibraryVersion version;     // version of the output files (III, VC, SA, Manhunt, ...)
 
     // General type system.
@@ -552,7 +567,6 @@ public:
     RwTypeSystem::typeInfoBase *rwobjTypeInfo;
     RwTypeSystem::typeInfoBase *textureTypeInfo;
 
-protected:
     FileInterface *customFileInterface;
 
     WarningManagerInterface *warningManager;
@@ -567,6 +581,13 @@ protected:
     bool dxtPackedDecompression;
 
     bool ignoreSerializationBlockRegions;
+
+    // Information about the running application.
+    std::string applicationName;
+    std::string applicationVersion;
+    std::string applicationDescription;
+
+    bool enableMetaDataTagging;
 };
 
 // To create a RenderWare interface, you have to go through a constructor.
