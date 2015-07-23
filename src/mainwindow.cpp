@@ -900,6 +900,11 @@ void MainWindow::onAddTexture( bool checked )
 
                                 if ( newTexture )
                                 {
+                                    // We need to set default texture rendering properties.
+                                    newTexture->SetFilterMode( rw::RWFILTER_LINEAR );
+                                    newTexture->SetUAddressing( rw::RWTEXADDRESS_WRAP );
+                                    newTexture->SetVAddressing( rw::RWTEXADDRESS_WRAP );
+
                                     // Give it a name.
                                     newTexture->SetName( ansiBaseName.c_str() );
 

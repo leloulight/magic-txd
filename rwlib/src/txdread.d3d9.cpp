@@ -190,11 +190,14 @@ void d3d9NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
                         isValidFormat = ( d3dFormat == D3DFMT_P8 );
 
                         // Basically, we have to tell the user that it should have had a palette D3DFORMAT.
-                        if ( engineIgnoreSecureWarnings == false )
+                        if ( isValidFormat == false )
                         {
-                            engineInterface->PushWarning( "texture " + theTexture->GetName() + " is a palette texture but did not set D3DFMT_P8" );
+                            if ( engineIgnoreSecureWarnings == false )
+                            {
+                                engineInterface->PushWarning( "texture " + theTexture->GetName() + " is a palette texture but did not set D3DFMT_P8" );
 
-                            hasReportedStrongWarning = true;
+                                hasReportedStrongWarning = true;
+                            }
                         }
                     }
                     else
