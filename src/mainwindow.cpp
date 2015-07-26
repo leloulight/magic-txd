@@ -23,6 +23,7 @@ MainWindow::MainWindow(QWidget *parent) :
     this->txdNameLabel = NULL;
     this->currentSelectedTexture = NULL;
     this->txdLog = NULL;
+    this->rwVersionButton = NULL;
 
     this->drawMipmapLayers = false;
 	this->showBackground = false;
@@ -76,6 +77,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	    QListWidget *listWidget = new QListWidget();
 	    listWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
 		listWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+        listWidget->setMaximumWidth(350);
 	    //listWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
         connect( listWidget, &QListWidget::currentItemChanged, this, &MainWindow::onTextureItemChanged );
@@ -292,13 +294,29 @@ MainWindow::MainWindow(QWidget *parent) :
 	    txdOptionsBackground->setLayout(hlayout);
 	    hlayout->setMenuBar(menu);
 
+        // Layout for rw version, with right-side alignment
+        QHBoxLayout *rwVerLayout = new QHBoxLayout;
+        rwVersionButton = new QPushButton;
+        rwVersionButton->setObjectName("rwVersionButton");
+        rwVersionButton->hide();
+        rwVerLayout->addWidget(rwVersionButton);
+        rwVerLayout->setAlignment(Qt::AlignRight);
+
+        // Layout to mix menu and rw version label/button
+        QGridLayout *menuVerLayout = new QGridLayout();
+        menuVerLayout->addWidget(txdOptionsBackground, 0, 0);
+        menuVerLayout->addLayout(rwVerLayout, 0, 0, Qt::AlignRight);
+        menuVerLayout->setContentsMargins(0, 0, 0, 0);
+        menuVerLayout->setMargin(0);
+        menuVerLayout->setSpacing(0);
+
 	    QWidget *hLineBackground = new QWidget();
 	    hLineBackground->setFixedHeight(1);
 	    hLineBackground->setObjectName("hLineBackground");
 
 	    QVBoxLayout *topLayout = new QVBoxLayout;
 	    topLayout->addWidget(txdNameBackground);
-	    topLayout->addWidget(txdOptionsBackground);
+        topLayout->addLayout(menuVerLayout);
 	    topLayout->addWidget(hLineBackground);
 	    topLayout->setContentsMargins(0, 0, 0, 0);
 	    topLayout->setMargin(0);
@@ -467,17 +485,29 @@ void MainWindow::updateWindowTitle( void )
     setWindowTitle( windowTitleString );
 
     // Also update the top label.
-    if ( this->txdNameLabel )
+    if (this->txdNameLabel)
     {
-        if ( rw::TexDictionary *txd = this->currentTXD )
+        if (rw::TexDictionary *txd = this->currentTXD)
         {
-            this->txdNameLabel->setText(
-                QString( this->openedTXDFileInfo.fileName() ) + QString( " [rwver: " ) + txd->GetEngineVersion().toString().c_str() + QString( "]" )
-            );
+            this->txdNameLabel->setText(QString(this->openedTXDFileInfo.fileName()));
         }
         else
         {
             this->txdNameLabel->clear();
+        }
+    }
+
+    // Update version button
+    if (this->rwVersionButton)
+    {
+        if (rw::TexDictionary *txd = this->currentTXD)
+        {
+            this->rwVersionButton->setText(QString(txd->GetEngineVersion().toString().c_str()));
+            this->rwVersionButton->show();
+        }
+        else
+        {
+            this->rwVersionButton->hide();
         }
     }
 }
