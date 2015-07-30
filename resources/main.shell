@@ -261,3 +261,16 @@ QPushButton:hover:!pressed
     background-color: rgba(255, 255, 255, 20);
     border-color: #d1db2f;
 }
+
+QPushButton#rwVersionButton
+{
+    background-color: rgba(0, 0, 0, 0);
+    border-style: none;
+    font-size: 25px;
+    padding: 0px 15px 4px;
+}
+
+QPushButton#rwVersionButton:pressed
+{
+    color: #d1db2f;
+}

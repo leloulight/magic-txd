@@ -99,6 +99,8 @@ private:
 
     QLabel *txdNameLabel;
 
+    QPushButton *rwVersionButton;
+
     bool drawMipmapLayers;
 	bool showBackground;
 
