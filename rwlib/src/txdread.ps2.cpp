@@ -12,6 +12,8 @@
 
 #include "pixelformat.hxx"
 
+#include "pixelutil.hxx"
+
 #include "txdread.ps2gsman.hxx"
 
 #include "txdread.common.hxx"

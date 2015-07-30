@@ -2609,7 +2609,7 @@ void Raster::readImage( rw::Stream *inputStream )
 
         if ( !deserializeSuccess )
         {
-            throw RwException( "could not deserialize image in raster image read method" );
+            throw RwException( "unknown image format" );
         }
 
         try

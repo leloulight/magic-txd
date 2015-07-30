@@ -17,7 +17,7 @@ struct d3dNativeTextureInterface abstract
     // Returns the D3DFORMAT field of that native texture.
     // Since every Direct3D 9 native texture must have a D3DFORMAT field, this will
     // always return true.
-    virtual bool GetD3DFormat( DWORD& d3dFormat ) const = 0;
+    virtual void GetD3DFormat( DWORD& d3dFormat ) const = 0;
 };
 
 /*

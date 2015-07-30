@@ -13,34 +13,6 @@
 namespace rw
 {
 
-inline uint32 getCompressionFromD3DFormat( D3DFORMAT d3dFormat )
-{
-    uint32 compressionIndex = 0;
-
-    if ( d3dFormat == D3DFMT_DXT1 )
-    {
-        compressionIndex = 1;
-    }
-    else if ( d3dFormat == D3DFMT_DXT2 )
-    {
-        compressionIndex = 2;
-    }
-    else if ( d3dFormat == D3DFMT_DXT3 )
-    {
-        compressionIndex = 3;
-    }
-    else if ( d3dFormat == D3DFMT_DXT4 )
-    {
-        compressionIndex = 4;
-    }
-    else if ( d3dFormat == D3DFMT_DXT5 )
-    {
-        compressionIndex = 5;
-    }
-
-    return compressionIndex;
-}
-
 void d3d9NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture, PlatformTexture *nativeTex, BlockProvider& inputProvider ) const
 {
     Interface *engineInterface = theTexture->engineInterface;
@@ -208,129 +180,17 @@ void d3d9NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
                         // TODO: add an interface property to enable GTA:SA-compliant loading behavior.
                         isD3DFORMATImportant = true;
 
-                        if (d3dFormat == D3DFMT_A8R8G8B8)
+                        // Get a valid D3DFORMAT to RW original types mapping.
+                        bool isVirtualFormat = false;
+
+                        isValidFormat = getRasterFormatFromD3DFormat(
+                            d3dFormat, platformTex->hasAlpha,
+                            d3dRasterFormat, colorOrder, isVirtualFormat
+                        );
+
+                        if ( isVirtualFormat )
                         {
-                            d3dRasterFormat = RASTER_8888;
-
-                            colorOrder = COLOR_BGRA;
-
-                            isValidFormat = true;
-                        }
-                        else if (d3dFormat == D3DFMT_X8R8G8B8)
-                        {
-                            d3dRasterFormat = RASTER_888;
-
-                            colorOrder = COLOR_BGRA;
-
-                            isValidFormat = true;
-                        }
-                        else if (d3dFormat == D3DFMT_R8G8B8)
-                        {
-                            d3dRasterFormat = RASTER_888;
-
-                            colorOrder = COLOR_BGRA;
-
-                            isValidFormat = true;
-                        }
-                        else if (d3dFormat == D3DFMT_R5G6B5)
-                        {
-                            d3dRasterFormat = RASTER_565;
-
-                            colorOrder = COLOR_BGRA;
-
-                            isValidFormat = true;
-                        }
-                        else if (d3dFormat == D3DFMT_X1R5G5B5)
-                        {
-                            d3dRasterFormat = RASTER_555;
-
-                            colorOrder = COLOR_BGRA;
-
-                            isValidFormat = true;
-                        }
-                        else if (d3dFormat == D3DFMT_A1R5G5B5)
-                        {
-                            d3dRasterFormat = RASTER_1555;
-
-                            colorOrder = COLOR_BGRA;
-
-                            isValidFormat = true;
-                        }
-                        else if (d3dFormat == D3DFMT_A4R4G4B4)
-                        {
-                            d3dRasterFormat = RASTER_4444;
-
-                            colorOrder = COLOR_BGRA;
-
-                            isValidFormat = true;
-                        }
-                        else if (d3dFormat == D3DFMT_A8B8G8R8)
-                        {
-                            d3dRasterFormat = RASTER_8888;
-
-                            colorOrder = COLOR_RGBA;
-
-                            isValidFormat = true;
-                        }
-                        else if (d3dFormat == D3DFMT_X8B8G8R8)
-                        {
-                            d3dRasterFormat = RASTER_888;
-
-                            colorOrder = COLOR_RGBA;
-
-                            isValidFormat = true;
-                        }
-                        else if (d3dFormat == D3DFMT_L8)
-                        {
-                            d3dRasterFormat = RASTER_LUM8;
-
-                            // Actually, there is no such thing as a color order for luminance textures.
-                            // We set this field so we make things happy.
-                            colorOrder = COLOR_BGRA;
-
-                            isValidFormat = true;
-                        }
-                        else if (d3dFormat == D3DFMT_DXT1)
-                        {
-                            if (platformTex->hasAlpha)
-                            {
-                                d3dRasterFormat = RASTER_1555;
-                            }
-                            else
-                            {
-                                d3dRasterFormat = RASTER_565;
-                            }
-
-                            colorOrder = COLOR_BGRA;
-
-                            isValidFormat = true;
-
                             isRasterFormatRequired = false;
-                        }
-                        else if (d3dFormat == D3DFMT_DXT2 || d3dFormat == D3DFMT_DXT3)
-                        {
-                            d3dRasterFormat = RASTER_4444;
-
-                            colorOrder = COLOR_BGRA;
-
-                            isValidFormat = true;
-
-                            isRasterFormatRequired = false;
-                        }
-                        else if (d3dFormat == D3DFMT_DXT4 || d3dFormat == D3DFMT_DXT5)
-                        {
-                            d3dRasterFormat = RASTER_4444;
-
-                            colorOrder = COLOR_BGRA;
-
-                            isValidFormat = true;
-
-                            isRasterFormatRequired = false;
-                        }
-                        else if (d3dFormat == D3DFMT_P8)
-                        {
-                            // We cannot be a palette texture without having actual palette data.
-                            isValidFormat = false;
                         }
 
                         // Is the D3DFORMAT known by this implementation?

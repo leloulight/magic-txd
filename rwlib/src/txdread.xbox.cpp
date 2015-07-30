@@ -17,6 +17,76 @@
 namespace rw
 {
 
+inline eCompressionType getDXTCompressionTypeFromXBOX( uint32 xboxCompressionType )
+{
+    eCompressionType rwCompressionType = RWCOMPRESS_NONE;
+
+    if ( xboxCompressionType != 0 )
+    {
+        if ( xboxCompressionType == 0xc )
+        {
+            rwCompressionType = RWCOMPRESS_DXT1;
+        }
+        else if ( xboxCompressionType == 0xd )
+        {
+            rwCompressionType = RWCOMPRESS_DXT2;
+        }
+        else if ( xboxCompressionType == 0xe )
+        {
+            rwCompressionType = RWCOMPRESS_DXT3;
+        }
+        else if ( xboxCompressionType == 0xf )
+        {
+            rwCompressionType = RWCOMPRESS_DXT5;
+        }
+        else if ( xboxCompressionType == 0x10 )
+        {
+            rwCompressionType = RWCOMPRESS_DXT4;
+        }
+        else
+        {
+            assert( 0 );
+        }
+    }
+
+    return rwCompressionType;
+}
+
+inline uint32 getXBOXCompressionTypeFromRW( eCompressionType rwCompressionType )
+{
+    uint32 xboxCompressionType = 0;
+
+    if ( rwCompressionType != RWCOMPRESS_NONE )
+    {
+        if ( rwCompressionType == RWCOMPRESS_DXT1 )
+        {
+            xboxCompressionType = 0xC;
+        }
+        else if ( rwCompressionType == RWCOMPRESS_DXT2 )
+        {
+            xboxCompressionType = 0xD;
+        }
+        else if ( rwCompressionType == RWCOMPRESS_DXT3 )
+        {
+            xboxCompressionType = 0xE;
+        }
+        else if ( rwCompressionType == RWCOMPRESS_DXT5 )
+        {
+            xboxCompressionType = 0xF;
+        }
+        else if ( rwCompressionType == RWCOMPRESS_DXT4 )
+        {
+            xboxCompressionType = 0x10;
+        }
+        else
+        {
+            assert( 0 );
+        }
+    }
+
+    return xboxCompressionType;
+}
+
 void xboxNativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture, PlatformTexture *nativeTex, BlockProvider& inputProvider ) const
 {
     Interface *engineInterface = theTexture->engineInterface;
@@ -226,25 +296,27 @@ void xboxNativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
                     {
                         uint32 texUnitCount = ( texWidth * texHeight );
 
+                        eCompressionType rwCompressionType = getDXTCompressionTypeFromXBOX( dxtCompression );
+
                         uint32 dxtType = 0;
 
-	                    if (dxtCompression == 0xC)	// DXT1 (?)
+	                    if ( rwCompressionType == RWCOMPRESS_DXT1 )  // DXT1 (?)
                         {
                             dxtType = 1;
                         }
-                        else if (dxtCompression == 0xD)
+                        else if ( rwCompressionType == RWCOMPRESS_DXT2 )
                         {
                             dxtType = 2;
                         }
-                        else if (dxtCompression == 0xE)
+                        else if ( rwCompressionType == RWCOMPRESS_DXT3 )
                         {
                             dxtType = 3;
                         }
-                        else if (dxtCompression == 0xF)
+                        else if ( rwCompressionType == RWCOMPRESS_DXT4 )
                         {
                             dxtType = 4;
                         }
-                        else if (dxtCompression == 0x10)
+                        else if ( rwCompressionType == RWCOMPRESS_DXT5 )
                         {
                             dxtType = 5;
                         }
@@ -400,43 +472,6 @@ inline void copyPaletteData(
     }
 }
 
-inline eCompressionType getXBOXCompressionType( const NativeTextureXBOX *nativeTex )
-{
-    eCompressionType rwCompressionType = RWCOMPRESS_NONE;
-
-    uint32 xboxCompressionType = nativeTex->dxtCompression;
-
-    if ( xboxCompressionType != 0 )
-    {
-        if ( xboxCompressionType == 0xc )
-        {
-            rwCompressionType = RWCOMPRESS_DXT1;
-        }
-        else if ( xboxCompressionType == 0xd )
-        {
-            rwCompressionType = RWCOMPRESS_DXT2;
-        }
-        else if ( xboxCompressionType == 0xe )
-        {
-            rwCompressionType = RWCOMPRESS_DXT3;
-        }
-        else if ( xboxCompressionType == 0xf )
-        {
-            rwCompressionType = RWCOMPRESS_DXT4;
-        }
-        else if ( xboxCompressionType == 0x10 )
-        {
-            rwCompressionType = RWCOMPRESS_DXT5;
-        }
-        else
-        {
-            assert( 0 );
-        }
-    }
-
-    return rwCompressionType;
-}
-
 inline bool isXBOXTextureSwizzled( const NativeTextureXBOX *nativeTex )
 {
     // TODO: maybe this is not entirely true.
@@ -451,7 +486,7 @@ void xboxNativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineIn
 
     // We need to find out how to store the texels into the traversal containers.
     // If we store compressed image data, we can give the data directly to the runtime.
-    eCompressionType rwCompressionType = getXBOXCompressionType( platformTex );
+    eCompressionType rwCompressionType = getDXTCompressionTypeFromXBOX( platformTex->dxtCompression );
 
     uint32 srcDepth = platformTex->depth;
 
@@ -626,30 +661,7 @@ void xboxNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
 
     if ( rwCompressionType != RWCOMPRESS_NONE )
     {
-        if ( rwCompressionType == RWCOMPRESS_DXT1 )
-        {
-            xboxCompressionType = 0xC;
-        }
-        else if ( rwCompressionType == RWCOMPRESS_DXT2 )
-        {
-            xboxCompressionType = 0xD;
-        }
-        else if ( rwCompressionType == RWCOMPRESS_DXT3 )
-        {
-            xboxCompressionType = 0xE;
-        }
-        else if ( rwCompressionType == RWCOMPRESS_DXT4 )
-        {
-            xboxCompressionType = 0xF;
-        }
-        else if ( rwCompressionType == RWCOMPRESS_DXT5 )
-        {
-            xboxCompressionType = 0x10;
-        }
-        else
-        {
-            assert( 0 );
-        }
+        xboxCompressionType = getXBOXCompressionTypeFromRW( rwCompressionType );
 
         // Compressed rasters are what they are.
         // They do not need swizzling.
@@ -1014,7 +1026,7 @@ struct xboxMipmapManager
         dstPaletteData = nativeTex->palette;
         dstPaletteSize = nativeTex->paletteSize;
 
-        dstCompressionType = getXBOXCompressionType( nativeTex );
+        dstCompressionType = getDXTCompressionTypeFromXBOX( nativeTex->dxtCompression );
 
         hasAlpha = nativeTex->hasAlpha;
 
@@ -1050,7 +1062,7 @@ struct xboxMipmapManager
                 rasterFormat, depth, rowAlignment, colorOrder, paletteType, paletteData, paletteSize, compressionType,
                 nativeTex->rasterFormat, nativeTex->depth, getXBOXTextureDataRowAlignment(), nativeTex->colorOrder,
                 nativeTex->paletteType, nativeTex->palette, nativeTex->paletteSize,
-                getXBOXCompressionType( nativeTex ),
+                getDXTCompressionTypeFromXBOX( nativeTex->dxtCompression ),
                 false,
                 width, height,
                 srcTexels, dataSize
@@ -1170,25 +1182,31 @@ void xboxNativeTextureTypeProvider::GetTextureFormatString( Interface *engineInt
 
     if ( xboxCompressionType != 0 )
     {
-        if ( xboxCompressionType == 0xC )
+        eCompressionType rwCompressionType = getDXTCompressionTypeFromXBOX( xboxCompressionType );
+
+        if ( rwCompressionType == RWCOMPRESS_DXT1 )
         {
             formatString += " DXT1";
         }
-        else if ( xboxCompressionType == 0xD )
+        else if ( rwCompressionType == RWCOMPRESS_DXT2 )
         {
             formatString += " DXT2";
         }
-        else if ( xboxCompressionType == 0xE )
+        else if ( rwCompressionType == RWCOMPRESS_DXT3 )
         {
             formatString += " DXT3";
         }
-        else if ( xboxCompressionType == 0xF )
+        else if ( rwCompressionType == RWCOMPRESS_DXT4 )
         {
             formatString += " DXT4";
         }
-        else if ( xboxCompressionType == 0x10 )
+        else if ( rwCompressionType == RWCOMPRESS_DXT5 )
         {
             formatString += " DXT5";
+        }
+        else
+        {
+            formatString += "compressed (unk)";
         }
     }
     else

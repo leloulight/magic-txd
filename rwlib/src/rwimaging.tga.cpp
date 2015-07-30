@@ -6,6 +6,8 @@
 
 #include "pixelformat.hxx"
 
+#include "streamutil.hxx"
+
 namespace rw
 {
 
@@ -196,14 +198,36 @@ struct tgaImagingExtension : public imagingFormatExtension
             return false;
         }
 
-        // Now skip the ID stuff, if present.
-        if ( possibleHeader.IDLength != 0 )
+        // We need to check definitive TGA format parameters.
+        // Extra steps are necessary because TGA has no magic number.
+        uint8 colorMapType = possibleHeader.ColorMapType;
         {
-            skipAvailable( inputStream, possibleHeader.IDLength );
+            if ( colorMapType != 0 && colorMapType != 1 )
+            {
+                return false;
+            }
+
+            uint8 imageType = possibleHeader.ImageType;
+
+            if ( imageType != 0 && imageType != 1 && imageType != 2 && imageType != 3 &&
+                 imageType != 9 && imageType != 10 && imageType != 11 )
+            {
+                return false;
+            }
+        }
+
+        // Now skip the ID stuff, if present.
+        {
+            uint8 idLength = possibleHeader.IDLength;
+
+            if ( idLength != 0 )
+            {
+                skipAvailable( inputStream, idLength );
+            }
         }
 
         // Read the palette stuff.
-        if ( possibleHeader.ColorMapType == 1 )
+        if ( colorMapType == 1 )
         {
             uint32 palDataSize = getPaletteDataSize( possibleHeader.CMapLength, possibleHeader.CMapDepth );
 

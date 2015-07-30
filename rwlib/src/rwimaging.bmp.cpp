@@ -6,6 +6,8 @@
 
 #include <PluginHelpers.h>
 
+#include "streamutil.hxx"
+
 namespace rw
 {
 

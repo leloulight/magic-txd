@@ -130,6 +130,175 @@ inline bool getD3DFormatFromRasterType(eRasterFormat paletteRasterType, ePalette
     return hasFormat;
 }
 
+inline bool getRasterFormatFromD3DFormat(
+    D3DFORMAT d3dFormat, bool canHaveAlpha,
+    eRasterFormat& rasterFormatOut, eColorOrdering& colorOrderOut, bool& isVirtualRasterFormatOut
+)
+{
+    bool isValidFormat = false;
+    bool isVirtualRasterFormat = false;
+
+    if (d3dFormat == D3DFMT_A8R8G8B8)
+    {
+        rasterFormatOut = RASTER_8888;
+
+        colorOrderOut = COLOR_BGRA;
+
+        isValidFormat = true;
+    }
+    else if (d3dFormat == D3DFMT_X8R8G8B8)
+    {
+        rasterFormatOut = RASTER_888;
+
+        colorOrderOut = COLOR_BGRA;
+
+        isValidFormat = true;
+    }
+    else if (d3dFormat == D3DFMT_R8G8B8)
+    {
+        rasterFormatOut = RASTER_888;
+
+        colorOrderOut = COLOR_BGRA;
+
+        isValidFormat = true;
+    }
+    else if (d3dFormat == D3DFMT_R5G6B5)
+    {
+        rasterFormatOut = RASTER_565;
+
+        colorOrderOut = COLOR_BGRA;
+
+        isValidFormat = true;
+    }
+    else if (d3dFormat == D3DFMT_X1R5G5B5)
+    {
+        rasterFormatOut = RASTER_555;
+
+        colorOrderOut = COLOR_BGRA;
+
+        isValidFormat = true;
+    }
+    else if (d3dFormat == D3DFMT_A1R5G5B5)
+    {
+        rasterFormatOut = RASTER_1555;
+
+        colorOrderOut = COLOR_BGRA;
+
+        isValidFormat = true;
+    }
+    else if (d3dFormat == D3DFMT_A4R4G4B4)
+    {
+        rasterFormatOut = RASTER_4444;
+
+        colorOrderOut = COLOR_BGRA;
+
+        isValidFormat = true;
+    }
+    else if (d3dFormat == D3DFMT_A8B8G8R8)
+    {
+        rasterFormatOut = RASTER_8888;
+
+        colorOrderOut = COLOR_RGBA;
+
+        isValidFormat = true;
+    }
+    else if (d3dFormat == D3DFMT_X8B8G8R8)
+    {
+        rasterFormatOut = RASTER_888;
+
+        colorOrderOut = COLOR_RGBA;
+
+        isValidFormat = true;
+    }
+    else if (d3dFormat == D3DFMT_L8)
+    {
+        rasterFormatOut = RASTER_LUM8;
+
+        // Actually, there is no such thing as a color order for luminance textures.
+        // We set this field so we make things happy.
+        colorOrderOut = COLOR_BGRA;
+
+        isValidFormat = true;
+    }
+    else if (d3dFormat == D3DFMT_DXT1)
+    {
+        if ( canHaveAlpha )
+        {
+            rasterFormatOut = RASTER_1555;
+        }
+        else
+        {
+            rasterFormatOut = RASTER_565;
+        }
+
+        colorOrderOut = COLOR_BGRA;
+
+        isValidFormat = true;
+
+        isVirtualRasterFormat = true;
+    }
+    else if (d3dFormat == D3DFMT_DXT2 || d3dFormat == D3DFMT_DXT3)
+    {
+        rasterFormatOut = RASTER_4444;
+
+        colorOrderOut = COLOR_BGRA;
+
+        isValidFormat = true;
+
+        isVirtualRasterFormat = true;
+    }
+    else if (d3dFormat == D3DFMT_DXT4 || d3dFormat == D3DFMT_DXT5)
+    {
+        rasterFormatOut = RASTER_4444;
+
+        colorOrderOut = COLOR_BGRA;
+
+        isValidFormat = true;
+
+        isVirtualRasterFormat = true;
+    }
+    else if (d3dFormat == D3DFMT_P8)
+    {
+        // We cannot be a palette texture without having actual palette data.
+        isValidFormat = false;
+    }
+    
+    if ( isValidFormat )
+    {
+        isVirtualRasterFormatOut = isVirtualRasterFormat;
+    }
+
+    return isValidFormat;
+}
+
+inline uint32 getCompressionFromD3DFormat( D3DFORMAT d3dFormat )
+{
+    uint32 compressionIndex = 0;
+
+    if ( d3dFormat == D3DFMT_DXT1 )
+    {
+        compressionIndex = 1;
+    }
+    else if ( d3dFormat == D3DFMT_DXT2 )
+    {
+        compressionIndex = 2;
+    }
+    else if ( d3dFormat == D3DFMT_DXT3 )
+    {
+        compressionIndex = 3;
+    }
+    else if ( d3dFormat == D3DFMT_DXT4 )
+    {
+        compressionIndex = 4;
+    }
+    else if ( d3dFormat == D3DFMT_DXT5 )
+    {
+        compressionIndex = 5;
+    }
+
+    return compressionIndex;
+}
+
 struct NativeTextureD3D9 : public d3dpublic::d3dNativeTextureInterface
 {
     Interface *engineInterface;
@@ -223,10 +392,9 @@ struct NativeTextureD3D9 : public d3dpublic::d3dNativeTextureInterface
 
     // Implement the public API.
 
-    bool GetD3DFormat( DWORD& d3dFormat ) const
+    void GetD3DFormat( DWORD& d3dFormat ) const override
     {
         d3dFormat = (DWORD)this->d3dFormat;
-        return true;
     }
 
     // PUBLIC API END

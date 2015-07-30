@@ -7,6 +7,7 @@
 namespace rw
 {
 
+// WARNING: little endian types!
 struct rgb565
 {
     union
@@ -21,6 +22,28 @@ struct rgb565
     };
 };
 
+AINLINE uint32 getDXTLocalBlockIndex( uint32 local_x, uint32 local_y )
+{
+    return ( local_y * 4u + local_x );
+}
+
+template <typename numType>
+AINLINE numType indexlist_lookup( const numType& indexList, numType index, numType bit_count )
+{
+    numType bitMask = ( (numType)std::pow( (numType)2, bit_count ) - 1 );
+
+    numType shiftCount = ( index * bit_count );
+
+    return ( indexList & ( bitMask << shiftCount ) ) >> shiftCount;
+}
+
+AINLINE uint32 fetchDXTIndexList( const uint32& indexList, uint32 local_x, uint32 local_y )
+{
+    uint32 coord_index = getDXTLocalBlockIndex( local_x, local_y );
+
+    return indexlist_lookup( indexList, coord_index, 2u );
+}
+
 struct dxt1_block
 {
     rgb565 col0;
@@ -29,7 +52,7 @@ struct dxt1_block
     uint32 indexList;
 };
 
-struct dxt3_block
+struct dxt2_3_block
 {
     uint64 alphaList;
 
@@ -37,9 +60,14 @@ struct dxt3_block
     rgb565 col1;
 
     uint32 indexList;
+
+    inline uint32 getAlphaForTexel( uint32 index ) const
+    {
+        return indexlist_lookup( this->indexList, index, 4u );
+    }
 };
 
-struct dxt4_block
+struct dxt4_5_block
 {
     uint8 alphaPreMult[2];
     uint8 alphaList[6];
@@ -48,6 +76,55 @@ struct dxt4_block
     rgb565 col1;
 
     uint32 indexList;
+
+    static inline uint8 getAlphaByIndex( uint32 first_alpha, uint32 second_alpha, uint32 alphaIndex )
+    {
+        uint8 theAlpha = 255u;
+
+        if ( alphaIndex < 2 )
+        {
+            if ( alphaIndex == 0 )
+            {
+                theAlpha = first_alpha;
+            }
+            else if ( alphaIndex == 1 )
+            {
+                theAlpha = second_alpha;
+            }
+        }
+        else
+        {
+            uint32 displaced_alpha_index = ( alphaIndex - 2 );
+
+            if ( first_alpha > second_alpha )
+            {
+                uint32 first_linear_arg = ( 6u - displaced_alpha_index );
+                uint32 second_linear_arg = ( displaced_alpha_index + 1u );
+
+                theAlpha = ( first_linear_arg * first_alpha + second_linear_arg * second_alpha ) / 7;
+            }
+            else
+            {
+                if ( alphaIndex == 6 )
+                {
+                    theAlpha = 0;
+                }
+                else if ( alphaIndex == 7 )
+                {
+                    theAlpha = 255u;
+                }
+                else
+                {
+                    uint32 first_linear_arg = ( 4u - displaced_alpha_index );
+                    uint32 second_linear_arg = ( displaced_alpha_index + 1u );
+
+                    theAlpha = ( first_linear_arg * first_alpha + second_linear_arg * second_alpha ) / 5;
+                }
+            }
+        }
+
+        return theAlpha;
+    }
 };
 
 struct squish_color
@@ -57,6 +134,49 @@ struct squish_color
     uint8 red;
     uint8 alpha;
 };
+
+inline void premultiplyByAlpha(
+    uint8 red, uint8 green, uint8 blue, uint8 alpha,
+    uint8& redOut, uint8& greenOut, uint8& blueOut
+)
+{
+    double r = unpackcolor( red );
+    double g = unpackcolor( green );
+    double b = unpackcolor( blue );
+    double a = unpackcolor( alpha );
+
+    r = r * a;
+    g = g * a;
+    b = b * a;
+
+    // Write new colors.
+    redOut = packcolor( r );
+    greenOut = packcolor( g );
+    blueOut = packcolor( b );
+}
+
+inline void unpremultiplyByAlpha(
+    uint8 red, uint8 green, uint8 blue, uint8 alpha,
+    uint8& redOut, uint8& greenOut, uint8& blueOut
+)
+{
+    double r = unpackcolor( red );
+    double g = unpackcolor( green );
+    double b = unpackcolor( blue );
+    double a = unpackcolor( alpha );
+
+    if ( a != 0 )
+    {
+        r = std::min( 1.0, r / a );
+        g = std::min( 1.0, g / a );
+        b = std::min( 1.0, b / a );
+    }
+
+    // Write new colors.
+    redOut = packcolor( r );
+    greenOut = packcolor( g );
+    blueOut = packcolor( b );
+}
 
 inline bool decompressDXTBlock(
     eDXTCompressionMethod dxtMethod,
@@ -153,9 +273,11 @@ inline bool decompressDXTBlock(
 
             hasDecompressed = true;
         }
-        else if (dxtType == 3)
+        else if (dxtType == 2 || dxtType == 3)
         {
-            const dxt3_block *block = (const dxt3_block*)theTexels + blockIndex;
+            bool isPremultiplied = ( dxtType == 2 );
+
+            const dxt2_3_block *block = (const dxt2_3_block*)theTexels + blockIndex;
 
 		    /* calculate colors */
 		    const rgb565 col0 = block->col0;
@@ -213,6 +335,12 @@ inline bool decompressDXTBlock(
                     uint8 blue      = c[ colorIndex ][2];
                     uint8 alpha     = alphas[ coordIndex ];
 
+                    // Since the color has been premultiplied with the alpha, we should reverse that.
+                    if ( isPremultiplied )
+                    {
+                        unpremultiplyByAlpha( red, green, blue, alpha, red, green, blue );
+                    }
+
                     pixelOut.red    = red;
                     pixelOut.green  = green;
                     pixelOut.blue   = blue;
@@ -222,9 +350,11 @@ inline bool decompressDXTBlock(
 
             hasDecompressed = true;
         }
-        else if (dxtType == 4)
+        else if (dxtType == 4 || dxtType == 5)
         {
-            const dxt4_block *block = (const dxt4_block*)theTexels + blockIndex;
+            bool isPremultiplied = ( dxtType == 4 );
+
+            const dxt4_5_block *block = (const dxt4_5_block*)theTexels + blockIndex;
 
 		    /* calculate colors */
 		    const rgb565 col0 = block->col0;
@@ -248,42 +378,28 @@ inline bool decompressDXTBlock(
 		    c[3][2] = (1*c[0][2] + 2*c[1][2])/3;
 
 		    uint32 a[8];
-		    a[0] = block->alphaPreMult[0];
-		    a[1] = block->alphaPreMult[1];
-		    if (a[0] > a[1])
+
+            uint8 first_alpha = block->alphaPreMult[0];
+            uint8 second_alpha = block->alphaPreMult[1];
+
+            for ( uint32 n = 0; n < 8; n++ )
             {
-			    a[2] = (6*a[0] + 1*a[1])/7;
-			    a[3] = (5*a[0] + 2*a[1])/7;
-			    a[4] = (4*a[0] + 3*a[1])/7;
-			    a[5] = (3*a[0] + 4*a[1])/7;
-			    a[6] = (2*a[0] + 5*a[1])/7;
-			    a[7] = (1*a[0] + 6*a[1])/7;
-		    }
-            else
-            {
-			    a[2] = (4*a[0] + 1*a[1])/5;
-			    a[3] = (3*a[0] + 2*a[1])/5;
-			    a[4] = (2*a[0] + 3*a[1])/5;
-			    a[5] = (1*a[0] + 4*a[1])/5;
-			    a[6] = 0;
-			    a[7] = 0xFF;
-		    }
+                a[n] = dxt4_5_block::getAlphaByIndex( first_alpha, second_alpha, n );
+            }
 
 		    /* make index list */
 		    uint32 indicesint = block->indexList;
 		    uint8 indices[16];
-		    for (int32 k = 0; k < 16; k++)
+		    for (uint32 k = 0; k < 16; k++)
             {
-			    indices[k] = indicesint & 0x3;
-			    indicesint >>= 2;
+			    indices[k] = indexlist_lookup( indicesint, k, 2u );
 		    }
 		    // actually 6 bytes
 		    uint64 alphasint = *((uint64 *) &block->alphaList );
 		    uint8 alphas[16];
-		    for (int32 k = 0; k < 16; k++)
+		    for (uint32 k = 0; k < 16; k++)
             {
-			    alphas[k] = alphasint & 0x7;
-			    alphasint >>= 3;
+			    alphas[k] = (uint8)indexlist_lookup( alphasint, (uint64)k, (uint64)3 );
 		    }
 
 		    /* write bytes */
@@ -293,7 +409,7 @@ inline bool decompressDXTBlock(
                 {
                     PixelFormat::pixeldata32bit& pixelOut = colorsOut[ y_block ][ x_block ];
 
-                    uint32 coordIndex = ( y_block * 4 + x_block );
+                    uint32 coordIndex = getDXTLocalBlockIndex( x_block, y_block );
 
                     uint32 colorIndex = indices[ coordIndex ];
 
@@ -301,6 +417,12 @@ inline bool decompressDXTBlock(
                     uint8 green     = c[ colorIndex ][1];
                     uint8 blue      = c[ colorIndex ][2];
                     uint8 alpha     = a[ alphas[ coordIndex ] ];
+
+                    // Since the color has been premultiplied with the alpha, we should reverse that.
+                    if ( isPremultiplied )
+                    {
+                        unpremultiplyByAlpha( red, green, blue, alpha, red, green, blue );
+                    }
 
                     pixelOut.red    = red;
                     pixelOut.green  = green;
@@ -320,23 +442,29 @@ inline bool decompressDXTBlock(
 
         bool canDecompress = false;
 
+        bool isPremultiplied = false;
+
         if (dxtType == 1)
         {
             dxt_flags |= squish::kDxt1;
 
             canDecompress = true;
         }
-        else if (dxtType == 3)
+        else if (dxtType == 2 || dxtType == 3)
         {
             dxt_flags |= squish::kDxt3;
 
             canDecompress = true;
+
+            isPremultiplied = ( dxtType == 2 );
         }
-        else if (dxtType == 5)
+        else if (dxtType == 4 || dxtType == 5)
         {
             dxt_flags |= squish::kDxt5;
 
             canDecompress = true;
+            
+            isPremultiplied = ( dxtType == 4 );
         }
 
         if (canDecompress)
@@ -350,11 +478,11 @@ inline bool decompressDXTBlock(
             }
             else if (dxtType == 2 || dxtType == 3)
             {
-                dxtBlockSize = sizeof(dxt3_block);
+                dxtBlockSize = sizeof(dxt2_3_block);
             }
             else if (dxtType == 4 || dxtType == 5)
             {
-                dxtBlockSize = sizeof(dxt4_block);
+                dxtBlockSize = sizeof(dxt4_5_block);
             }
 
             if ( dxtBlockSize != 0 )
@@ -364,6 +492,29 @@ inline bool decompressDXTBlock(
                 squish::Decompress( (squish::u8*)colorsOut, dxt_block, dxt_flags );
 
                 hasDecompressed = true;
+
+                // If we are premultiplied, we gotta fix that.
+                if ( isPremultiplied )
+                {
+                    for ( uint32 y_block = 0; y_block < 4; y_block++ )
+                    {
+                        for ( uint32 x_block = 0; x_block < 4; x_block++ )
+                        {
+                            PixelFormat::pixeldata32bit& color = colorsOut[ y_block ][ x_block ];
+
+                            uint8 red = color.red;
+                            uint8 green = color.green;
+                            uint8 blue = color.blue;
+                            uint8 alpha = color.alpha;
+
+                            unpremultiplyByAlpha( red, green, blue, alpha, red, green, blue );
+
+                            color.red = red;
+                            color.green = green;
+                            color.blue = blue;
+                        }
+                    }
+                }
             }
         }
     }
@@ -428,6 +579,9 @@ inline void compressTexelsUsingDXT(
             // Compress a 4x4 color block.
             PixelFormat::pixeldata32bit colors[4][4];
 
+            // Check whether we should premultiply.
+            bool isPremultiplied = ( dxtType == 2 || dxtType == 4 );
+
             for ( uint32 y_iter = 0; y_iter != 4; y_iter++ )
             {
                 for ( uint32 x_iter = 0; x_iter != 4; x_iter++ )
@@ -449,6 +603,11 @@ inline void compressTexelsUsingDXT(
                         fetchSrcDispatch.getRGBA( rowData, targetX, r, g, b, a );
                     }
 
+                    if ( isPremultiplied )
+                    {
+                        premultiplyByAlpha( r, g, b, a, r, g, b );
+                    }
+
                     inColor.red = r;
                     inColor.green = g;
                     inColor.blue = b;
@@ -466,8 +625,8 @@ inline void compressTexelsUsingDXT(
             union
             {
                 dxt1_block _dxt1_block;
-                dxt3_block _dxt3_block;
-                dxt4_block _dxt5_block;
+                dxt2_3_block _dxt2_3_block;
+                dxt4_5_block _dxt4_5_block;
             };
 
             if ( dxtType == 1 )
@@ -479,23 +638,23 @@ inline void compressTexelsUsingDXT(
                 compressBlockSize = sizeof( _dxt1_block );
                 blockPointer = &_dxt1_block;
             }
-            else if ( dxtType == 3 )
+            else if ( dxtType == 2 || dxtType == 3 )
             {
                 squishFlags |= squish::kDxt3;
 
                 canCompress = true;
 
-                compressBlockSize = sizeof( _dxt3_block );
-                blockPointer = &_dxt3_block;
+                compressBlockSize = sizeof( _dxt2_3_block );
+                blockPointer = &_dxt2_3_block;
             }
-            else if ( dxtType == 5 )
+            else if ( dxtType == 4 || dxtType == 5 )
             {
                 squishFlags |= squish::kDxt5;
 
                 canCompress = true;
 
-                compressBlockSize = sizeof( _dxt5_block );
-                blockPointer = &_dxt5_block;
+                compressBlockSize = sizeof( _dxt4_5_block );
+                blockPointer = &_dxt4_5_block;
             }
 
             if ( canCompress )

@@ -2,6 +2,8 @@
 
 #include "pixelformat.hxx"
 
+#include "pixelutil.hxx"
+
 #include "txdread.d3d.dxt.hxx"
 
 #include "txdread.palette.hxx"
@@ -188,11 +190,6 @@ void genericCompressDXTNative( Interface *engineInterface, pixelDataTraversal& p
     if ( pixelData.compressionType != RWCOMPRESS_NONE )
     {
         throw RwException( "runtime fault: attempting to compress an already compressed texture" );
-    }
-
-    if (dxtType != 1 && dxtType != 3 && dxtType != 5)
-    {
-        throw RwException( "cannot compress Direct3D textures using unsupported DXTn format" );
     }
 
     // We must have stand-alone pixel data.
@@ -676,11 +673,6 @@ bool ConvertMipmapLayerNative(
         // Perform compression now.
         if ( isDstDXTType )
         {
-            if ( dstDXTType == 2 || dstDXTType == 4 )
-            {
-                throw RwException( "unsupported DXT target in pixel conversion routine (sorry)" );
-            }
-
             void *dstTexels;
             uint32 dstDataSize;
 

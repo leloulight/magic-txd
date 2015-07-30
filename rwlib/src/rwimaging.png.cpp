@@ -6,6 +6,8 @@
 
 #include "pixelformat.hxx"
 
+#include "streamutil.hxx"
+
 #ifdef RWLIB_INCLUDE_PNG_IMAGING
 #include <png.h>
 #endif //RWLIB_INCLUDE_PNG_IMAGING

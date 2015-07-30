@@ -6,6 +6,8 @@
 
 #include "pixelformat.hxx"
 
+#include "streamutil.hxx"
+
 #ifdef RWLIB_INCLUDE_JPEG_IMAGING
 
 #include <jpeglib.h>
