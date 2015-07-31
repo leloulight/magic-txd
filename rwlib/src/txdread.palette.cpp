@@ -18,6 +18,64 @@
 namespace rw
 {
 
+inline void nativePaletteRemap(
+    Interface *engineInterface,
+    palettizer& conv, ePaletteType convPaletteFormat, uint32 convItemDepth,
+    const void *texelSource, uint32 mipWidth, uint32 mipHeight,
+    ePaletteType srcPaletteType, const void *srcPaletteData, uint32 srcPaletteCount,
+    eRasterFormat srcRasterFormat, eColorOrdering srcColorOrder, uint32 srcItemDepth,
+    uint32 srcRowAlignment, uint32 dstRowAlignment,
+    void*& texelsOut, uint32& dataSizeOut
+)
+{
+    if ( convItemDepth != 4 && convItemDepth != 8 )
+    {
+        // Unsupported depth.
+        assert( 0 );
+    }
+
+    uint32 srcRowSize = getRasterDataRowSize( mipWidth, srcItemDepth, srcRowAlignment );
+
+    // Allocate appropriate memory.
+    uint32 dstRowSize = getRasterDataRowSize( mipWidth, convItemDepth, dstRowAlignment );
+
+    size_t dstDataSize = getRasterDataSizeByRowSize( dstRowSize, mipHeight );
+
+    void *newTexelData = engineInterface->PixelAllocate( dstDataSize );
+
+    colorModelDispatcher <const void> fetchDispatch( srcRasterFormat, srcColorOrder, srcItemDepth, srcPaletteData, srcPaletteCount, srcPaletteType );
+
+    for ( uint32 row = 0; row < mipHeight; row++ )
+    {
+        const void *srcRow = getConstTexelDataRow( texelSource, srcRowSize, row );
+        void *dstRow = getTexelDataRow( newTexelData, dstRowSize, row );
+
+        for ( uint32 col = 0; col < mipWidth; col++ )
+        {
+            // Browse each texel of the original image and link it to a palette entry.
+            uint8 red, green, blue, alpha;
+            bool hasColor = fetchDispatch.getRGBA(srcRow, col, red, green, blue, alpha);
+
+            if ( !hasColor )
+            {
+                red = 0;
+                green = 0;
+                blue = 0;
+                alpha = 0;
+            }
+
+            uint32 paletteIndex = conv.getclosestlink(red, green, blue, alpha);
+
+            // Store it in the palette data.
+            setpaletteindex(dstRow, col, convItemDepth, convPaletteFormat, paletteIndex);
+        }
+    }
+
+    // Give the parameters to the runtime.
+    texelsOut = newTexelData;
+    dataSizeOut = dstDataSize;
+}
+
 #ifdef RWLIB_INCLUDE_LIBIMAGEQUANT
 struct _fetch_texel_libquant_traverse
 {
@@ -604,6 +662,238 @@ void Raster::convertToPalette( ePaletteType paletteType )
     else
     {
         pixelData.DetachPixels();
+    }
+}
+
+struct liq_mipmap
+{
+    const void *texelSource;
+    uint32 rowSize;
+
+    eRasterFormat rasterFormat;
+    eColorOrdering colorOrder;
+    uint32 depth;
+    uint32 rowAlignment;
+
+    ePaletteType paletteType;
+    const void *paletteData;
+    uint32 paletteSize;
+};
+
+static void liq_single_mip_rgba_fetch_callback( liq_color row_out[], int row, int width, void *ud )
+{
+    const liq_mipmap *imgData = (const liq_mipmap*)ud;
+
+    const void *texelSource = imgData->texelSource;
+
+    colorModelDispatcher <const void> fetchDispatch(
+        imgData->rasterFormat, imgData->colorOrder, imgData->depth,
+        imgData->paletteData, imgData->paletteSize, imgData->paletteType
+    );
+
+    uint32 srcRowSize = imgData->rowSize;
+
+    const void *srcRowData = getConstTexelDataRow( texelSource, srcRowSize, row );
+
+    for ( int col = 0; col < width; col++ )
+    {
+        liq_color& colorOut = row_out[ col ];
+
+        fetchDispatch.getRGBA(
+            srcRowData, col, colorOut.r, colorOut.g, colorOut.b, colorOut.a
+        );
+    }
+}
+
+void RemapMipmapLayer(
+    Interface *engineInterface,
+    eRasterFormat palRasterFormat, eColorOrdering palColorOrder,
+    const void *mipTexels, uint32 mipWidth, uint32 mipHeight,
+    eRasterFormat mipRasterFormat, eColorOrdering mipColorOrder, uint32 mipDepth, ePaletteType mipPaletteType, const void *mipPaletteData, uint32 mipPaletteSize,
+    const void *paletteData, uint32 paletteSize, uint32 convItemDepth, ePaletteType convPaletteType,
+    uint32 srcRowAlignment, uint32 dstRowAlignment,
+    void*& dstTexelsOut, uint32& dstTexelDataSizeOut
+)
+{
+    // Determine with what algorithm we should map.
+    ePaletteRuntimeType palRuntimeType = engineInterface->GetPaletteRuntime();
+
+    uint32 palItemDepth = Bitmap::getRasterFormatDepth(palRasterFormat);
+
+    colorModelDispatcher <const void> fetchPalDispatch( palRasterFormat, palColorOrder, palItemDepth, NULL, 0, PALETTE_NONE );
+
+    if ( palRuntimeType == PALRUNTIME_NATIVE )
+    {
+        // Do some complex remapping.
+        palettizer remapper;
+
+        // Create an array with all the palette colors.
+        palettizer::texelContainer_t paletteContainer;
+
+        paletteContainer.resize( paletteSize );
+
+        for ( uint32 n = 0; n < paletteSize; n++ )
+        {
+            uint8 r, g, b, a;
+
+            bool hasColor = fetchPalDispatch.getRGBA(paletteData, n, r, g, b, a);
+
+            if ( !hasColor )
+            {
+                r = 0;
+                g = 0;
+                b = 0;
+                a = 0;
+            }
+
+            palettizer::texel_t inTexel;
+            inTexel.red = r;
+            inTexel.green = g;
+            inTexel.blue = b;
+            inTexel.alpha = a;
+
+            paletteContainer[ n ] = inTexel;
+        }
+
+        // Put the palette texels into the remapper.
+        remapper.texelElimData = paletteContainer;
+
+        // Do the remap.
+        nativePaletteRemap(
+            engineInterface,
+            remapper, convPaletteType, convItemDepth,
+            mipTexels, mipWidth, mipHeight, mipPaletteType, mipPaletteData, mipPaletteSize,
+            mipRasterFormat, mipColorOrder, mipDepth,
+            srcRowAlignment, dstRowAlignment,
+            dstTexelsOut, dstTexelDataSizeOut
+        );
+    }
+    else if ( palRuntimeType == PALRUNTIME_PNGQUANT )
+    {
+        liq_attr *liq_attr = liq_attr_create();
+
+        assert( liq_attr != NULL );
+
+        // Disallow libimagequant from sorting our colors.
+        liq_set_allow_palette_sorting( liq_attr, false );
+
+        // Since we want to remap an image, we want to create an image handle.
+        // Then we want to copy palette into the library's memory and use it to search for colors.
+        liq_mipmap mipData;
+        mipData.texelSource = mipTexels;
+        mipData.rowSize = getRasterDataRowSize( mipWidth, mipDepth, srcRowAlignment );
+        mipData.rasterFormat = mipRasterFormat;
+        mipData.depth = mipDepth;
+        mipData.rowAlignment = srcRowAlignment;
+        mipData.colorOrder = mipColorOrder;
+        mipData.paletteType = mipPaletteType;
+        mipData.paletteData = mipPaletteData;
+        mipData.paletteSize = mipPaletteSize;
+        
+        liq_image *liq_mip_layer =
+            liq_image_create_custom(
+                liq_attr, liq_single_mip_rgba_fetch_callback, &mipData,
+                mipWidth, mipHeight,
+                1.0
+            );
+
+        assert( liq_mip_layer != NULL );
+
+        // Copy the palette in the correct order into libimagequant memory.
+        liq_set_max_colors( liq_attr, paletteSize );
+
+        for ( uint32 n = 0; n < paletteSize; n++ )
+        {
+            uint8 r, g, b, a;
+
+            fetchPalDispatch.getRGBA( paletteData, n, r, g, b, a );
+
+            liq_color theColor;
+
+            theColor.r = r;
+            theColor.g = g;
+            theColor.b = b;
+            theColor.a = a;
+
+            liq_error palAddError = liq_image_add_fixed_color( liq_mip_layer, theColor );
+
+            assert( palAddError == LIQ_OK );
+        }
+
+        // Create an output buffer.
+        // It must be 8 bit.
+        uint32 dstRowSize = getRasterDataRowSize( mipWidth, convItemDepth, dstRowAlignment );
+
+        uint32 dstDataSize = getRasterDataSizeByRowSize( dstRowSize, mipHeight );
+
+        void *newtexels = engineInterface->PixelAllocate( dstDataSize );
+
+        assert( newtexels != NULL );
+
+        // Write the remapped image.
+        // This should write configuration about colors, but should not replace palette colors.
+        liq_result *liq_res = liq_quantize_image( liq_attr, liq_mip_layer );
+    
+        assert( liq_res != NULL );
+
+        // If convPaletteDepth is 8, basically what libimagequant outputs as, we can directly take those pixels.
+        // Otherwise we need a temporary buffer where libimagequant will write into and we transform to correct format afterward.
+        if ( convItemDepth == 8 )
+        {
+            // Split it into rows.
+            void **rowp = (void**)engineInterface->PixelAllocate( sizeof(void*) * mipHeight );
+
+            assert( rowp != NULL );
+
+            for ( uint32 n = 0; n < mipHeight; n++ )
+            {
+                rowp[ n ] = getTexelDataRow( newtexels, dstRowSize, n );
+            }
+
+            liq_error writeError = liq_write_remapped_image_rows( liq_res, liq_mip_layer, (unsigned char**)rowp );
+
+            assert( writeError == LIQ_OK );
+        }
+        else
+        {
+            // Write the pixels into a temporary buffer.
+            // Then convert to the final format for ourselves.
+            uint32 liqPackedRowSize = ( mipWidth * sizeof(unsigned char) );
+
+            uint32 liqPackedDataSize = ( liqPackedRowSize * mipHeight );
+
+            void *liqBuf = engineInterface->PixelAllocate( liqPackedDataSize );
+
+            assert( liqBuf != NULL );
+
+            liq_error writeError = liq_write_remapped_image( liq_res, liq_mip_layer, liqBuf, liqPackedDataSize );
+
+            assert( writeError == LIQ_OK );
+
+            // Convert the palette indice.
+            ConvertPaletteDepth(
+                liqBuf, newtexels,
+                mipWidth, mipHeight,
+                PALETTE_8BIT, convPaletteType, paletteSize,
+                8, convItemDepth,
+                1, dstRowAlignment
+            );
+
+            // Free the temporary buffer.
+            engineInterface->PixelFree( liqBuf );
+        }
+
+        // Clean up after ourselves.
+
+        liq_result_destroy( liq_res );
+
+        liq_image_destroy( liq_mip_layer );
+
+        liq_attr_destroy( liq_attr );
+
+        // Return the results.
+        dstTexelsOut = newtexels;
+        dstTexelDataSizeOut = dstDataSize;
     }
 }
 

@@ -253,13 +253,13 @@ typedef struct {
 typedef struct {
     f_pixel acolor;
     float popularity;
+    bool fixed; // if true it's user-supplied and must not be changed (e.g in voronoi iteration)
 } colormap_item;
 
 typedef struct colormap {
     unsigned int colors;
     void* (*malloc)(size_t);
     void (*free)(void*);
-    struct colormap *subset_palette;
     colormap_item palette[];
 } colormap;
 

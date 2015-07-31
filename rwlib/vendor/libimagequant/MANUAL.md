@@ -5,18 +5,18 @@ It's powering [pngquant2](http://pngquant.org).
 
 ## License
 
-[BSD](https://raw.github.com/pornel/improved-pngquant/master/lib/COPYRIGHT).
+[BSD](https://raw.github.com/pornel/pngquant/master/lib/COPYRIGHT).
 It can be linked with both free and closed-source software.
 
 ## Download
 
-The [library](http://pngquant.org/lib) is currently a part of the [pngquant2 project](https://github.com/pornel/improved-pngquant/tree/lib/lib).
+The [library](http://pngquant.org/lib) is currently a part of the [pngquant2 project](https://github.com/pornel/pngquant/tree/master/lib).
 
 Files needed for the library are only in the `lib/` directory inside the repository (and you can ignore the rest).
 
 ## Compiling and Linking
 
-The library can be linked with ANSI C and C++ programs. It has no external dependencies.
+The library can be linked with ANSI C, C++ and [Rust](https://crates.io/crates/imagequant/) programs. It has no external dependencies.
 
 To build on Unix-like systems run:
 
@@ -31,6 +31,9 @@ On BSD, use `gmake` (GNU make) rather than the native `make`.
 Alternatively you can compile the library with your program simply by including all `.c` files (and define `NDEBUG` to get a fast version):
 
     gcc -std=c99 -O3 -DNDEBUG lib/*.c yourprogram.c
+
+In [Rust](https://github.com/pornel/libimagequant-rust),
+if using Cargo, add `imagequant` to dependencies.
 
 ### Compiling on Windows/Visual Studio
 
@@ -49,18 +52,20 @@ The basic flow is:
 4. Store remapped image and final palette.
 5. Free memory.
 
+Please note that libimagequant only handles raw uncompressed bitmaps in memory and is completely independent of any file format.
+
 <p>
 
     #include "lib/libimagequant.h"
 
     liq_attr *attr = liq_attr_create();
-    liq_image *image = liq_image_create_rgba(attr, bitmap, width, height, 0);
+    liq_image *image = liq_image_create_rgba(attr, bitmap_rgba, width, height, 0);
     liq_result *res = liq_quantize_image(attr, image);
 
-    liq_write_remapped_image(res, image, bitmap, bitmap_size);
+    liq_write_remapped_image(res, image, bitmap_8bpp, bitmap_size);
     const liq_palette *pal = liq_get_palette(res);
 
-    // use image and palette here
+    // save image and palette here
 
     liq_attr_destroy(attr);
     liq_image_destroy(image);
@@ -75,6 +80,8 @@ There are 3 ways to create image object for quantization:
   * `liq_image_create_rgba()` for simple, contiguous RGBA bitmaps (width×height×4 bytes large array).
   * `liq_image_create_rgba_rows()` for non-contiguous RGBA bitmaps (that have padding between rows or reverse order, e.g. BMP).
   * `liq_image_create_custom()` for RGB, ABGR, YUV and all other formats that can be converted on-the-fly to RGBA (you have to supply the conversion function).
+
+Note that "image" here means raw uncompressed pixels. If you have a compressed image file, such as PNG, you must use another library (e.g. libpng or lodepng) to decode it first.
 
 ## Functions
 
@@ -194,7 +201,9 @@ Returns `LIQ_VALUE_OUT_OF_RANGE` if the dithering level is outside the 0-1 range
 
     liq_error liq_write_remapped_image(liq_result *result, liq_image *input_image, void *buffer, size_t buffer_size);
 
-Remaps the image to palette and writes its pixels to the given buffer, 1 pixel per byte. Buffer must be large enough to fit the entire image, i.e. width×height bytes large. For safety, pass size of the buffer as `buffer_size`.
+Remaps the image to palette and writes its pixels to the given buffer, 1 pixel per byte.
+
+The buffer must be large enough to fit the entire image, i.e. width×height bytes large. For safety, pass the size of the buffer as `buffer_size`.
 
 For best performance call `liq_get_palette()` *after* this function, as palette is improved during remapping.
 
@@ -207,7 +216,11 @@ Returns `LIQ_BUFFER_TOO_SMALL` if given size of the buffer is not enough to fit 
         // save image
     }
 
-See `liq_get_palette()` and `liq_write_remapped_image_rows()`.
+See `liq_get_palette()`.
+
+The buffer is assumed to be contiguous, with rows ordered from top to bottom, and no gaps between rows. If you need to write rows with padding or upside-down order, then use `liq_write_remapped_image_rows()`.
+
+Please note that it only writes raw uncompressed pixels to memory. It does not perform any PNG compression. If you'd like to create a PNG file then you need to pass the raw pixel data to another library, e.g. libpng or lodepng. See `rwpng.c` in `pngquant` project for an example how to do that.
 
 ----
 
@@ -262,7 +275,7 @@ Returns the value set by `liq_set_speed()`.
 
     liq_error liq_set_min_opacity(liq_attr* attr, int min);
 
-Alpha values higher than this will be rounded to opaque. This is a workaround for Internet Explorer 6 that truncates semitransparent values to completely transparent. The default is `255` (no change). 238 is a suggested value.
+Alpha values higher than this will be rounded to opaque. This is a workaround for Internet Explorer 6, but because this browser is not used any more, this option is deprecated and will be removed. The default is `255` (no change).
 
 Returns `LIQ_VALUE_OUT_OF_RANGE` if the value is outside the 0-255 range.
 
@@ -441,6 +454,24 @@ Sets gamma correction for generated palette and remapped image. Must be > 0 and 
 Getters for `width`, `height` and `gamma` of the input image.
 
 If the input is invalid, these all return -1.
+
+---
+
+    liq_error liq_image_add_fixed_color(liq_image* img, liq_color color);
+
+Reserves a color in the output palette created from this image. It behaves as if the given color was used in the image and was very important.
+
+RGB values of `liq_color` are assumed to have the same gamma as the image.
+
+It must be called before the image is quantized.
+
+Returns error if more than 256 colors are added. If image is quantized to fewer colors than the number of fixed colors added, then excess fixed colors will be ignored.
+
+---
+
+    int liq_version();
+
+Returns version of the library as an integer. Same as `LIQ_VERSION`. Human-readable version is defined as `LIQ_VERSION_STRING`.
 
 ## Multithreading
 

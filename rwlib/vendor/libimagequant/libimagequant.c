@@ -3,7 +3,7 @@
 ** Copyright (C) 1989, 1991 by Jef Poskanzer.
 ** Copyright (C) 1997, 2000, 2002 by Greg Roelofs; based on an idea by
 **                                Stefan Schneider.
-** © 2009-2013 by Kornel Lesinski.
+** © 2009-2015 by Kornel Lesinski.
 **
 ** Permission to use, copy, modify, and distribute this software and its
 ** documentation for any purpose and without fee is hereby granted, provided
@@ -60,7 +60,7 @@ struct liq_attr {
     unsigned int max_colors, max_histogram_entries;
     unsigned int min_posterization_output /* user setting */, min_posterization_input /* speed setting */;
     unsigned int voronoi_iterations, feedback_loop_trials;
-    bool last_index_transparent, use_contrast_maps, use_dither_map, fast_palette;
+    bool last_index_transparent, use_contrast_maps, use_dither_map, fast_palette, allow_sort;
     unsigned int speed;
     liq_log_callback_function *log_callback;
     void *log_callback_user_info;
@@ -83,6 +83,8 @@ struct liq_image {
     liq_image_get_rgba_row_callback *row_callback;
     void *row_callback_user_info;
     float min_opaque_val;
+    f_pixel fixed_colors[256];
+    unsigned short fixed_colors_count;
     bool free_pixels, free_rows, free_rows_internal;
 };
 
@@ -113,15 +115,15 @@ struct liq_result {
     bool use_dither_map, fast_palette;
 };
 
-static liq_result *pngquant_quantize(histogram *hist, const liq_attr *options, double gamma);
-static void modify_alpha(liq_image *input_image, rgba_pixel *const row_pixels);
-static void contrast_maps(liq_image *image);
-static histogram *get_histogram(liq_image *input_image, const liq_attr *options);
-static const rgba_pixel *liq_image_get_row_rgba(liq_image *input_image, unsigned int row);
-static const f_pixel *liq_image_get_row_f(liq_image *input_image, unsigned int row);
-static void liq_remapping_result_destroy(liq_remapping_result *result);
+static liq_result *pngquant_quantize(histogram *hist, const liq_attr *options, const liq_image *img) LIQ_NONNULL;
+static void modify_alpha(liq_image *input_image, rgba_pixel *const row_pixels) LIQ_NONNULL;
+static void contrast_maps(liq_image *image) LIQ_NONNULL;
+static histogram *get_histogram(liq_image *input_image, const liq_attr *options) LIQ_NONNULL;
+static const rgba_pixel *liq_image_get_row_rgba(liq_image *input_image, unsigned int row) LIQ_NONNULL;
+static const f_pixel *liq_image_get_row_f(liq_image *input_image, unsigned int row) LIQ_NONNULL;
+static void liq_remapping_result_destroy(liq_remapping_result *result) LIQ_NONNULL;
 
-static void liq_verbose_printf(const liq_attr *context, const char *fmt, ...)
+LIQ_NONNULL static void liq_verbose_printf(const liq_attr *context, const char *fmt, ...)
 {
     if (context->log_callback) {
         va_list va;
@@ -146,14 +148,14 @@ static void liq_verbose_printf(const liq_attr *context, const char *fmt, ...)
     }
 }
 
-inline static void verbose_print(const liq_attr *attr, const char *msg)
+LIQ_NONNULL inline static void verbose_print(const liq_attr *attr, const char *msg)
 {
     if (attr->log_callback) {
         attr->log_callback(attr, msg, attr->log_callback_user_info);
     }
 }
 
-static void liq_verbose_printf_flush(liq_attr *attr)
+LIQ_NONNULL static void liq_verbose_printf_flush(liq_attr *attr)
 {
     if (attr->log_flush_callback) {
         attr->log_flush_callback(attr, attr->log_flush_callback_user_info);
@@ -209,7 +211,8 @@ LIQ_EXPORT bool liq_crash_if_invalid_pointer_given(void *pointer)
     return test_access || true;
 }
 
-static void liq_log_error(const liq_attr *attr, const char *msg) {
+LIQ_NONNULL static void liq_log_error(const liq_attr *attr, const char *msg)
+{
     if (!CHECK_STRUCT_TYPE(attr, liq_attr)) return;
     liq_verbose_printf(attr, "  error: %s", msg);
 }
@@ -239,7 +242,7 @@ static unsigned int mse_to_quality(double mse)
     return 0;
 }
 
-LIQ_EXPORT liq_error liq_set_quality(liq_attr* attr, int minimum, int target)
+LIQ_EXPORT LIQ_NONNULL liq_error liq_set_quality(liq_attr* attr, int minimum, int target)
 {
     if (!CHECK_STRUCT_TYPE(attr, liq_attr)) return LIQ_INVALID_POINTER;
     if (target < 0 || target > 100 || target < minimum || minimum < 0) return LIQ_VALUE_OUT_OF_RANGE;
@@ -249,20 +252,20 @@ LIQ_EXPORT liq_error liq_set_quality(liq_attr* attr, int minimum, int target)
     return LIQ_OK;
 }
 
-LIQ_EXPORT int liq_get_min_quality(const liq_attr *attr)
+LIQ_EXPORT LIQ_NONNULL int liq_get_min_quality(const liq_attr *attr)
 {
     if (!CHECK_STRUCT_TYPE(attr, liq_attr)) return -1;
     return mse_to_quality(attr->max_mse);
 }
 
-LIQ_EXPORT int liq_get_max_quality(const liq_attr *attr)
+LIQ_EXPORT LIQ_NONNULL int liq_get_max_quality(const liq_attr *attr)
 {
     if (!CHECK_STRUCT_TYPE(attr, liq_attr)) return -1;
     return mse_to_quality(attr->target_mse);
 }
 
 
-LIQ_EXPORT liq_error liq_set_max_colors(liq_attr* attr, int colors)
+LIQ_EXPORT LIQ_NONNULL liq_error liq_set_max_colors(liq_attr* attr, int colors)
 {
     if (!CHECK_STRUCT_TYPE(attr, liq_attr)) return LIQ_INVALID_POINTER;
     if (colors < 2 || colors > 256) return LIQ_VALUE_OUT_OF_RANGE;
@@ -271,14 +274,14 @@ LIQ_EXPORT liq_error liq_set_max_colors(liq_attr* attr, int colors)
     return LIQ_OK;
 }
 
-LIQ_EXPORT int liq_get_max_colors(const liq_attr *attr)
+LIQ_EXPORT LIQ_NONNULL int liq_get_max_colors(const liq_attr *attr)
 {
     if (!CHECK_STRUCT_TYPE(attr, liq_attr)) return -1;
 
     return attr->max_colors;
 }
 
-LIQ_EXPORT liq_error liq_set_min_posterization(liq_attr *attr, int bits)
+LIQ_EXPORT LIQ_NONNULL liq_error liq_set_min_posterization(liq_attr *attr, int bits)
 {
     if (!CHECK_STRUCT_TYPE(attr, liq_attr)) return LIQ_INVALID_POINTER;
     if (bits < 0 || bits > 4) return LIQ_VALUE_OUT_OF_RANGE;
@@ -287,14 +290,14 @@ LIQ_EXPORT liq_error liq_set_min_posterization(liq_attr *attr, int bits)
     return LIQ_OK;
 }
 
-LIQ_EXPORT int liq_get_min_posterization(const liq_attr *attr)
+LIQ_EXPORT LIQ_NONNULL int liq_get_min_posterization(const liq_attr *attr)
 {
     if (!CHECK_STRUCT_TYPE(attr, liq_attr)) return -1;
 
     return attr->min_posterization_output;
 }
 
-LIQ_EXPORT liq_error liq_set_speed(liq_attr* attr, int speed)
+LIQ_EXPORT LIQ_NONNULL liq_error liq_set_speed(liq_attr* attr, int speed)
 {
     if (!CHECK_STRUCT_TYPE(attr, liq_attr)) return LIQ_INVALID_POINTER;
     if (speed < 1 || speed > 10) return LIQ_VALUE_OUT_OF_RANGE;
@@ -313,14 +316,14 @@ LIQ_EXPORT liq_error liq_set_speed(liq_attr* attr, int speed)
     return LIQ_OK;
 }
 
-LIQ_EXPORT int liq_get_speed(const liq_attr *attr)
+LIQ_EXPORT LIQ_NONNULL int liq_get_speed(const liq_attr *attr)
 {
     if (!CHECK_STRUCT_TYPE(attr, liq_attr)) return -1;
 
     return attr->speed;
 }
 
-LIQ_EXPORT liq_error liq_set_output_gamma(liq_result* res, double gamma)
+LIQ_EXPORT LIQ_NONNULL liq_error liq_set_output_gamma(liq_result* res, double gamma)
 {
     if (!CHECK_STRUCT_TYPE(res, liq_result)) return LIQ_INVALID_POINTER;
     if (gamma <= 0 || gamma >= 1.0) return LIQ_VALUE_OUT_OF_RANGE;
@@ -334,7 +337,7 @@ LIQ_EXPORT liq_error liq_set_output_gamma(liq_result* res, double gamma)
     return LIQ_OK;
 }
 
-LIQ_EXPORT liq_error liq_set_min_opacity(liq_attr* attr, int min)
+LIQ_EXPORT LIQ_NONNULL liq_error liq_set_min_opacity(liq_attr* attr, int min)
 {
     if (!CHECK_STRUCT_TYPE(attr, liq_attr)) return LIQ_INVALID_POINTER;
     if (min < 0 || min > 255) return LIQ_VALUE_OUT_OF_RANGE;
@@ -343,18 +346,24 @@ LIQ_EXPORT liq_error liq_set_min_opacity(liq_attr* attr, int min)
     return LIQ_OK;
 }
 
-LIQ_EXPORT int liq_get_min_opacity(const liq_attr *attr)
+LIQ_EXPORT LIQ_NONNULL int liq_get_min_opacity(const liq_attr *attr)
 {
     if (!CHECK_STRUCT_TYPE(attr, liq_attr)) return -1;
 
     return MIN(255, 256.0 * attr->min_opaque_val);
 }
 
-LIQ_EXPORT void liq_set_last_index_transparent(liq_attr* attr, int is_last)
+LIQ_EXPORT LIQ_NONNULL void liq_set_last_index_transparent(liq_attr* attr, int is_last)
 {
     if (!CHECK_STRUCT_TYPE(attr, liq_attr)) return;
 
     attr->last_index_transparent = !!is_last;
+}
+LIQ_EXPORT LIQ_NONNULL void liq_set_allow_palette_sorting(liq_attr* attr, int allow)
+{
+    if (!CHECK_STRUCT_TYPE(attr, liq_attr)) return;
+
+    attr->allow_sort = allow;
 }
 
 LIQ_EXPORT void liq_set_log_callback(liq_attr *attr, liq_log_callback_function *callback, void* user_info)
@@ -379,7 +388,7 @@ LIQ_EXPORT liq_attr* liq_attr_create()
     return liq_attr_create_with_allocator(NULL, NULL);
 }
 
-LIQ_EXPORT void liq_attr_destroy(liq_attr *attr)
+LIQ_EXPORT LIQ_NONNULL void liq_attr_destroy(liq_attr *attr)
 {
     if (!CHECK_STRUCT_TYPE(attr, liq_attr)) {
         return;
@@ -391,7 +400,7 @@ LIQ_EXPORT void liq_attr_destroy(liq_attr *attr)
     attr->free(attr);
 }
 
-LIQ_EXPORT liq_attr* liq_attr_copy(liq_attr *orig)
+LIQ_EXPORT LIQ_NONNULL liq_attr* liq_attr_copy(liq_attr *orig)
 {
     if (!CHECK_STRUCT_TYPE(orig, liq_attr)) {
         return NULL;
@@ -417,7 +426,7 @@ static void *liq_aligned_malloc(size_t size)
     return ptr;
 }
 
-static void liq_aligned_free(void *inptr)
+LIQ_NONNULL static void liq_aligned_free(void *inptr)
 {
     unsigned char *ptr = inptr;
     size_t offset = ptr[-1] ^ 0x59;
@@ -448,6 +457,7 @@ LIQ_EXPORT liq_attr* liq_attr_create_with_allocator(void* (*custom_malloc)(size_
         .max_colors = 256,
         .min_opaque_val = 1, // whether preserve opaque colors for IE (1.0=no, does not affect alpha)
         .last_index_transparent = false, // puts transparent color at last index. This is workaround for blu-ray subtitles.
+        .allow_sort = true, // if false then palette indice must conform to fixed color input order
         .target_mse = 0,
         .max_mse = MAX_DIFF,
     };
@@ -455,26 +465,35 @@ LIQ_EXPORT liq_attr* liq_attr_create_with_allocator(void* (*custom_malloc)(size_
     return attr;
 }
 
-static bool liq_image_use_low_memory(liq_image *img)
+LIQ_EXPORT LIQ_NONNULL liq_error liq_image_add_fixed_color(liq_image *img, liq_color color)
+{
+    if (!CHECK_STRUCT_TYPE(img, liq_image)) return LIQ_INVALID_POINTER;
+    if (img->fixed_colors_count > 255) return LIQ_BUFFER_TOO_SMALL;
+
+    float gamma_lut[256];
+    to_f_set_gamma(gamma_lut, img->gamma);
+    img->fixed_colors[img->fixed_colors_count++] = to_f(gamma_lut, (rgba_pixel){
+        .r = color.r,
+        .g = color.g,
+        .b = color.b,
+        .a = color.a,
+    });
+    return LIQ_OK;
+}
+
+LIQ_NONNULL static bool liq_image_use_low_memory(liq_image *img)
 {
     img->temp_f_row = img->malloc(sizeof(img->f_pixels[0]) * img->width * omp_get_max_threads());
     return img->temp_f_row != NULL;
 }
 
-static bool liq_image_should_use_low_memory(liq_image *img, const bool low_memory_hint)
+LIQ_NONNULL static bool liq_image_should_use_low_memory(liq_image *img, const bool low_memory_hint)
 {
-    return img->width * img->height * sizeof(f_pixel) > (low_memory_hint ? LIQ_HIGH_MEMORY_LIMIT/8 : LIQ_HIGH_MEMORY_LIMIT);
+    return img->width * img->height > (low_memory_hint ? LIQ_HIGH_MEMORY_LIMIT/8 : LIQ_HIGH_MEMORY_LIMIT) / sizeof(f_pixel); // Watch out for integer overflow
 }
 
 static liq_image *liq_image_create_internal(liq_attr *attr, rgba_pixel* rows[], liq_image_get_rgba_row_callback *row_callback, void *row_callback_user_info, int width, int height, double gamma)
 {
-    if (!CHECK_STRUCT_TYPE(attr, liq_attr)) {
-        return NULL;
-    }
-    if (width <= 0 || height <= 0) {
-        liq_log_error(attr, "width and height must be > 0");
-        return NULL;
-    }
     if (gamma < 0 || gamma > 1.0) {
         liq_log_error(attr, "gamma must be >= 0 and <= 1 (try 1/gamma instead)");
         return NULL;
@@ -517,7 +536,7 @@ static liq_image *liq_image_create_internal(liq_attr *attr, rgba_pixel* rows[], 
     return img;
 }
 
-LIQ_EXPORT liq_error liq_image_set_memory_ownership(liq_image *img, int ownership_flags)
+LIQ_EXPORT LIQ_NONNULL liq_error liq_image_set_memory_ownership(liq_image *img, int ownership_flags)
 {
     if (!CHECK_STRUCT_TYPE(img, liq_image)) return LIQ_INVALID_POINTER;
     if (!img->rows || !ownership_flags || (ownership_flags & ~(LIQ_OWN_ROWS|LIQ_OWN_PIXELS))) {
@@ -544,19 +563,34 @@ LIQ_EXPORT liq_error liq_image_set_memory_ownership(liq_image *img, int ownershi
     return LIQ_OK;
 }
 
+LIQ_NONNULL static bool check_image_size(const liq_attr *attr, const int width, const int height)
+{
+    if (!CHECK_STRUCT_TYPE(attr, liq_attr)) {
+        return false;
+    }
+
+    if (width <= 0 || height <= 0) {
+        liq_log_error(attr, "width and height must be > 0");
+        return false;
+    }
+    if (width > INT_MAX/height) {
+        liq_log_error(attr, "image too large");
+        return false;
+    }
+    return true;
+}
+
 LIQ_EXPORT liq_image *liq_image_create_custom(liq_attr *attr, liq_image_get_rgba_row_callback *row_callback, void* user_info, int width, int height, double gamma)
 {
+    if (!check_image_size(attr, width, height)) {
+        return NULL;
+    }
     return liq_image_create_internal(attr, NULL, row_callback, user_info, width, height, gamma);
 }
 
 LIQ_EXPORT liq_image *liq_image_create_rgba_rows(liq_attr *attr, void* rows[], int width, int height, double gamma)
 {
-    if (width <= 0 || height <= 0) {
-        liq_log_error(attr, "width and height must be > 0");
-        return NULL;
-    }
-    if (width > INT_MAX/16/height || height > INT_MAX/16/width) {
-        liq_log_error(attr, "image too large");
+    if (!check_image_size(attr, width, height)) {
         return NULL;
     }
 
@@ -569,15 +603,9 @@ LIQ_EXPORT liq_image *liq_image_create_rgba_rows(liq_attr *attr, void* rows[], i
     return liq_image_create_internal(attr, (rgba_pixel**)rows, NULL, NULL, width, height, gamma);
 }
 
-LIQ_EXPORT liq_image *liq_image_create_rgba(liq_attr *attr, void* bitmap, int width, int height, double gamma)
+LIQ_EXPORT LIQ_NONNULL liq_image *liq_image_create_rgba(liq_attr *attr, void* bitmap, int width, int height, double gamma)
 {
-    if (!CHECK_STRUCT_TYPE(attr, liq_attr)) return NULL;
-    if (width <= 0 || height <= 0) {
-        liq_log_error(attr, "width and height must be > 0");
-        return NULL;
-    }
-    if (width > INT_MAX/16/height || height > INT_MAX/16/width) {
-        liq_log_error(attr, "image too large");
+    if (!check_image_size(attr, width, height)) {
         return NULL;
     }
     if (!CHECK_USER_POINTER(bitmap)) {
@@ -594,6 +622,10 @@ LIQ_EXPORT liq_image *liq_image_create_rgba(liq_attr *attr, void* bitmap, int wi
     }
 
     liq_image *image = liq_image_create_internal(attr, rows, NULL, NULL, width, height, gamma);
+    if (!image) {
+        attr->free(rows);
+        return NULL;
+    }
     image->free_rows = true;
     image->free_rows_internal = true;
     return image;
@@ -607,13 +639,13 @@ LIQ_EXPORT void liq_executing_user_callback(liq_image_get_rgba_row_callback *cal
     callback(temp_row, row, width, user_info);
 }
 
-inline static bool liq_image_can_use_rows(liq_image *img)
+LIQ_NONNULL inline static bool liq_image_can_use_rows(liq_image *img)
 {
     const bool iebug = img->min_opaque_val < 1.f;
     return (img->rows && !iebug);
 }
 
-static const rgba_pixel *liq_image_get_row_rgba(liq_image *img, unsigned int row)
+LIQ_NONNULL static const rgba_pixel *liq_image_get_row_rgba(liq_image *img, unsigned int row)
 {
     if (liq_image_can_use_rows(img)) {
         return img->rows[row];
@@ -631,7 +663,7 @@ static const rgba_pixel *liq_image_get_row_rgba(liq_image *img, unsigned int row
     return temp_row;
 }
 
-static void convert_row_to_f(liq_image *img, f_pixel *row_f_pixels, const unsigned int row, const float gamma_lut[])
+LIQ_NONNULL static void convert_row_to_f(liq_image *img, f_pixel *row_f_pixels, const unsigned int row, const float gamma_lut[])
 {
     assert(row_f_pixels);
 #ifndef _MSC_VER
@@ -645,7 +677,7 @@ static void convert_row_to_f(liq_image *img, f_pixel *row_f_pixels, const unsign
     }
 }
 
-static const f_pixel *liq_image_get_row_f(liq_image *img, unsigned int row)
+LIQ_NONNULL static const f_pixel *liq_image_get_row_f(liq_image *img, unsigned int row)
 {
     if (!img->f_pixels) {
         if (img->temp_f_row) {
@@ -674,13 +706,13 @@ static const f_pixel *liq_image_get_row_f(liq_image *img, unsigned int row)
     return img->f_pixels + img->width * row;
 }
 
-LIQ_EXPORT int liq_image_get_width(const liq_image *input_image)
+LIQ_EXPORT LIQ_NONNULL int liq_image_get_width(const liq_image *input_image)
 {
     if (!CHECK_STRUCT_TYPE(input_image, liq_image)) return -1;
     return input_image->width;
 }
 
-LIQ_EXPORT int liq_image_get_height(const liq_image *input_image)
+LIQ_EXPORT LIQ_NONNULL int liq_image_get_height(const liq_image *input_image)
 {
     if (!CHECK_STRUCT_TYPE(input_image, liq_image)) return -1;
     return input_image->height;
@@ -688,7 +720,7 @@ LIQ_EXPORT int liq_image_get_height(const liq_image *input_image)
 
 typedef void free_func(void*);
 
-free_func *get_default_free_func(liq_image *img)
+LIQ_NONNULL static free_func *get_default_free_func(liq_image *img)
 {
     // When default allocator is used then user-supplied pointers must be freed with free()
     if (img->free_rows_internal || img->free != liq_aligned_free) {
@@ -697,7 +729,7 @@ free_func *get_default_free_func(liq_image *img)
     return free;
 }
 
-static void liq_image_free_rgba_source(liq_image *input_image)
+LIQ_NONNULL static void liq_image_free_rgba_source(liq_image *input_image)
 {
     if (input_image->free_pixels && input_image->pixels) {
         get_default_free_func(input_image)(input_image->pixels);
@@ -710,7 +742,7 @@ static void liq_image_free_rgba_source(liq_image *input_image)
     }
 }
 
-LIQ_EXPORT void liq_image_destroy(liq_image *input_image)
+LIQ_EXPORT LIQ_NONNULL void liq_image_destroy(liq_image *input_image)
 {
     if (!CHECK_STRUCT_TYPE(input_image, liq_image)) return;
 
@@ -736,11 +768,15 @@ LIQ_EXPORT void liq_image_destroy(liq_image *input_image)
         input_image->free(input_image->temp_row);
     }
 
+    if (input_image->temp_f_row) {
+        input_image->free(input_image->temp_f_row);
+    }
+
     input_image->magic_header = liq_freed_magic;
     input_image->free(input_image);
 }
 
-LIQ_EXPORT liq_result *liq_quantize_image(liq_attr *attr, liq_image *img)
+LIQ_EXPORT LIQ_NONNULL liq_result *liq_quantize_image(liq_attr *attr, liq_image *img)
 {
     if (!CHECK_STRUCT_TYPE(attr, liq_attr)) { return NULL; }
     if (!CHECK_STRUCT_TYPE(img, liq_image)) {
@@ -753,13 +789,13 @@ LIQ_EXPORT liq_result *liq_quantize_image(liq_attr *attr, liq_image *img)
         return NULL;
     }
 
-    liq_result *result = pngquant_quantize(hist, attr, img->gamma);
+    liq_result *result = pngquant_quantize(hist, attr, img);
 
     pam_freeacolorhist(hist);
     return result;
 }
 
-LIQ_EXPORT liq_error liq_set_dithering_level(liq_result *res, float dither_level)
+LIQ_EXPORT LIQ_NONNULL liq_error liq_set_dithering_level(liq_result *res, float dither_level)
 {
     if (!CHECK_STRUCT_TYPE(res, liq_result)) return LIQ_INVALID_POINTER;
 
@@ -773,7 +809,7 @@ LIQ_EXPORT liq_error liq_set_dithering_level(liq_result *res, float dither_level
     return LIQ_OK;
 }
 
-static liq_remapping_result *liq_remapping_result_create(liq_result *result)
+LIQ_NONNULL static liq_remapping_result *liq_remapping_result_create(liq_result *result)
 {
     if (!CHECK_STRUCT_TYPE(result, liq_result)) {
         return NULL;
@@ -794,14 +830,14 @@ static liq_remapping_result *liq_remapping_result_create(liq_result *result)
     return res;
 }
 
-LIQ_EXPORT double liq_get_output_gamma(const liq_result *result)
+LIQ_EXPORT LIQ_NONNULL double liq_get_output_gamma(const liq_result *result)
 {
     if (!CHECK_STRUCT_TYPE(result, liq_result)) return -1;
 
     return result->gamma;
 }
 
-static void liq_remapping_result_destroy(liq_remapping_result *result)
+LIQ_NONNULL static void liq_remapping_result_destroy(liq_remapping_result *result)
 {
     if (!CHECK_STRUCT_TYPE(result, liq_remapping_result)) return;
 
@@ -812,7 +848,7 @@ static void liq_remapping_result_destroy(liq_remapping_result *result)
     result->free(result);
 }
 
-LIQ_EXPORT void liq_result_destroy(liq_result *res)
+LIQ_EXPORT LIQ_NONNULL void liq_result_destroy(liq_result *res)
 {
     if (!CHECK_STRUCT_TYPE(res, liq_result)) return;
 
@@ -829,7 +865,7 @@ LIQ_EXPORT void liq_result_destroy(liq_result *res)
     res->free(res);
 }
 
-LIQ_EXPORT double liq_get_quantization_error(liq_result *result)
+LIQ_EXPORT LIQ_NONNULL double liq_get_quantization_error(liq_result *result)
 {
     if (!CHECK_STRUCT_TYPE(result, liq_result)) return -1;
 
@@ -844,7 +880,7 @@ LIQ_EXPORT double liq_get_quantization_error(liq_result *result)
     return result->palette_error;
 }
 
-LIQ_EXPORT int liq_get_quantization_quality(liq_result *result)
+LIQ_EXPORT LIQ_NONNULL int liq_get_quantization_quality(liq_result *result)
 {
     if (!CHECK_STRUCT_TYPE(result, liq_result)) return -1;
 
@@ -859,14 +895,14 @@ LIQ_EXPORT int liq_get_quantization_quality(liq_result *result)
     return result->palette_error;
 }
 
-static int compare_popularity(const void *ch1, const void *ch2)
+LIQ_NONNULL static int compare_popularity(const void *ch1, const void *ch2)
 {
     const float v1 = ((const colormap_item*)ch1)->popularity;
     const float v2 = ((const colormap_item*)ch2)->popularity;
     return v1 > v2 ? -1 : 1;
 }
 
-static void sort_palette_qsort(colormap *map, int start, int nelem)
+LIQ_NONNULL static void sort_palette_qsort(colormap *map, int start, int nelem)
 {
     qsort(map->palette + start, nelem, sizeof(map->palette[0]), compare_popularity);
 }
@@ -876,7 +912,7 @@ static void sort_palette_qsort(colormap *map, int start, int nelem)
     (map)->palette[(a)] = (map)->palette[(b)]; \
     (map)->palette[(b)] = tmp; }
 
-static void sort_palette(colormap *map, const liq_attr *options)
+LIQ_NONNULL static void sort_palette(colormap *map, const liq_attr *options)
 {
     /*
     ** Step 3.5 [GRR]: remap the palette colors so that all entries with
@@ -885,14 +921,14 @@ static void sort_palette(colormap *map, const liq_attr *options)
     */
     if (options->last_index_transparent) {
     	for(unsigned int i=0; i < map->colors; i++) {
-    	    if (map->palette[i].acolor.a < 1.0/256.0) {
-        		const unsigned int old = i, transparent_dest = map->colors-1;
+	    if (map->palette[i].acolor.a < 1.0/256.0) {
+			const unsigned int old = i, transparent_dest = map->colors-1;
 
-        		SWAP_PALETTE(map, transparent_dest, old);
+			SWAP_PALETTE(map, transparent_dest, old);
 
-        		/* colors sorted by popularity make pngs slightly more compressible */
+			/* colors sorted by popularity make pngs slightly more compressible */
         		sort_palette_qsort(map, 0, map->colors-1);
-        		return;
+			return;
             }
         }
     }
@@ -929,7 +965,7 @@ inline static unsigned int posterize_channel(unsigned int color, unsigned int bi
     return (color & ~((1<<bits)-1)) | (color >> (8-bits));
 }
 
-static void set_rounded_palette(liq_palette *const dest, colormap *const map, const double gamma, unsigned int posterize)
+LIQ_NONNULL static void set_rounded_palette(liq_palette *const dest, colormap *const map, const double gamma, unsigned int posterize)
 {
     float gamma_lut[256];
     to_f_set_gamma(gamma_lut, gamma);
@@ -953,7 +989,7 @@ static void set_rounded_palette(liq_palette *const dest, colormap *const map, co
     }
 }
 
-LIQ_EXPORT const liq_palette *liq_get_palette(liq_result *result)
+LIQ_EXPORT LIQ_NONNULL const liq_palette *liq_get_palette(liq_result *result)
 {
     if (!CHECK_STRUCT_TYPE(result, liq_result)) return NULL;
 
@@ -967,11 +1003,10 @@ LIQ_EXPORT const liq_palette *liq_get_palette(liq_result *result)
     return &result->int_palette;
 }
 
-static float remap_to_palette(liq_image *const input_image, unsigned char *const *const output_pixels, colormap *const map, const bool fast)
+LIQ_NONNULL static float remap_to_palette(liq_image *const input_image, unsigned char *const *const output_pixels, colormap *const map, const bool fast)
 {
     const int rows = input_image->height;
     const unsigned int cols = input_image->width;
-    const float min_opaque_val = input_image->min_opaque_val;
     double remapping_error=0;
 
     if (!liq_image_get_row_f(input_image, 0)) { // trigger lazy conversion
@@ -993,13 +1028,11 @@ static float remap_to_palette(liq_image *const input_image, unsigned char *const
         const f_pixel *const row_pixels = liq_image_get_row_f(input_image, row);
         unsigned int last_match=0;
         for(unsigned int col = 0; col < cols; ++col) {
-            f_pixel px = row_pixels[col];
             float diff;
-
-            output_pixels[row][col] = last_match = nearest_search(n, px, last_match, min_opaque_val, &diff);
+            output_pixels[row][col] = last_match = nearest_search(n, &row_pixels[col], last_match, &diff);
 
             remapping_error += diff;
-            viter_update_color(px, 1.0, map, last_match, omp_get_thread_num(), average_color);
+            viter_update_color(row_pixels[col], 1.0, map, last_match, omp_get_thread_num(), average_color);
         }
     }
 
@@ -1056,11 +1089,10 @@ inline static f_pixel get_dithered_pixel(const float dither_level, const float m
 
   If output_image_is_remapped is true, only pixels noticeably changed by error diffusion will be written to output image.
  */
-static void remap_to_palette_floyd(liq_image *input_image, unsigned char *const output_pixels[], const colormap *map, const float max_dither_error, const bool use_dither_map, const bool output_image_is_remapped, float base_dithering_level)
+LIQ_NONNULL static void remap_to_palette_floyd(liq_image *input_image, unsigned char *const output_pixels[], const colormap *map, const float max_dither_error, const bool use_dither_map, const bool output_image_is_remapped, float base_dithering_level)
 {
     const unsigned int rows = input_image->height, cols = input_image->width;
     const unsigned char *dither_map = use_dither_map ? (input_image->dither_map ? input_image->dither_map : input_image->edges) : NULL;
-    const float min_opaque_val = input_image->min_opaque_val;
 
     const colormap_item *acolormap = map->palette;
 
@@ -1106,7 +1138,7 @@ static void remap_to_palette_floyd(liq_image *input_image, unsigned char *const 
             const f_pixel spx = get_dithered_pixel(dither_level, max_dither_error, thiserr[col + 1], row_pixels[col]);
 
             const unsigned int guessed_match = output_image_is_remapped ? output_pixels[row][col] : last_match;
-            output_pixels[row][col] = last_match = nearest_search(n, spx, guessed_match, min_opaque_val, NULL);
+            output_pixels[row][col] = last_match = nearest_search(n, &spx, guessed_match, NULL);
 
             const f_pixel xp = acolormap[last_match].acolor;
             f_pixel err = {
@@ -1192,9 +1224,24 @@ static void remap_to_palette_floyd(liq_image *input_image, unsigned char *const 
     nearest_free(n);
 }
 
+/* fixed colors are always included in the palette, so it would be wasteful to duplicate them in palette from histogram */
+LIQ_NONNULL static void remove_fixed_colors_from_histogram(histogram *hist, const liq_image *input_image, const float target_mse)
+{
+    const float max_difference = MAX(target_mse/2.0, 2.0/256.0/256.0);
+    if (input_image->fixed_colors_count) {
+        for(int j=0; j < hist->size; j++) {
+            for(unsigned int i=0; i < input_image->fixed_colors_count; i++) {
+                if (colordifference(hist->achv[j].acolor, input_image->fixed_colors[i]) < max_difference) {
+                    hist->achv[j] = hist->achv[--hist->size]; // remove color from histogram by overwriting with the last entry
+                    j--; break; // continue searching histogram
+                }
+            }
+        }
+    }
+}
 
 /* histogram contains information how many times each color is present in the image, weighted by importance_map */
-static histogram *get_histogram(liq_image *input_image, const liq_attr *options)
+LIQ_NONNULL static histogram *get_histogram(liq_image *input_image, const liq_attr *options)
 {
     unsigned int ignorebits=MAX(options->min_posterization_output, options->min_posterization_input);
     const unsigned int cols = input_image->width, rows = input_image->height;
@@ -1249,14 +1296,15 @@ static histogram *get_histogram(liq_image *input_image, const liq_attr *options)
 
     histogram *hist = pam_acolorhashtoacolorhist(acht, input_image->gamma, options->malloc, options->free);
     pam_freeacolorhash(acht);
-
     if (hist) {
         liq_verbose_printf(options, "  made histogram...%d colors found", hist->size);
+        remove_fixed_colors_from_histogram(hist, input_image, options->target_mse);
     }
+
     return hist;
 }
 
-static void modify_alpha(liq_image *input_image, rgba_pixel *const row_pixels)
+LIQ_NONNULL static void modify_alpha(liq_image *input_image, rgba_pixel *const row_pixels)
 {
     /* IE6 makes colors with even slightest transparency completely transparent,
        thus to improve situation in IE, make colors that are less than ~10% transparent
@@ -1284,7 +1332,7 @@ static void modify_alpha(liq_image *input_image, rgba_pixel *const row_pixels)
     noise - approximation of areas with high-frequency noise, except straight edges. 1=flat, 0=noisy.
     edges - noise map including all edges
  */
-static void contrast_maps(liq_image *image)
+LIQ_NONNULL static void contrast_maps(liq_image *image)
 {
     const int cols = image->width, rows = image->height;
     if (cols < 4 || rows < 4 || (3*cols*rows) > LIQ_HIGH_MEMORY_LIMIT) {
@@ -1371,7 +1419,7 @@ static void contrast_maps(liq_image *image)
  * and peeks 1 pixel above/below. Full 2d algorithm doesn't improve it significantly.
  * Correct flood fill doesn't have visually good properties.
  */
-static void update_dither_map(unsigned char *const *const row_pointers, liq_image *input_image)
+LIQ_NONNULL static void update_dither_map(unsigned char *const *const row_pointers, liq_image *input_image)
 {
     const unsigned int width = input_image->width;
     const unsigned int height = input_image->height;
@@ -1413,7 +1461,29 @@ static void update_dither_map(unsigned char *const *const row_pointers, liq_imag
     input_image->edges = NULL;
 }
 
-static void adjust_histogram_callback(hist_item *item, float diff)
+static colormap *add_fixed_colors_to_palette(colormap *palette, const int max_colors, const f_pixel fixed_colors[], const int fixed_colors_count, void* (*malloc)(size_t), void (*free)(void*))
+{
+    if (!fixed_colors_count) return palette;
+
+    colormap *newpal = pam_colormap(MIN(max_colors, (palette ? palette->colors : 0) + fixed_colors_count), malloc, free);
+    unsigned int i=0;
+    if (palette && fixed_colors_count < max_colors) {
+        unsigned int palette_max = MIN(palette->colors, max_colors - fixed_colors_count);
+        for(; i < palette_max; i++) {
+            newpal->palette[i] = palette->palette[i];
+        }
+    }
+    for(int j=0; j < MIN(max_colors, fixed_colors_count); j++) {
+        newpal->palette[i++] = (colormap_item){
+            .acolor = fixed_colors[j],
+            .fixed = true,
+        };
+    }
+    if (palette) pam_freecolormap(palette);
+    return newpal;
+}
+
+LIQ_NONNULL static void adjust_histogram_callback(hist_item *item, float diff)
 {
     item->adjusted_weight = (item->perceptual_weight+item->adjusted_weight) * (sqrtf(1.f+diff));
 }
@@ -1423,12 +1493,13 @@ static void adjust_histogram_callback(hist_item *item, float diff)
 
  feedback_loop_trials controls how long the search will take. < 0 skips the iteration.
  */
-static colormap *find_best_palette(histogram *hist, const liq_attr *options, double *palette_error_p)
+static colormap *find_best_palette(histogram *hist, const liq_attr *options, const double max_mse, const f_pixel fixed_colors[], const unsigned int fixed_colors_count, double *palette_error_p)
 {
     unsigned int max_colors = options->max_colors;
+
     // if output is posterized it doesn't make sense to aim for perfrect colors, so increase target_mse
     // at this point actual gamma is not set, so very conservative posterization estimate is used
-    const double target_mse = MAX(options->target_mse, pow((1<<options->min_posterization_output)/1024.0, 2));
+    const double target_mse = MIN(max_mse, MAX(options->target_mse, pow((1<<options->min_posterization_output)/1024.0, 2)));
     int feedback_loop_trials = options->feedback_loop_trials;
     colormap *acolormap = NULL;
     double least_error = MAX_DIFF;
@@ -1436,9 +1507,15 @@ static colormap *find_best_palette(histogram *hist, const liq_attr *options, dou
     const double percent = (double)(feedback_loop_trials>0?feedback_loop_trials:1)/100.0;
 
     do {
-        colormap *newmap = mediancut(hist, options->min_opaque_val, max_colors,
-            target_mse * target_mse_overshoot, MAX(MAX(90.0/65536.0, target_mse), least_error)*1.2,
+        colormap *newmap;
+        if (hist->size && fixed_colors_count < max_colors) {
+            newmap = mediancut(hist, max_colors-fixed_colors_count, target_mse * target_mse_overshoot, MAX(MAX(90.0/65536.0, target_mse), least_error)*1.2,
             options->malloc, options->free);
+        } else {
+            feedback_loop_trials = 0;
+            newmap = NULL;
+        }
+        newmap = add_fixed_colors_to_palette(newmap, max_colors, fixed_colors, fixed_colors_count, options->malloc, options->free);
         if (!newmap) {
             return NULL;
         }
@@ -1452,7 +1529,7 @@ static colormap *find_best_palette(histogram *hist, const liq_attr *options, dou
         // and histogram weights are adjusted based on remapping error to give more weight to poorly matched colors
 
         const bool first_run_of_target_mse = !acolormap && target_mse > 0;
-        double total_error = viter_do_iteration(hist, newmap, options->min_opaque_val, first_run_of_target_mse ? NULL : adjust_histogram_callback, !acolormap || options->fast_palette);
+        double total_error = viter_do_iteration(hist, newmap, first_run_of_target_mse ? NULL : adjust_histogram_callback, !acolormap || options->fast_palette);
 
         // goal is to increase quality or to reduce number of colors used if quality is good enough
         if (!acolormap || total_error < least_error || (total_error <= target_mse && newmap->colors < max_colors)) {
@@ -1488,55 +1565,56 @@ static colormap *find_best_palette(histogram *hist, const liq_attr *options, dou
     }
     while(feedback_loop_trials > 0);
 
-    // likely_colormap_index (used and set in viter_do_iteration) can't point to index outside colormap
-    if (acolormap->colors < 256) {
-	for(unsigned int j=0; j < hist->size; j++) {
-	    if (hist->achv[j].tmp.likely_colormap_index >= acolormap->colors) {
-		hist->achv[j].tmp.likely_colormap_index = 0; // actual value doesn't matter, as the guess is out of date anyway
-	    }
-	}
-    }
     *palette_error_p = least_error;
     return acolormap;
 }
 
-static liq_result *pngquant_quantize(histogram *hist, const liq_attr *options, const double gamma)
+LIQ_NONNULL static liq_result *pngquant_quantize(histogram *hist, const liq_attr *options, const liq_image *img)
 {
     colormap *acolormap;
     double palette_error = -1;
 
     // no point having perfect match with imperfect colors (ignorebits > 0)
     const bool fast_palette = options->fast_palette || hist->ignorebits > 0;
+    const bool few_input_colors = hist->size+img->fixed_colors_count <= options->max_colors;
 
     // If image has few colors to begin with (and no quality degradation is required)
     // then it's possible to skip quantization entirely
-    if (hist->size <= options->max_colors && options->target_mse == 0) {
+    if (few_input_colors && options->target_mse == 0) {
         acolormap = pam_colormap(hist->size, options->malloc, options->free);
         for(unsigned int i=0; i < hist->size; i++) {
             acolormap->palette[i].acolor = hist->achv[i].acolor;
             acolormap->palette[i].popularity = hist->achv[i].perceptual_weight;
         }
+        acolormap = add_fixed_colors_to_palette(acolormap, options->max_colors, img->fixed_colors, img->fixed_colors_count, options->malloc, options->free);
         palette_error = 0;
     } else {
-        acolormap = find_best_palette(hist, options, &palette_error);
+        const double max_mse = options->max_mse * (few_input_colors ? 0.33 : 1.0); // when degrading image that's already paletted, require much higher improvement, since pal2pal often looks bad and there's little gain
+        acolormap = find_best_palette(hist, options, max_mse, img->fixed_colors, img->fixed_colors_count, &palette_error);
         if (!acolormap) {
             return NULL;
         }
 
         // Voronoi iteration approaches local minimum for the palette
-        const double max_mse = options->max_mse;
         const double iteration_limit = options->voronoi_iteration_limit;
         unsigned int iterations = options->voronoi_iterations;
 
         if (!iterations && palette_error < 0 && max_mse < MAX_DIFF) iterations = 1; // otherwise total error is never calculated and MSE limit won't work
 
         if (iterations) {
+            // likely_colormap_index (used and set in viter_do_iteration) can't point to index outside colormap
+            if (acolormap->colors < 256) for(unsigned int j=0; j < hist->size; j++) {
+                if (hist->achv[j].tmp.likely_colormap_index >= acolormap->colors) {
+                    hist->achv[j].tmp.likely_colormap_index = 0; // actual value doesn't matter, as the guess is out of date anyway
+                }
+            }
+
             verbose_print(options, "  moving colormap towards local minimum");
 
             double previous_palette_error = MAX_DIFF;
 
             for(unsigned int i=0; i < iterations; i++) {
-                palette_error = viter_do_iteration(hist, acolormap, options->min_opaque_val, NULL, i==0 || options->fast_palette);
+                palette_error = viter_do_iteration(hist, acolormap, NULL, i==0 || options->fast_palette);
 
                 if (fabs(previous_palette_error-palette_error) < iteration_limit) {
                     break;
@@ -1544,7 +1622,7 @@ static liq_result *pngquant_quantize(histogram *hist, const liq_attr *options, c
 
                 if (palette_error > max_mse*1.5) { // probably hopeless
                     if (palette_error > max_mse*3.0) break; // definitely hopeless
-                    iterations++;
+                    i++;
                 }
 
                 previous_palette_error = palette_error;
@@ -1560,7 +1638,10 @@ static liq_result *pngquant_quantize(histogram *hist, const liq_attr *options, c
         }
     }
 
-    sort_palette(acolormap, options);
+    if ( options->allow_sort == true )
+    {
+        sort_palette(acolormap, options);
+    }
 
     liq_result *result = options->malloc(sizeof(liq_result));
     if (!result) return NULL;
@@ -1572,13 +1653,13 @@ static liq_result *pngquant_quantize(histogram *hist, const liq_attr *options, c
         .palette_error = palette_error,
         .fast_palette = fast_palette,
         .use_dither_map = options->use_dither_map,
-        .gamma = gamma,
+        .gamma = img->gamma,
         .min_posterization_output = options->min_posterization_output,
     };
     return result;
 }
 
-LIQ_EXPORT liq_error liq_write_remapped_image(liq_result *result, liq_image *input_image, void *buffer, size_t buffer_size)
+LIQ_EXPORT LIQ_NONNULL liq_error liq_write_remapped_image(liq_result *result, liq_image *input_image, void *buffer, size_t buffer_size)
 {
     if (!CHECK_STRUCT_TYPE(result, liq_result)) {
         return LIQ_INVALID_POINTER;
@@ -1608,7 +1689,7 @@ LIQ_EXPORT liq_error liq_write_remapped_image(liq_result *result, liq_image *inp
     return error;
 }
 
-LIQ_EXPORT liq_error liq_write_remapped_image_rows(liq_result *quant, liq_image *input_image, unsigned char **row_pointers)
+LIQ_EXPORT LIQ_NONNULL liq_error liq_write_remapped_image_rows(liq_result *quant, liq_image *input_image, unsigned char **row_pointers)
 {
     if (!CHECK_STRUCT_TYPE(quant, liq_result)) return LIQ_INVALID_POINTER;
     if (!CHECK_STRUCT_TYPE(input_image, liq_image)) return LIQ_INVALID_POINTER;
@@ -1658,4 +1739,8 @@ LIQ_EXPORT liq_error liq_write_remapped_image_rows(liq_result *quant, liq_image 
     }
 
     return LIQ_OK;
+}
+
+LIQ_EXPORT int liq_version() {
+    return LIQ_VERSION;
 }

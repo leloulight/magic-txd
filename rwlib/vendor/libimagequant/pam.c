@@ -3,7 +3,7 @@
 ** Copyright (C) 1989, 1991 by Jef Poskanzer.
 ** Copyright (C) 1997, 2000, 2002 by Greg Roelofs; based on an idea by
 **                                Stefan Schneider.
-** © 2009-2013 by Kornel Lesinski.
+** © 2009-2015 by Kornel Lesinski.
 **
 ** Permission to use, copy, modify, and distribute this software and its
 ** documentation for any purpose and without fee is hereby granted, provided
@@ -159,7 +159,7 @@ LIQ_PRIVATE bool pam_computeacolorhash(struct acolorhash_table *acht, const rgba
 
 LIQ_PRIVATE struct acolorhash_table *pam_allocacolorhash(unsigned int maxcolors, unsigned int surface, unsigned int ignorebits, void* (*malloc)(size_t), void (*free)(void*))
 {
-    const unsigned int estimated_colors = MIN(maxcolors, surface/(ignorebits + (surface > 512*512 ? 5 : 4)));
+    const unsigned int estimated_colors = MIN(maxcolors, surface/(ignorebits + (surface > 512*512 ? 6 : 5)));
     const unsigned int hash_size = estimated_colors < 66000 ? 6673 : (estimated_colors < 200000 ? 12011 : 24019);
 
     mempool m = NULL;
@@ -236,6 +236,9 @@ LIQ_PRIVATE void pam_freeacolorhist(histogram *hist)
 
 LIQ_PRIVATE colormap *pam_colormap(unsigned int colors, void* (*malloc)(size_t), void (*free)(void*))
 {
+    if ( colors == 0 )
+        return NULL;
+
     assert(colors > 0 && colors < 65536);
 
     colormap *map;
@@ -245,7 +248,6 @@ LIQ_PRIVATE colormap *pam_colormap(unsigned int colors, void* (*malloc)(size_t),
     *map = (colormap){
         .malloc = malloc,
         .free = free,
-        .subset_palette = NULL,
         .colors = colors,
     };
     memset(map->palette, 0, colors_size);
@@ -258,15 +260,11 @@ LIQ_PRIVATE colormap *pam_duplicate_colormap(colormap *map)
     for(unsigned int i=0; i < map->colors; i++) {
         dupe->palette[i] = map->palette[i];
     }
-    if (map->subset_palette) {
-        dupe->subset_palette = pam_duplicate_colormap(map->subset_palette);
-    }
     return dupe;
 }
 
 LIQ_PRIVATE void pam_freecolormap(colormap *c)
 {
-    if (c->subset_palette) pam_freecolormap(c->subset_palette);
     c->free(c);
 }
 

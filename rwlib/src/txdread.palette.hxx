@@ -919,66 +919,8 @@ struct palettizer
     }
 };
 
-inline void nativePaletteRemap(
-    Interface *engineInterface,
-    palettizer& conv, ePaletteType convPaletteFormat, uint32 convItemDepth,
-    const void *texelSource, uint32 mipWidth, uint32 mipHeight,
-    ePaletteType srcPaletteType, const void *srcPaletteData, uint32 srcPaletteCount,
-    eRasterFormat srcRasterFormat, eColorOrdering srcColorOrder, uint32 srcItemDepth,
-    uint32 srcRowAlignment, uint32 dstRowAlignment,
-    void*& texelsOut, uint32& dataSizeOut
-)
-{
-    if ( convItemDepth != 4 && convItemDepth != 8 )
-    {
-        // Unsupported depth.
-        assert( 0 );
-    }
-
-    uint32 srcRowSize = getRasterDataRowSize( mipWidth, srcItemDepth, srcRowAlignment );
-
-    // Allocate appropriate memory.
-    uint32 dstRowSize = getRasterDataRowSize( mipWidth, convItemDepth, dstRowAlignment );
-
-    size_t dstDataSize = getRasterDataSizeByRowSize( dstRowSize, mipHeight );
-
-    void *newTexelData = engineInterface->PixelAllocate( dstDataSize );
-
-    colorModelDispatcher <const void> fetchDispatch( srcRasterFormat, srcColorOrder, srcItemDepth, srcPaletteData, srcPaletteCount, srcPaletteType );
-
-    for ( uint32 row = 0; row < mipHeight; row++ )
-    {
-        const void *srcRow = getConstTexelDataRow( texelSource, srcRowSize, row );
-        void *dstRow = getTexelDataRow( newTexelData, dstRowSize, row );
-
-        for ( uint32 col = 0; col < mipWidth; col++ )
-        {
-            // Browse each texel of the original image and link it to a palette entry.
-            uint8 red, green, blue, alpha;
-            bool hasColor = fetchDispatch.getRGBA(srcRow, col, red, green, blue, alpha);
-
-            if ( !hasColor )
-            {
-                red = 0;
-                green = 0;
-                blue = 0;
-                alpha = 0;
-            }
-
-            uint32 paletteIndex = conv.getclosestlink(red, green, blue, alpha);
-
-            // Store it in the palette data.
-            setpaletteindex(dstRow, col, convItemDepth, convPaletteFormat, paletteIndex);
-        }
-    }
-
-    // Give the parameters to the runtime.
-    texelsOut = newTexelData;
-    dataSizeOut = dstDataSize;
-}
-
 // Mipmap remapping algorithm.
-inline void RemapMipmapLayer(
+void RemapMipmapLayer(
     Interface *engineInterface,
     eRasterFormat palRasterFormat, eColorOrdering palColorOrder,
     const void *mipTexels, uint32 mipWidth, uint32 mipHeight,
@@ -986,57 +928,7 @@ inline void RemapMipmapLayer(
     const void *paletteData, uint32 paletteSize, uint32 convItemDepth, ePaletteType convPaletteType,
     uint32 srcRowAlignment, uint32 dstRowAlignment,
     void*& dstTexels, uint32& dstTexelDataSize
-)
-{
-    // Do some complex remapping.
-    // Since libimagequant does not support just remapping, we need to map it with the native algorithm.
-    palettizer remapper;
-
-    // Create an array with all the palette colors.
-    palettizer::texelContainer_t paletteContainer;
-
-    paletteContainer.resize( paletteSize );
-
-    uint32 palItemDepth = Bitmap::getRasterFormatDepth(palRasterFormat);
-
-    colorModelDispatcher <const void> fetchPalDispatch( palRasterFormat, palColorOrder, palItemDepth, NULL, 0, PALETTE_NONE );
-
-    for ( uint32 n = 0; n < paletteSize; n++ )
-    {
-        uint8 r, g, b, a;
-
-        bool hasColor = fetchPalDispatch.getRGBA(paletteData, n, r, g, b, a);
-
-        if ( !hasColor )
-        {
-            r = 0;
-            g = 0;
-            b = 0;
-            a = 0;
-        }
-
-        palettizer::texel_t inTexel;
-        inTexel.red = r;
-        inTexel.green = g;
-        inTexel.blue = b;
-        inTexel.alpha = a;
-
-        paletteContainer[ n ] = inTexel;
-    }
-
-    // Put the palette texels into the remapper.
-    remapper.texelElimData = paletteContainer;
-
-    // Do the remap.
-    nativePaletteRemap(
-        engineInterface,
-        remapper, convPaletteType, convItemDepth,
-        mipTexels, mipWidth, mipHeight, mipPaletteType, mipPaletteData, mipPaletteSize,
-        mipRasterFormat, mipColorOrder, mipDepth,
-        srcRowAlignment, dstRowAlignment,
-        dstTexels, dstTexelDataSize
-    );
-}
+);
 
 // Main palettization function for the pixel conversion framework.
 void PalettizePixelData( Interface *engineInterface, pixelDataTraversal& pixelData, const pixelFormat& dstPixelFormat );

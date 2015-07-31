@@ -34,3 +34,6 @@ EXPORTS
     liq_image_get_width
     liq_image_get_height
     liq_get_output_gamma
+    liq_image_add_fixed_color
+    liq_version
+    liq_set_allow_palette_sorting

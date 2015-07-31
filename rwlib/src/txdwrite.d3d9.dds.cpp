@@ -1873,14 +1873,42 @@ void d3d9NativeTextureTypeProvider::DeserializeNativeImage( Interface *engineInt
 
                         dstTexels = engineInterface->PixelAllocate( dstDataSize );
 
-                        usedFormatHandler->ConvertToRW( srcTexels, mipWidth, mipHeight, dstStride, srcDataSize, dstTexels );
+                        if ( dstTexels == NULL )
+                        {
+                            throw RwException( "failed to determine native texture alpha due to memory allocation failure" );
+                        }
+
+                        try
+                        {
+                            usedFormatHandler->ConvertToRW( srcTexels, mipWidth, mipHeight, dstStride, srcDataSize, dstTexels );
+                        }
+                        catch( ... )
+                        {
+                            engineInterface->PixelFree( dstTexels );
+
+                            throw;
+                        }
                     }
 
-                    bool hasMipmapAlpha =
-                        rawMipmapCalculateHasAlpha(
-                            mipWidth, mipHeight, dstTexels, dstDataSize,
-                            mipRasterFormat, mipDepth, getD3DTextureDataRowAlignment(), mipColorOrder, PALETTE_NONE, NULL, 0
-                        );
+                    bool hasMipmapAlpha = false;
+
+                    try
+                    {
+                        hasMipmapAlpha =
+                            rawMipmapCalculateHasAlpha(
+                                mipWidth, mipHeight, dstTexels, dstDataSize,
+                                mipRasterFormat, mipDepth, getD3DTextureDataRowAlignment(), mipColorOrder, PALETTE_NONE, NULL, 0
+                            );
+                    }
+                    catch( ... )
+                    {
+                        if ( srcTexels != dstTexels )
+                        {
+                            engineInterface->PixelFree( dstTexels );
+                        }
+
+                        throw;
+                    }
 
                     // Free texels if we allocated any.
                     if ( srcTexels != dstTexels )
