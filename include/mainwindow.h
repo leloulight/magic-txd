@@ -43,6 +43,8 @@ public:
     void saveCurrentTXDAt( QString location );
 
 	void clearViewImage( void );
+    
+    static const char* GetTXDPlatformString( rw::TexDictionary *txd );
 
 public slots:
     void onOpenFile( bool checked );

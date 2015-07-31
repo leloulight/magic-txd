@@ -919,8 +919,21 @@ void MainWindow::onAddTexture( bool checked )
                         {
                             try
                             {
+                                // Decide what platform to give this new raster.
+                                const char *platformName = "Direct3D9";
+
+                                if ( rw::TexDictionary *currentTXD = this->currentTXD )
+                                {
+                                    const char *txdPlatformName = GetTXDPlatformString( currentTXD );
+
+                                    if ( txdPlatformName )
+                                    {
+                                        platformName = txdPlatformName;
+                                    }
+                                }
+
                                 // Give the raster a platform.
-                                newRaster->newNativeData( "Direct3D9" );
+                                newRaster->newNativeData( platformName );
 
                                 // Deserialize.
                                 newRaster->readImage( imageStream );
@@ -1072,4 +1085,21 @@ void MainWindow::clearViewImage()
 {
 	imageWidget->clear();
 	imageWidget->hide();
+}
+
+const char* MainWindow::GetTXDPlatformString( rw::TexDictionary *txd )
+{
+    // We return the platform of the first texture.
+    // Otherwise we return NULL.
+    rw::TexDictionary::texIter_t texIter = txd->GetTextureIterator();
+
+    if ( texIter.IsEnd() )
+        return NULL;
+
+    rw::Raster *texRaster = texIter.Resolve()->GetRaster();
+
+    if ( !texRaster )
+        return NULL;
+
+    return texRaster->getNativeDataTypeName();
 }

@@ -171,4 +171,7 @@
     <ClCompile Include="..\..\src\rwimaging.tiff.cpp" />
     <ClCompile Include="..\..\src\txdwrite.d3d9.dds.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="rwtools.natvis" />
+  </ItemGroup>
 </Project>

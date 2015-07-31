@@ -169,6 +169,7 @@ struct bmpImagingEnv : public imagingFormatExtension
         // Decide about the raster format we decode to.
         eRasterFormat rasterFormat;
         uint32 depth;
+        eColorOrdering colorOrder;
 
         ePaletteType paletteType = PALETTE_NONE;
 
@@ -209,6 +210,8 @@ struct bmpImagingEnv : public imagingFormatExtension
                 itemDepth = 8;
             }
 
+            colorOrder = COLOR_BGRA;
+
             hasRasterFormat = true;
         }
         else if ( infoHeader.biBitCount == 16 )
@@ -218,6 +221,8 @@ struct bmpImagingEnv : public imagingFormatExtension
 
             itemDepth = depth;
 
+            colorOrder = COLOR_BGRA;
+
             hasRasterFormat = true;
         }
         else if ( infoHeader.biBitCount == 24 )
@@ -226,6 +231,8 @@ struct bmpImagingEnv : public imagingFormatExtension
             depth = 24;
 
             itemDepth = depth;
+
+            colorOrder = COLOR_BGRA;
             
             hasRasterFormat = true;
         }
@@ -235,6 +242,8 @@ struct bmpImagingEnv : public imagingFormatExtension
             depth = 32;
 
             itemDepth = depth;
+
+            colorOrder = COLOR_BGRA;
 
             hasRasterFormat = true;
         }
@@ -364,7 +373,7 @@ struct bmpImagingEnv : public imagingFormatExtension
             outputPixels.rasterFormat = rasterFormat;
             outputPixels.depth = itemDepth;
             outputPixels.rowAlignment = rowPadding;
-            outputPixels.colorOrder = COLOR_BGRA;
+            outputPixels.colorOrder = colorOrder;
             outputPixels.paletteType = paletteType;
             outputPixels.paletteData = paletteData;
             outputPixels.paletteSize = paletteSize;

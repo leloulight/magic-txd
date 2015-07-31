@@ -199,6 +199,9 @@
     <ClCompile Include="..\..\src\txdwrite.xbox.cpp" />
     <ClCompile Include="..\..\src\xboxnative.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="rwtools.natvis" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

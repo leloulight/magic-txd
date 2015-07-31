@@ -884,7 +884,6 @@ void RemapMipmapLayer(
         }
 
         // Clean up after ourselves.
-
         liq_result_destroy( liq_res );
 
         liq_image_destroy( liq_mip_layer );
