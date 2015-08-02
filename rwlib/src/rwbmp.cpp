@@ -173,7 +173,7 @@ bool Bitmap::browsecolor(uint32 x, uint32 y, uint8& redOut, uint8& greenOut, uin
     return hasColor;
 }
 
-bool Bitmap::browselum(uint32 x, uint32 y, uint8& lum) const
+bool Bitmap::browselum(uint32 x, uint32 y, uint8& lum, uint8& a) const
 {
     bool hasColor = false;
 
@@ -185,7 +185,7 @@ bool Bitmap::browselum(uint32 x, uint32 y, uint8& lum) const
 
         hasColor = fetchDispatch.getLuminance(
             srcRow, x,
-            lum
+            lum, a
         );
     }
 

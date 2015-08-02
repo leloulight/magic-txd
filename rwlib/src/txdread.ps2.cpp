@@ -320,6 +320,26 @@ eTexNativeCompatibility ps2NativeTextureTypeProvider::IsCompatibleTextureBlock( 
     return returnCompat;
 }
 
+inline bool isValidRasterFormat(eRasterFormat rasterFormat)
+{
+    // This is a legacy function.
+
+    bool isValidRaster = false;
+
+    if (rasterFormat == RASTER_1555 ||
+        rasterFormat == RASTER_565 ||
+        rasterFormat == RASTER_4444 ||
+        rasterFormat == RASTER_LUM ||
+        rasterFormat == RASTER_8888 ||
+        rasterFormat == RASTER_888 ||
+        rasterFormat == RASTER_555)
+    {
+        isValidRaster = true;
+    }
+
+    return isValidRaster;
+}
+
 void ps2NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture, PlatformTexture *nativeTex, BlockProvider& inputProvider ) const
 {
     Interface *engineInterface = theTexture->engineInterface;
@@ -2327,7 +2347,7 @@ void ps2NativeTextureTypeProvider::GetTextureFormatString( Interface *engineInte
     // The PS2 specific encoding does not matter.
     std::string formatString = "PS2 ";
 
-    getDefaultRasterFormatString( nativeTex->rasterFormat, nativeTex->paletteType, nativeTex->colorOrdering, formatString );
+    getDefaultRasterFormatString( nativeTex->rasterFormat, nativeTex->depth, nativeTex->paletteType, nativeTex->colorOrdering, formatString );
 
     if ( buf )
     {

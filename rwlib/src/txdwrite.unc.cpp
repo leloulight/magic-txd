@@ -438,7 +438,7 @@ void uncNativeTextureTypeProvider::GetTextureFormatString( Interface *engineInte
 
     getUNCRasterFormat( nativeTex->hasAlpha, rasterFormat, colorOrder, depth );
 
-    getDefaultRasterFormatString( rasterFormat, PALETTE_NONE, colorOrder, formatString );
+    getDefaultRasterFormatString( rasterFormat, depth, PALETTE_NONE, colorOrder, formatString );
 
     if ( buf )
     {

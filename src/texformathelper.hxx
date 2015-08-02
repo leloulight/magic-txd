@@ -18,9 +18,9 @@ inline void MagicMapToInternalRasterFormat( MAGIC_RASTER_FORMAT formatIn, rw::eR
     {
         formatOut = rw::RASTER_4444;
     }
-    else if ( formatIn == MAGIC_RASTER_FORMAT::RASTER_LUM8 )
+    else if ( formatIn == MAGIC_RASTER_FORMAT::RASTER_LUM )
     {
-        formatOut = rw::RASTER_LUM8;
+        formatOut = rw::RASTER_LUM;
     }
     else if ( formatIn == MAGIC_RASTER_FORMAT::RASTER_8888 )
     {
@@ -102,9 +102,9 @@ inline void MagicMapToVirtualRasterFormat( rw::eRasterFormat formatIn, MAGIC_RAS
     {
         formatOut = MAGIC_RASTER_FORMAT::RASTER_4444;
     }
-    else if ( formatIn == rw::RASTER_LUM8 )
+    else if ( formatIn == rw::RASTER_LUM )
     {
-        formatOut = MAGIC_RASTER_FORMAT::RASTER_LUM8;
+        formatOut = MAGIC_RASTER_FORMAT::RASTER_LUM;
     }
     else if ( formatIn == rw::RASTER_8888 )
     {

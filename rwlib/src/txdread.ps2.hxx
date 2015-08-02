@@ -1148,26 +1148,37 @@ inline eFormatEncodingType getFormatEncodingFromRasterFormat(eRasterFormat raste
 {
     eFormatEncodingType encodingFormat = FORMAT_UNKNOWN;
 
-    if (paletteType == PALETTE_4BIT)
+    if ( paletteType != PALETTE_NONE )
     {
-        encodingFormat = FORMAT_IDTEX8_COMPRESSED;
+        if (paletteType == PALETTE_4BIT)
+        {
+            encodingFormat = FORMAT_IDTEX8_COMPRESSED;
+        }
+        else if (paletteType == PALETTE_8BIT)
+        {
+            encodingFormat = FORMAT_IDTEX8;
+        }
+        else
+        {
+            throw RwException( "invalid palette type in PS2 swizzle format detection" );
+        }
     }
-    else if (paletteType == PALETTE_8BIT)
+    else
     {
-        encodingFormat = FORMAT_IDTEX8;
-    }
-    else if (rasterFormat == RASTER_LUM8)
-    {
-        encodingFormat = FORMAT_IDTEX8;
-    }
-    else if (rasterFormat == RASTER_1555 || rasterFormat == RASTER_565 || rasterFormat == RASTER_4444 ||
-             rasterFormat == RASTER_16 || rasterFormat == RASTER_555)
-    {
-        encodingFormat = FORMAT_TEX16;
-    }
-    else if (rasterFormat == RASTER_8888 || rasterFormat == RASTER_888 || rasterFormat == RASTER_32)
-    {
-        encodingFormat = FORMAT_TEX32;
+        if (rasterFormat == RASTER_LUM)
+        {
+            // We assume that we are 8bit LUM here.
+            encodingFormat = FORMAT_IDTEX8;
+        }
+        else if (rasterFormat == RASTER_1555 || rasterFormat == RASTER_565 || rasterFormat == RASTER_4444 ||
+                 rasterFormat == RASTER_16 || rasterFormat == RASTER_555)
+        {
+            encodingFormat = FORMAT_TEX16;
+        }
+        else if (rasterFormat == RASTER_8888 || rasterFormat == RASTER_888 || rasterFormat == RASTER_32)
+        {
+            encodingFormat = FORMAT_TEX32;
+        }
     }
 
     return encodingFormat;

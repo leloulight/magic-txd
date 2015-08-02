@@ -39,7 +39,7 @@ inline uint32 getD3DPaletteCount(ePaletteType paletteType)
 }
 
 // Function to get a default raster format string.
-inline void getDefaultRasterFormatString( eRasterFormat rasterFormat, ePaletteType paletteType, eColorOrdering colorOrder, std::string& formatOut )
+inline void getDefaultRasterFormatString( eRasterFormat rasterFormat, uint32 itemDepth, ePaletteType paletteType, eColorOrdering colorOrder, std::string& formatOut )
 {
     // Put info about pixel type.
     bool isColorOrderImportant = false;
@@ -66,9 +66,20 @@ inline void getDefaultRasterFormatString( eRasterFormat rasterFormat, ePaletteTy
 
             isColorOrderImportant = true;
         }
-        else if ( rasterFormat == RASTER_LUM8 )
+        else if ( rasterFormat == RASTER_LUM )
         {
-            formatOut += "LUM8";
+            if ( itemDepth == 8 )
+            {
+                formatOut += "LUM8";
+            }
+            else if ( itemDepth == 4 )
+            {
+                formatOut += "LUM4";
+            }
+            else
+            {
+                formatOut += "LUM";
+            }
         }
         else if ( rasterFormat == RASTER_8888 )
         {
@@ -79,6 +90,11 @@ inline void getDefaultRasterFormatString( eRasterFormat rasterFormat, ePaletteTy
         else if ( rasterFormat == RASTER_888 )
         {
             formatOut += "888";
+
+            if ( itemDepth == 24 )
+            {
+                formatOut += " 24bit";
+            }
 
             isColorOrderImportant = true;
         }

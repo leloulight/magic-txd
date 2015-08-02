@@ -1157,10 +1157,10 @@ bool BrowseTexelRGBA(
 bool BrowseTexelLuminance(
     const void *texelSource, uint32 texelIndex,
     eRasterFormat rasterFormat, uint32 depth, ePaletteType paletteType, const void *paletteData, uint32 paletteSize,
-    uint8& lumOut
+    uint8& lumOut, uint8& alphaOut
 )
 {
-    return colorModelDispatcher <const void> ( rasterFormat, COLOR_RGBA, depth, paletteData, paletteSize, paletteType ).getLuminance( texelSource, texelIndex, lumOut );
+    return colorModelDispatcher <const void> ( rasterFormat, COLOR_RGBA, depth, paletteData, paletteSize, paletteType ).getLuminance( texelSource, texelIndex, lumOut, alphaOut );
 }
 
 eColorModel GetRasterFormatColorModel( eRasterFormat rasterFormat )
@@ -1180,10 +1180,10 @@ bool PutTexelRGBA(
 bool PutTexelLuminance(
     void *texelSource, uint32 texelIndex,
     eRasterFormat rasterFormat, uint32 depth,
-    uint8 lum
+    uint8 lum, uint8 alpha
 )
 {
-    return colorModelDispatcher <void> ( rasterFormat, COLOR_RGBA, depth, NULL, 0, PALETTE_NONE ).setLuminance( texelSource, texelIndex, lum );
+    return colorModelDispatcher <void> ( rasterFormat, COLOR_RGBA, depth, NULL, 0, PALETTE_NONE ).setLuminance( texelSource, texelIndex, lum, alpha );
 }
 
 void pixelDataTraversal::FreePixels( Interface *engineInterface )

@@ -93,8 +93,11 @@ struct abstractColorItem
         {
             uint8 r, g, b, a;
         } rgbaColor;
-
-        uint8 lumColor;
+        struct
+        {
+            uint8 lum;
+            uint8 alpha;
+        } luminance;
     };
 };
 
@@ -242,6 +245,9 @@ public:
 
     inline static uint32 getRasterFormatDepth( eRasterFormat format )
     {
+        // Returns the default raster format depth.
+        // This one is standardized to be used by palette colors.
+
         uint32 theDepth = 0;
 
         if ( format == RASTER_8888 || format == RASTER_888 || format == RASTER_32 )
@@ -256,7 +262,7 @@ public:
         {
             theDepth = 24;
         }
-        else if ( format == RASTER_LUM8 )
+        else if ( format == RASTER_LUM )
         {
             theDepth = 8;
         }
@@ -415,7 +421,7 @@ public:
     }
 
     bool browsecolor(uint32 x, uint32 y, uint8& redOut, uint8& greenOut, uint8& blueOut, uint8& alphaOut) const;
-    bool browselum(uint32 x, uint32 y, uint8& lum) const;
+    bool browselum(uint32 x, uint32 y, uint8& lum, uint8& a) const;
     bool browsecolorex(uint32 x, uint32 y, abstractColorItem& colorItem ) const;
 
     eColorModel getColorModel( void ) const;

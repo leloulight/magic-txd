@@ -63,9 +63,10 @@ public:
     void readFromBlock(BlockProvider& inputProvider);
 };
 
+template <typename userType = endian::little_endian <uint32>>
 struct texFormatInfo_serialized
 {
-    endian::little_endian <uint32> info;
+    userType info;
 
     inline operator texFormatInfo ( void ) const
     {
@@ -96,43 +97,26 @@ public:
 
 #include "renderware.txd.pixelformat.h"
 
-// Native GTA:SA feature map:
-// no RASTER_PAL4 support at all.
-// if RASTER_PAL8, then only RASTER_8888 and RASTER_888
-// else 
-
+// This is our library-wide supported sample format enumeration.
+// Feel free to extend this. You must not serialize this anywhere,
+// since this type is version-agnostic.
 enum eRasterFormat
 {
     RASTER_DEFAULT,
     RASTER_1555,
     RASTER_565,
     RASTER_4444,
-    RASTER_LUM8,        // D3DFMT_L8
+    RASTER_LUM,         // D3DFMT_L8 (can be 4 or 8 bit)
     RASTER_8888,
     RASTER_888,
     RASTER_16,          // D3DFMT_D16
     RASTER_24,          // D3DFMT_D24X8
     RASTER_32,          // D3DFMT_D32
-    RASTER_555          // D3DFMT_X1R5G5B5
+    RASTER_555,         // D3DFMT_X1R5G5B5
+
+    // New types. :)
+    RASTER_LUM_ALPHA
 };
-
-inline bool isValidRasterFormat(eRasterFormat rasterFormat)
-{
-    bool isValidRaster = false;
-
-    if (rasterFormat == RASTER_1555 ||
-        rasterFormat == RASTER_565 ||
-        rasterFormat == RASTER_4444 ||
-        rasterFormat == RASTER_LUM8 ||
-        rasterFormat == RASTER_8888 ||
-        rasterFormat == RASTER_888 ||
-        rasterFormat == RASTER_555)
-    {
-        isValidRaster = true;
-    }
-
-    return isValidRaster;
-}
 
 inline bool canRasterFormatHaveAlpha(eRasterFormat rasterFormat)
 {
@@ -192,6 +176,27 @@ inline uint32 getPaletteItemCount( ePaletteType paletteType )
 // Texture container per platform for specialized color data.
 typedef void* PlatformTexture;
 
+// Native GTA:SA feature map:
+// no RASTER_PAL4 support at all.
+// if RASTER_PAL8, then only RASTER_8888 and RASTER_888
+// else 
+
+// Those are all sample types from RenderWare version 3.
+enum rwSerializedRasterFormat_3
+{
+    RWFORMAT3_UNKNOWN,
+    RWFORMAT3_1555,
+    RWFORMAT3_565,
+    RWFORMAT3_4444,
+    RWFORMAT3_LUM8,
+    RWFORMAT3_8888,
+    RWFORMAT3_888,
+    RWFORMAT3_16,
+    RWFORMAT3_24,
+    RWFORMAT3_32,
+    RWFORMAT3_555
+};
+
 // Useful routine to generate generic raster format flags.
 inline uint32 generateRasterFormatFlags( eRasterFormat rasterFormat, ePaletteType paletteType, bool hasMipmaps, bool autoMipmaps )
 {
@@ -200,7 +205,60 @@ inline uint32 generateRasterFormatFlags( eRasterFormat rasterFormat, ePaletteTyp
     // bits 0..3 can be (alternatively) used for the raster type
     // bits 4..8 are stored in the raster private flags.
 
-    rasterFlags |= ( (uint32)rasterFormat << 8 );
+    // Map the raster format or RenderWare3.
+    rwSerializedRasterFormat_3 serFormat = RWFORMAT3_UNKNOWN;
+
+    if ( rasterFormat != RASTER_DEFAULT )
+    {
+        if ( rasterFormat == RASTER_1555 )
+        {
+            serFormat = RWFORMAT3_1555;
+        }
+        else if ( rasterFormat == RASTER_565 )
+        {
+            serFormat = RWFORMAT3_565;
+        }
+        else if ( rasterFormat == RASTER_4444 )
+        {
+            serFormat = RWFORMAT3_4444;
+        }
+        else if ( rasterFormat == RASTER_LUM )
+        {
+            serFormat = RWFORMAT3_LUM8;
+        }
+        else if ( rasterFormat == RASTER_8888 )
+        {
+            serFormat = RWFORMAT3_8888;
+        }
+        else if ( rasterFormat == RASTER_888 )
+        {
+            serFormat = RWFORMAT3_888;
+        }
+        else if ( rasterFormat == RASTER_16 )
+        {
+            serFormat = RWFORMAT3_16;
+        }
+        else if ( rasterFormat == RASTER_24 )
+        {
+            serFormat = RWFORMAT3_24;
+        }
+        else if ( rasterFormat == RASTER_32 )
+        {
+            serFormat = RWFORMAT3_32;
+        }
+        else if ( rasterFormat == RASTER_555 )
+        {
+            serFormat = RWFORMAT3_555;
+        }
+        else
+        {
+            // We failed to map to a RenderWare3 format!
+            // This is a safe assertion.
+            assert( 0 );
+        }
+    }
+
+    rasterFlags |= ( (uint32)serFormat << 8 );
 
     if ( paletteType == PALETTE_4BIT )
     {
@@ -227,8 +285,56 @@ inline uint32 generateRasterFormatFlags( eRasterFormat rasterFormat, ePaletteTyp
 // Useful routine to read generic raster format flags.
 inline void readRasterFormatFlags( uint32 rasterFormatFlags, eRasterFormat& rasterFormat, ePaletteType& paletteType, bool& hasMipmaps, bool& autoMipmaps )
 {
-    rasterFormat = (eRasterFormat)( ( rasterFormatFlags & 0xF00 ) >> 8 );
+    rwSerializedRasterFormat_3 serFormat = (rwSerializedRasterFormat_3)( ( rasterFormatFlags & 0xF00 ) >> 8 );
     
+    // Map the serialized format to our raster format.
+    // We should be backwards compatible to every RenderWare3 format.
+    eRasterFormat formatOut = RASTER_DEFAULT;
+
+    if ( serFormat == RWFORMAT3_1555 )
+    {
+        formatOut = RASTER_1555;
+    }
+    else if ( serFormat == RWFORMAT3_565 )
+    {
+        formatOut = RASTER_565;
+    }
+    else if ( serFormat == RWFORMAT3_4444 )
+    {
+        formatOut = RASTER_4444;
+    }
+    else if ( serFormat == RWFORMAT3_LUM8 )
+    {
+        formatOut = RASTER_LUM;
+    }
+    else if ( serFormat == RWFORMAT3_8888 )
+    {
+        formatOut = RASTER_8888;
+    }
+    else if ( serFormat == RWFORMAT3_888 )
+    {
+        formatOut = RASTER_888;
+    }
+    else if ( serFormat == RWFORMAT3_16 )
+    {
+        formatOut = RASTER_16;
+    }
+    else if ( serFormat == RWFORMAT3_24 )
+    {
+        formatOut = RASTER_24;
+    }
+    else if ( serFormat == RWFORMAT3_32 )
+    {
+        formatOut = RASTER_32;
+    }
+    else if ( serFormat == RWFORMAT3_555 )
+    {
+        formatOut = RASTER_555;
+    }
+    // anything else will be an unknown raster mapping.
+
+    rasterFormat = formatOut;
+
     if ( ( rasterFormatFlags & RASTER_PAL4 ) != 0 )
     {
         paletteType = PALETTE_4BIT;
@@ -833,7 +939,7 @@ bool BrowseTexelRGBA(
 bool BrowseTexelLuminance(
     const void *texelSource, uint32 texelIndex,
     eRasterFormat rasterFormat, uint32 depth, ePaletteType paletteType, const void *paletteData, uint32 paletteSize,
-    uint8& lumOut
+    uint8& lumOut, uint8& alphaOut
 );
 
 // Use this function to decide the functions you should use for color manipulation.
@@ -847,7 +953,7 @@ bool PutTexelRGBA(
 bool PutTexelLuminance(
     void *texelSource, uint32 texelIndex,
     eRasterFormat rasterFormat, uint32 depth,
-    uint8 lum
+    uint8 lum, uint8 alpha
 );
 
 // Debug API.

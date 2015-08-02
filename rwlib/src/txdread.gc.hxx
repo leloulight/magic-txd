@@ -1,34 +1,73 @@
-#include "txdread.d3d.hxx"
+// The Gamecube native texture is stored in big-endian format.
+#define PLATFORMDESC_GAMECUBE   6
 
-#define PLATFORM_D3D8   8
+#include "txdread.d3d.genmip.hxx"
 
 namespace rw
 {
 
-struct NativeTextureD3D8
+enum eGCNativeTextureFormat : unsigned char
+{
+    GVRFMT_LUM_4BIT,
+    GVRFMT_LUM_8BIT,
+    GVRFMT_LUM_4BIT_ALPHA,
+    GVRFMT_LUM_8BIT_ALPHA,
+    GVRFMT_RGB565,
+    GVRFMT_RGB5A3,
+    GVRFMT_RGBA8888,
+    GVRFMT_PAL_4BIT = 0x8,
+    GVRFMT_PAL_8BIT,
+    GVRFMT_CMP = 0xE
+};
+
+enum eGCPixelFormat : unsigned char
+{
+    GVRPIX_LUM_ALPHA,
+    GVRPIX_RGB565,
+    GVRPIX_RGB5A3
+};
+
+inline uint32 getGVRPixelFormatDepth( eGCPixelFormat format )
+{
+    uint32 depth = 0;
+
+    if ( format == GVRPIX_LUM_ALPHA )
+    {
+        depth = 16;
+    }
+    else if ( format == GVRPIX_RGB565 )
+    {
+        depth = 16;
+    }
+    else if ( format == GVRPIX_RGB5A3 )
+    {
+        depth = 16;
+    }
+
+    return depth;
+}
+
+struct NativeTextureGC
 {
     Interface *engineInterface;
 
     LibraryVersion texVersion;
 
-    inline NativeTextureD3D8( Interface *engineInterface )
+    inline NativeTextureGC( Interface *engineInterface )
     {
-        // Initialize the texture object.
         this->engineInterface = engineInterface;
         this->texVersion = engineInterface->GetVersion();
         this->palette = NULL;
         this->paletteSize = 0;
         this->paletteType = PALETTE_NONE;
-        this->rasterFormat = RASTER_8888;
-        this->depth = 0;
+        this->internalFormat = GVRFMT_RGBA8888;
+        this->palettePixelFormat = GVRPIX_LUM_ALPHA;
         this->autoMipmaps = false;
-        this->dxtCompression = 0;
         this->rasterType = 4;
-        this->hasAlpha = true;
-        this->colorOrdering = COLOR_BGRA;
+        this->hasAlpha = false;
     }
 
-    inline NativeTextureD3D8( const NativeTextureD3D8& right )
+    inline NativeTextureGC( const NativeTextureGC& right )
     {
         Interface *engineInterface = right.engineInterface;
 
@@ -39,7 +78,7 @@ struct NativeTextureD3D8
         {
 	        if (right.palette)
             {
-                uint32 palRasterDepth = Bitmap::getRasterFormatDepth(right.rasterFormat);
+                uint32 palRasterDepth = getGVRPixelFormatDepth(this->palettePixelFormat);
 
                 size_t wholeDataSize = getPaletteDataSize( right.paletteSize, palRasterDepth );
 
@@ -54,21 +93,19 @@ struct NativeTextureD3D8
 
             this->paletteSize = right.paletteSize;
             this->paletteType = right.paletteType;
+            this->palettePixelFormat = right.palettePixelFormat;
         }
 
         // Copy image texel information.
         {
             copyMipmapLayers( engineInterface, right.mipmaps, this->mipmaps );
-
-            this->rasterFormat = right.rasterFormat;
-            this->depth = right.depth;
         }
 
-        this->autoMipmaps =         right.autoMipmaps;
-        this->dxtCompression =      right.dxtCompression;
-        this->rasterType =          right.rasterType;
-        this->hasAlpha =            right.hasAlpha;
-        this->colorOrdering =       right.colorOrdering;
+        // Copy advanced properties.
+        this->internalFormat = right.internalFormat;
+        this->autoMipmaps = right.autoMipmaps;
+        this->rasterType = right.rasterType;
+        this->hasAlpha = right.hasAlpha;
     }
 
     inline void clearTexelData( void )
@@ -83,17 +120,13 @@ struct NativeTextureD3D8
         deleteMipmapLayers( this->engineInterface, this->mipmaps );
     }
 
-    inline ~NativeTextureD3D8( void )
+    inline ~NativeTextureGC( void )
     {
         this->clearTexelData();
     }
 
 public:
     typedef genmip::mipmapLayer mipmapLayer;
-
-    eRasterFormat rasterFormat;
-
-    uint32 depth;
 
 	std::vector <mipmapLayer> mipmaps;
 
@@ -102,32 +135,30 @@ public:
 
     ePaletteType paletteType;
 
-	// PC/XBOX
-    bool autoMipmaps;
+    eGCNativeTextureFormat internalFormat;
+    eGCPixelFormat palettePixelFormat;
 
-    uint32 dxtCompression;
-    uint32 rasterType;
+    bool autoMipmaps;
+    uint8 rasterType;
 
     bool hasAlpha;
-
-    eColorOrdering colorOrdering;
 };
 
-struct d3d8NativeTextureTypeProvider : public texNativeTypeProvider
+struct gamecubeNativeTextureTypeProvider : public texNativeTypeProvider
 {
     void ConstructTexture( Interface *engineInterface, void *objMem, size_t memSize ) override
     {
-        new (objMem) NativeTextureD3D8( engineInterface );
+        new (objMem) NativeTextureGC( engineInterface );
     }
 
     void CopyConstructTexture( Interface *engineInterface, void *objMem, const void *srcObjMem, size_t memSize ) override
     {
-        new (objMem) NativeTextureD3D8( *(const NativeTextureD3D8*)srcObjMem );
+        new (objMem) NativeTextureGC( *(const NativeTextureGC*)srcObjMem );
     }
-    
+
     void DestroyTexture( Interface *engineInterface, void *objMem, size_t memSize ) override
     {
-        ( *(NativeTextureD3D8*)objMem ).~NativeTextureD3D8();
+        ((NativeTextureGC*)objMem)->~NativeTextureGC();
     }
 
     eTexNativeCompatibility IsCompatibleTextureBlock( BlockProvider& inputProvider ) const;
@@ -135,23 +166,23 @@ struct d3d8NativeTextureTypeProvider : public texNativeTypeProvider
     void SerializeTexture( TextureBase *theTexture, PlatformTexture *nativeTex, BlockProvider& outputProvider ) const;
     void DeserializeTexture( TextureBase *theTexture, PlatformTexture *nativeTex, BlockProvider& inputProvider ) const;
 
-    void GetPixelCapabilities( pixelCapabilities& capsOut ) const override
+    void GetPixelCapabilities( pixelCapabilities& capsOut ) const
     {
         capsOut.supportsDXT1 = true;
-        capsOut.supportsDXT2 = true;
-        capsOut.supportsDXT3 = true;
-        capsOut.supportsDXT4 = true;
-        capsOut.supportsDXT5 = true;
+        capsOut.supportsDXT2 = false;
+        capsOut.supportsDXT3 = false;
+        capsOut.supportsDXT4 = false;
+        capsOut.supportsDXT5 = false;
         capsOut.supportsPalette = true;
     }
 
-    void GetStorageCapabilities( storageCapabilities& storeCaps ) const override
+    void GetStorageCapabilities( storageCapabilities& storeCaps ) const
     {
         storeCaps.pixelCaps.supportsDXT1 = true;
-        storeCaps.pixelCaps.supportsDXT2 = true;
-        storeCaps.pixelCaps.supportsDXT3 = true;
-        storeCaps.pixelCaps.supportsDXT4 = true;
-        storeCaps.pixelCaps.supportsDXT5 = true;
+        storeCaps.pixelCaps.supportsDXT2 = false;
+        storeCaps.pixelCaps.supportsDXT3 = false;
+        storeCaps.pixelCaps.supportsDXT4 = false;
+        storeCaps.pixelCaps.supportsDXT5 = false;
         storeCaps.pixelCaps.supportsPalette = true;
 
         storeCaps.isCompressedFormat = false;
@@ -161,16 +192,18 @@ struct d3d8NativeTextureTypeProvider : public texNativeTypeProvider
     void SetPixelDataToTexture( Interface *engineInterface, void *objMem, const pixelDataTraversal& pixelsIn, acquireFeedback_t& feedbackOut );
     void UnsetPixelDataFromTexture( Interface *engineInterface, void *objMem, bool deallocate );
 
-    void SetTextureVersion( Interface *engineInterface, void *objMem, LibraryVersion version ) override
+    void SetTextureVersion( Interface *engineInterface, void *objMem, LibraryVersion version )
     {
-        NativeTextureD3D8 *nativeTex = (NativeTextureD3D8*)objMem;
+        NativeTextureGC *nativeTex = (NativeTextureGC*)objMem;
 
         nativeTex->texVersion = version;
+
+        // TODO: handle different RW versions.
     }
 
-    LibraryVersion GetTextureVersion( const void *objMem ) override
+    LibraryVersion GetTextureVersion( const void *objMem )
     {
-        const NativeTextureD3D8 *nativeTex = (const NativeTextureD3D8*)objMem;
+        const NativeTextureGC *nativeTex = (const NativeTextureGC*)objMem;
 
         return nativeTex->texVersion;
     }
@@ -179,86 +212,97 @@ struct d3d8NativeTextureTypeProvider : public texNativeTypeProvider
     bool AddMipmapLayer( Interface *engineInterface, void *objMem, const rawMipmapLayer& layerIn, acquireFeedback_t& feedbackOut );
     void ClearMipmaps( Interface *engineInterface, void *objMem );
 
-    void* GetNativeInterface( void *objMem ) override
-    {
-        // TODO.
-        return NULL;
-    }
-
     void GetTextureInfo( Interface *engineInterface, void *objMem, nativeTextureBatchedInfo& infoOut );
     void GetTextureFormatString( Interface *engineInterface, void *objMem, char *buf, size_t bufLen, size_t& lengthOut ) const;
 
     ePaletteType GetTexturePaletteType( const void *objMem ) override
     {
-        const NativeTextureD3D8 *nativeTex = (const NativeTextureD3D8*)objMem;
+        const NativeTextureGC *nativeTex = (const NativeTextureGC*)objMem;
 
         return nativeTex->paletteType;
     }
 
     bool IsTextureCompressed( const void *objMem ) override
     {
-        const NativeTextureD3D8 *nativeTex = (const NativeTextureD3D8*)objMem;
-
-        return ( nativeTex->dxtCompression != 0 );
+        const NativeTextureGC *nativeTex = (const NativeTextureGC*)objMem;
+        
+        return ( nativeTex->internalFormat == GVRFMT_CMP );
     }
 
     bool DoesTextureHaveAlpha( const void *objMem ) override
     {
-        const NativeTextureD3D8 *nativeTex = (const NativeTextureD3D8*)objMem;
+        const NativeTextureGC *nativeTex = (const NativeTextureGC*)objMem;
 
         return nativeTex->hasAlpha;
     }
 
     uint32 GetTextureDataRowAlignment( void ) const override
     {
-        // Direct3D 8 and 9 work with DWORD aligned texture data rows.
-        // We found this out when looking at the return values of GetLevelDesc.
-        return getD3DTextureDataRowAlignment();
+        // I guess we want to be 4 byte aligned.
+        return 4;
+    }
+
+    void* GetNativeInterface( void *objMem ) override
+    {
+        // TODO.
+        return NULL;
+    }
+
+    void* GetDriverNativeInterface( void ) const override
+    {
+        // TODO.
+        return NULL;
     }
 
     uint32 GetDriverIdentifier( void *objMem ) const override
     {
-        // Direct3D 8 driver.
-        return 1;
+        // Undefined.
+        return 0;
     }
 
     inline void Initialize( Interface *engineInterface )
     {
-        RegisterNativeTextureType( engineInterface, "Direct3D8", this, sizeof( NativeTextureD3D8 ) );
+        RegisterNativeTextureType( engineInterface, "Gamecube", this, sizeof( NativeTextureGC ) );
     }
 
     inline void Shutdown( Interface *engineInterface )
     {
-        UnregisterNativeTextureType( engineInterface, "Direct3D8" );
+        UnregisterNativeTextureType( engineInterface, "Gamecube" );
     }
 };
 
-namespace d3d8
+namespace gamecube
 {
 
 #pragma pack(1)
 struct textureMetaHeaderStructGeneric
 {
-    endian::little_endian <uint32> platformDescriptor;
+    endian::big_endian <uint32> platformDescriptor;
 
-    rw::texFormatInfo_serialized <rw::endian::little_endian <uint32>> texFormat;
+    rw::texFormatInfo_serialized <endian::big_endian <uint32>> texFormat;
+
+    endian::big_endian <uint32> unk1;   // gotta be some sort of gamecube registers.
+    endian::big_endian <uint32> unk2;
+    endian::big_endian <uint32> unk3;
+    endian::big_endian <uint32> unk4;
     
     char name[32];
     char maskName[32];
 
-    endian::little_endian <uint32> rasterFormat;
-    endian::little_endian <uint32> hasAlpha;
+    endian::big_endian <uint32> rasterFormat;
 
-    endian::little_endian <uint16> width;
-    endian::little_endian <uint16> height;
+    endian::big_endian <uint16> width;
+    endian::big_endian <uint16> height;
     uint8 depth;
     uint8 mipmapCount;
-    uint8 rasterType : 3;
-    uint8 pad1 : 5;
-    uint8 dxtCompression;
+    eGCNativeTextureFormat internalFormat;
+    uint8 unk5;
+
+    endian::big_endian <uint32> hasAlpha;
+    endian::big_endian <uint32> imageDataSectionSize;
 };
 #pragma pack()
 
 };
 
-}
+};

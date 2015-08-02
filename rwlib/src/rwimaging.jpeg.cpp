@@ -374,7 +374,9 @@ struct jpegImagingExtension : public imagingFormatExtension
                 }
                 else if ( numComponents == 1 && colorSpace == JCS_GRAYSCALE )
                 {
-                    dstRasterFormat = RASTER_LUM8;
+                    // We clearly are 8bit LUM here.
+                    // If we are 4bit LUM, we should not have a problem either.
+                    dstRasterFormat = RASTER_LUM;
                     dstDepth = 8;
                 }
                 else
@@ -623,9 +625,10 @@ struct jpegImagingExtension : public imagingFormatExtension
                     numColorComponents = 3;
                     colorSpace = JCS_RGB;
                 }
-                else if ( srcRasterFormat == RASTER_LUM8 )
+                else if ( srcRasterFormat == RASTER_LUM )
                 {
-                    dstRasterFormat = RASTER_LUM8;
+                    // We want to map to 8bit LUM for the JPEG library.
+                    dstRasterFormat = RASTER_LUM;
                     dstDepth = 8;
 
                     numColorComponents = 1;

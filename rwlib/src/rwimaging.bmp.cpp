@@ -182,7 +182,7 @@ struct bmpImagingEnv : public imagingFormatExtension
             throw RwException( "cannot read monochrome .bmp files" );
 
 #if 0
-            rasterFormat = RASTER_LUM8;
+            rasterFormat = RASTER_LUM;
             depth = 8;
 
             itemDepth = 8;

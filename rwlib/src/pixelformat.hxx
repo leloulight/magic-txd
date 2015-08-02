@@ -505,7 +505,8 @@ inline eColorModel getColorModelFromRasterFormat( eRasterFormat rasterFormat )
     {
         usedColorModel = COLORMODEL_RGBA;
     }
-    else if ( rasterFormat == RASTER_LUM8 )
+    else if ( rasterFormat == RASTER_LUM ||
+              rasterFormat == RASTER_LUM_ALPHA )
     {
         usedColorModel = COLORMODEL_LUMINANCE;
     }
@@ -582,16 +583,16 @@ public:
         }
         else if ( model == COLORMODEL_LUMINANCE )
         {
-            uint8 lum;
+            uint8 lum, a;
 
-            success = this->getLuminance( texelSource, index, lum );
+            success = this->getLuminance( texelSource, index, lum, a );
 
             if ( success )
             {
                 red = lum;
                 green = lum;
                 blue = lum;
-                alpha = 255;
+                alpha = a;
             }
         }
         else
@@ -630,7 +631,7 @@ public:
         return success;
     }
 
-    AINLINE bool setLuminance( texel_t *texelSource, unsigned int index, uint8 lum ) const
+    AINLINE bool setLuminance( texel_t *texelSource, unsigned int index, uint8 lum, uint8 alpha ) const
     {
         eColorModel model = this->usedColorModel;
 
@@ -645,7 +646,7 @@ public:
             eRasterFormat rasterFormat = this->rasterFormat;
             uint32 depth = this->depth;
             
-            if ( rasterFormat == RASTER_LUM8 )
+            if ( rasterFormat == RASTER_LUM )
             {
                 if ( depth == 8 )
                 {
@@ -660,6 +661,49 @@ public:
 
                     success = true;
                 }
+                else if ( depth == 4 )
+                {
+                    PixelFormat::palette4bit *lumData = (PixelFormat::palette4bit*)texelSource;
+
+                    uint8 scaledLum = ( lum * 15 / 255 );
+
+                    lumData->setvalue( index, scaledLum );
+
+                    success = true;
+                }
+            }
+            else if ( rasterFormat == RASTER_LUM_ALPHA )
+            {
+                if ( depth == 8 )
+                {
+                    struct pixel_t
+                    {
+                        uint8 lum : 4;
+                        uint8 alpha : 4;
+                    };
+
+                    pixel_t *srcData = ( (pixel_t*)texelSource + index );
+
+                    srcData->lum = ( lum * 15 / 255 );
+                    srcData->alpha = ( alpha * 15 / 255 );
+
+                    success = true;
+                }
+                else if ( depth == 16 )
+                {
+                    struct pixel_t
+                    {
+                        uint8 lum;
+                        uint8 alpha;
+                    };
+
+                    pixel_t *srcData = ( (pixel_t*)texelSource + index );
+
+                    srcData->lum = lum;
+                    srcData->alpha = alpha;
+
+                    success = true;
+                }
             }
         }
         else
@@ -670,7 +714,7 @@ public:
         return success;
     }
 
-    AINLINE bool getLuminance( texel_t *texelSource, unsigned int index, uint8& lum ) const
+    AINLINE bool getLuminance( texel_t *texelSource, unsigned int index, uint8& lum, uint8& alpha ) const
     {
         eColorModel model = this->usedColorModel;
 
@@ -681,7 +725,7 @@ public:
             eRasterFormat rasterFormat = this->rasterFormat;
             uint32 depth = this->depth;
             
-            if ( rasterFormat == RASTER_LUM8 )
+            if ( rasterFormat == RASTER_LUM )
             {
                 if ( depth == 8 )
                 {
@@ -693,8 +737,53 @@ public:
                     pixel_t *srcData = ( (pixel_t*)texelSource + index );
 
                     lum = srcData->lum;
+                    alpha = 255;
 
                     success = true;
+                }
+                else if ( depth == 4 )
+                {
+                    PixelFormat::palette4bit *lumData = (PixelFormat::palette4bit*)texelSource;
+
+                    uint8 scaledLum;
+
+                    lumData->getvalue( index, scaledLum );
+
+                    lum = ( scaledLum * 255 / 15 );
+                    alpha = 255;
+
+                    success = true;
+                }
+            }
+            else if ( rasterFormat == RASTER_LUM_ALPHA )
+            {
+                if ( depth == 8 )
+                {
+                    struct pixel_t
+                    {
+                        uint8 lum : 4;
+                        uint8 alpha : 4;
+                    };
+
+                    pixel_t *srcData = ( (pixel_t*)texelSource + index );
+
+                    lum = ( srcData->lum * 255 / 15 );
+                    alpha = ( srcData->alpha * 255 / 15 );
+
+                    success = true;
+                }
+                else if ( depth == 16 )
+                {
+                    struct pixel_t
+                    {
+                        uint8 lum;
+                        uint8 alpha;
+                    };
+
+                    pixel_t *srcData = ( (pixel_t*)texelSource + index );
+
+                    lum = srcData->lum;
+                    alpha = srcData->alpha;
                 }
             }
         }
@@ -718,7 +807,7 @@ public:
         }
         else if ( model == COLORMODEL_LUMINANCE )
         {
-            success = this->setLuminance( texelSource, index, colorItem.lumColor );
+            success = this->setLuminance( texelSource, index, colorItem.luminance.lum, colorItem.luminance.alpha );
         }
         else
         {
@@ -748,11 +837,12 @@ public:
         }
         else if ( model == COLORMODEL_LUMINANCE )
         {
-            success = this->getLuminance( texelSource, index, colorItem.lumColor );
+            success = this->getLuminance( texelSource, index, colorItem.luminance.lum, colorItem.luminance.alpha );
 
             if ( !success )
             {
-                colorItem.lumColor = 0;
+                colorItem.luminance.lum = 0;
+                colorItem.luminance.alpha = 0;
             }
         }
         else
@@ -764,7 +854,7 @@ public:
     AINLINE void clearColor( texel_t *texelSource, unsigned int index )
     {
         // TODO.
-        this->setLuminance( texelSource, index, 0 );
+        this->setLuminance( texelSource, index, 0, 0 );
     }
 };
 

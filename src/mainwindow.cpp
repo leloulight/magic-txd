@@ -246,7 +246,14 @@ MainWindow::MainWindow(QWidget *parent) :
                 {
                     registered_image_format imgformat;
 
-                    imgformat.formatName = nativeExt;   // could improve this.
+                    if ( strcmp( nativeExt, "DDS" ) == 0 )
+                    {
+                        imgformat.formatName = "DirectDraw Surface";
+                    }
+                    else
+                    {
+                        imgformat.formatName = nativeExt;   // could improve this.
+                    }
                     imgformat.defaultExt = nativeExt;
                     imgformat.isNativeFormat = true;
                     imgformat.nativeType = nativeName;
@@ -446,7 +453,7 @@ void MainWindow::updateTextureList( void )
     QListWidget *listWidget = this->textureListWidget;
 
     listWidget->clear();
-
+    
     if ( txdObj )
     {
 	    bool selected = false;

@@ -1214,7 +1214,7 @@ void xboxNativeTextureTypeProvider::GetTextureFormatString( Interface *engineInt
         formatString += " ";
 
         // Just a default raster type.
-        getDefaultRasterFormatString( nativeTex->rasterFormat, nativeTex->paletteType, nativeTex->colorOrder, formatString );
+        getDefaultRasterFormatString( nativeTex->rasterFormat, nativeTex->depth, nativeTex->paletteType, nativeTex->colorOrder, formatString );
     }
 
     if ( buf )

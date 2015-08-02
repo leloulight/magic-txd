@@ -52,6 +52,7 @@
   <Type Name="rw::TextureBase">
     <DisplayString>{name}</DisplayString>
     <Expand>
+      <Item Name="Object">(RwObject*)this,nd</Item>
       <Item Name="Raster">texRaster</Item>
       <Item Name="Name">name</Item>
       <Item Name="Mask Name" Condition="maskName[0] != 0">maskName</Item>
@@ -65,6 +66,7 @@
   <Type Name="rw::TexDictionary">
     <DisplayString>Texture Dictionary ({numTextures})</DisplayString>
     <Expand>
+      <Item Name="Object">(RwObject*)this,nd</Item>
       <Item Name="[count]">numTextures</Item>
       <CustomListItems>
         <Variable Name="nodeptr" InitialValue="textures.root.next"/>

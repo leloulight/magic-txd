@@ -257,7 +257,7 @@ struct xboxNativeTextureTypeProvider : public texNativeTypeProvider
 #pragma pack(1)
 struct textureMetaHeaderStructXbox
 {
-    rw::texFormatInfo_serialized formatInfo;
+    rw::texFormatInfo_serialized <rw::endian::little_endian <uint32>> formatInfo;
 
     char name[32];
     char maskName[32];

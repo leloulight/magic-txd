@@ -237,7 +237,7 @@ struct pngImagingExtension : public imagingFormatExtension
                     if ( png_depth == 1 || png_depth == 2 || png_depth == 4 || png_depth == 8 || png_depth == 16 )
                     {
                         // We are a grayscale image without palette and no alpha.
-                        rasterFormat = RASTER_LUM8;
+                        rasterFormat = RASTER_LUM;  // obviously 8bit LUM.
                         depth = 8;
                         itemDepth = 8;
 
@@ -751,7 +751,7 @@ struct pngImagingExtension : public imagingFormatExtension
                         png_depth = 8;
                         color_type = 0;
 
-                        wantedRasterFormat = RASTER_LUM8;
+                        wantedRasterFormat = RASTER_LUM;
                         wantedItemDepth = 8;
                         wantedDepth = 8;
                     }

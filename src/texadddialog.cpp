@@ -92,7 +92,7 @@ TexAddDialog::TexAddDialog( MainWindow *mainWnd, QPixmap pixels )
             pixelFormatSelect->addItem( "RASTER_1555" );
             pixelFormatSelect->addItem( "RASTER_565" );
             pixelFormatSelect->addItem( "RASTER_4444" );
-            pixelFormatSelect->addItem( "RASTER_LUM8" );
+            pixelFormatSelect->addItem( "RASTER_LUM" );
             pixelFormatSelect->addItem( "RASTER_8888" );
             pixelFormatSelect->addItem( "RASTER_888" );
             pixelFormatSelect->addItem( "RASTER_555" );

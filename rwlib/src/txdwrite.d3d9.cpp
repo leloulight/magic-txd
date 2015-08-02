@@ -446,8 +446,9 @@ inline void convertCompatibleRasterFormat(
             colorOrder = COLOR_BGRA;
             d3dFormatOut = D3DFMT_X1R5G5B5;
         }
-        else if ( srcRasterFormat == RASTER_LUM8 )
+        else if ( srcRasterFormat == RASTER_LUM )
         {
+            // We only support 8bit LUM, obviously.
             depth = 8;
             d3dFormatOut = D3DFMT_L8;
         }
@@ -1079,7 +1080,7 @@ void d3d9NativeTextureTypeProvider::GetTextureFormatString( Interface *engineInt
         {
             // We are a default raster.
             // Share functionality here.
-            getDefaultRasterFormatString( nativeTexture->rasterFormat, nativeTexture->paletteType, nativeTexture->colorOrdering, formatString );
+            getDefaultRasterFormatString( nativeTexture->rasterFormat, nativeTexture->depth, nativeTexture->paletteType, nativeTexture->colorOrdering, formatString );
         }
     }
 

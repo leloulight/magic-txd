@@ -665,12 +665,12 @@ struct tiffImagingExtension : public imagingFormatExtension
                             else
                             {
                                 // We store things in grayscale.
-                                dstRasterFormat = RASTER_LUM8;
+                                dstRasterFormat = RASTER_LUM;
                                 dstDepth = 8;
 
                                 if ( photometric_type == PHOTOMETRIC_MINISBLACK )
                                 {
-                                    tiffRasterFormat = RASTER_LUM8;
+                                    tiffRasterFormat = RASTER_LUM;
                                     tiffDepth = 8;
                                 }
                             }
@@ -889,8 +889,7 @@ struct tiffImagingExtension : public imagingFormatExtension
                                                     alpha = 0;
                                                 }
 
-                                                // We kinda ignore the alpha channel.
-                                                putDispatch.setLuminance( dstRowData, col, lum );
+                                                putDispatch.setLuminance( dstRowData, col, lum, alpha );
                                             }
                                             else if ( parseMode == TPARSEMODE_FULLCOLOR )
                                             {
@@ -1141,12 +1140,12 @@ struct tiffImagingExtension : public imagingFormatExtension
 
                     sample_count = 3;
                 }
-                else if ( srcRasterFormat == RASTER_LUM8 )
+                else if ( srcRasterFormat == RASTER_LUM )
                 {
                     photometric_type = PHOTOMETRIC_MINISBLACK;
                     bits_per_sample = 8;
 
-                    tiffRasterFormat = RASTER_LUM8;
+                    tiffRasterFormat = RASTER_LUM;
                     tiffDepth = 8;
 
                     sample_count = 1;

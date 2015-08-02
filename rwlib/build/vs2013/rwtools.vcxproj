@@ -130,6 +130,7 @@
     <ClInclude Include="..\..\src\txdread.d3d8.hxx" />
     <ClInclude Include="..\..\src\txdread.d3d9.hxx" />
     <ClInclude Include="..\..\src\txdread.dxtmobile.hxx" />
+    <ClInclude Include="..\..\src\txdread.gc.hxx" />
     <ClInclude Include="..\..\src\txdread.miputil.hxx" />
     <ClInclude Include="..\..\src\txdread.palette.hxx" />
     <ClInclude Include="..\..\src\txdread.ps2.hxx" />
@@ -177,6 +178,7 @@
     <ClCompile Include="..\..\src\txdread.d3d9.formats.cpp" />
     <ClCompile Include="..\..\src\txdread.debugutil.cpp" />
     <ClCompile Include="..\..\src\txdread.dxtmobile.cpp" />
+    <ClCompile Include="..\..\src\txdread.gc.cpp" />
     <ClCompile Include="..\..\src\txdread.mipmaps.cpp" />
     <ClCompile Include="..\..\src\txdread.palette.cpp" />
     <ClCompile Include="..\..\src\txdread.pixelconv.cpp" />
@@ -193,6 +195,7 @@
     <ClCompile Include="..\..\src\txdwrite.d3d9.cpp" />
     <ClCompile Include="..\..\src\txdwrite.d3d9.dds.cpp" />
     <ClCompile Include="..\..\src\txdwrite.dxtmobile.cpp" />
+    <ClCompile Include="..\..\src\txdwrite.gc.cpp" />
     <ClCompile Include="..\..\src\txdwrite.ps2.cpp" />
     <ClCompile Include="..\..\src\txdwrite.pvr.cpp" />
     <ClCompile Include="..\..\src\txdwrite.unc.cpp" />
@@ -200,6 +203,7 @@
     <ClCompile Include="..\..\src\xboxnative.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\vendor\eirrepo\sdk\DynamicTypeSystem.natvis" />
     <None Include="rwtools.natvis" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

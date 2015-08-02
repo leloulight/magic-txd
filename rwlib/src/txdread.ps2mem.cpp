@@ -53,13 +53,27 @@ eFormatEncodingType NativeTexturePS2::getHardwareRequiredEncoding(LibraryVersion
     eRasterFormat rasterFormat = this->rasterFormat;
     ePaletteType paletteType = this->paletteType;
 
-    if (paletteType == PALETTE_4BIT)
+    if ( paletteType != PALETTE_NONE )
     {
-        if (version.rwLibMinor < 3)
+        if (paletteType == PALETTE_4BIT)
         {
-            imageEncodingType = FORMAT_IDTEX8_COMPRESSED;
+            if (version.rwLibMinor < 3)
+            {
+                imageEncodingType = FORMAT_IDTEX8_COMPRESSED;
+            }
+            else
+            {
+                if (this->requiresHeaders || this->hasSwizzle)
+                {
+                    imageEncodingType = FORMAT_TEX32;
+                }
+                else
+                {
+                    imageEncodingType = FORMAT_IDTEX8_COMPRESSED;
+                }
+            }
         }
-        else
+        else if (paletteType == PALETTE_8BIT)
         {
             if (this->requiresHeaders || this->hasSwizzle)
             {
@@ -67,33 +81,30 @@ eFormatEncodingType NativeTexturePS2::getHardwareRequiredEncoding(LibraryVersion
             }
             else
             {
-                imageEncodingType = FORMAT_IDTEX8_COMPRESSED;
+                imageEncodingType = FORMAT_IDTEX8;
             }
-        }
-    }
-    else if (paletteType == PALETTE_8BIT)
-    {
-        if (this->requiresHeaders || this->hasSwizzle)
-        {
-            imageEncodingType = FORMAT_TEX32;
         }
         else
         {
-            imageEncodingType = FORMAT_IDTEX8;
+            throw RwException( "invalid palette type in PS2 hardware swizzle detection" );
         }
     }
-    else if (rasterFormat == RASTER_LUM8)
+    else
     {
-        imageEncodingType = FORMAT_IDTEX8;
-    }
-    else if (rasterFormat == RASTER_1555 || rasterFormat == RASTER_555 || rasterFormat == RASTER_565 ||
-             rasterFormat == RASTER_4444 || rasterFormat == RASTER_16)
-    {
-        imageEncodingType = FORMAT_TEX16;
-    }
-    else if (rasterFormat == RASTER_8888 || rasterFormat == RASTER_888 || rasterFormat == RASTER_32)
-    {
-        imageEncodingType = FORMAT_TEX32;
+        if (rasterFormat == RASTER_LUM)
+        {
+            // We assume we are 8bit LUM here.
+            imageEncodingType = FORMAT_IDTEX8;
+        }
+        else if (rasterFormat == RASTER_1555 || rasterFormat == RASTER_555 || rasterFormat == RASTER_565 ||
+                 rasterFormat == RASTER_4444 || rasterFormat == RASTER_16)
+        {
+            imageEncodingType = FORMAT_TEX16;
+        }
+        else if (rasterFormat == RASTER_8888 || rasterFormat == RASTER_888 || rasterFormat == RASTER_32)
+        {
+            imageEncodingType = FORMAT_TEX32;
+        }
     }
 
     return imageEncodingType;

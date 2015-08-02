@@ -7,6 +7,9 @@
     <Filter Include="shared_api">
       <UniqueIdentifier>{31e26d9e-925e-4242-9704-d77235644973}</UniqueIdentifier>
     </Filter>
+    <Filter Include="helper">
+      <UniqueIdentifier>{79a5bf29-d654-48c5-a8c3-5dfad634bcf8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\pixelformat.hxx">
@@ -120,6 +123,9 @@
     <ClInclude Include="..\..\src\rwendian.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\txdread.gc.hxx">
+      <Filter>Include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\dffread.cpp" />
@@ -170,8 +176,15 @@
     <ClCompile Include="..\..\src\rwimaging.jpeg.cpp" />
     <ClCompile Include="..\..\src\rwimaging.tiff.cpp" />
     <ClCompile Include="..\..\src\txdwrite.d3d9.dds.cpp" />
+    <ClCompile Include="..\..\src\txdread.gc.cpp" />
+    <ClCompile Include="..\..\src\txdwrite.gc.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="rwtools.natvis" />
+    <None Include="rwtools.natvis">
+      <Filter>helper</Filter>
+    </None>
+    <None Include="..\..\vendor\eirrepo\sdk\DynamicTypeSystem.natvis">
+      <Filter>shared_api</Filter>
+    </None>
   </ItemGroup>
 </Project>

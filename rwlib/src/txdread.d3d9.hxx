@@ -59,7 +59,7 @@ inline bool getD3DFormatFromRasterType(eRasterFormat paletteRasterType, ePalette
                 }
             }
         }
-        else if ( paletteRasterType == RASTER_LUM8 )
+        else if ( paletteRasterType == RASTER_LUM )
         {
             if ( itemDepth == 8 )
             {
@@ -67,6 +67,7 @@ inline bool getD3DFormatFromRasterType(eRasterFormat paletteRasterType, ePalette
 
                 hasFormat = true;
             }
+            // there is also 4bit LUM, but as you see it is not supported by D3D.
         }
         else if ( paletteRasterType == RASTER_8888 )
         {
@@ -212,7 +213,7 @@ inline bool getRasterFormatFromD3DFormat(
     }
     else if (d3dFormat == D3DFMT_L8)
     {
-        rasterFormatOut = RASTER_LUM8;
+        rasterFormatOut = RASTER_LUM;
 
         // Actually, there is no such thing as a color order for luminance textures.
         // We set this field so we make things happy.
@@ -625,7 +626,7 @@ struct textureMetaHeaderStructGeneric
 {
     endian::little_endian <uint32> platformDescriptor;
 
-    rw::texFormatInfo_serialized texFormat;
+    rw::texFormatInfo_serialized <rw::endian::little_endian <uint32>> texFormat;
     
     char name[32];
     char maskName[32];

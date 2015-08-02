@@ -126,6 +126,7 @@ inline bool performMipmapFiltering(
         else if ( model == COLORMODEL_LUMINANCE )
         {
             uint32 lumSumm = 0;
+            uint32 alphaSumm = 0;
 
             // Loop through the texels and calculate a blur.
             uint32 addCount = 0;
@@ -134,17 +135,18 @@ inline bool performMipmapFiltering(
             {
                 for ( uint32 x = 0; x < mipProcessWidth; x++ )
                 {
-                    uint8 lumm;
+                    uint8 lumm, a;
 
                     bool hasColor = srcBitmap.browselum(
                         x + srcPosX, y + srcPosY,
-                        lumm
+                        lumm, a
                     );
 
                     if ( hasColor )
                     {
                         // Add colors together.
                         lumSumm += lumm;
+                        alphaSumm += a;
 
                         addCount++;
                     }
@@ -154,7 +156,8 @@ inline bool performMipmapFiltering(
             if ( addCount != 0 )
             {
                 // Calculate the real color.
-                colorItem.lumColor = std::min( lumSumm / addCount, 255u );
+                colorItem.luminance.lum = std::min( lumSumm / addCount, 255u );
+                colorItem.luminance.alpha = std::min( alphaSumm / addCount, 255u );
 
                 colorItem.model = COLORMODEL_LUMINANCE;
 

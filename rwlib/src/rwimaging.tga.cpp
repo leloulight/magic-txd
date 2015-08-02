@@ -324,7 +324,7 @@ struct tgaImagingExtension : public imagingFormatExtension
         }
         else if ( headerData.ImageType == 3 ) // grayscale.
         {
-            dstRasterFormat = RASTER_LUM8;
+            dstRasterFormat = RASTER_LUM;
             dstDepth = 8;
             dstItemDepth = 8;
 
