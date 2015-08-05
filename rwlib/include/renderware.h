@@ -334,6 +334,13 @@ protected:
     LibraryVersion objVersion;
 };
 
+// Special acquisition function using reference counting.
+// Objects do not have to support reference counts, but if they do then there are special destruction semantics.
+RwObject* AcquireObject( RwObject *obj );
+void ReleaseObject( RwObject *obj );
+
+uint32 GetRefCount( RwObject *obj );
+
 struct Frame : public RwObject
 {
     inline Frame( Interface *engineInterface, void *construction_params ) : RwObject( engineInterface, construction_params )
@@ -406,6 +413,8 @@ struct RwException
 #include "renderware.dff.h"
 #include "renderware.imaging.h"
 #include "renderware.file.h"
+#include "renderware.events.h"
+#include "renderware.windowing.h"
 
 // Warning manager interface.
 struct WarningManagerInterface abstract
@@ -593,6 +602,11 @@ public:
 // To create a RenderWare interface, you have to go through a constructor.
 Interface*  CreateEngine( LibraryVersion engine_version );
 void        DeleteEngine( Interface *theEngine );
+
+// Framework entry points.
+#ifdef WIN32
+BOOL WINAPI frameworkEntryPoint_win32( HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nCmdShow );
+#endif
 
 }
 

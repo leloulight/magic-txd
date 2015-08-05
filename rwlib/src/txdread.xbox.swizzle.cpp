@@ -100,8 +100,6 @@ static inline void unswizzleXboxBlock
         // Catch an exception.
         if (imWidth == 1 || imHeight == 1)
         {
-            __asm nop
-
             assert( 0 );
         }
 

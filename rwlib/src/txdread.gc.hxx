@@ -3,8 +3,37 @@
 
 #include "txdread.d3d.genmip.hxx"
 
+#include "pixelformat.hxx"
+
 namespace rw
 {
+
+inline uint32 getGCTextureDataRowAlignment( void )
+{
+    // I guess it is aligned by 4? I am not sure yet.
+    return 4;
+}
+
+inline uint32 getGCRasterDataRowSize( uint32 planeWidth, uint32 depth )
+{
+    return getRasterDataRowSize( planeWidth, depth, getGCTextureDataRowAlignment() );
+}
+
+inline uint32 getGCPaletteSize( ePaletteType paletteType )
+{
+    uint32 paletteSize = 0;
+
+    if ( paletteType == PALETTE_4BIT )
+    {
+        paletteSize = 16;
+    }
+    else if ( paletteType == PALETTE_8BIT )
+    {
+        paletteSize = 256;
+    }
+
+    return paletteSize;
+}
 
 enum eGCNativeTextureFormat : unsigned char
 {
@@ -20,12 +49,108 @@ enum eGCNativeTextureFormat : unsigned char
     GVRFMT_CMP = 0xE
 };
 
-enum eGCPixelFormat : unsigned char
+enum eGCPixelFormat : char
 {
+    GVRPIX_NO_PALETTE = -1,
     GVRPIX_LUM_ALPHA,
     GVRPIX_RGB565,
     GVRPIX_RGB5A3
 };
+
+inline bool getGCNativeTextureRasterFormat(
+    eGCNativeTextureFormat format, eGCPixelFormat paletteFormat,
+    eRasterFormat& rasterFormatOut, uint32& depthOut, eColorOrdering& colorOrderOut,
+    ePaletteType& paletteTypeOut
+)
+{
+    bool hasFormat = true;
+
+    ePaletteType paletteType = PALETTE_NONE;
+
+    if ( format == GVRFMT_LUM_4BIT )
+    {
+        rasterFormatOut = RASTER_LUM;
+        depthOut = 4;
+        colorOrderOut = COLOR_RGBA;
+    }
+    else if ( format == GVRFMT_LUM_8BIT )
+    {
+        rasterFormatOut = RASTER_LUM;
+        depthOut = 8;
+        colorOrderOut = COLOR_RGBA;
+    }
+    else if ( format == GVRFMT_LUM_4BIT_ALPHA )
+    {
+        rasterFormatOut = RASTER_LUM_ALPHA;
+        depthOut = 8;
+        colorOrderOut = COLOR_RGBA;
+    }
+    else if ( format == GVRFMT_LUM_8BIT_ALPHA )
+    {
+        rasterFormatOut = RASTER_LUM_ALPHA;
+        depthOut = 16;
+        colorOrderOut = COLOR_RGBA;
+    }
+    else if ( format == GVRFMT_RGB565 )
+    {
+        rasterFormatOut = RASTER_565;
+        depthOut = 16;
+        colorOrderOut = COLOR_RGBA;
+    }
+    else if ( format == GVRFMT_RGB5A3 )
+    {
+        // This format will never have a RW representation, because it is too specific to GC hardware.
+        hasFormat = false;
+    }
+    else if ( format == GVRFMT_PAL_4BIT ||
+              format == GVRFMT_PAL_8BIT )
+    {
+        bool hasPaletteFormat = false;
+
+        if ( paletteFormat == GVRPIX_LUM_ALPHA )
+        {
+            rasterFormatOut = RASTER_LUM_ALPHA;
+            colorOrderOut = COLOR_RGBA;
+
+            hasPaletteFormat = true;
+        }
+        else if ( paletteFormat == GVRPIX_RGB565 )
+        {
+            rasterFormatOut = RASTER_565;
+            colorOrderOut = COLOR_RGBA;
+
+            hasPaletteFormat = true;
+        }
+
+        if ( hasPaletteFormat )
+        {
+            if ( format == GVRFMT_PAL_4BIT )
+            {
+                paletteType = PALETTE_4BIT;
+                depthOut = 4;
+            }
+            else if ( format == GVRFMT_PAL_8BIT )
+            {
+                paletteType = PALETTE_8BIT;
+                depthOut = 8;
+            }
+        }
+
+        hasFormat = hasPaletteFormat;
+    }
+    else
+    {
+        // Should never happen.
+        hasFormat = false;
+    }
+
+    if ( hasFormat )
+    {
+        paletteTypeOut = paletteType;
+    }
+
+    return hasFormat;
+}
 
 inline uint32 getGVRPixelFormatDepth( eGCPixelFormat format )
 {
@@ -47,6 +172,86 @@ inline uint32 getGVRPixelFormatDepth( eGCPixelFormat format )
     return depth;
 }
 
+AINLINE bool gcbrowstexelcolor(
+    const void *texelSource, uint32 colorIndex, eGCNativeTextureFormat internalFormat, eGCPixelFormat palettePixelFormat,
+    uint32 itemDepth, ePaletteType paletteType, const void *paletteData, uint32 maxpalette,
+    uint8& redOut, uint8& greenOut, uint8& blueOut, uint8& alphaOut
+)
+{
+    bool hasColor = false;
+
+    const void *realTexelSource = NULL;
+    uint32 realColorIndex = 0;
+    eGCNativeTextureFormat realInternalFormat;
+
+    bool couldResolveSource = false;
+
+    // TODO.
+#if 0
+    uint8 prered, pregreen, preblue, prealpha;
+#endif
+
+    if (paletteType != PALETTE_NONE)
+    {
+        realTexelSource = paletteData;
+
+        uint8 paletteIndex;
+
+        bool couldResolvePalIndex = getpaletteindex(texelSource, paletteType, maxpalette, itemDepth, colorIndex, paletteIndex);
+
+        if (couldResolvePalIndex)
+        {
+            realColorIndex = paletteIndex;
+
+            // Get the internal format from the palette pixel type.
+            if ( palettePixelFormat == GVRPIX_LUM_ALPHA )
+            {
+                realInternalFormat = GVRFMT_LUM_8BIT_ALPHA;
+            }
+            else if ( palettePixelFormat == GVRPIX_RGB565 )
+            {
+                realInternalFormat = GVRFMT_RGB565;
+            }
+            else if ( palettePixelFormat == GVRPIX_RGB5A3 )
+            {
+                realInternalFormat = GVRFMT_RGB5A3;
+            }
+            else
+            {
+                assert( 0 );
+
+                return false;
+            }
+
+            couldResolveSource = true;
+        }
+    }
+    else
+    {
+        realTexelSource = texelSource;
+        realColorIndex = colorIndex;
+        realInternalFormat = internalFormat;
+
+        couldResolveSource = true;
+    }
+
+    if ( !couldResolveSource )
+        return false;
+
+    // TODO.
+#if 0
+    if ( realInternalFormat == GVRFMT_LUM_4BIT )
+    {
+        hasColor =
+            browsetexelcolor(
+                texelSource, PALETTE_NONE, NULL, 0,
+                colorIndex, RASTER_LUM, COLOR_RGBA, 4,
+
+    }
+#endif
+    return false;
+}
+
 struct NativeTextureGC
 {
     Interface *engineInterface;
@@ -61,10 +266,14 @@ struct NativeTextureGC
         this->paletteSize = 0;
         this->paletteType = PALETTE_NONE;
         this->internalFormat = GVRFMT_RGBA8888;
-        this->palettePixelFormat = GVRPIX_LUM_ALPHA;
+        this->palettePixelFormat = GVRPIX_NO_PALETTE;
         this->autoMipmaps = false;
         this->rasterType = 4;
         this->hasAlpha = false;
+        this->unk1 = 0;
+        this->unk2 = 1;
+        this->unk3 = 1;
+        this->unk4 = 0;
     }
 
     inline NativeTextureGC( const NativeTextureGC& right )
@@ -106,6 +315,10 @@ struct NativeTextureGC
         this->autoMipmaps = right.autoMipmaps;
         this->rasterType = right.rasterType;
         this->hasAlpha = right.hasAlpha;
+        this->unk1 = right.unk1;
+        this->unk2 = right.unk2;
+        this->unk3 = right.unk3;
+        this->unk4 = right.unk4;
     }
 
     inline void clearTexelData( void )
@@ -142,6 +355,12 @@ public:
     uint8 rasterType;
 
     bool hasAlpha;
+
+    // TODO: find out what these are.
+    uint32 unk1;
+    uint32 unk2;
+    uint32 unk3;
+    uint32 unk4;
 };
 
 struct gamecubeNativeTextureTypeProvider : public texNativeTypeProvider
@@ -296,10 +515,9 @@ struct textureMetaHeaderStructGeneric
     uint8 depth;
     uint8 mipmapCount;
     eGCNativeTextureFormat internalFormat;
-    uint8 unk5;
+    eGCPixelFormat palettePixelFormat;
 
     endian::big_endian <uint32> hasAlpha;
-    endian::big_endian <uint32> imageDataSectionSize;
 };
 #pragma pack()
 

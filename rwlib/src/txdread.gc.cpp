@@ -2,6 +2,12 @@
 
 #include "txdread.gc.hxx"
 
+#include "txdread.common.hxx"
+
+#include "txdread.d3d.dxt.hxx"
+
+#include "txdread.miputil.hxx"
+
 namespace rw
 {
 
@@ -64,7 +70,7 @@ void gamecubeNativeTextureTypeProvider::DeserializeTexture( TextureBase *theText
                 // Read the main header.
                 gamecube::textureMetaHeaderStructGeneric metaHeader;
 
-                inputProvider.readStruct( metaHeader );
+                gcNativeBlock.readStruct( metaHeader );
 
                 if ( metaHeader.platformDescriptor != PLATFORMDESC_GAMECUBE )
                 {
@@ -96,6 +102,11 @@ void gamecubeNativeTextureTypeProvider::DeserializeTexture( TextureBase *theText
                     theTexture->SetMaskName( tmpbuf );
                 }
 
+                // Parse the addressing and filtering properties.
+                texFormatInfo formatInfo = metaHeader.texFormat;
+
+                formatInfo.parse( *theTexture );
+
                 // Verify that it has correct entries.
                 eGCNativeTextureFormat internalFormat = metaHeader.internalFormat;
 
@@ -113,8 +124,31 @@ void gamecubeNativeTextureTypeProvider::DeserializeTexture( TextureBase *theText
                     throw RwException( "texture " + theTexture->GetName() + " has an unknown gamecube native texture format" );
                 }
 
+                // Verify the palette format.
+                eGCPixelFormat palettePixelFormat = metaHeader.palettePixelFormat;
+
+                if ( palettePixelFormat != GVRPIX_NO_PALETTE &&
+                     palettePixelFormat != GVRPIX_LUM_ALPHA &&
+                     palettePixelFormat != GVRPIX_RGB5A3 &&
+                     palettePixelFormat != GVRPIX_RGB565 )
+                {
+                    throw RwException( "texture " + theTexture->GetName() + " has an unknown palette pixel format" );
+                }
+
+                // Check whether we have a solid palette format description.
+                // We cannot have the internal format say we have a palette but the pixel format say otherwise.
+                {
+                    bool hasPaletteByInternalFormat = ( internalFormat == GVRFMT_PAL_4BIT || internalFormat == GVRFMT_PAL_8BIT );
+                    bool hasPaletteByPixelFormat = ( palettePixelFormat != GVRPIX_NO_PALETTE );
+
+                    if ( hasPaletteByInternalFormat != hasPaletteByPixelFormat )
+                    {
+                        throw RwException( "texture " + theTexture->GetName() + " has ambiguous palette format description" );
+                    }
+                }
+
                 // Parse the raster format.
-                eRasterFormat rasterFormat;
+                eRasterFormat rasterFormat;     // this raster format is invalid anyway.
                 ePaletteType paletteType;
                 bool hasMipmaps;
                 bool autoMipmaps;
@@ -126,9 +160,248 @@ void gamecubeNativeTextureTypeProvider::DeserializeTexture( TextureBase *theText
                 // Read advanced things.
                 uint8 rasterType = ( rasterFormatFlags & 0xFF );
 
+                uint32 depth = metaHeader.depth;
 
+                // Verify properties.
+                {
+                    eRasterFormat gcRasterFormat;
+                    uint32 gcDepth;
+                    eColorOrdering gcColorOrder;
+                    ePaletteType gcPaletteType;
 
-                throw RwException( "reading gamecube native textures not implemented yet" );
+                    bool hasGCFormat = getGCNativeTextureRasterFormat( internalFormat, palettePixelFormat, gcRasterFormat, gcDepth, gcColorOrder, gcPaletteType );
+
+                    if ( hasGCFormat )
+                    {
+                        // - depth
+                        {
+                            if ( depth != gcDepth )
+                            {
+                                engineInterface->PushWarning( "texture " + theTexture->GetName() + " has an invalid depth (ignoring)" );
+
+                                // Fix it.
+                                depth = gcDepth;
+                            }
+                        }
+                        // - raster format.
+                        {
+                            if ( rasterFormat != gcRasterFormat )
+                            {
+                                engineInterface->PushWarning( "texture " + theTexture->GetName() + " has an invalid raster format (ignoring)" );
+
+                                rasterFormat = gcRasterFormat;
+                            }
+                        }
+                        // - palette type.
+                        {
+                            if ( paletteType != gcPaletteType )
+                            {
+                                engineInterface->PushWarning( "terxture " + theTexture->GetName() + " has an invalid palette type (ignoring)" );
+
+                                paletteType = gcPaletteType;
+                            }
+                        }
+                    }
+                }
+
+                // Store raster properties in the native texture.
+                platformTex->internalFormat = internalFormat;
+                platformTex->palettePixelFormat = palettePixelFormat;
+                platformTex->autoMipmaps = autoMipmaps;
+                platformTex->hasAlpha = ( metaHeader.hasAlpha != 0 );
+                platformTex->rasterType = rasterType;
+
+                platformTex->paletteType = paletteType;
+
+                // Store some unknowns.
+                platformTex->unk1 = metaHeader.unk1;
+                platformTex->unk2 = metaHeader.unk2;
+                platformTex->unk3 = metaHeader.unk3;
+                platformTex->unk4 = metaHeader.unk4;
+                
+                // Read the palette.
+                if ( paletteType != PALETTE_NONE )
+                {
+                    uint32 palRasterDepth = getGVRPixelFormatDepth( palettePixelFormat );
+
+                    uint32 paletteSize = getGCPaletteSize( paletteType );
+
+                    uint32 palDataSize = getPaletteDataSize( paletteSize, palRasterDepth );
+
+                    gcNativeBlock.check_read_ahead( palDataSize );
+
+                    void *palData = engineInterface->PixelAllocate( palDataSize );
+
+                    if ( !palData )
+                    {
+                        throw RwException( "failed to allocate palette buffer for texture " + theTexture->GetName() );
+                    }
+
+                    try
+                    {
+                        gcNativeBlock.read( palData, palDataSize );
+                    }
+                    catch( ... )
+                    {
+                        engineInterface->PixelFree( palData );
+
+                        throw;
+                    }
+
+                    platformTex->palette = palData;
+                    platformTex->paletteSize = paletteSize;
+                }
+
+                // Fetch the image data section size.
+                uint32 imageDataSectionSize;
+                {
+                    endian::big_endian <uint32> secSize;
+
+                    gcNativeBlock.readStruct( secSize );
+
+                    imageDataSectionSize = secSize;
+                }
+
+                // Read the image data now.
+                uint32 actualImageDataLength = imageDataSectionSize;
+
+                uint32 mipmapCount = 0;
+
+                uint32 maybeMipmapCount = metaHeader.mipmapCount;
+
+                mipGenLevelGenerator mipGen( metaHeader.width, metaHeader.height );
+
+                if ( !mipGen.isValidLevel() )
+                {
+                    throw RwException( "texture " + theTexture->GetName() + " has invalid texture dimensions" );
+                }
+
+                uint32 imageDataLeft = actualImageDataLength;
+
+                bool handledImageDataLengthError = false;
+
+                for ( uint32 n = 0; n < maybeMipmapCount; n++ )
+                {
+                    bool hasEstablishedLevel = true;
+
+                    if ( n != 0 )
+                    {
+                        hasEstablishedLevel = mipGen.incrementLevel();
+                    }
+
+                    if ( !hasEstablishedLevel )
+                    {
+                        break;
+                    }
+
+                    uint32 layerWidth = mipGen.getLevelWidth();
+                    uint32 layerHeight = mipGen.getLevelHeight();
+
+                    // Calculate the surface dimensions of this level.
+                    uint32 surfWidth, surfHeight;
+                    {
+                        if ( internalFormat == GVRFMT_CMP )
+                        {
+                            // This is DXT1 compression.
+                            surfWidth = ALIGN_SIZE( layerWidth, 4u );
+                            surfHeight = ALIGN_SIZE( layerHeight, 4u );
+                        }
+                        else
+                        {
+                            surfWidth = layerWidth;
+                            surfHeight = layerHeight;
+                        }
+                    }
+
+                    // Calculate the actual mipmap data size.
+                    uint32 texDataSize;
+                    {
+                        if ( internalFormat == GVRFMT_CMP )
+                        {
+                            texDataSize = getDXTRasterDataSize( 1, surfWidth * surfHeight );
+                        }
+                        else
+                        {
+                            uint32 texRowSize = getGCRasterDataRowSize( surfWidth, depth );
+
+                            texDataSize = getRasterDataSizeByRowSize( texRowSize, surfHeight );
+                        }
+                    }
+
+                    // Check whether we can read this image data.
+                    if ( imageDataLeft < texDataSize )
+                    {
+                        // In this case we just halt reading and output a warning.
+                        engineInterface->PushWarning( "texture " + theTexture->GetName() + " has less image data bytes than the mipmaps require" );
+
+                        handledImageDataLengthError = true;
+
+                        break;
+                    }
+
+                    // Read the data.
+                    gcNativeBlock.check_read_ahead( texDataSize );
+
+                    void *texels = engineInterface->PixelAllocate( texDataSize );
+
+                    if ( !texels )
+                    {
+                        throw RwException( "failed to allocate mipmap texel buffer for texture " + theTexture->GetName() );
+                    }
+
+                    try
+                    {
+                        gcNativeBlock.read( texels, texDataSize );
+                    }
+                    catch( ... )
+                    {
+                        engineInterface->PixelFree( texels );
+
+                        throw;
+                    }
+
+                    // Update the read count of the image data section.
+                    imageDataLeft -= texDataSize;
+
+                    // Store this layer.
+                    NativeTextureGC::mipmapLayer mipLayer;
+                    mipLayer.width = surfWidth;
+                    mipLayer.height = surfHeight;
+
+                    mipLayer.layerWidth = layerWidth;
+                    mipLayer.layerHeight = layerHeight;
+
+                    mipLayer.texels = texels;
+                    mipLayer.dataSize = texDataSize;
+
+                    // Store it.
+                    platformTex->mipmaps.push_back( mipLayer );
+
+                    mipmapCount++;
+                }
+
+                // Make sure we cannot accept empty textures.
+                if ( mipmapCount == 0 )
+                {
+                    throw RwException( "texture " + theTexture->GetName() + " has no mipmaps" );
+                }
+
+                // If we have not read all the image data, skip to the end.
+                if ( imageDataLeft != 0 )
+                {
+                    if ( handledImageDataLengthError == false )
+                    {
+                        // We want to warn the user about this.
+                        engineInterface->PushWarning( "texture " + theTexture->GetName() + " has image data section meta data (ignoring)" );
+                    }
+
+                    inputProvider.skip( imageDataLeft );
+                }
+
+                // Fix filtering modes.
+                fixFilteringMode( *theTexture, mipmapCount );
+
+                // Done.
             }
             else
             {
@@ -149,19 +422,91 @@ void gamecubeNativeTextureTypeProvider::DeserializeTexture( TextureBase *theText
     engineInterface->DeserializeExtensions( theTexture, inputProvider );
 }
 
+struct gcMipmapManager
+{
+    NativeTextureGC *nativeTex;
+
+    inline gcMipmapManager( NativeTextureGC *nativeTex )
+    {
+        this->nativeTex = nativeTex;
+    }
+
+    inline void GetLayerDimensions(
+        const NativeTextureGC::mipmapLayer& mipLayer,
+        uint32& layerWidth, uint32& layerHeight
+    )
+    {
+        layerWidth = mipLayer.layerWidth;
+        layerHeight = mipLayer.layerHeight;
+    }
+
+    inline void Deinternalize(
+        Interface *engineInterface,
+        const NativeTextureGC::mipmapLayer& mipLayer,
+        uint32& widthOut, uint32& heightOut, uint32& layerWidthOut, uint32& layerHeightOut,
+        eRasterFormat& dstRasterFormat, eColorOrdering& dstColorOrder, uint32& dstDepth,
+        uint32& dstRowAlignment,
+        ePaletteType& dstPaletteType, void*& dstPaletteData, uint32& dstPaletteSize,
+        eCompressionType& dstCompressionType, bool& hasAlpha,
+        void*& dstTexelsOut, uint32& dstDataSizeOut,
+        bool& isNewlyAllocatedOut, bool& isPaletteNewlyAllocated
+    )
+    {
+        // TODO.
+    }
+
+    inline void Internalize(
+        Interface *engineInterface,
+        NativeTextureGC::mipmapLayer& mipLayer,
+        uint32 width, uint32 height, uint32 layerWidth, uint32 layerHeight, void *srcTexels, uint32 dataSize,
+        eRasterFormat rasterFormat, eColorOrdering colorOrder, uint32 depth,
+        uint32 rowAlignment,
+        ePaletteType paletteType, void *paletteData, uint32 paletteSize,
+        eCompressionType compressionType, bool hasAlpha,
+        bool& hasDirectlyAcquiredOut
+    )
+    {
+        // TODO.
+    }
+};
+
 bool gamecubeNativeTextureTypeProvider::GetMipmapLayer( Interface *engineInterface, void *objMem, uint32 mipIndex, rawMipmapLayer& layerOut )
 {
     return false;
+
+    NativeTextureGC *nativeTex = (NativeTextureGC*)objMem;
+
+    gcMipmapManager mipMan( nativeTex );
+
+    return
+        virtualGetMipmapLayer <NativeTextureGC::mipmapLayer> (
+            engineInterface, mipMan,
+            mipIndex,
+            nativeTex->mipmaps, layerOut
+        );
 }
 
-bool gamecubeNativeTextureTypeProvider::AddMipmapLayer( Interface *engineInterface, void *objMem, const rawMipmapLayer& layerIn, texNativeTypeProvider::acquireFeedback_t& acquireFeedback )
+bool gamecubeNativeTextureTypeProvider::AddMipmapLayer( Interface *engineInterface, void *objMem, const rawMipmapLayer& layerIn, texNativeTypeProvider::acquireFeedback_t& feedbackOut )
 {
-    return false;
+    NativeTextureGC *nativeTex = (NativeTextureGC*)objMem;
+
+    gcMipmapManager mipMan( nativeTex );
+
+    return
+        virtualAddMipmapLayer <NativeTextureGC::mipmapLayer> (
+            engineInterface, mipMan,
+            nativeTex->mipmaps, layerIn,
+            feedbackOut
+        );
 }
 
 void gamecubeNativeTextureTypeProvider::ClearMipmaps( Interface *engineInterface, void *objMem )
 {
+    NativeTextureGC *nativeTex = (NativeTextureGC*)objMem;
 
+    virtualClearMipmaps <NativeTextureGC::mipmapLayer> (
+        engineInterface, nativeTex->mipmaps
+    );
 }
 
 void gamecubeNativeTextureTypeProvider::GetTextureInfo( Interface *engineInterface, void *objMem, nativeTextureBatchedInfo& infoOut )

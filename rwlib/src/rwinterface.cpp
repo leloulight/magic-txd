@@ -162,6 +162,119 @@ std::string GetRunningSoftwareInformation( Interface *engineInterface )
     return infoOut;
 }
 
+struct refCountPlugin
+{
+    unsigned long refCount;
+
+    inline void operator =( const refCountPlugin& right )
+    {
+        this->refCount = right.refCount;
+    }
+
+    inline void Initialize( GenericRTTI *obj )
+    {
+        this->refCount = 1; // we start off with one.
+    }
+
+    inline void Shutdown( GenericRTTI *obj )
+    {
+        // Has to be zeroed by the manager.
+        assert( this->refCount == 0 );
+    }
+
+    inline void AddRef( void )
+    {
+        this->refCount++;
+    }
+
+    inline bool RemoveRef( void )
+    {
+        this->refCount--;
+
+        return ( this->refCount == 0 );
+    }
+};
+
+struct refCountManager
+{
+    inline void Initialize( Interface *engineInterface )
+    {
+        this->pluginOffset =
+            engineInterface->typeSystem.RegisterDependantStructPlugin <refCountPlugin> ( engineInterface->rwobjTypeInfo, RwTypeSystem::ANONYMOUS_PLUGIN_ID );
+    }
+
+    inline void Shutdown( Interface *engineInterface )
+    {
+        engineInterface->typeSystem.UnregisterPlugin( engineInterface->rwobjTypeInfo, this->pluginOffset );
+    }
+
+    inline refCountPlugin* GetPluginStruct( Interface *engineInterface, RwObject *obj )
+    {
+        GenericRTTI *rtObj = RwTypeSystem::GetTypeStructFromObject( obj );
+
+        return RwTypeSystem::RESOLVE_STRUCT <refCountPlugin> ( engineInterface, rtObj, engineInterface->rwobjTypeInfo, this->pluginOffset );
+    }
+
+    RwTypeSystem::pluginOffset_t pluginOffset;
+};
+
+static PluginDependantStructRegister <refCountManager, RwInterfaceFactory_t> refCountRegister;
+
+// Acquisition routine for objects, so that reference counting is increased, if needed.
+// Can return NULL if the reference count could not be increased.
+RwObject* AcquireObject( RwObject *obj )
+{
+    Interface *engineInterface = obj->engineInterface;
+
+    // Increase the reference count.
+    if ( refCountManager *refMan = refCountRegister.GetPluginStruct( (EngineInterface*)engineInterface ) )
+    {
+        if ( refCountPlugin *refCount = refMan->GetPluginStruct( engineInterface, obj ) )
+        {
+            // TODO: make sure that incrementing is actually possible.
+            // we cannot increment if we would overflow the number, for instance.
+
+            refCount->AddRef();
+        }
+    }
+
+    return obj;
+}
+
+void ReleaseObject( RwObject *obj )
+{
+    Interface *engineInterface = obj->engineInterface;
+
+    // Increase the reference count.
+    if ( refCountManager *refMan = refCountRegister.GetPluginStruct( (EngineInterface*)engineInterface ) )
+    {
+        if ( refCountPlugin *refCount = refMan->GetPluginStruct( engineInterface, obj ) )
+        {
+            // We just delete the object.
+            engineInterface->DeleteRwObject( obj );
+        }
+    }
+}
+
+uint32 GetRefCount( RwObject *obj )
+{
+    uint32 refCountNum = 1;    // If we do not support reference counting, this is actually a valid value.
+
+    Interface *engineInterface = obj->engineInterface;
+
+    // Increase the reference count.
+    if ( refCountManager *refMan = refCountRegister.GetPluginStruct( (EngineInterface*)engineInterface ) )
+    {
+        if ( refCountPlugin *refCount = refMan->GetPluginStruct( engineInterface, obj ) )
+        {
+            // We just delete the object.
+            refCountNum = refCount->refCount;
+        }
+    }
+
+    return refCountNum;
+}
+
 RwObject* Interface::ConstructRwObject( const char *typeName )
 {
     RwObject *newObj = NULL;
@@ -214,7 +327,22 @@ void Interface::DeleteRwObject( RwObject *obj )
 
     if ( rttiObj )
     {
-        this->typeSystem.Destroy( this, rttiObj );
+        // By default, we can destroy.
+        bool canDestroy = true;
+
+        // If we have the refcount plugin, we want to handle things with it.
+        if ( refCountManager *refMan = refCountRegister.GetPluginStruct( (EngineInterface*)this ) )
+        {
+            if ( refCountPlugin *refCountObj = RwTypeSystem::RESOLVE_STRUCT <refCountPlugin> ( this, rttiObj, this->rwobjTypeInfo, refMan->pluginOffset ) )
+            {
+                canDestroy = refCountObj->RemoveRef();
+            }
+        }
+
+        if ( canDestroy )
+        {
+            this->typeSystem.Destroy( this, rttiObj );
+        }
     }
 }
 
@@ -441,11 +569,13 @@ bool Interface::GetIgnoreSerializationBlockRegions( void ) const
 }
 
 // Static library object that takes care of initializing the module dependencies properly.
+extern void registerEventSystem( void );
 extern void registerTXDPlugins( void );
 extern void registerObjectExtensionsPlugins( void );
 extern void registerSerializationPlugins( void );
 extern void registerStreamGlobalPlugins( void );
 extern void registerImagingPlugin( void );
+extern void registerWindowingSystem( void );
 
 static bool hasInitialized = false;
 
@@ -477,13 +607,16 @@ Interface* CreateEngine( LibraryVersion theVersion )
         {
             // Initialize our plugins first.
             warningHandlerPluginRegister.RegisterPlugin( engineFactory );
+            refCountRegister.RegisterPlugin( engineFactory );
 
             // Now do the main modules.
+            registerEventSystem();
             registerStreamGlobalPlugins();
             registerSerializationPlugins();
             registerObjectExtensionsPlugins();
             registerTXDPlugins();
             registerImagingPlugin();
+            registerWindowingSystem();
 
             hasInitialized = true;
         }

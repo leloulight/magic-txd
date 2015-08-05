@@ -227,4 +227,57 @@ string getChunkName(uint32 i)
 		return "Unknown";
 }
 
+// Definition of the framework entry points.
+extern LibraryVersion app_version( void );
+extern int32 rwmain( Interface *engineInterface );
+
+#ifdef _WIN32
+
+BOOL WINAPI frameworkEntryPoint_win32( HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nCmdShow )
+{
+    using namespace rw;
+
+    // Get the desired engine version.
+    LibraryVersion engineVer = app_version();
+
+    Interface *engineInterface = rw::CreateEngine( engineVer );
+
+    if ( engineInterface )
+    {
+        int32 returnCode = -1;
+
+        try
+        {
+            // Call into the main application.
+            returnCode = rwmain( engineInterface );
+        }
+        catch( RwException& )
+        {
+            // We encountered some RenderWare exception.
+            // We want to return -1.
+#ifdef _DEBUG
+            __debugbreak();
+#endif
+        }
+
+        // Delete our engine again.
+        rw::DeleteEngine( engineInterface );
+
+        if ( returnCode != 0 )
+        {
+            return -1;
+        }
+    }
+    else
+    {
+        assert( 0 );
+    }
+
+    return 0;
 }
+
+#else
+#error Need framework entry point.
+#endif
+
+};

@@ -4,6 +4,8 @@
 // DXT specific stuff.
 #include <squish.h>
 
+#include "pixelformat.hxx"
+
 namespace rw
 {
 

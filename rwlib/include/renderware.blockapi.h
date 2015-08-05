@@ -40,6 +40,8 @@ struct BlockProvider
         this->ignoreBlockRegions = ignoreBlockRegions;
     }
 
+    BlockProvider( const BlockProvider& right ) = delete;
+
     inline ~BlockProvider( void )
     {
         assert( this->isInContext == false );
