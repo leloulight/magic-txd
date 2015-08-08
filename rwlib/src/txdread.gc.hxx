@@ -1,3 +1,5 @@
+#include "txdread.nativetex.hxx"
+
 // The Gamecube native texture is stored in big-endian format.
 #define PLATFORMDESC_GAMECUBE   6
 

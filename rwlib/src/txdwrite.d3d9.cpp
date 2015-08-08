@@ -86,7 +86,7 @@ void d3d9NativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, P
             writeStringIntoBufferSafe( engineInterface, theTexture->GetMaskName(), metaHeader.maskName, sizeof( metaHeader.maskName ), theTexture->GetName(), "mask name" );
 
             // Construct raster flags.
-            uint32 mipmapCount = platformTex->mipmaps.size();
+            size_t mipmapCount = platformTex->mipmaps.size();
 
             metaHeader.rasterFormat = generateRasterFormatFlags( platformTex->rasterFormat, paletteType, mipmapCount > 1, platformTex->autoMipmaps );
 
@@ -94,7 +94,7 @@ void d3d9NativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, P
             metaHeader.width = platformTex->mipmaps[ 0 ].layerWidth;
             metaHeader.height = platformTex->mipmaps[ 0 ].layerHeight;
             metaHeader.depth = platformTex->depth;
-            metaHeader.mipmapCount = mipmapCount;
+            metaHeader.mipmapCount = (uint8)mipmapCount;
             metaHeader.rasterType = platformTex->rasterType;
             metaHeader.pad1 = 0;
 
@@ -259,13 +259,13 @@ void d3d9NativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineIn
     pixelsOut.rasterType = platformTex->rasterType;
 
     // Now, the texels.
-    uint32 mipmapCount = platformTex->mipmaps.size();
+    size_t mipmapCount = platformTex->mipmaps.size();
 
     pixelsOut.mipmaps.resize( mipmapCount );
 
     try
     {
-        for ( uint32 n = 0; n < mipmapCount; n++ )
+        for ( size_t n = 0; n < mipmapCount; n++ )
         {
             const NativeTextureD3D9::mipmapLayer& srcLayer = platformTex->mipmaps[ n ];
 
@@ -615,7 +615,7 @@ void d3d9NativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
     nativeTex->colorOrdering = dstColorOrder;
     nativeTex->hasAlpha = hasAlpha;
 
-    uint32 mipmapCount = pixelsIn.mipmaps.size();
+    size_t mipmapCount = pixelsIn.mipmaps.size();
 
     // Properly set the automipmaps field.
     bool autoMipmaps = pixelsIn.autoMipmaps;
@@ -890,7 +890,7 @@ struct d3d9MipmapManager
             uint32 srcRowSize = getRasterDataRowSize( width, depth, rowAlignment );
 
             // We create an encoding that is expected to be raw data.
-            uint32 texDataSize = formatHandler->GetFormatTextureDataSize( width, height );
+            uint32 texDataSize = (uint32)formatHandler->GetFormatTextureDataSize( width, height );
 
             void *newtexels = engineInterface->PixelAllocate( texDataSize );
 
@@ -997,9 +997,9 @@ void d3d9NativeTextureTypeProvider::GetTextureInfo( Interface *engineInterface, 
 {
     NativeTextureD3D9 *nativeTex = (NativeTextureD3D9*)objMem;
 
-    uint32 mipmapCount = nativeTex->mipmaps.size();
+    size_t mipmapCount = nativeTex->mipmaps.size();
 
-    infoOut.mipmapCount = mipmapCount;
+    infoOut.mipmapCount = (uint32)mipmapCount;
 
     uint32 baseWidth = 0;
     uint32 baseHeight = 0;

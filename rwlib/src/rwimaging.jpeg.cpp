@@ -37,7 +37,7 @@ struct jpegImagingExtension : public imagingFormatExtension
         // Check the JPEG checksum.
         endian::big_endian <uint16> checksum;
 
-        uint32 readCount = inputStream->read( &checksum, sizeof( checksum ) );
+        size_t readCount = inputStream->read( &checksum, sizeof( checksum ) );
 
         if ( readCount != sizeof( checksum ) )
         {
@@ -57,7 +57,7 @@ struct jpegImagingExtension : public imagingFormatExtension
         {
             jpeg_block_header header;
 
-            uint32 readCount = inputStream->read( &header, sizeof( header ) );
+            size_t readCount = inputStream->read( &header, sizeof( header ) );
 
             if ( readCount != sizeof( header ) )
             {
@@ -110,7 +110,7 @@ struct jpegImagingExtension : public imagingFormatExtension
         {
             uint8 maybe_app0;
             {
-                uint32 readCount = inputStream->read( &maybe_app0, sizeof( maybe_app0 ) );
+                size_t readCount = inputStream->read( &maybe_app0, sizeof( maybe_app0 ) );
 
                 if ( readCount != sizeof( maybe_app0 ) )
                 {
@@ -125,7 +125,7 @@ struct jpegImagingExtension : public imagingFormatExtension
                 // Check whether we are at the end.
                 uint8 possible_end_marker;
 
-                uint32 readCount = inputStream->read( &possible_end_marker, sizeof( possible_end_marker ) );
+                size_t readCount = inputStream->read( &possible_end_marker, sizeof( possible_end_marker ) );
 
                 if ( possible_end_marker != 0x00 )
                 {
@@ -420,7 +420,7 @@ struct jpegImagingExtension : public imagingFormatExtension
 
                         while ( decompress_info.output_scanline < height )
                         {
-                            uint32 curRowIndex = ( curScanlineArrayPtr - scanlineArray );
+                            uint32 curRowIndex = (uint32)( curScanlineArrayPtr - scanlineArray );
 
                             size_t numReadLines = jpeg_read_scanlines( &decompress_info, (JSAMPARRAY)curScanlineArrayPtr, height - curRowIndex );
 
@@ -706,7 +706,7 @@ struct jpegImagingExtension : public imagingFormatExtension
 
                         while ( compress_info.next_scanline < height )
                         {
-                            uint32 curRowIndex = ( currentScanlineArrayPtr - rowpointers );
+                            uint32 curRowIndex = (uint32)( currentScanlineArrayPtr - rowpointers );
 
                             uint32 writtenLines = jpeg_write_scanlines( &compress_info, (JSAMPARRAY)currentScanlineArrayPtr, height - curRowIndex );
 

@@ -1,3 +1,5 @@
+#include "txdread.nativetex.hxx"
+
 #define PS2_FOURCC 0x00325350 /* "PS2\0" */
 
 namespace rw
@@ -715,11 +717,11 @@ struct NativeTexturePS2
         this->depth = right.depth;
 
         {
-            uint32 mipmapCount = right.mipmaps.size();
+            size_t mipmapCount = right.mipmaps.size();
 
             this->mipmaps.resize( mipmapCount );
 
-            for ( uint32 n = 0; n < mipmapCount; n++ )
+            for ( size_t n = 0; n < mipmapCount; n++ )
             {
                 GSMipmap& thisLayer = this->mipmaps[ n ];
 
@@ -750,9 +752,9 @@ struct NativeTexturePS2
         Interface *engineInterface = this->engineInterface;
 
         // Free all mipmaps.
-        uint32 mipmapCount = this->mipmaps.size();
+        size_t mipmapCount = this->mipmaps.size();
 
-        for ( uint32 n = 0; n < mipmapCount; n++ )
+        for ( size_t n = 0; n < mipmapCount; n++ )
         {
             GSMipmap& mipLayer = this->mipmaps[ n ];
 
@@ -829,11 +831,11 @@ struct NativeTexturePS2
         inline void setGSRegister(eGSRegister regID, unsigned long long regContent)
         {
             // Try to find an existing entry with this register.
-            uint32 numRegs = this->storedRegs.size();
+            size_t numRegs = this->storedRegs.size();
 
             bool hasReplacedReg = false;
 
-            for ( uint32 n = 0; n < numRegs; n++ )
+            for ( size_t n = 0; n < numRegs; n++ )
             {
                 GSRegInfo& regInfo = this->storedRegs[ n ];
 
@@ -874,7 +876,7 @@ struct NativeTexturePS2
 
             if ( requiresHeaders )
             {
-                streamSize += (
+                streamSize += (uint32)(
                     sizeof(GIFtag_serialized) +
                     this->storedRegs.size() * ( sizeof(uint64) * 2 ) +
                     sizeof(GIFtag_serialized)

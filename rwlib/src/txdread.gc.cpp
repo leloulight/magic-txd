@@ -513,7 +513,7 @@ void gamecubeNativeTextureTypeProvider::GetTextureInfo( Interface *engineInterfa
 {
     const NativeTextureGC *nativeTex = (const NativeTextureGC*)objMem;
 
-    uint32 mipmapCount = nativeTex->mipmaps.size();
+    uint32 mipmapCount = (uint32)nativeTex->mipmaps.size();
 
     uint32 baseWidth = 0;
     uint32 baseHeight = 0;

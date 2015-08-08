@@ -80,4 +80,9 @@
       </CustomListItems>
     </Expand>
   </Type>
+  <Type Name="rw::Interface">
+    <Expand>
+      <ExpandedItem>(rw::EngineInterface*)this</ExpandedItem>
+    </Expand>
+  </Type>
 </AutoVisualizer>

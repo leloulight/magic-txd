@@ -5,9 +5,17 @@
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -21,7 +29,19 @@
     <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <PlatformToolset>v120</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
@@ -33,7 +53,13 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
@@ -42,18 +68,28 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(ProjectDir)..\..\output\</OutDir>
-    <IntDir>$(ProjectDir)..\..\obj\$(Configuration)_2013\</IntDir>
+    <IntDir>$(ProjectDir)..\..\obj\$(Platform)_$(Configuration)_2013\</IntDir>
     <TargetName>rwtools_d_2013</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <TargetName>rwtools_d_2013_x64</TargetName>
+    <IntDir>$(ProjectDir)..\..\obj\$(Platform)_$(Configuration)_2013\</IntDir>
+    <OutDir>$(ProjectDir)..\..\output\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(ProjectDir)..\..\output\</OutDir>
-    <IntDir>$(ProjectDir)..\..\obj\$(Configuration)_2013\</IntDir>
+    <IntDir>$(ProjectDir)..\..\obj\$(Platform)_$(Configuration)_2013\</IntDir>
     <TargetName>rwtools_2013</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <TargetName>rwtools_2013_x64</TargetName>
+    <OutDir>$(ProjectDir)..\..\output\</OutDir>
+    <IntDir>$(ProjectDir)..\..\obj\$(Platform)_$(Configuration)_2013\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -65,9 +101,32 @@
       <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName)_2013.pch</PrecompiledHeaderOutputFile>
     </ClCompile>
     <Lib>
-      <AdditionalDependencies>libimagequant_d_2013.lib;squishd_2013.lib;ATI_Compress_MT.lib;PVRTexLib.lib;libpng_d_2013.lib;libjpeg_d_2013.lib;libtiff_d_2013.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libimagequant_d_2013.lib;squishd_2013.lib;ATI_Compress_MT.lib;PVRTexLib.lib;libpng_d_2013.lib;libjpeg_d_2013.lib;libtiff_d_2013.lib;native_exec_d_2013.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>..\..\vendor\libimagequant\lib\static;..\..\vendor\squish-1.11\lib\vs12;..\..\vendor\pvrtexlib\Windows_x86_32\Static;..\..\vendor\atitc\VS2010\MT Release\Win32;..\..\vendor\lpng\lib\static\;..\..\vendor\libjpeg\lib\;..\..\vendor\libtiff\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\vendor\libimagequant\lib\static;..\..\vendor\squish-1.11\lib\vs12;..\..\vendor\pvrtexlib\Windows_x86_32\Static;..\..\vendor\atitc\VS2010\MT Release\Win32;..\..\vendor\lpng\lib\static\;..\..\vendor\libjpeg\lib\;..\..\vendor\libtiff\lib\;..\..\vendor\NativeExecutive\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>LIBCMT;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+    </Lib>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>StdInc.h</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4996</DisableSpecificWarnings>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName)_2013.pch</PrecompiledHeaderOutputFile>
+    </ClCompile>
+    <Lib>
+      <AdditionalDependencies>libimagequant_d_2013_x64.lib;squishd_2013_x64.lib;ATI_Compress_MT.lib;PVRTexLib.lib;libpng_d_2013_x64.lib;libjpeg_d_2013_x64.lib;libtiff_d_2013_x64.lib;native_exec_d_2013.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <AdditionalLibraryDirectories>..\..\vendor\libimagequant\lib\static;..\..\vendor\squish-1.11\lib\vs12;..\..\vendor\pvrtexlib\Windows_x86_32\Static;..\..\vendor\atitc\VS2010\MT Release\Win32;..\..\vendor\lpng\lib\static\;..\..\vendor\libjpeg\lib\;..\..\vendor\libtiff\lib\;..\..\vendor\NativeExecutive\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>LIBCMT;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Lib>
     <ProjectReference>
@@ -81,7 +140,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -92,9 +151,37 @@
       <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName)_2013.pch</PrecompiledHeaderOutputFile>
     </ClCompile>
     <Lib>
-      <AdditionalDependencies>libimagequant_2013.lib;squish_2013.lib;ATI_Compress_MT.lib;PVRTexLib.lib;libpng_2013.lib;libjpeg_2013.lib;libtiff_2013.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libimagequant_2013.lib;squish_2013.lib;ATI_Compress_MT.lib;PVRTexLib.lib;libpng_2013.lib;libjpeg_2013.lib;libtiff_2013.lib;native_exec_2013.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>..\..\vendor\libimagequant\lib\static;..\..\vendor\squish-1.11\lib\vs12;..\..\vendor\pvrtexlib\Windows_x86_32\Static;..\..\vendor\atitc\VS2010\MT Release\Win32;..\..\vendor\lpng\lib\static\;..\..\vendor\libjpeg\lib\;..\..\vendor\libtiff\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\vendor\libimagequant\lib\static;..\..\vendor\squish-1.11\lib\vs12;..\..\vendor\pvrtexlib\Windows_x86_32\Static;..\..\vendor\atitc\VS2010\MT Release\Win32;..\..\vendor\lpng\lib\static\;..\..\vendor\libjpeg\lib\;..\..\vendor\libtiff\lib\;..\..\vendor\NativeExecutive\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
+      <IgnoreSpecificDefaultLibraries>LIBCMT;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+    </Lib>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>StdInc.h</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4996</DisableSpecificWarnings>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName)_2013.pch</PrecompiledHeaderOutputFile>
+    </ClCompile>
+    <Lib>
+      <AdditionalDependencies>libimagequant_2013_x64.lib;squish_2013_x64.lib;ATI_Compress_MT.lib;PVRTexLib.lib;libpng_2013_x64.lib;libjpeg_2013_x64.lib;libtiff_2013_x64.lib;native_exec_2013.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <AdditionalLibraryDirectories>..\..\vendor\libimagequant\lib\static;..\..\vendor\squish-1.11\lib\vs12;..\..\vendor\pvrtexlib\Windows_x86_32\Static;..\..\vendor\atitc\VS2010\MT Release\Win32;..\..\vendor\lpng\lib\static\;..\..\vendor\libjpeg\lib\;..\..\vendor\libtiff\lib\;..\..\vendor\NativeExecutive\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <IgnoreSpecificDefaultLibraries>LIBCMT;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Lib>
@@ -112,6 +199,7 @@
     <ClInclude Include="..\..\include\renderware.imaging.h" />
     <ClInclude Include="..\..\include\renderware.material.h" />
     <ClInclude Include="..\..\include\renderware.stream.h" />
+    <ClInclude Include="..\..\include\renderware.threading.h" />
     <ClInclude Include="..\..\include\renderware.txd.d3d.h" />
     <ClInclude Include="..\..\include\renderware.txd.h" />
     <ClInclude Include="..\..\include\renderware.txd.pixelformat.h" />
@@ -123,6 +211,8 @@
     <ClInclude Include="..\..\src\pluginutil.hxx" />
     <ClInclude Include="..\..\src\rwendian.h" />
     <ClInclude Include="..\..\src\rwimaging.hxx" />
+    <ClInclude Include="..\..\src\rwinterface.hxx" />
+    <ClInclude Include="..\..\src\rwserialize.hxx" />
     <ClInclude Include="..\..\src\streamutil.hxx" />
     <ClInclude Include="..\..\src\txdread.atc.hxx" />
     <ClInclude Include="..\..\src\txdread.common.hxx" />
@@ -134,6 +224,7 @@
     <ClInclude Include="..\..\src\txdread.dxtmobile.hxx" />
     <ClInclude Include="..\..\src\txdread.gc.hxx" />
     <ClInclude Include="..\..\src\txdread.miputil.hxx" />
+    <ClInclude Include="..\..\src\txdread.nativetex.hxx" />
     <ClInclude Include="..\..\src\txdread.palette.hxx" />
     <ClInclude Include="..\..\src\txdread.ps2.hxx" />
     <ClInclude Include="..\..\src\txdread.ps2gsman.hxx" />
@@ -148,7 +239,11 @@
     <ClCompile Include="..\..\src\dffread.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\..\src\dffwrite.cpp" />
@@ -168,12 +263,15 @@
     <ClCompile Include="..\..\src\rwimaging.tiff.cpp" />
     <ClCompile Include="..\..\src\rwinterface.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\..\src\rwmem.cpp" />
     <ClCompile Include="..\..\src\rwobjextensions.cpp" />
     <ClCompile Include="..\..\src\rwserialize.cpp" />
     <ClCompile Include="..\..\src\rwstream.cpp" />
+    <ClCompile Include="..\..\src\rwthreading.cpp" />
     <ClCompile Include="..\..\src\rwwindowing.cpp" />
     <ClCompile Include="..\..\src\txdread.atc.cpp" />
     <ClCompile Include="..\..\src\txdread.cpp" />

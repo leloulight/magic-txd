@@ -76,9 +76,9 @@ void pvrNativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, Pl
             writeStringIntoBufferSafe( engineInterface, theTexture->GetName(), metaHeader.name, sizeof( metaHeader.name ), theTexture->GetName(), "name" );
             writeStringIntoBufferSafe( engineInterface, theTexture->GetMaskName(), metaHeader.maskName, sizeof( metaHeader.maskName ), theTexture->GetName(), "mask name" );
 
-            uint32 mipmapCount = platformTex->mipmaps.size();
+            size_t mipmapCount = platformTex->mipmaps.size();
 
-            metaHeader.mipmapCount = mipmapCount;
+            metaHeader.mipmapCount = (uint8)mipmapCount;
             metaHeader.unk1 = platformTex->unk1;
             metaHeader.hasAlpha = platformTex->hasAlpha;
             metaHeader.pad2 = 0;
@@ -91,7 +91,7 @@ void pvrNativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, Pl
             // Calculate the image data section size.
             uint32 imageDataSectionSize = 0;
 
-            for ( uint32 n = 0; n < mipmapCount; n++ )
+            for ( size_t n = 0; n < mipmapCount; n++ )
             {
                 uint32 mipDataSize = platformTex->mipmaps[ n ].dataSize;
 
@@ -106,7 +106,7 @@ void pvrNativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, Pl
             texImageDataChunk.write( &metaHeader, sizeof(metaHeader) );
 
             // Write the mipmap data sizes.
-            for ( uint32 n = 0; n < mipmapCount; n++ )
+            for ( size_t n = 0; n < mipmapCount; n++ )
             {
                 uint32 mipDataSize = platformTex->mipmaps[ n ].dataSize;
 
@@ -114,7 +114,7 @@ void pvrNativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, Pl
             }
 
             // Write the picture data now.
-            for ( uint32 n = 0; n < mipmapCount; n++ )
+            for ( size_t n = 0; n < mipmapCount; n++ )
             {
                 NativeTexturePVR::mipmapLayer& mipLayer = platformTex->mipmaps[ n ];
 
@@ -296,7 +296,7 @@ void pvrNativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineInt
     getPVRTargetRasterFormat( internalFormat, targetRasterFormat, targetDepth, targetColorOrder );
 
     // Decompress the PVR texture and put it in RGBA format into the D3D texture.
-    uint32 mipmapCount = platformTex->mipmaps.size();
+    size_t mipmapCount = platformTex->mipmaps.size();
 
     pixelsOut.mipmaps.resize( mipmapCount );
     {
@@ -317,7 +317,7 @@ void pvrNativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineInt
         // We need a pixel type for the decompressed format.
         const PixelType pvrDstPixelType = PVRStandard8PixelType;
 
-        for ( uint32 n = 0; n < mipmapCount; n++ )
+        for ( size_t n = 0; n < mipmapCount; n++ )
         {
             // Get parameters of this mipmap layer.
             const NativeTexturePVR::mipmapLayer& mipLayer = platformTex->mipmaps[ n ];
@@ -546,7 +546,7 @@ void pvrNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInter
         }
     }
 
-    uint32 mipmapCount = pixelsIn.mipmaps.size();
+    size_t mipmapCount = pixelsIn.mipmaps.size();
 
     {
         using namespace pvrtexture;
@@ -911,9 +911,9 @@ void pvrNativeTextureTypeProvider::GetTextureInfo( Interface *engineInterface, v
 {
     NativeTexturePVR *nativeTex = (NativeTexturePVR*)objMem;
 
-    uint32 mipmapCount = nativeTex->mipmaps.size();
+    size_t mipmapCount = nativeTex->mipmaps.size();
 
-    infoOut.mipmapCount = mipmapCount;
+    infoOut.mipmapCount = (uint32)mipmapCount;
 
     uint32 baseWidth = 0;
     uint32 baseHeight = 0;

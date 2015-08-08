@@ -116,9 +116,9 @@ bool genericDecompressDXTNative(
     // Decide which raster format to use.
     bool conversionSuccessful = true;
 
-    uint32 mipmapCount = pixelData.mipmaps.size();
+    size_t mipmapCount = pixelData.mipmaps.size();
 
-	for (uint32 i = 0; i < mipmapCount; i++)
+	for (size_t i = 0; i < mipmapCount; i++)
     {
         pixelDataTraversal::mipmapResource& mipLayer = pixelData.mipmaps[ i ];
 
@@ -197,7 +197,7 @@ void genericCompressDXTNative( Interface *engineInterface, pixelDataTraversal& p
     assert( pixelData.isNewlyAllocated == true );
 
     // Compress it now.
-    uint32 mipmapCount = pixelData.mipmaps.size();
+    size_t mipmapCount = pixelData.mipmaps.size();
 
     uint32 itemDepth = pixelData.depth;
     uint32 rowAlignment = pixelData.rowAlignment;
@@ -209,7 +209,7 @@ void genericCompressDXTNative( Interface *engineInterface, pixelDataTraversal& p
     uint32 maxpalette = pixelData.paletteSize;
     void *paletteData = pixelData.paletteData;
 
-    for ( uint32 n = 0; n < mipmapCount; n++ )
+    for ( size_t n = 0; n < mipmapCount; n++ )
     {
         pixelDataTraversal::mipmapResource& mipLayer = pixelData.mipmaps[ n ];
 
@@ -219,7 +219,7 @@ void genericCompressDXTNative( Interface *engineInterface, pixelDataTraversal& p
         void *texelSource = mipLayer.texels;
 
         void *dxtArray = NULL;
-        size_t dxtDataSize = 0;
+        uint32 dxtDataSize = 0;
 
         // Create the new DXT array.
         uint32 realMipWidth, realMipHeight;
@@ -1028,10 +1028,10 @@ bool ConvertPixelData( Interface *engineInterface, pixelDataTraversal& pixelsToC
                 }
 
                 // Process mipmaps.
-                uint32 mipmapCount = pixelsToConvert.mipmaps.size();
+                size_t mipmapCount = pixelsToConvert.mipmaps.size();
 
                 // Determine the depth of the items.
-                for ( uint32 n = 0; n < mipmapCount; n++ )
+                for ( size_t n = 0; n < mipmapCount; n++ )
                 {
                     pixelDataTraversal::mipmapResource& mipLayer = pixelsToConvert.mipmaps[ n ];
 
@@ -1190,9 +1190,9 @@ void pixelDataTraversal::FreePixels( Interface *engineInterface )
 {
     if ( this->isNewlyAllocated )
     {
-        uint32 mipmapCount = this->mipmaps.size();
+        size_t mipmapCount = this->mipmaps.size();
 
-        for ( uint32 n = 0; n < mipmapCount; n++ )
+        for ( size_t n = 0; n < mipmapCount; n++ )
         {
             mipmapResource& thisLayer = this->mipmaps[ n ];
 
@@ -1259,11 +1259,11 @@ void pixelDataTraversal::CloneFrom( Interface *engineInterface, const pixelDataT
     this->paletteSize = dstPaletteSize;
 
     // Clone mipmaps.
-    uint32 mipmapCount = right.mipmaps.size();
+    size_t mipmapCount = right.mipmaps.size();
 
     this->mipmaps.resize( mipmapCount );
 
-    for ( uint32 n = 0; n < mipmapCount; n++ )
+    for ( size_t n = 0; n < mipmapCount; n++ )
     {
         const mipmapResource& srcLayer = right.mipmaps[ n ];
 

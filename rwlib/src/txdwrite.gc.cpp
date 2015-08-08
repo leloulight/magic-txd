@@ -26,7 +26,7 @@ void gamecubeNativeTextureTypeProvider::SerializeTexture( TextureBase *theTextur
             eGCNativeTextureFormat internalFormat = platformTex->internalFormat;
             eGCPixelFormat palettePixelFormat = platformTex->palettePixelFormat;
 
-            uint32 mipmapCount = platformTex->mipmaps.size();
+            size_t mipmapCount = platformTex->mipmaps.size();
 
             if ( mipmapCount == 0 )
             {
@@ -132,7 +132,7 @@ void gamecubeNativeTextureTypeProvider::SerializeTexture( TextureBase *theTextur
                 metaHeader.width = baseLayer.layerWidth;
                 metaHeader.height = baseLayer.layerHeight;
                 metaHeader.depth = depth;
-                metaHeader.mipmapCount = mipmapCount;
+                metaHeader.mipmapCount = (uint8)mipmapCount;
                 metaHeader.internalFormat = internalFormat;
                 metaHeader.palettePixelFormat = palettePixelFormat;
                 
@@ -160,7 +160,7 @@ void gamecubeNativeTextureTypeProvider::SerializeTexture( TextureBase *theTextur
             // For that we have to calculate it.
             uint32 imageDataSectionSize = 0;
 
-            for ( uint32 n = 0; n < mipmapCount; n++ )
+            for ( size_t n = 0; n < mipmapCount; n++ )
             {
                 const NativeTextureGC::mipmapLayer& mipLayer = platformTex->mipmaps[ n ];
 
@@ -172,7 +172,7 @@ void gamecubeNativeTextureTypeProvider::SerializeTexture( TextureBase *theTextur
             gcNativeBlock.writeStruct( sectionSizeBE );
 
             // Write all the mipmap layers now.
-            for ( uint32 n = 0; n < mipmapCount; n++ )
+            for ( size_t n = 0; n < mipmapCount; n++ )
             {
                 const NativeTextureGC::mipmapLayer& mipLayer = platformTex->mipmaps[ n ];
 

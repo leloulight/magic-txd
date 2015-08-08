@@ -1169,6 +1169,7 @@ public:
 };
 
 // Helper struct for common plugin system functions.
+// THREAD-SAFE because this class itself is immutable and the systemType is THREAD-SAFE.
 template <typename classType, typename systemType, typename pluginDescriptorType, typename... AdditionalArgs>
 struct CommonPluginSystemDispatch
 {

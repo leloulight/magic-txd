@@ -43,11 +43,11 @@ void uncNativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, Pl
             // Cast to our native texture format.
             NativeTextureMobileUNC *platformTex = (NativeTextureMobileUNC*)nativeTex;
 
-            uint32 mipmapCount = platformTex->mipmaps.size();
+            size_t mipmapCount = platformTex->mipmaps.size();
 
             bool hasAlpha = platformTex->hasAlpha;
 
-            metaHeader.mipmapCount = mipmapCount;
+            metaHeader.mipmapCount = (uint8)mipmapCount;
             metaHeader.unk1 = false;
             metaHeader.hasAlpha = hasAlpha;
             metaHeader.pad2 = 0;
@@ -61,7 +61,7 @@ void uncNativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, Pl
             // Calculate the image data section size.
             uint32 imgDataSectionSize = 0;
 
-            for ( uint32 n = 0; n < mipmapCount; n++ )
+            for ( size_t n = 0; n < mipmapCount; n++ )
             {
                 const NativeTextureMobileUNC::mipmapLayer& mipLayer = platformTex->mipmaps[ n ];
 
@@ -74,7 +74,7 @@ void uncNativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, Pl
             texImageDataBlock.write( &metaHeader, sizeof( metaHeader ) );
 
             // Now write all the mipmap layers.
-            for ( uint32 n = 0; n < mipmapCount; n++ )
+            for ( size_t n = 0; n < mipmapCount; n++ )
             {
                 const NativeTextureMobileUNC::mipmapLayer& mipLayer = platformTex->mipmaps[ n ];
 
@@ -105,11 +105,11 @@ void uncNativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineInt
     NativeTextureMobileUNC *nativeTex = (NativeTextureMobileUNC*)objMem;
 
     // Move over mipmaps.
-    uint32 mipmapCount = nativeTex->mipmaps.size();
+    size_t mipmapCount = nativeTex->mipmaps.size();
 
     pixelsOut.mipmaps.resize( mipmapCount );
 
-    for ( uint32 n = 0; n < mipmapCount; n++ )
+    for ( size_t n = 0; n < mipmapCount; n++ )
     {
         const NativeTextureMobileUNC::mipmapLayer& mipLayer = nativeTex->mipmaps[ n ];
 
@@ -209,11 +209,11 @@ void uncNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInter
     }
 
     // Do the mipmap conversion.
-    uint32 mipmapCount = pixelsIn.mipmaps.size();
+    size_t mipmapCount = pixelsIn.mipmaps.size();
 
     nativeTex->mipmaps.resize( mipmapCount );
 
-    for ( uint32 n = 0; n < mipmapCount; n++ )
+    for ( size_t n = 0; n < mipmapCount; n++ )
     {
         const pixelDataTraversal::mipmapResource& mipLayer = pixelsIn.mipmaps[ n ];
 
@@ -408,9 +408,9 @@ void uncNativeTextureTypeProvider::GetTextureInfo( Interface *engineInterface, v
 {
     NativeTextureMobileUNC *nativeTex = (NativeTextureMobileUNC*)objMem;
 
-    uint32 mipmapCount = nativeTex->mipmaps.size();
+    size_t mipmapCount = nativeTex->mipmaps.size();
 
-    infoOut.mipmapCount = mipmapCount;
+    infoOut.mipmapCount = (uint32)mipmapCount;
 
     uint32 baseWidth = 0;
     uint32 baseHeight = 0;

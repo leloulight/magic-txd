@@ -302,7 +302,7 @@ struct CustomStream : public Stream
 // Register the stream plugin to the interface.
 struct streamSystemPlugin
 {
-    inline void Initialize( Interface *engine )
+    inline void Initialize( EngineInterface *engine )
     {
         this->fileStreamTypeInfo = NULL;
         this->memoryStreamTypeInfo = NULL;
@@ -314,7 +314,7 @@ struct streamSystemPlugin
         }
     }
 
-    inline void Shutdown( Interface *engine )
+    inline void Shutdown( EngineInterface *engine )
     {
         // Delete all custom types first.
         for ( typeInfoList_t::const_iterator iter = custom_types.begin(); iter != custom_types.end(); iter++ )
@@ -356,7 +356,7 @@ struct customStreamConstructionParams
 
 struct streamCustomTypeInterface : public RwTypeSystem::typeInterface
 {
-    void Construct( void *mem, Interface *engineInterface, void *construction_params ) const
+    void Construct( void *mem, EngineInterface *engineInterface, void *construction_params ) const override
     {
         // We must receive a custom userdata struct.
         customStreamConstructionParams *custom_param = (customStreamConstructionParams*)construction_params;
@@ -380,13 +380,13 @@ struct streamCustomTypeInterface : public RwTypeSystem::typeInterface
         }
     }
 
-    void CopyConstruct( void *mem, const void *srcMem ) const
+    void CopyConstruct( void *mem, const void *srcMem ) const override
     {
         // Impossible.
         throw RwException( "cannot clone custom streams" );
     }
 
-    void Destruct( void *mem ) const
+    void Destruct( void *mem ) const override
     {
         // First delete the meta struct.
         {
@@ -399,12 +399,12 @@ struct streamCustomTypeInterface : public RwTypeSystem::typeInterface
         ( (CustomStream*)mem )->~CustomStream();
     }
 
-    size_t GetTypeSize( Interface *engineInterface, void *construct_params ) const
+    size_t GetTypeSize( EngineInterface *engineInterface, void *construct_params ) const override
     {
         return ( sizeof( CustomStream ) + this->objCustomBufferSize );
     }
 
-    size_t GetTypeSizeByObject( Interface *engineInterface, const void *mem ) const
+    size_t GetTypeSizeByObject( EngineInterface *engineInterface, const void *mem ) const override
     {
         return ( sizeof( CustomStream ) + this->objCustomBufferSize );
     }
@@ -415,6 +415,8 @@ struct streamCustomTypeInterface : public RwTypeSystem::typeInterface
 
 bool Interface::RegisterStream( const char *typeName, size_t memBufSize, customStreamInterface *streamInterface )
 {
+    EngineInterface *engineInterface = (EngineInterface*)this;
+
     bool registerSuccess = false;
 
     // Get the stream environment first.
@@ -423,7 +425,7 @@ bool Interface::RegisterStream( const char *typeName, size_t memBufSize, customS
     if ( streamSysEnv )
     {
         // We need a special type descriptor, just like in the native texture registration.
-        streamCustomTypeInterface *tInterface = _newstruct <streamCustomTypeInterface> ( *this->typeSystem._memAlloc );
+        streamCustomTypeInterface *tInterface = _newstruct <streamCustomTypeInterface> ( *engineInterface->typeSystem._memAlloc );
 
         if ( tInterface )
         {
@@ -434,7 +436,7 @@ bool Interface::RegisterStream( const char *typeName, size_t memBufSize, customS
                 tInterface->meta_info = streamInterface;
 
                 // Attempt to register it into the system.
-                RwTypeSystem::typeInfoBase *customTypeInfo = this->typeSystem.RegisterCommonTypeInterface( typeName, tInterface, this->streamTypeInfo );
+                RwTypeSystem::typeInfoBase *customTypeInfo = engineInterface->typeSystem.RegisterCommonTypeInterface( typeName, tInterface, engineInterface->streamTypeInfo );
 
                 if ( customTypeInfo )
                 {
@@ -454,7 +456,7 @@ bool Interface::RegisterStream( const char *typeName, size_t memBufSize, customS
 
             if ( registerSuccess == false )
             {
-                _delstruct <streamCustomTypeInterface> ( tInterface, *this->typeSystem._memAlloc );
+                _delstruct <streamCustomTypeInterface> ( tInterface, *engineInterface->typeSystem._memAlloc );
             }
         }
     }
@@ -464,6 +466,8 @@ bool Interface::RegisterStream( const char *typeName, size_t memBufSize, customS
 
 Stream* Interface::CreateStream( eBuiltinStreamType streamType, eStreamMode streamMode, streamConstructionParam_t *param )
 {
+    EngineInterface *engineInterface = (EngineInterface*)this;
+
     Stream *outputStream = NULL;
 
     streamSystemPlugin *streamSysEnv = streamSystemPluginRegister.GetPluginStruct( (EngineInterface*)this );
@@ -538,7 +542,7 @@ Stream* Interface::CreateStream( eBuiltinStreamType streamType, eStreamMode stre
 
                 if ( fileHandle )
                 {
-                    GenericRTTI *rttiObj = this->typeSystem.Construct( this, fileStreamTypeInfo, NULL );
+                    GenericRTTI *rttiObj = engineInterface->typeSystem.Construct( engineInterface, fileStreamTypeInfo, NULL );
 
                     if ( rttiObj )
                     {
@@ -565,7 +569,7 @@ Stream* Interface::CreateStream( eBuiltinStreamType streamType, eStreamMode stre
         else if ( streamType == RWSTREAMTYPE_CUSTOM )
         {
             // We need to get the stream type info to proceed.
-            if ( RwTypeSystem::typeInfoBase *streamTypeInfo = this->streamTypeInfo )
+            if ( RwTypeSystem::typeInfoBase *streamTypeInfo = engineInterface->streamTypeInfo )
             {
                 if ( param->dwSize == sizeof( streamConstructionCustomParam_t ) )
                 {
@@ -575,7 +579,7 @@ Stream* Interface::CreateStream( eBuiltinStreamType streamType, eStreamMode stre
                     // Since we cannot do too much verification here, we hope that the vendor does things right.
 
                     // Get the type info associated.
-                    if ( RwTypeSystem::typeInfoBase *customTypeInfo = this->typeSystem.FindTypeInfo( customParam->typeName, streamTypeInfo ) )
+                    if ( RwTypeSystem::typeInfoBase *customTypeInfo = engineInterface->typeSystem.FindTypeInfo( customParam->typeName, streamTypeInfo ) )
                     {
                         // We need to fetch our custom type information struct.
                         // If we cannot resolve it, the type info is not a valid custom stream type info.
@@ -588,7 +592,7 @@ Stream* Interface::CreateStream( eBuiltinStreamType streamType, eStreamMode stre
                             cstr_params.userdata = customParam->userdata;
 
                             // Construct the object.
-                            GenericRTTI *rtObj = this->typeSystem.Construct( this, customTypeInfo, &cstr_params );
+                            GenericRTTI *rtObj = engineInterface->typeSystem.Construct( engineInterface, customTypeInfo, &cstr_params );
 
                             if ( rtObj )
                             {
@@ -612,8 +616,10 @@ Stream* Interface::CreateStream( eBuiltinStreamType streamType, eStreamMode stre
 
 void Interface::DeleteStream( Stream *theStream )
 {
+    EngineInterface *engineInterface = (EngineInterface*)this;
+
     // Just rek it.
-    this->typeSystem.Destroy( this, RwTypeSystem::GetTypeStructFromObject( theStream ) );
+    engineInterface->typeSystem.Destroy( engineInterface, RwTypeSystem::GetTypeStructFromObject( theStream ) );
 }
 
 void registerStreamGlobalPlugins( void )

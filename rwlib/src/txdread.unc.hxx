@@ -1,3 +1,5 @@
+#include "txdread.nativetex.hxx"
+
 // Platform descriptor, not that important.
 #define PLATFORMDESC_UNC_MOBILE     12
 

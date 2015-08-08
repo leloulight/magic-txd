@@ -16,25 +16,106 @@
 // This one should be private to the rwtools project, hence we reject including it in "renderware.h"
 #include "../rwconf.h"
 
+#include <DynamicTypeSystem.h>
+
 namespace rw
 {
 
+// Type system declaration for type abstraction.
+// This is where atomics, frames, geometries register to.
 struct EngineInterface : public Interface
 {
-    inline EngineInterface( void )
-    {
-        // We default to the San Andreas engine.
-        this->version = KnownVersions::getGameVersion( KnownVersions::SA );
-    }
+    friend struct Interface;
 
-    inline ~EngineInterface( void )
+    EngineInterface( void );
+    ~EngineInterface( void );
+
+    // DO NOT ACCESS THE FIELDS DIRECTLY.
+    // THEY MUST BE ACCESSED UNDER MUTUAL EXCLUSION/CONTEXT LOCKING.
+
+    LibraryVersion version;     // version of the output files (III, VC, SA, Manhunt, ...)
+
+    // General type system.
+    RwMemoryAllocator memAlloc;
+
+    struct typeSystemLockProvider
     {
-        // We are done.
-        return;
-    }
+        typedef rw::rwlock rwlock;
+
+        inline rwlock* CreateLock( void )
+        {
+            return CreateReadWriteLock( engineInterface );
+        }
+
+        inline void CloseLock( rwlock *theLock )
+        {
+            CloseReadWriteLock( engineInterface, theLock );
+        }
+
+        inline void LockEnterRead( rwlock *theLock ) const
+        {
+            theLock->enter_read();
+        }
+
+        inline void LockLeaveRead( rwlock *theLock ) const
+        {
+            theLock->leave_read();
+        }
+
+        inline void LockEnterWrite( rwlock *theLock ) const
+        {
+            theLock->enter_write();
+        }
+
+        inline void LockLeaveWrite( rwlock *theLock ) const
+        {
+            theLock->leave_write();
+        }
+
+        EngineInterface *engineInterface;
+    };
+
+    typedef DynamicTypeSystem <RwMemoryAllocator, EngineInterface, typeSystemLockProvider> RwTypeSystem;
+
+    RwTypeSystem typeSystem;
+
+    // Types that should be registered by all RenderWare implementations.
+    // These can be NULL, tho.
+    RwTypeSystem::typeInfoBase *streamTypeInfo;
+    RwTypeSystem::typeInfoBase *rasterTypeInfo;
+    RwTypeSystem::typeInfoBase *rwobjTypeInfo;
+    RwTypeSystem::typeInfoBase *textureTypeInfo;
+
+private:
+    FileInterface *customFileInterface;
+
+    WarningManagerInterface *warningManager;
+
+    ePaletteRuntimeType palRuntimeType;
+    eDXTCompressionMethod dxtRuntimeType;
+    
+    int warningLevel;
+    bool ignoreSecureWarnings;
+
+    bool fixIncompatibleRasters;
+    bool dxtPackedDecompression;
+
+    bool ignoreSerializationBlockRegions;
+
+public:
+    // Information about the running application.
+    std::string applicationName;
+    std::string applicationVersion;
+    std::string applicationDescription;
+
+    bool enableMetaDataTagging;
 };
 
-std::string GetRunningSoftwareInformation( Interface *engineInterface );
+typedef EngineInterface::RwTypeSystem RwTypeSystem;
+
+// Use this function is you need a string that describes the currently running RenderWare environment.
+// It uses the application variables of EngineInterface.
+std::string GetRunningSoftwareInformation( EngineInterface *engineInterface, bool outputShort = false );
 
 // Factory for global RenderWare interfaces.
 typedef StaticPluginClassFactory <EngineInterface> RwInterfaceFactory_t;
@@ -71,10 +152,6 @@ struct rawBitmapFetchResult
         }
     }
 };
-
-// Private native texture API.
-texNativeTypeProvider* GetNativeTextureTypeProvider( Interface *engineInterface, void *platformData );
-uint32 GetNativeTextureMipmapCount( Interface *engineInterface, PlatformTexture *nativeTexture, texNativeTypeProvider *texTypeProvider );
 
 // Quick palette depth remapper.
 void ConvertPaletteDepthEx(
@@ -154,8 +231,8 @@ struct WarningHandler abstract
     virtual void OnWarningMessage( const std::string& theMessage ) = 0;
 };
 
-void GlobalPushWarningHandler( Interface *engineInterface, WarningHandler *theHandler );
-void GlobalPopWarningHandler( Interface *engineInterface );
+void GlobalPushWarningHandler( EngineInterface *engineInterface, WarningHandler *theHandler );
+void GlobalPopWarningHandler( EngineInterface *engineInterface );
 
 }
 

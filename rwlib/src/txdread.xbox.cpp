@@ -523,12 +523,12 @@ void xboxNativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineIn
     // Otherwise we can optimize.
     bool isNewlyAllocated = ( isSwizzledFormat == true );
 
-    uint32 mipmapCount = platformTex->mipmaps.size();
+    size_t mipmapCount = platformTex->mipmaps.size();
 
     // Allocate virtual mipmaps.
     pixelsOut.mipmaps.resize( mipmapCount );
 
-    for ( uint32 n = 0; n < mipmapCount; n++ )
+    for ( size_t n = 0; n < mipmapCount; n++ )
     {
         const NativeTextureXBOX::mipmapLayer& mipLayer = platformTex->mipmaps[ n ];
 
@@ -751,14 +751,14 @@ void xboxNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
     // If we require swizzling, we cannot directly acquire the data.
     bool hasDirectlyAcquired = ( requiresSwizzling == false && requiresConversion == false );
 
-    uint32 mipmapCount = pixelsIn.mipmaps.size();
+    size_t mipmapCount = pixelsIn.mipmaps.size();
 
     uint32 depth = pixelsIn.depth;
 
     // Allocate the mipmaps on the XBOX texture.
     xboxTex->mipmaps.resize( mipmapCount );
 
-    for ( uint32 n = 0; n < mipmapCount; n++ )
+    for ( size_t n = 0; n < mipmapCount; n++ )
     {
         const pixelDataTraversal::mipmapResource& srcLayer = pixelsIn.mipmaps[ n ];
 
@@ -1154,9 +1154,9 @@ void xboxNativeTextureTypeProvider::GetTextureInfo( Interface *engineInterface, 
 {
     NativeTextureXBOX *nativeTex = (NativeTextureXBOX*)objMem;
 
-    uint32 mipmapCount = nativeTex->mipmaps.size();
+    size_t mipmapCount = nativeTex->mipmaps.size();
 
-    infoOut.mipmapCount = mipmapCount;
+    infoOut.mipmapCount = (uint32)mipmapCount;
 
     uint32 baseWidth = 0;
     uint32 baseHeight = 0;

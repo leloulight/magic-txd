@@ -489,7 +489,7 @@ struct tgaImagingExtension : public imagingFormatExtension
                         for ( uint32 srcRow = 0; srcRow < height; srcRow++ )
                         {
                             // Read the source row.
-                            uint32 rowReadCount = inputStream->read( rowbuf, tgaRowSize );
+                            size_t rowReadCount = inputStream->read( rowbuf, tgaRowSize );
 
                             if ( rowReadCount != tgaRowSize )
                             {
@@ -702,12 +702,12 @@ struct tgaImagingExtension : public imagingFormatExtension
             bool isPalette = (dstPaletteType != PALETTE_NONE);
 
             // We want to write information about this software in the image id field.
-            std::string _software_info = GetRunningSoftwareInformation( engineInterface );
+            std::string _software_info = GetRunningSoftwareInformation( (EngineInterface*)engineInterface );
 
             const char *image_id_data = _software_info.c_str();
             size_t image_id_length = _software_info.length();
 
-            header.IDLength = image_id_length;
+            header.IDLength = (BYTE)image_id_length;
             header.ColorMapType = ( isPalette ? 1 : 0 );
             header.ImageType = ( isPalette ? 1 : 2 );
 

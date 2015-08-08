@@ -144,7 +144,7 @@ struct palettizer
     template <typename criteriaType>
     inline bool findmostsimilarpixel(const criteriaType& parser, typename criteriaType::result_t& theResult, uint32 first, uint32& second)
     {
-        size_t numTexels = texelElimData.size();
+        uint32 numTexels = (uint32)texelElimData.size();
 
         uint32 smallest;
         typename criteriaType::result_t smallestResult;
@@ -153,7 +153,7 @@ struct palettizer
         {
             const texel_t& firstComparand = texelElimData.at( first );
 
-            for (size_t i = 0; i < numTexels; i++)
+            for (uint32 i = 0; i < numTexels; i++)
             {
                 if (i != first)
                 {
@@ -735,7 +735,7 @@ struct palettizer
         // Construct similarity lists of texels while the amount of texels is too big.
         while ( texelElimData.size() > maxentries )
         {
-            uint32 numTexels = texelElimData.size();
+            uint32 numTexels = (uint32)texelElimData.size();
 
             typedef std::vector <similarPixels_t> simList_t;
 
@@ -857,7 +857,7 @@ struct palettizer
     {
         uint32 palDepth = Bitmap::getRasterFormatDepth(rasterFormat);
 
-        uint32 palItemCount = texelElimData.size();
+        uint32 palItemCount = (uint32)texelElimData.size();
 
         uint32 palDataSize = getPaletteDataSize( palItemCount, palDepth );
 

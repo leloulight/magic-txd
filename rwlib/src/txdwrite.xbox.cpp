@@ -78,7 +78,7 @@ void xboxNativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, P
             texImageDataBlock.writeUInt32( NATIVE_TEXTURE_XBOX );
 
             // Write the header.
-            uint32 mipmapCount = platformTex->mipmaps.size();
+            size_t mipmapCount = platformTex->mipmaps.size();
             {
                 textureMetaHeaderStructXbox metaInfo;
 
@@ -101,7 +101,7 @@ void xboxNativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, P
 
                 metaInfo.hasAlpha = platformTex->hasAlpha;
 
-                metaInfo.mipmapCount = mipmapCount;
+                metaInfo.mipmapCount = (uint8)mipmapCount;
 
                 metaInfo.rasterType = platformTex->rasterType;
 
@@ -116,7 +116,7 @@ void xboxNativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, P
                 // Calculate the size of all the texture data combined.
                 uint32 imageDataSectionSize = 0;
 
-                for (uint32 n = 0; n < mipmapCount; n++)
+                for (size_t n = 0; n < mipmapCount; n++)
                 {
                     imageDataSectionSize += platformTex->mipmaps[ n ].dataSize;
                 }
@@ -146,7 +146,7 @@ void xboxNativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, P
             }
 
             // Write mipmap data.
-            for ( uint32 n = 0; n < mipmapCount; n++ )
+            for ( size_t n = 0; n < mipmapCount; n++ )
             {
                 const NativeTextureXBOX::mipmapLayer& mipLayer = platformTex->mipmaps[ n ];
 

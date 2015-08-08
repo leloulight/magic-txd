@@ -39,7 +39,7 @@ inline void nativePaletteRemap(
     // Allocate appropriate memory.
     uint32 dstRowSize = getRasterDataRowSize( mipWidth, convItemDepth, dstRowAlignment );
 
-    size_t dstDataSize = getRasterDataSizeByRowSize( dstRowSize, mipHeight );
+    uint32 dstDataSize = getRasterDataSizeByRowSize( dstRowSize, mipHeight );
 
     void *newTexelData = engineInterface->PixelAllocate( dstDataSize );
 
@@ -206,7 +206,7 @@ void PalettizePixelData( Interface *engineInterface, pixelDataTraversal& pixelDa
     // Do the palettization.
     bool palettizeSuccess = false;
     {
-        uint32 mipmapCount = pixelData.mipmaps.size();
+        uint32 mipmapCount = (uint32)pixelData.mipmaps.size();
 
         // Decide what palette system to use.
         ePaletteRuntimeType useRuntime = engineInterface->GetPaletteRuntime();
@@ -320,7 +320,7 @@ void PalettizePixelData( Interface *engineInterface, pixelDataTraversal& pixelDa
 
             // Store the new palette texels.
             pixelData.paletteData = conv.makepalette(engineInterface, dstRasterFormat, dstColorOrder);
-            pixelData.paletteSize = conv.texelElimData.size();
+            pixelData.paletteSize = (uint32)conv.texelElimData.size();
 
             palettizeSuccess = true;
         }

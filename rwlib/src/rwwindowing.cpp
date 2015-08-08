@@ -42,51 +42,40 @@ struct windowingSystemWin32
     // We use a special window object for Windows stuff.
     struct Win32Window : public Window
     {
-        inline Win32Window( Interface *engineInterface, void *construction_params ) : Window( engineInterface, construction_params )
+        struct _rwwindow_win32_initialization
         {
-            windowingSystemWin32 *windowSys = GetWindowingSystem( engineInterface );
+            Win32Window *msgWnd;
+            HANDLE evtWindowCreated;
+        };
 
-            if ( !windowSys )
+        static void _rwwindow_message_handler_thread( thread_t threadHandle, Interface *intf, void *ud )
+        {
+            Win32Window *msgWnd;
+            HANDLE evtWindowCreated;
             {
-                throw RwException( "win32 windowing system not initialized" );
+                const _rwwindow_win32_initialization *params = (const _rwwindow_win32_initialization*)ud;
+
+                msgWnd = params->msgWnd;
+                evtWindowCreated = params->evtWindowCreated;
             }
 
-            this->windowSys = windowSys;
+            EngineInterface *engineInterface = (EngineInterface*)intf;
 
             // Determine what title our window should have.
-            std::string windowTitle;
+            std::string windowTitle = GetRunningSoftwareInformation( engineInterface, true );
 
-            if ( engineInterface->applicationName.length() != 0 )
-            {
-                windowTitle += engineInterface->applicationName;
+            // Create a real window rect.
+            RECT windowRect = { 0, 0, msgWnd->clientWidth, msgWnd->clientHeight };
+            AdjustWindowRect( &windowRect, msgWnd->dwStyle, false );
 
-                if ( engineInterface->applicationVersion.length() != 0 )
-                {
-                    windowTitle += " [" + engineInterface->applicationVersion + "]";
-                }
-            }
-            else
-            {
-                windowTitle += "RenderWare";
-            }
-
-            // Append the RenderWare version.
-            windowTitle += " [rwver: " + this->objVersion.toString() + "]";
-
-            // Adjust the windowing system rectangle correctly.
-            DWORD dwStyle = ( WS_OVERLAPPEDWINDOW );
-
-            this->dwStyle = dwStyle;
-
-            RECT windowRect = { 0, 0, this->clientWidth, this->clientHeight };
-            AdjustWindowRect( &windowRect, dwStyle, false );
+            windowingSystemWin32 *windowSys = msgWnd->windowSys;
 
             // Create a window.
             HWND wndHandle = CreateWindowExA(
                 NULL,
                 (LPCSTR)windowSys->_windowClassHandle,
                 windowTitle.c_str(),
-                dwStyle,
+                msgWnd->dwStyle,
                 300, 300,
                 windowRect.right - windowRect.left,
                 windowRect.bottom - windowRect.top,
@@ -101,85 +90,202 @@ struct windowingSystemWin32
             }
 
             // Store our class link into the window.
-            SetWindowLongPtr( wndHandle, GWLP_USERDATA, (LONG)this );
+            SetWindowLongW( wndHandle, GWLP_USERDATA, (LONG)msgWnd );
             
-            this->windowHandle = wndHandle;
+            msgWnd->windowHandle = wndHandle;
 
-            LIST_INSERT( windowSys->windowList.root, node );
+            SetEvent( evtWindowCreated );
+
+            while ( msgWnd->isAlive )
+            {
+                // Dispatch messages
+                if ( msgWnd->isFullyConstructed )
+                {
+                    MSG msg;
+                
+		            while ( true )
+		            {
+                        BOOL wndMsgRet = GetMessageW( &msg, NULL, 0, 0 );
+
+                        if ( wndMsgRet <= 0 )
+                        {
+                            assert( wndMsgRet == 0 );
+                            break;
+                        }
+
+			            TranslateMessage( &msg );
+			            DispatchMessageW( &msg );
+		            }
+                }
+                else
+                {
+                    // We wait until the window is fully constructed.
+                    Sleep( 1 );
+                }
+            }
+
+            // Remove our userdata pointer.
+            SetWindowLongW( wndHandle, GWLP_USERDATA, NULL );
+
+            // Destroy our window.
+            DestroyWindow( wndHandle );
+
+            // Reset the native pointer in the window class.
+            msgWnd->windowHandle = NULL;
+        }
+
+        inline Win32Window( EngineInterface *engineInterface, void *construction_params ) : Window( engineInterface, construction_params )
+        {
+            windowingSystemWin32 *windowSys = GetWindowingSystem( engineInterface );
+
+            if ( !windowSys )
+            {
+                throw RwException( "win32 windowing system not initialized" );
+            }
+
+            this->windowSys = windowSys;
+
+            // Adjust the windowing system rectangle correctly.
+            DWORD dwStyle = ( WS_OVERLAPPEDWINDOW );
+
+            this->dwStyle = dwStyle;
+
+            this->windowHandle = NULL;
+
+            this->isAlive = true;
+            this->isFullyConstructed = false;
+
+            // Give the window special parameters.
+            _rwwindow_win32_initialization info;
+            info.msgWnd = this;
+            info.evtWindowCreated = CreateEvent( NULL, false, false, NULL );
+
+            // Create a thread that handles the window.
+            this->windowMessageThread = MakeThread( engineInterface, _rwwindow_message_handler_thread, &info );
+
+            if ( !this->windowMessageThread )
+            {
+                throw RwException( "failed to create window messaging thread" );
+            }
+
+            // Since threads start out suspended, we start it here.
+            ResumeThread( engineInterface, this->windowMessageThread );
+
+            // Wait until that thread has created the window.
+            WaitForSingleObject( info.evtWindowCreated, INFINITE );
+
+            // Alright. We should be signaling the thread again once the window object is fully created.
+            CloseHandle( info.evtWindowCreated );
+
+            // We need to make windows thread-safe. :)
+            this->wndPropertyLock = CreateReadWriteLock( engineInterface );
+
+            // Register our window.
+            {
+                scoped_rwlock_writer <rwlock> sysLock( windowSys->windowingLock );
+
+                LIST_INSERT( windowSys->windowList.root, node );
+            }
+        }
+
+        inline void KickOffMessagingThread( void )
+        {
+            // Notify the thread that it can process messages for real.
+            this->isFullyConstructed = true;
         }
 
         inline Win32Window( const Win32Window& right ) : Window( right )
         {
             throw RwException( "cannot clone win32 windows, yet" );
-
-            this->windowSys = right.windowSys;
-
-            LIST_INSERT( this->windowSys->windowList.root, node );
         }
 
         inline ~Win32Window( void )
         {
+            this->isAlive = false;
+
+            // Have to ping the window for destruction.
+            PostMessageW( this->windowHandle, WM_QUIT, 0, 0 );
+
+            Interface *engineInterface = this->engineInterface;
+
+            // We must wait until our thread has finished.
+            CloseThread( engineInterface, this->windowMessageThread );
+
             // Remove us from the list of actively managed windows.
-            LIST_REMOVE( node );
+            {
+                scoped_rwlock_writer <rwlock> lock( this->windowSys->windowingLock );
 
-            // Remove our userdata pointer.
-            SetWindowLongPtr( this->windowHandle, GWLP_USERDATA, NULL );
+                LIST_REMOVE( node );
+            }
 
-            // Destroy our window.
-            DestroyWindow( this->windowHandle );
+            // Delete the window property lock.
+            if ( rwlock *lock = this->wndPropertyLock )
+            {
+                CloseReadWriteLock( engineInterface, lock );
+            }
         }
 
         static LRESULT CALLBACK _rwwindow_message_handler_win32( HWND wndHandle, UINT uMsg, WPARAM wParam, LPARAM lParam )
         {
+            // This function must be called from one thread only!
+
             Win32Window *wndClass = (Win32Window*)GetWindowLongPtr( wndHandle, GWLP_USERDATA );
 
             if ( wndClass )
             {
-                AcquireObject( wndClass );
+                // We can only process messages if we are not destroying ourselves.
+                bool isAlive = wndClass->isAlive;
 
-                bool hasHandled = false;
-
-                switch( uMsg )
+                if ( isAlive )
                 {
-                case WM_SIZE:
+                    AcquireObject( wndClass );
+
+                    bool hasHandled = false;
+
+                    switch( uMsg )
                     {
-                        // Update our logical client area.
-                        RECT clientRect;
-
-                        BOOL gotClientRect = GetClientRect( wndHandle, &clientRect );
-
-                        if ( gotClientRect )
+                    case WM_SIZE:
                         {
-                            wndClass->clientWidth = ( clientRect.right - clientRect.left );
-                            wndClass->clientHeight = ( clientRect.bottom - clientRect.top );
+                            scoped_rwlock_writer <rwlock> wndLock( wndClass->wndPropertyLock );
+
+                            // Update our logical client area.
+                            RECT clientRect;
+
+                            BOOL gotClientRect = GetClientRect( wndHandle, &clientRect );
+
+                            if ( gotClientRect )
+                            {
+                                wndClass->clientWidth = ( clientRect.right - clientRect.left );
+                                wndClass->clientHeight = ( clientRect.bottom - clientRect.top );
+                            }
                         }
+
+                        // Tell the system that this window resized.
+                        TriggerEvent( wndClass, WINDOW_RESIZE, NULL );
+
+                        hasHandled = true;
+                        break;
+                    case WM_CLOSE:
+                        // We call an event.
+                        TriggerEvent( wndClass, WINDOW_CLOSING, NULL );
+                
+                        hasHandled = true;
+                        break;
+                    case WM_QUIT:
+                        // We received a message for immediate termination.
+                        // The application layer should get to the exit ASAP!
+                        TriggerEvent( wndClass, WINDOW_QUIT, NULL );
+
+                        hasHandled = true;
+                        break;
                     }
 
-                    // Tell the system that this window resized.
-                    TriggerEvent( wndClass, WINDOW_RESIZE, NULL );
+                    ReleaseObject( wndClass );
 
-                    hasHandled = true;
-                    break;
-                case WM_CLOSE:
-                    // We call an event.
-                    TriggerEvent( wndClass, WINDOW_CLOSING, NULL );
-                
-                    hasHandled = true;
-                    break;
-                case WM_QUIT:
-                    // We received a message for immediate termination.
-                    // The application layer should get to the exit ASAP!
-                    TriggerEvent( wndClass, WINDOW_QUIT, NULL );
-
-                    hasHandled = true;
-                    break;
-                }
-
-                ReleaseObject( wndClass );
-
-                if ( hasHandled )
-                {
-                    return 0;
+                    if ( hasHandled )
+                    {
+                        return 0;
+                    }
                 }
             }
 
@@ -188,13 +294,20 @@ struct windowingSystemWin32
 
         windowingSystemWin32 *windowSys;
 
+        bool isAlive;
+        bool isFullyConstructed;
+
         HWND windowHandle;
         DWORD dwStyle;
+
+        thread_t windowMessageThread;
+
+        rwlock *wndPropertyLock;
 
         RwListEntry <Win32Window> node;
     };
 
-    inline void Initialize( Interface *engineInterface )
+    inline void Initialize( EngineInterface *engineInterface )
     {
         // Register the windowing system class.
 	    _windowClass = { 0 };
@@ -217,10 +330,13 @@ struct windowingSystemWin32
             engineInterface->typeSystem.SetTypeInfoExclusive( windowTypeInfo, true );
         }
 
+        // We need a windowing system lock to synchronize creation of windows.
+        this->windowingLock = CreateReadWriteLock( engineInterface );
+
         LIST_CLEAR( windowList.root );
     }
 
-    inline void Shutdown( Interface *engineInterface )
+    inline void Shutdown( EngineInterface *engineInterface )
     {
         // Destroy all yet active windows.
         // This will force destruction no matter what.
@@ -230,6 +346,12 @@ struct windowingSystemWin32
             Win32Window *wndHandle = LIST_GETITEM( Win32Window, windowList.root.next, node );
 
             engineInterface->DeleteRwObject( wndHandle );
+        }
+
+        // Close the windowing system lock.
+        if ( rwlock *lock = this->windowingLock )
+        {
+            CloseReadWriteLock( engineInterface, lock );
         }
 
         if ( RwTypeSystem::typeInfoBase *windowTypeInfo = this->windowTypeInfo )
@@ -243,7 +365,8 @@ struct windowingSystemWin32
 
     inline void Update( void )
     {
-        // We fetch messages of all active windows.
+        // We fetch messages for whatever.
+        // I guess we want to be a good win32 application :-)
         MSG msg;
 
         unsigned int msgFetched = 0;
@@ -270,13 +393,17 @@ struct windowingSystemWin32
 
     // List of all registered windows.
     RwList <Win32Window> windowList;
+
+    rwlock *windowingLock;
 };
 
 PluginDependantStructRegister <windowingSystemWin32, RwInterfaceFactory_t> windowingSystemWin32::win32Windowing;
 
 // General window routines.
-Window* MakeWindow( Interface *engineInterface, uint32 clientWidth, uint32 clientHeight )
+Window* MakeWindow( Interface *intf, uint32 clientWidth, uint32 clientHeight )
 {
+    EngineInterface *engineInterface = (EngineInterface*)intf;
+
     Window *handle = NULL;
 
     windowingSystemWin32 *winSys = windowingSystemWin32::GetWindowingSystem( engineInterface );
@@ -292,6 +419,10 @@ Window* MakeWindow( Interface *engineInterface, uint32 clientWidth, uint32 clien
         if ( winObj )
         {
             windowingSystemWin32::Win32Window *win32Wnd = (windowingSystemWin32::Win32Window*)RwTypeSystem::GetObjectFromTypeStruct( winObj );
+
+            // The window is fully created.
+            // Signal the messaging thread.
+            win32Wnd->KickOffMessagingThread();
 
             handle = win32Wnd;
         }
@@ -319,6 +450,8 @@ bool Window::IsVisible( void ) const
 void Window::SetClientSize( uint32 clientWidth, uint32 clientHeight )
 {
     windowingSystemWin32::Win32Window *window = (windowingSystemWin32::Win32Window*)this;
+
+    scoped_rwlock_writer <rwlock> wndLock( window->wndPropertyLock );
 
     // Transform it into a client rect.
     RECT wndRect = { 0, 0, clientWidth, clientHeight };

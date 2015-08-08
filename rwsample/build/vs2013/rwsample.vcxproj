@@ -40,13 +40,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v120</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v120</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -70,13 +70,23 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(ProjectDir)..\..\bin\</OutDir>
-    <IntDir>$(ProjectDir)..\..\obj\win32_$(Configuration)_2013\</IntDir>
+    <IntDir>$(ProjectDir)..\..\obj\$(Platform)_$(Configuration)_2013\</IntDir>
     <TargetName>rwsample_d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(ProjectDir)..\..\bin\</OutDir>
-    <IntDir>$(ProjectDir)..\..\obj\win32_$(Configuration)_2013\</IntDir>
+    <IntDir>$(ProjectDir)..\..\obj\$(Platform)_$(Configuration)_2013\</IntDir>
     <TargetName>rwsample</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(ProjectDir)..\..\bin\</OutDir>
+    <IntDir>$(ProjectDir)..\..\obj\$(Platform)_$(Configuration)_2013\</IntDir>
+    <TargetName>rwsample_d_x64</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <TargetName>rwsample_x64</TargetName>
+    <IntDir>$(ProjectDir)..\..\obj\$(Platform)_$(Configuration)_2013\</IntDir>
+    <OutDir>$(ProjectDir)..\..\bin\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

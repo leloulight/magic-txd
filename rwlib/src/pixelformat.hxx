@@ -987,9 +987,9 @@ inline bool doesPixelDataNeedConversion(
     // Then there is the possibility that the buffer has expanded, for any mipmap inside of pixelData.
     // A conversion will properly fix that.
     {
-        unsigned int numberOfMipmaps = pixelData.mipmaps.size();
+        size_t numberOfMipmaps = pixelData.mipmaps.size();
 
-        for ( unsigned int n = 0; n < numberOfMipmaps; n++ )
+        for ( size_t n = 0; n < numberOfMipmaps; n++ )
         {
             const pixelDataTraversal::mipmapResource& mipLayer = pixelData.mipmaps[ n ];
 

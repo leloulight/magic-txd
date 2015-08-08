@@ -486,7 +486,7 @@ struct pngImagingExtension : public imagingFormatExtension
 
                         assert( rowLength == dstRowSize );
 
-                        size_t texelBufferSize = ( rowLength * height );
+                        uint32 texelBufferSize = (uint32)( rowLength * height );
 
                         // Allocate a pixel buffer. We may want to reuse this buffer directly if we can.
                         void *texelBuffer = engineInterface->PixelAllocate( texelBufferSize );

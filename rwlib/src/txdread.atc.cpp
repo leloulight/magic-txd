@@ -317,7 +317,7 @@ inline void DecompressATCMipmap(
 
     // Put the texels into a format we want.
     void *dstTexels = dstTexture.pData;
-    size_t dstDataSize = dstTexture.dwDataSize;
+    uint32 dstDataSize = dstTexture.dwDataSize;
 
     uint32 atcRowAlignment = getATCToolTextureDataRowAlignment();
 
@@ -388,7 +388,7 @@ void atcNativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineInt
 
     uint32 targetRowAlignment = getATCExportTextureDataRowAlignment();
 
-    uint32 mipmapCount = nativeTex->mipmaps.size();
+    uint32 mipmapCount = (uint32)nativeTex->mipmaps.size();
 
     pixelsOut.mipmaps.resize( mipmapCount );
 
@@ -425,7 +425,7 @@ void atcNativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineInt
         newLayer.mipHeight = layerHeight;
 
         // Decompress now.
-        size_t texDataSize = 0;
+        uint32 texDataSize = 0;
         void *mipTexels = NULL;
         
         DecompressATCMipmap(
@@ -528,7 +528,7 @@ inline void CompressMipmapToATC(
         uint32 compressionBlockCount = ( compressWidth * compressHeight ) / 16;
 
         // Allocate the output buffer.
-        size_t dstDataSize = ( compressionBlockCount * compressionBlockSize );
+        uint32 dstDataSize = ( compressionBlockCount * compressionBlockSize );
 
         void *dstTexels = engineInterface->PixelAllocate( dstDataSize );
 
@@ -648,7 +648,7 @@ void atcNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInter
         uint32 compressionBlockSize = getATCCompressionBlockSize( internalFormat );
 
         // Parse all mipmaps.
-        uint32 mipmapCount = pixelsIn.mipmaps.size();
+        uint32 mipmapCount = (uint32)pixelsIn.mipmaps.size();
 
         nativeTex->mipmaps.resize( mipmapCount );
 
@@ -968,7 +968,7 @@ void atcNativeTextureTypeProvider::GetTextureInfo( Interface *engineInterface, v
 {
     NativeTextureATC *nativeTex = (NativeTextureATC*)objMem;
 
-    uint32 mipmapCount = nativeTex->mipmaps.size();
+    uint32 mipmapCount = (uint32)nativeTex->mipmaps.size();
 
     infoOut.mipmapCount = mipmapCount;
 

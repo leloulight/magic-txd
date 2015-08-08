@@ -28,4 +28,8 @@
 // quality color-mapped images.
 #define RWLIB_INCLUDE_LIBIMAGEQUANT
 
+// Define this if you want to use framework entry points for RenderWare in your project.
+// Those can be used to create managed RenderWare applications.
+#define RWLIB_INCLUDE_FRAMEWORK_ENTRYPOINTS
+
 #endif //_RENDERWARE_CONFIGURATION_

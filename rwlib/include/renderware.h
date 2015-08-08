@@ -12,8 +12,7 @@
 #include <bitset>
 #include <assert.h>
 #include <algorithm>
-
-#include <DynamicTypeSystem.h>
+#include <list>
 
 #ifdef DEBUG
 	#define READ_HEADER(x)\
@@ -26,6 +25,10 @@
 	#define READ_HEADER(x)\
 	header.read(rw);
 #endif
+
+// Include some special vendor libraries.
+#include <core/CFileSystem.common.h>
+#include <sdk/rwlist.hpp>
 
 namespace rw
 {
@@ -58,10 +61,6 @@ public:
         return delete [] memPtr;
     }
 };
-
-// Type system declaration for type abstraction.
-// This is where atomics, frames, geometries register to.
-typedef DynamicTypeSystem <RwMemoryAllocator, Interface> RwTypeSystem;
 
 // Common types used in this library.
 // These are defined against MSVC++ 32bit.
@@ -415,6 +414,7 @@ struct RwException
 #include "renderware.file.h"
 #include "renderware.events.h"
 #include "renderware.windowing.h"
+#include "renderware.threading.h"
 
 // Warning manager interface.
 struct WarningManagerInterface abstract
@@ -444,55 +444,22 @@ enum eDXTCompressionMethod
     DXTRUNTIME_SQUISH       // prefer squish
 };
 
-enum eSerializationTypeMode
-{
-    RWSERIALIZE_INHERIT,
-    RWSERIALIZE_ISOF
-};
-
-// Main chunk serialization interface.
-// Allows you to store data in the RenderWare ecosystem, be officially registering it.
-struct serializationProvider abstract
-{
-    inline serializationProvider( void )
-    {
-        this->managerData.isRegistered = false;
-    }
-
-    inline ~serializationProvider( void )
-    {
-        if ( this->managerData.isRegistered )
-        {
-            LIST_REMOVE( this->managerData.managerNode );
-        }
-    }
-
-    // This interface is used to save the contents of the RenderWare engine to disk.
-    virtual void            Serialize( Interface *engineInterface, BlockProvider& outputProvider, RwObject *objectToSerialize ) const = 0;
-    virtual void            Deserialize( Interface *engineInterface, BlockProvider& inputProvider, RwObject *objectToDeserialize ) const = 0;
-
-    // Do not access this data. It is off-limits for you.
-    struct
-    {
-        RwListEntry <serializationProvider> managerNode;
-
-        uint32 chunkID;
-        eSerializationTypeMode mode;
-        RwTypeSystem::typeInfoBase *rwType;
-
-        bool isRegistered;
-    } managerData;
-};
-
 struct Interface abstract
 {
 protected:
-    Interface( void );
-    ~Interface( void );
+    Interface( void )
+    {
+        return;
+    }
+
+    ~Interface( void )
+    {
+        return;
+    }
 
 public:
     void                SetVersion              ( LibraryVersion version );
-    LibraryVersion      GetVersion              ( void ) const     { return this->version; }
+    LibraryVersion      GetVersion              ( void ) const;
 
     // Give details about the running application to RenderWare.
     void                SetApplicationInfo      ( const softwareMetaInfo& metaInfo );
@@ -507,9 +474,6 @@ public:
     void                DeleteStream            ( Stream *theStream );
 
     // Serialization interface.
-    bool                RegisterSerialization   ( uint32 chunkID, RwTypeSystem::typeInfoBase *rwType, serializationProvider *serializer, eSerializationTypeMode mode );
-    bool                UnregisterSerialization ( uint32 chunkID, RwTypeSystem::typeInfoBase *rtType, serializationProvider *serializer );
-
     void                SerializeBlock          ( RwObject *objectToStore, BlockProvider& outputProvider );
     void                Serialize               ( RwObject *objectToStore, Stream *outputStream );
     RwObject*           DeserializeBlock        ( BlockProvider& inputProvider );
@@ -518,7 +482,7 @@ public:
     // RwObject general API.
     RwObject*           ConstructRwObject       ( const char *typeName );       // construct any registered RwObject class
     RwObject*           CloneRwObject           ( const RwObject *srcObj );     // creates a new copy of an object
-    void                DeleteRwObject          ( RwObject *obj );              // force kills an object
+    void                DeleteRwObject          ( RwObject *obj );              // force kills an object (or decrements ref count)
 
     typedef std::vector <std::string> rwobjTypeNameList_t;
 
@@ -559,44 +523,6 @@ public:
 
     void                SetIgnoreSerializationBlockRegions  ( bool doIgnore );
     bool                GetIgnoreSerializationBlockRegions  ( void ) const;
-
-    // DIRECT ACCESS TO THE FOLLING MEMBERS IF OFF-LIMITS TO APPLICATIONS!
-
-    LibraryVersion version;     // version of the output files (III, VC, SA, Manhunt, ...)
-
-    // General type system.
-    RwMemoryAllocator memAlloc;
-
-    RwTypeSystem typeSystem;
-
-    // Types that should be registered by all RenderWare implementations.
-    // These can be NULL, tho.
-    RwTypeSystem::typeInfoBase *streamTypeInfo;
-    RwTypeSystem::typeInfoBase *rasterTypeInfo;
-    RwTypeSystem::typeInfoBase *rwobjTypeInfo;
-    RwTypeSystem::typeInfoBase *textureTypeInfo;
-
-    FileInterface *customFileInterface;
-
-    WarningManagerInterface *warningManager;
-
-    ePaletteRuntimeType palRuntimeType;
-    eDXTCompressionMethod dxtRuntimeType;
-    
-    int warningLevel;
-    bool ignoreSecureWarnings;
-
-    bool fixIncompatibleRasters;
-    bool dxtPackedDecompression;
-
-    bool ignoreSerializationBlockRegions;
-
-    // Information about the running application.
-    std::string applicationName;
-    std::string applicationVersion;
-    std::string applicationDescription;
-
-    bool enableMetaDataTagging;
 };
 
 // To create a RenderWare interface, you have to go through a constructor.

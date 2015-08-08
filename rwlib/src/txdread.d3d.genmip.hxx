@@ -73,7 +73,7 @@ inline void copyMipmapLayers( Interface *engineInterface, const containerType& s
 template <typename containerType>
 inline void deleteMipmapLayers( Interface *engineInterface, containerType& mipmaps )
 {
-    uint32 mipmapCount = mipmaps.size();
+    uint32 mipmapCount = (uint32)mipmaps.size();
 
     for (uint32 i = 0; i < mipmapCount; i++)
     {

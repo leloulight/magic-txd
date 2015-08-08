@@ -17,3 +17,17 @@ int main(int argc, char *argv[])
 
     return a.exec();
 }
+
+// Stubs.
+namespace rw
+{
+    LibraryVersion app_version()
+    {
+        return rw::KnownVersions::getGameVersion( rw::KnownVersions::SA );
+    }
+
+    int32 rwmain( Interface *engineInterface )
+    {
+        return -1;
+    }
+};

@@ -140,7 +140,7 @@ struct rwInterfaceExtensionPlugin
             RwTypeSystem::INVALID_PLUGIN_OFFSET;
     }
 
-    inline void Initialize( Interface *engineInterface )
+    inline void Initialize( EngineInterface *engineInterface )
     {
         RwTypeSystem::typeInfoBase *rwobjTypeInfo = engineInterface->rwobjTypeInfo;
 
@@ -152,10 +152,10 @@ struct rwInterfaceExtensionPlugin
             engineInterface->typeSystem.RegisterDependantStructPlugin <rwObjExtensionStore> ( rwobjTypeInfo, RwTypeSystem::ANONYMOUS_PLUGIN_ID );
     }
 
-    inline void Shutdown( Interface *engineInterface )
+    inline void Shutdown( EngineInterface *engineInterface )
     {
         // Unregister our plugin again.
-        uint32 pluginOff = this->rwobjExtensionStorePluginOffset;
+        RwTypeSystem::pluginOffset_t pluginOff = this->rwobjExtensionStorePluginOffset;
 
         if ( RwTypeSystem::IsOffsetValid( pluginOff ) )
         {
@@ -163,11 +163,11 @@ struct rwInterfaceExtensionPlugin
         }
     }
 
-    inline rwObjExtensionStore* GetObjectExtensionStore( Interface *engineInterface, RwObject *rwobj )
+    inline rwObjExtensionStore* GetObjectExtensionStore( EngineInterface *engineInterface, RwObject *rwobj )
     {
         rwObjExtensionStore *theStore = NULL;
 
-        uint32 pluginOff = this->rwobjExtensionStorePluginOffset;
+        RwTypeSystem::pluginOffset_t pluginOff = this->rwobjExtensionStorePluginOffset;
 
         if ( RwTypeSystem::IsOffsetValid( pluginOff ) )
         {
@@ -186,11 +186,11 @@ struct rwInterfaceExtensionPlugin
         return theStore;
     }
 
-    inline const rwObjExtensionStore* GetConstObjectExtensionStore( Interface *engineInterface, const RwObject *rwobj )
+    inline const rwObjExtensionStore* GetConstObjectExtensionStore( EngineInterface *engineInterface, const RwObject *rwobj )
     {
         const rwObjExtensionStore *theStore = NULL;
 
-        uint32 pluginOff = this->rwobjExtensionStorePluginOffset;
+        RwTypeSystem::pluginOffset_t pluginOff = this->rwobjExtensionStorePluginOffset;
 
         if ( RwTypeSystem::IsOffsetValid( pluginOff ) )
         {
@@ -214,6 +214,8 @@ static PluginDependantStructRegister <rwInterfaceExtensionPlugin, RwInterfaceFac
 
 void Interface::SerializeExtensions( const RwObject *rwObj, BlockProvider& outputProvider )
 {
+    EngineInterface *engineInterface = (EngineInterface*)this;
+    
     BlockProvider extensionBlock( &outputProvider );
 
     extensionBlock.EnterContext();
@@ -222,11 +224,11 @@ void Interface::SerializeExtensions( const RwObject *rwObj, BlockProvider& outpu
 
     // Put all the extension data to the stream.
     {
-        rwInterfaceExtensionPlugin *rwintExtPlugin = rwExtensionsRegister.GetPluginStruct( (EngineInterface*)this );
+        rwInterfaceExtensionPlugin *rwintExtPlugin = rwExtensionsRegister.GetPluginStruct( engineInterface );
 
         if ( rwintExtPlugin )
         {
-            const rwObjExtensionStore *extStore = rwintExtPlugin->GetConstObjectExtensionStore( this, rwObj );
+            const rwObjExtensionStore *extStore = rwintExtPlugin->GetConstObjectExtensionStore( engineInterface, rwObj );
 
             if ( extStore )
             {
@@ -241,14 +243,16 @@ void Interface::SerializeExtensions( const RwObject *rwObj, BlockProvider& outpu
 
 void Interface::DeserializeExtensions( RwObject *rwObj, BlockProvider& inputProvider )
 {
+    EngineInterface *engineInterface = (EngineInterface*)this;
+
     // Attempt to fetch the object's extension store.
     rwObjExtensionStore *extStore = NULL;
     {
-        rwInterfaceExtensionPlugin *rwintExtPlugin = rwExtensionsRegister.GetPluginStruct( (EngineInterface*)this );
+        rwInterfaceExtensionPlugin *rwintExtPlugin = rwExtensionsRegister.GetPluginStruct( engineInterface );
 
         if ( rwintExtPlugin )
         {
-            extStore = rwintExtPlugin->GetObjectExtensionStore( this, rwObj );
+            extStore = rwintExtPlugin->GetObjectExtensionStore( engineInterface, rwObj );
         }
     }
 

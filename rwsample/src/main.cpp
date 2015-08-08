@@ -20,6 +20,12 @@ namespace rw
         obj->engineInterface->DeleteRwObject( obj );
     }
 
+    static void test_thread_runtime( thread_t threadHandle, Interface *engineInterface, void *ud )
+    {
+        // OK.
+        __noop();
+    }
+
     int32 rwmain( Interface *engineInterface )
     {
         // Give information about the running application to the runtime.

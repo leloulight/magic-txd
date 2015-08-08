@@ -1,33 +1,35 @@
+#include "rwserialize.hxx"
+
 namespace rw
 {
 
 struct texDictionaryStreamPlugin : public serializationProvider
 {
-    inline void Initialize( Interface *engineInterface )
+    inline void Initialize( EngineInterface *engineInterface )
     {
         txdTypeInfo = engineInterface->typeSystem.RegisterStructType <TexDictionary> ( "texture_dictionary", engineInterface->rwobjTypeInfo );
 
         if ( txdTypeInfo )
         {
             // Register ourselves.
-            engineInterface->RegisterSerialization( CHUNK_TEXDICTIONARY, txdTypeInfo, this, RWSERIALIZE_ISOF );
+            RegisterSerialization( engineInterface, CHUNK_TEXDICTIONARY, txdTypeInfo, this, RWSERIALIZE_ISOF );
         }
     }
 
-    inline void Shutdown( Interface *engineInterface )
+    inline void Shutdown( EngineInterface *engineInterface )
     {
         if ( RwTypeSystem::typeInfoBase *txdTypeInfo = this->txdTypeInfo )
         {
             // Unregister us again.
-            engineInterface->UnregisterSerialization( CHUNK_TEXDICTIONARY, txdTypeInfo, this );
+            UnregisterSerialization( engineInterface, CHUNK_TEXDICTIONARY, txdTypeInfo, this );
 
             engineInterface->typeSystem.DeleteType( txdTypeInfo );
         }
     }
 
     // Creation functions.
-    TexDictionary*  CreateTexDictionary( Interface *engineInterface ) const;
-    TexDictionary*  ToTexDictionary( Interface *engineInterface, RwObject *rwObj );
+    TexDictionary*  CreateTexDictionary( EngineInterface *engineInterface ) const;
+    TexDictionary*  ToTexDictionary( EngineInterface *engineInterface, RwObject *rwObj );
 
     // Serialization functions.
     void        Serialize( Interface *engineInterface, BlockProvider& outputProvider, RwObject *objectToSerialize ) const;

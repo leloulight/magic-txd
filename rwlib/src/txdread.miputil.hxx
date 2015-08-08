@@ -172,7 +172,7 @@ inline bool virtualAddMipmapLayer(
     texNativeTypeProvider::acquireFeedback_t& feedbackOut
 )
 {
-    uint32 newMipIndex = mipmaps.size();
+    uint32 newMipIndex = (uint32)mipmaps.size();
 
     uint32 layerWidth, layerHeight;
 
@@ -241,7 +241,7 @@ inline bool virtualAddMipmapLayer(
 template <typename mipDataType, typename mipListType>
 inline void virtualClearMipmaps( Interface *engineInterface, mipListType& mipmaps )
 {
-    uint32 mipmapCount = mipmaps.size();
+    uint32 mipmapCount = (uint32)mipmaps.size();
 
     if ( mipmapCount > 1 )
     {

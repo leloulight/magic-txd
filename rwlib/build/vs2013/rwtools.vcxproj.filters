@@ -132,6 +132,18 @@
     <ClInclude Include="..\..\include\renderware.events.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\renderware.threading.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\txdread.nativetex.hxx">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\rwserialize.hxx">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\rwinterface.hxx">
+      <Filter>Include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\dffread.cpp" />
@@ -186,6 +198,7 @@
     <ClCompile Include="..\..\src\txdwrite.gc.cpp" />
     <ClCompile Include="..\..\src\rwwindowing.cpp" />
     <ClCompile Include="..\..\src\rwevents.cpp" />
+    <ClCompile Include="..\..\src\rwthreading.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="rwtools.natvis">

@@ -504,7 +504,7 @@ uint32 NativeTexturePS2::GSTexture::writeGIFPacket(
             regListTag.nreg = 1;
             regListTag.setRegisterID(0, 0xE);
 
-            uint32 numRegs = this->storedRegs.size();
+            size_t numRegs = this->storedRegs.size();
 
             regListTag.nloop = numRegs;
 
@@ -516,7 +516,7 @@ uint32 NativeTexturePS2::GSTexture::writeGIFPacket(
 
             writeCount += sizeof(regListTag_ser);
 
-            for ( uint32 n = 0; n < numRegs; n++ )
+            for ( size_t n = 0; n < numRegs; n++ )
             {
                 const GSRegInfo& regInfo = this->storedRegs[ n ];
 
@@ -533,7 +533,7 @@ uint32 NativeTexturePS2::GSTexture::writeGIFPacket(
                 outputProvider.writeUInt64( regID.toNumber() );
             }
 
-            writeCount += numRegs * ( sizeof(unsigned long long) * 2 );
+            writeCount += (uint32)( numRegs * ( sizeof(unsigned long long) * 2 ) );
         }
 
         // Now write the image data header.
@@ -609,7 +609,7 @@ void NativeTexturePS2::UpdateStructure( Interface *engineInterface )
     LibraryVersion version = this->texVersion;
 
     // Check whether we have to update the texture contents.
-    uint32 mipmapCount = this->mipmaps.size();
+    size_t mipmapCount = this->mipmaps.size();
 
     eRasterFormat rasterFormat = this->rasterFormat;
     ePaletteType paletteType = this->paletteType;
@@ -641,7 +641,7 @@ void NativeTexturePS2::UpdateStructure( Interface *engineInterface )
 
             uint32 currentEncodingDepth = getFormatEncodingDepth( currentMipmapEncodingType );
 
-            for ( uint32 n = 0; n < mipmapCount; n++ )
+            for ( size_t n = 0; n < mipmapCount; n++ )
             {
                 NativeTexturePS2::GSMipmap& mipLayer = this->mipmaps[ n ];
 
@@ -771,7 +771,7 @@ void ps2NativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, Pl
     writeStringSection(engineInterface, outputProvider, theTexture->GetMaskName().c_str(), theTexture->GetMaskName().size());
 
     // Prepare the image data (if not already prepared).
-    uint32 mipmapCount = platformTex->mipmaps.size();
+    size_t mipmapCount = platformTex->mipmaps.size();
 
     if ( mipmapCount == 0 )
     {
@@ -831,8 +831,8 @@ void ps2NativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, Pl
             }
 
             // Block sizes.
-            size_t justTextureSize = 0;
-            size_t justPaletteSize = 0;
+            uint32 justTextureSize = 0;
+            uint32 justPaletteSize = 0;
 
             // Write the texture meta information.
             const size_t maxMipmaps = 7;

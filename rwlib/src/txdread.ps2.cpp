@@ -31,13 +31,13 @@ inline void verifyTexture( const NativeTexturePS2::GSTexture& gsTex, bool hasHea
     if ( hasHeaders )
     {
         // Debug register contents (only the important ones).
-        uint32 regCount = gsTex.storedRegs.size();
+        size_t regCount = gsTex.storedRegs.size();
 
         bool hasTRXPOS = false;
         bool hasTRXREG = false;
         bool hasTRXDIR = false;
 
-        for ( uint32 n = 0; n < regCount; n++ )
+        for ( size_t n = 0; n < regCount; n++ )
         {
             const NativeTexturePS2::GSTexture::GSRegInfo& regInfo = gsTex.storedRegs[ n ];
 
@@ -824,9 +824,9 @@ void ps2NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture, 
                             {
                                 bool hasValidTransmissionRects = true;
 
-                                uint32 mipmapCount = platformTex->mipmaps.size();
+                                size_t mipmapCount = platformTex->mipmaps.size();
 
-                                for ( uint32 n = 0; n < mipmapCount; n++ )
+                                for ( size_t n = 0; n < mipmapCount; n++ )
                                 {
                                     const ps2MipmapTransmissionData& srcTransData = _origMipmapTransData[ n ];
                                     const ps2MipmapTransmissionData& dstTransData = mipmapTransData[ n ];
@@ -856,7 +856,7 @@ void ps2NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture, 
                             }
 
                             // Fix filtering mode.
-                            fixFilteringMode( *theTexture, platformTex->mipmaps.size() );
+                            fixFilteringMode( *theTexture, (uint32)platformTex->mipmaps.size() );
                         }
                         else
                         {
@@ -1418,7 +1418,7 @@ void ps2NativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineInt
     // Cast to our native platform texture.
     NativeTexturePS2 *platformTex = (NativeTexturePS2*)objMem;
 
-    uint32 mipmapCount = platformTex->mipmaps.size();
+    size_t mipmapCount = platformTex->mipmaps.size();
 
     eRasterFormat rasterFormat = platformTex->rasterFormat;
     ePaletteType paletteType = platformTex->paletteType;
@@ -1471,7 +1471,7 @@ void ps2NativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineInt
 
     pixelsOut.mipmaps.resize( mipmapCount );
 
-    for (uint32 j = 0; j < mipmapCount; j++)
+    for (size_t j = 0; j < mipmapCount; j++)
     {
         NativeTexturePS2::GSMipmap& gsTex = platformTex->mipmaps[ j ];
 
@@ -1811,7 +1811,7 @@ void ps2NativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInter
     assert( pixelsIn.compressionType == RWCOMPRESS_NONE );
 
     // The maximum amount of mipmaps supported by PS2 textures.
-    const uint32 maxMipmaps = 7;
+    const size_t maxMipmaps = 7;
 
     {
         // The PlayStation 2 does NOT support all raster formats.
@@ -1895,13 +1895,13 @@ void ps2NativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInter
 
         assert(swizzleMipmapRequiredEncoding != FORMAT_UNKNOWN);
 
-        uint32 mipmapCount = pixelsIn.mipmaps.size();
+        size_t mipmapCount = pixelsIn.mipmaps.size();
         {
-            uint32 mipProcessCount = std::min( maxMipmaps, mipmapCount );
+            size_t mipProcessCount = std::min( maxMipmaps, mipmapCount );
 
             ps2tex->mipmaps.resize( mipProcessCount );
 
-            for ( uint32 n = 0; n < mipProcessCount; n++ )
+            for ( size_t n = 0; n < mipProcessCount; n++ )
             {
                 // Process every mipmap individually.
                 NativeTexturePS2::GSMipmap& newMipmap = ps2tex->mipmaps[ n ];
@@ -2017,10 +2017,10 @@ void ps2NativeTextureTypeProvider::UnsetPixelDataFromTexture( Interface *engineI
 
     if ( deallocate )
     {
-        uint32 mipmapCount = nativeTex->mipmaps.size();
+        size_t mipmapCount = nativeTex->mipmaps.size();
 
         // Free all mipmaps.
-        for ( uint32 n = 0; n < mipmapCount; n++ )
+        for ( size_t n = 0; n < mipmapCount; n++ )
         {
             NativeTexturePS2::GSMipmap& mipLayer = nativeTex->mipmaps[ n ];
 
@@ -2322,9 +2322,9 @@ void ps2NativeTextureTypeProvider::GetTextureInfo( Interface *engineInterface, v
 {
     NativeTexturePS2 *nativeTex = (NativeTexturePS2*)objMem;
 
-    uint32 mipmapCount = nativeTex->mipmaps.size();
+    size_t mipmapCount = nativeTex->mipmaps.size();
 
-    infoOut.mipmapCount = mipmapCount;
+    infoOut.mipmapCount = (uint32)mipmapCount;
 
     uint32 baseWidth = 0;
     uint32 baseHeight = 0;

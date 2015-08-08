@@ -471,7 +471,7 @@ void d3d9NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
                             // If we have a format plugin, make sure we match its size.
                             if ( usedFormatHandler != NULL )
                             {
-                                uint32 shouldBeSize = usedFormatHandler->GetFormatTextureDataSize( texWidth, texHeight );
+                                size_t shouldBeSize = usedFormatHandler->GetFormatTextureDataSize( texWidth, texHeight );
 
                                 if ( texDataSize != shouldBeSize )
                                 {

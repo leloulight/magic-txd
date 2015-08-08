@@ -99,7 +99,7 @@ void d3d8NativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, P
             writeStringIntoBufferSafe( engineInterface, theTexture->GetMaskName(), metaHeader.maskName, sizeof( metaHeader.maskName ), theTexture->GetName(), "mask name" );
 
             // Construct raster flags.
-            uint32 mipmapCount = platformTex->mipmaps.size();
+            size_t mipmapCount = platformTex->mipmaps.size();
 
             metaHeader.rasterFormat = generateRasterFormatFlags( platformTex->rasterFormat, paletteType, mipmapCount > 1, platformTex->autoMipmaps );
 
@@ -107,7 +107,7 @@ void d3d8NativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, P
             metaHeader.width = platformTex->mipmaps[ 0 ].layerWidth;
             metaHeader.height = platformTex->mipmaps[ 0 ].layerHeight;
             metaHeader.depth = platformTex->depth;
-            metaHeader.mipmapCount = mipmapCount;
+            metaHeader.mipmapCount = (uint8)mipmapCount;
             metaHeader.rasterType = platformTex->rasterType;
             metaHeader.pad1 = 0;
             metaHeader.dxtCompression = compressionType;
@@ -133,7 +133,7 @@ void d3d8NativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, P
 		    }
 
 		    /* Texels */
-		    for (uint32 i = 0; i < mipmapCount; i++)
+		    for (size_t i = 0; i < mipmapCount; i++)
             {
                 const NativeTextureD3D8::mipmapLayer& mipLayer = platformTex->mipmaps[ i ];
 
@@ -228,7 +228,7 @@ void d3d8NativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineIn
     pixelsOut.rasterType = platformTex->rasterType;
 
     // Now, the texels.
-    uint32 mipmapCount = platformTex->mipmaps.size();
+    size_t mipmapCount = platformTex->mipmaps.size();
 
     pixelsOut.mipmaps.resize( mipmapCount );
 
@@ -472,7 +472,7 @@ void d3d8NativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
     nativeTex->colorOrdering = dstColorOrder;
     nativeTex->hasAlpha = hasAlpha;
 
-    uint32 mipmapCount = pixelsIn.mipmaps.size();
+    size_t mipmapCount = pixelsIn.mipmaps.size();
 
     // Properly set the automipmaps field.
     bool autoMipmaps = pixelsIn.autoMipmaps;
@@ -490,7 +490,7 @@ void d3d8NativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
     // Apply the pixel data.
     nativeTex->mipmaps.resize( mipmapCount );
 
-    for ( uint32 n = 0; n < mipmapCount; n++ )
+    for ( size_t n = 0; n < mipmapCount; n++ )
     {
         const pixelDataTraversal::mipmapResource& srcLayer = pixelsIn.mipmaps[ n ];
 
@@ -718,9 +718,9 @@ void d3d8NativeTextureTypeProvider::GetTextureInfo( Interface *engineInterface, 
 {
     NativeTextureD3D8 *nativeTex = (NativeTextureD3D8*)objMem;
 
-    uint32 mipmapCount = nativeTex->mipmaps.size();
+    size_t mipmapCount = nativeTex->mipmaps.size();
 
-    infoOut.mipmapCount = mipmapCount;
+    infoOut.mipmapCount = (uint32)mipmapCount;
 
     uint32 baseWidth = 0;
     uint32 baseHeight = 0;

@@ -32,16 +32,27 @@ struct eventSystemManager
 
         inline void Initialize( GenericRTTI *rtObj )
         {
+            RwObject *rwObj = (RwObject*)RwTypeSystem::GetObjectFromTypeStruct( rtObj );
+
             // We start out with an empty map of events.
+            this->evtLock = CreateReadWriteLock( rwObj->engineInterface );
         }
 
         inline void Shutdown( GenericRTTI *rtObj )
         {
+            RwObject *rwObj = (RwObject*)RwTypeSystem::GetObjectFromTypeStruct( rtObj );
+
             // Memory is cleared automatically.
+            if ( rwlock *lock = this->evtLock )
+            {
+                CloseReadWriteLock( rwObj->engineInterface, lock );
+            }
         }
 
         inline void RegisterEventHandler( event_t eventID, EventHandler_t handler, void *ud )
         {
+            scoped_rwlock_writer <rwlock> lock( this->evtLock );
+
             eventEntry& info = events[ eventID ];
 
             // Only register if not already registered.
@@ -57,6 +68,8 @@ struct eventSystemManager
 
         inline void UnregisterEventHandler( event_t eventID, EventHandler_t handler )
         {
+            scoped_rwlock_writer <rwlock> lock( this->evtLock );
+
             eventMap_t::iterator eventEntryIter = events.find( eventID );
 
             if ( eventEntryIter == events.end() )
@@ -89,6 +102,8 @@ struct eventSystemManager
 
         inline bool TriggerEvent( RwObject *obj, event_t eventID, void *ud )
         {
+            scoped_rwlock_reader <rwlock> lock( this->evtLock );
+
             eventMap_t::iterator eventEntryIter = events.find( eventID );
 
             if ( eventEntryIter == events.end() )
@@ -114,20 +129,22 @@ struct eventSystemManager
         typedef std::map <event_t, eventEntry> eventMap_t;
 
         eventMap_t events;
+
+        rwlock *evtLock;
     };
 
-    inline void Initialize( Interface *engineInterface )
+    inline void Initialize( EngineInterface *engineInterface )
     {
         this->pluginOffset =
             engineInterface->typeSystem.RegisterDependantStructPlugin <objectEvents> ( engineInterface->rwobjTypeInfo, RwTypeSystem::ANONYMOUS_PLUGIN_ID );
     }
 
-    inline void Shutdown( Interface *engineInterface )
+    inline void Shutdown( EngineInterface *engineInterface )
     {
         engineInterface->typeSystem.UnregisterPlugin( engineInterface->rwobjTypeInfo, this->pluginOffset );
     }
 
-    inline objectEvents* GetPluginStruct( Interface *engineInterface, RwObject *obj )
+    inline objectEvents* GetPluginStruct( EngineInterface *engineInterface, RwObject *obj )
     {
         GenericRTTI *rtObj = RwTypeSystem::GetTypeStructFromObject( obj );
 
@@ -141,9 +158,9 @@ static PluginDependantStructRegister <eventSystemManager, RwInterfaceFactory_t> 
 
 void RegisterEventHandler( RwObject *obj, event_t eventID, EventHandler_t theHandler, void *ud )
 {
-    Interface *engineInterface = obj->engineInterface;
+    EngineInterface *engineInterface = (EngineInterface*)obj->engineInterface;
 
-    if ( eventSystemManager *eventSys = eventSysRegister.GetPluginStruct( (EngineInterface*)engineInterface ) )
+    if ( eventSystemManager *eventSys = eventSysRegister.GetPluginStruct( engineInterface ) )
     {
         // Put the event handler into the holder plugin.
         if ( eventSystemManager::objectEvents *objReg = eventSys->GetPluginStruct( engineInterface, obj ) )
@@ -155,9 +172,9 @@ void RegisterEventHandler( RwObject *obj, event_t eventID, EventHandler_t theHan
 
 void UnregisterEventHandler( RwObject *obj, event_t eventID, EventHandler_t theHandler )
 {
-    Interface *engineInterface = obj->engineInterface;
+    EngineInterface *engineInterface = (EngineInterface*)obj->engineInterface;
 
-    if ( eventSystemManager *eventSys = eventSysRegister.GetPluginStruct( (EngineInterface*)engineInterface ) )
+    if ( eventSystemManager *eventSys = eventSysRegister.GetPluginStruct( engineInterface ) )
     {
         // Put the event handler into the holder plugin.
         if ( eventSystemManager::objectEvents *objReg = eventSys->GetPluginStruct( engineInterface, obj ) )
@@ -174,12 +191,12 @@ bool TriggerEvent( RwObject *obj, event_t eventID, void *ud )
         throw RwException( "failed to get object reference count for event trigger" );
     }
 
-    Interface *engineInterface = obj->engineInterface;
+    EngineInterface *engineInterface = (EngineInterface*)obj->engineInterface;
 
     bool wasHandled = false;
 
     // Trigger all event handlers that count for this eventID.
-    if ( eventSystemManager *eventSys = eventSysRegister.GetPluginStruct( (EngineInterface*)engineInterface ) )
+    if ( eventSystemManager *eventSys = eventSysRegister.GetPluginStruct( engineInterface ) )
     {
         if ( eventSystemManager::objectEvents *objReg = eventSys->GetPluginStruct( engineInterface, obj ) )
         {

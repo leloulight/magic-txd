@@ -73,9 +73,9 @@ void atcNativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, Pl
             writeStringIntoBufferSafe( engineInterface, theTexture->GetName(), metaHeader.name, sizeof( metaHeader.name ), theTexture->GetName(), "name" );
             writeStringIntoBufferSafe( engineInterface, theTexture->GetMaskName(), metaHeader.maskName, sizeof( metaHeader.maskName ), theTexture->GetName(), "mask name" );
 
-            uint32 mipmapCount = platformTex->mipmaps.size();
+            size_t mipmapCount = platformTex->mipmaps.size();
 
-            metaHeader.mipmapCount = mipmapCount;
+            metaHeader.mipmapCount = (uint32)mipmapCount;
             metaHeader.unk1 = platformTex->unk1;
             metaHeader.hasAlpha = platformTex->hasAlpha;
             metaHeader.pad2 = 0;
@@ -88,7 +88,7 @@ void atcNativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, Pl
             // Calculate the image data section size.
             uint32 imageDataSectionSize = 0;
 
-            for ( uint32 n = 0; n < mipmapCount; n++ )
+            for ( size_t n = 0; n < mipmapCount; n++ )
             {
                 uint32 mipDataSize = platformTex->mipmaps[ n ].dataSize;
 
@@ -103,7 +103,7 @@ void atcNativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, Pl
             texNativeImageStruct.write((const char*)&metaHeader, sizeof(metaHeader));
 
             // Write the mipmap data sizes.
-            for ( uint32 n = 0; n < mipmapCount; n++ )
+            for ( size_t n = 0; n < mipmapCount; n++ )
             {
                 uint32 mipDataSize = platformTex->mipmaps[ n ].dataSize;
 
@@ -111,7 +111,7 @@ void atcNativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, Pl
             }
 
             // Write the picture data now.
-            for ( uint32 n = 0; n < mipmapCount; n++ )
+            for ( size_t n = 0; n < mipmapCount; n++ )
             {
                 NativeTextureATC::mipmapLayer& mipLayer = platformTex->mipmaps[ n ];
 

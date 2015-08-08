@@ -13,7 +13,7 @@ uint32 NativeTexturePS2::calculateGPUDataSize(
     uint32 clutBasePointer, uint32 clutMemSize
 ) const
 {
-    uint32 numMipMaps = this->mipmaps.size();
+    size_t numMipMaps = this->mipmaps.size();
 
     if ( numMipMaps == 0 )
         return 0;
@@ -21,7 +21,7 @@ uint32 NativeTexturePS2::calculateGPUDataSize(
     // Calculate the maximum memory offset required.
     uint32 maxMemOffset = 0;
 
-    for ( uint32 n = 0; n < numMipMaps; n++ )
+    for ( size_t n = 0; n < numMipMaps; n++ )
     {
         uint32 thisOffset = ( mipmapBasePointer[n] + mipmapMemorySize[n] );
 
@@ -899,7 +899,7 @@ struct ps2GSMemoryLayoutManager
         eMemoryLayoutType memLayoutType, const memoryLayoutProperties_t& layoutProps,
         uint32 clutWidth, uint32 clutHeight,
         uint32& clutBasePointerOut, uint32& clutMemSize, uint32& clutOffX, uint32& clutOffY, uint32& clutBufferWidthOut,
-        uint32 mipmapCount
+        size_t mipmapCount
     )
     {
         // Get the allocation width of this buffer.
@@ -1139,7 +1139,7 @@ struct singleMemLayoutGSAllocator
 
     inline bool allocateCLUT(
         uint32 encodedWidth, uint32 encodedHeight, uint32& clutBasePointerOut, uint32& clutBufferWidthOut, uint32& clutMemSizeOut, uint32& clutOffXOut, uint32& clutOffYOut,
-        uint32 mipmapCount
+        size_t mipmapCount
     )
     {
         uint32 texelWidth, texelHeight;
@@ -1217,7 +1217,7 @@ bool NativeTexturePS2::allocateTextureMemoryNative(
 
     ps2GSMemoryLayoutManager::getMemoryLayoutProperties(encodedMemLayoutType, encodingMemLayout, encodedLayoutProps);
 
-    uint32 mipmapCount = this->mipmaps.size();
+    size_t mipmapCount = this->mipmaps.size();
 
     // Perform the allocation.
     {
@@ -1227,7 +1227,7 @@ bool NativeTexturePS2::allocateTextureMemoryNative(
         uint32 maxBufferPageWidth = 0;
         uint32 mainTexPageWidth = 0;
 
-        for ( uint32 n = 0; n < mipmapCount; n++ )
+        for ( size_t n = 0; n < mipmapCount; n++ )
         {
             const NativeTexturePS2::GSTexture& gsTex = this->mipmaps[n];
 
@@ -1324,7 +1324,7 @@ bool NativeTexturePS2::allocateTextureMemoryNative(
         }
 
         // Normalize all the remaining fields.
-        for ( uint32 n = mipmapCount; n < maxMipmaps; n++ )
+        for ( size_t n = mipmapCount; n < maxMipmaps; n++ )
         {
             mipmapBasePointer[ n ] = 0;
             mipmapMemorySize[ n ] = 0;
@@ -1448,10 +1448,10 @@ bool NativeTexturePS2::allocateTextureMemory(
     if ( success )
     {
         // Convert the transition datas to pixel offsets in the encoded format.
-        uint32 mipmapCount = this->mipmaps.size();
+        size_t mipmapCount = this->mipmaps.size();
         {
             // First mipmaps.
-            for ( uint32 n = 0; n < mipmapCount; n++ )
+            for ( size_t n = 0; n < mipmapCount; n++ )
             {
                 ps2MipmapTransmissionData& transData = mipmapTransData[ n ];
 
@@ -1545,7 +1545,7 @@ bool NativeTexturePS2::getDebugBitmap( Bitmap& bmpOut ) const
     if ( encodingPixelMemLayoutType == FORMAT_UNKNOWN )
         return false;
 
-    uint32 mipmapCount = this->mipmaps.size();
+    size_t mipmapCount = this->mipmaps.size();
 
     // Perform the allocation.
     const uint32 maxMipmaps = 7;
@@ -1574,7 +1574,7 @@ bool NativeTexturePS2::getDebugBitmap( Bitmap& bmpOut ) const
     if ( !hasAllocated )
         return false;
 
-    for ( uint32 n = 0; n < mipmapCount; n++ )
+    for ( size_t n = 0; n < mipmapCount; n++ )
     {
         const NativeTexturePS2::GSTexture& gsTex = this->mipmaps[n];
 

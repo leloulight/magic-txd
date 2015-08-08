@@ -227,6 +227,8 @@ string getChunkName(uint32 i)
 		return "Unknown";
 }
 
+#ifdef RWLIB_INCLUDE_FRAMEWORK_ENTRYPOINTS
+
 // Definition of the framework entry points.
 extern LibraryVersion app_version( void );
 extern int32 rwmain( Interface *engineInterface );
@@ -279,5 +281,7 @@ BOOL WINAPI frameworkEntryPoint_win32( HINSTANCE hInst, HINSTANCE hPrevInst, LPS
 #else
 #error Need framework entry point.
 #endif
+
+#endif //RWLIB_INCLUDE_FRAMEWORK_ENTRYPOINTS
 
 };

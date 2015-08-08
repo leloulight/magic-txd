@@ -2,6 +2,8 @@
 
 #include "pixelformat.hxx"
 
+#include "txdread.nativetex.hxx"
+
 namespace rw
 {
 
@@ -28,13 +30,13 @@ bool DebugDrawMipmaps( Interface *engineInterface, Raster *debugRaster, Bitmap& 
     uint32 requiredBitmapWidth = 0;
     uint32 requiredBitmapHeight = 0;
 
-    uint32 mipmapCount = pixelData.mipmaps.size();
+    size_t mipmapCount = pixelData.mipmaps.size();
 
     bool gotStuff = false;
 
     if ( mipmapCount > 0 )
     {
-        for ( uint32 n = 0; n < mipmapCount; n++ )
+        for ( size_t n = 0; n < mipmapCount; n++ )
         {
             const pixelDataTraversal::mipmapResource& mipLayer = pixelData.mipmaps[ n ];
 

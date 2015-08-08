@@ -1248,7 +1248,7 @@ struct tiffImagingExtension : public imagingFormatExtension
                 }
 
                 // Now write our data, on a scanline-by-scanline basis.
-                uint32 tiffRowSize = TIFFScanlineSize( tif );
+                uint32 tiffRowSize = (uint32)TIFFScanlineSize( tif );
 
                 uint32 srcRowSize = getRasterDataRowSize( width, srcDepth, srcRowAlignment );
 

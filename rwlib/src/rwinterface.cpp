@@ -1,6 +1,10 @@
-#include <StdInc.h>
+#include "StdInc.h"
 
 #include "pluginutil.hxx"
+
+#include <atomic>
+
+#include "rwinterface.hxx"
 
 namespace rw
 {
@@ -10,12 +14,16 @@ RwMemoryAllocator _engineMemAlloc;
 
 RwInterfaceFactory_t engineFactory;
 
-Interface::Interface( void )
+EngineInterface::EngineInterface( void )
 {
-    // We set the version in a specialized constructor.
+    // We default to the San Andreas engine.
+    this->version = KnownVersions::getGameVersion( KnownVersions::SA );
 
     // Set up the type system.
     this->typeSystem._memAlloc = &memAlloc;
+    this->typeSystem.lockProvider.engineInterface = this;
+
+    this->typeSystem.InitializeLockProvider();
 
     // Register the main RenderWare types.
     {
@@ -53,7 +61,7 @@ RwObject::RwObject( Interface *engineInterface, void *construction_params )
     this->objVersion = engineInterface->GetVersion();   // when creating an object, we assign it the current version.
 }
 
-inline void SafeDeleteType( Interface *engineInterface, RwTypeSystem::typeInfoBase*& theType )
+inline void SafeDeleteType( EngineInterface *engineInterface, RwTypeSystem::typeInfoBase*& theType )
 {
     RwTypeSystem::typeInfoBase *theTypeVal = theType;
 
@@ -65,7 +73,7 @@ inline void SafeDeleteType( Interface *engineInterface, RwTypeSystem::typeInfoBa
     }
 }
 
-Interface::~Interface( void )
+EngineInterface::~EngineInterface( void )
 {
     // Unregister all types again.
     {
@@ -76,86 +84,120 @@ Interface::~Interface( void )
     }
 }
 
+rwLockProvider_t rwlockProvider;
+
 void Interface::SetVersion( LibraryVersion version )
 {
-    this->version = version;
+    EngineInterface *engineInterface = (EngineInterface*)this;
+
+    scoped_rwlock_writer <rwlock> lock( GetReadWriteLock( engineInterface ) );
+
+    engineInterface->version = version;
+}
+
+LibraryVersion Interface::GetVersion( void ) const
+{
+    EngineInterface *engineInterface = (EngineInterface*)this;
+
+    scoped_rwlock_reader <rwlock> lock( GetReadWriteLock( engineInterface ) );
+
+    return engineInterface->version;
 }
 
 void Interface::SetApplicationInfo( const softwareMetaInfo& metaInfo )
 {
+    EngineInterface *engineInterface = (EngineInterface*)this;
+
+    scoped_rwlock_writer <rwlock> lock( GetReadWriteLock( engineInterface ) );
+
     if ( const char *appName = metaInfo.applicationName )
     {
-        this->applicationName = appName;
+        engineInterface->applicationName = appName;
     }
     else
     {
-        this->applicationName.clear();
+        engineInterface->applicationName.clear();
     }
 
     if ( const char *appVersion = metaInfo.applicationVersion )
     {
-        this->applicationVersion = appVersion;
+        engineInterface->applicationVersion = appVersion;
     }
     else
     {
-        this->applicationVersion.clear();
+        engineInterface->applicationVersion.clear();
     }
 
     if ( const char *desc = metaInfo.description )
     {
-        this->applicationDescription = desc;
+        engineInterface->applicationDescription = desc;
     }
     else
     {
-        this->applicationDescription.clear();
+        engineInterface->applicationDescription.clear();
     }
 }
 
 void Interface::SetMetaDataTagging( bool enabled )
 {
+    EngineInterface *engineInterface = (EngineInterface*)this;
+
+    scoped_rwlock_writer <rwlock> lock( GetReadWriteLock( engineInterface ) );
+
     // Meta data tagging is useful so that people will find you if they need to (debugging, etc).
-    this->enableMetaDataTagging = enabled;
+    engineInterface->enableMetaDataTagging = enabled;
 }
 
 bool Interface::GetMetaDataTagging( void ) const
 {
-    return this->enableMetaDataTagging;
+    const EngineInterface *engineInterface = (const EngineInterface*)this;
+
+    scoped_rwlock_reader <rwlock> lock( GetReadWriteLock( engineInterface ) );
+
+    return engineInterface->enableMetaDataTagging;
 }
 
-std::string GetRunningSoftwareInformation( Interface *engineInterface )
+std::string GetRunningSoftwareInformation( EngineInterface *engineInterface, bool outputShort )
 {
     std::string infoOut;
 
-    // Only output anything if we enable meta data tagging.
-    if ( engineInterface->enableMetaDataTagging )
     {
-        // First put the software name.
-        bool hasAppName = false;
+        scoped_rwlock_reader <rwlock> lock( GetReadWriteLock( engineInterface ) );
 
-        if ( engineInterface->applicationName.length() != 0 )
+        // Only output anything if we enable meta data tagging.
+        if ( engineInterface->enableMetaDataTagging )
         {
-            infoOut += engineInterface->applicationName;
+            // First put the software name.
+            bool hasAppName = false;
 
-            hasAppName = true;
-        }
-        else
-        {
-            infoOut += "RenderWare (generic)";
-        }
-
-        infoOut += " [rwver: " + engineInterface->GetVersion().toString() + "]";
-
-        if ( hasAppName )
-        {
-            if ( engineInterface->applicationVersion.length() != 0 )
+            if ( engineInterface->applicationName.length() != 0 )
             {
-                infoOut += " version: " + engineInterface->applicationVersion;
-            }
-        }
+                infoOut += engineInterface->applicationName;
 
-        if ( engineInterface->applicationDescription.length() != 0 )
-        {
-            infoOut += " " + engineInterface->applicationDescription;
+                hasAppName = true;
+            }
+            else
+            {
+                infoOut += "RenderWare (generic)";
+            }
+
+            infoOut += " [rwver: " + engineInterface->GetVersion().toString() + "]";
+
+            if ( hasAppName )
+            {
+                if ( engineInterface->applicationVersion.length() != 0 )
+                {
+                    infoOut += " version: " + engineInterface->applicationVersion;
+                }
+            }
+
+            if ( outputShort == false )
+            {
+                if ( engineInterface->applicationDescription.length() != 0 )
+                {
+                    infoOut += " " + engineInterface->applicationDescription;
+                }
+            }
         }
     }
 
@@ -164,11 +206,11 @@ std::string GetRunningSoftwareInformation( Interface *engineInterface )
 
 struct refCountPlugin
 {
-    unsigned long refCount;
+    std::atomic <unsigned long> refCount;
 
     inline void operator =( const refCountPlugin& right )
     {
-        this->refCount = right.refCount;
+        this->refCount.store( right.refCount );
     }
 
     inline void Initialize( GenericRTTI *obj )
@@ -189,26 +231,24 @@ struct refCountPlugin
 
     inline bool RemoveRef( void )
     {
-        this->refCount--;
-
-        return ( this->refCount == 0 );
+        return ( this->refCount.fetch_sub( 1 ) == 1 );
     }
 };
 
 struct refCountManager
 {
-    inline void Initialize( Interface *engineInterface )
+    inline void Initialize( EngineInterface *engineInterface )
     {
         this->pluginOffset =
             engineInterface->typeSystem.RegisterDependantStructPlugin <refCountPlugin> ( engineInterface->rwobjTypeInfo, RwTypeSystem::ANONYMOUS_PLUGIN_ID );
     }
 
-    inline void Shutdown( Interface *engineInterface )
+    inline void Shutdown( EngineInterface *engineInterface )
     {
         engineInterface->typeSystem.UnregisterPlugin( engineInterface->rwobjTypeInfo, this->pluginOffset );
     }
 
-    inline refCountPlugin* GetPluginStruct( Interface *engineInterface, RwObject *obj )
+    inline refCountPlugin* GetPluginStruct( EngineInterface *engineInterface, RwObject *obj )
     {
         GenericRTTI *rtObj = RwTypeSystem::GetTypeStructFromObject( obj );
 
@@ -224,10 +264,10 @@ static PluginDependantStructRegister <refCountManager, RwInterfaceFactory_t> ref
 // Can return NULL if the reference count could not be increased.
 RwObject* AcquireObject( RwObject *obj )
 {
-    Interface *engineInterface = obj->engineInterface;
+    EngineInterface *engineInterface = (EngineInterface*)obj->engineInterface;
 
     // Increase the reference count.
-    if ( refCountManager *refMan = refCountRegister.GetPluginStruct( (EngineInterface*)engineInterface ) )
+    if ( refCountManager *refMan = refCountRegister.GetPluginStruct( engineInterface ) )
     {
         if ( refCountPlugin *refCount = refMan->GetPluginStruct( engineInterface, obj ) )
         {
@@ -243,7 +283,7 @@ RwObject* AcquireObject( RwObject *obj )
 
 void ReleaseObject( RwObject *obj )
 {
-    Interface *engineInterface = obj->engineInterface;
+    EngineInterface *engineInterface = (EngineInterface*)obj->engineInterface;
 
     // Increase the reference count.
     if ( refCountManager *refMan = refCountRegister.GetPluginStruct( (EngineInterface*)engineInterface ) )
@@ -260,10 +300,10 @@ uint32 GetRefCount( RwObject *obj )
 {
     uint32 refCountNum = 1;    // If we do not support reference counting, this is actually a valid value.
 
-    Interface *engineInterface = obj->engineInterface;
+    EngineInterface *engineInterface = (EngineInterface*)obj->engineInterface;
 
     // Increase the reference count.
-    if ( refCountManager *refMan = refCountRegister.GetPluginStruct( (EngineInterface*)engineInterface ) )
+    if ( refCountManager *refMan = refCountRegister.GetPluginStruct( engineInterface ) )
     {
         if ( refCountPlugin *refCount = refMan->GetPluginStruct( engineInterface, obj ) )
         {
@@ -277,17 +317,19 @@ uint32 GetRefCount( RwObject *obj )
 
 RwObject* Interface::ConstructRwObject( const char *typeName )
 {
+    EngineInterface *engineInterface = (EngineInterface*)this;
+
     RwObject *newObj = NULL;
 
-    if ( RwTypeSystem::typeInfoBase *rwobjTypeInfo = this->rwobjTypeInfo )
+    if ( RwTypeSystem::typeInfoBase *rwobjTypeInfo = engineInterface->rwobjTypeInfo )
     {
         // Try to find a type that inherits from RwObject with this name.
-        RwTypeSystem::typeInfoBase *rwTypeInfo = this->typeSystem.FindTypeInfo( typeName, rwobjTypeInfo );
+        RwTypeSystem::typeInfoBase *rwTypeInfo = engineInterface->typeSystem.FindTypeInfo( typeName, rwobjTypeInfo );
 
         if ( rwTypeInfo )
         {
             // Try to construct us.
-            GenericRTTI *rtObj = this->typeSystem.Construct( this, rwTypeInfo, NULL );
+            GenericRTTI *rtObj = engineInterface->typeSystem.Construct( engineInterface, rwTypeInfo, NULL );
 
             if ( rtObj )
             {
@@ -302,14 +344,16 @@ RwObject* Interface::ConstructRwObject( const char *typeName )
 
 RwObject* Interface::CloneRwObject( const RwObject *srcObj )
 {
+    EngineInterface *engineInterface = (EngineInterface*)this;
+
     RwObject *newObj = NULL;
 
     // We simply use our type system to do the job.
-    const GenericRTTI *rttiObj = this->typeSystem.GetTypeStructFromConstAbstractObject( srcObj );
+    const GenericRTTI *rttiObj = engineInterface->typeSystem.GetTypeStructFromConstAbstractObject( srcObj );
 
     if ( rttiObj )
     {
-        GenericRTTI *newRtObj = this->typeSystem.Clone( this, rttiObj );
+        GenericRTTI *newRtObj = engineInterface->typeSystem.Clone( engineInterface, rttiObj );
 
         if ( newRtObj )
         {
@@ -322,8 +366,10 @@ RwObject* Interface::CloneRwObject( const RwObject *srcObj )
 
 void Interface::DeleteRwObject( RwObject *obj )
 {
+    EngineInterface *engineInterface = (EngineInterface*)this;
+
     // Delete it using the type system.
-    GenericRTTI *rttiObj = this->typeSystem.GetTypeStructFromAbstractObject( obj );
+    GenericRTTI *rttiObj = engineInterface->typeSystem.GetTypeStructFromAbstractObject( obj );
 
     if ( rttiObj )
     {
@@ -331,9 +377,9 @@ void Interface::DeleteRwObject( RwObject *obj )
         bool canDestroy = true;
 
         // If we have the refcount plugin, we want to handle things with it.
-        if ( refCountManager *refMan = refCountRegister.GetPluginStruct( (EngineInterface*)this ) )
+        if ( refCountManager *refMan = refCountRegister.GetPluginStruct( engineInterface ) )
         {
-            if ( refCountPlugin *refCountObj = RwTypeSystem::RESOLVE_STRUCT <refCountPlugin> ( this, rttiObj, this->rwobjTypeInfo, refMan->pluginOffset ) )
+            if ( refCountPlugin *refCountObj = RwTypeSystem::RESOLVE_STRUCT <refCountPlugin> ( engineInterface, rttiObj, engineInterface->rwobjTypeInfo, refMan->pluginOffset ) )
             {
                 canDestroy = refCountObj->RemoveRef();
             }
@@ -341,35 +387,40 @@ void Interface::DeleteRwObject( RwObject *obj )
 
         if ( canDestroy )
         {
-            this->typeSystem.Destroy( this, rttiObj );
+            engineInterface->typeSystem.Destroy( engineInterface, rttiObj );
         }
     }
 }
 
 void Interface::GetObjectTypeNames( rwobjTypeNameList_t& listOut ) const
 {
-    if ( RwTypeSystem::typeInfoBase *rwobjTypeInfo = this->rwobjTypeInfo )
+    const EngineInterface *engineInterface = (const EngineInterface*)this;
+
+    if ( RwTypeSystem::typeInfoBase *rwobjTypeInfo = engineInterface->rwobjTypeInfo )
     {
-        LIST_FOREACH_BEGIN( RwTypeSystem::typeInfoBase, this->typeSystem.registeredTypes.root, node )
+        for ( RwTypeSystem::type_iterator iter = engineInterface->typeSystem.GetTypeIterator(); !iter.IsEnd(); iter.Increment() )
+        {
+            RwTypeSystem::typeInfoBase *item = iter.Resolve();
 
             if ( item != rwobjTypeInfo )
             {
-                if ( this->typeSystem.IsTypeInheritingFrom( rwobjTypeInfo, item ) )
+                if ( engineInterface->typeSystem.IsTypeInheritingFrom( rwobjTypeInfo, item ) )
                 {
                     listOut.push_back( item->name );
                 }
             }
-
-        LIST_FOREACH_END
+        }
     }
 }
 
 bool Interface::IsObjectRegistered( const char *typeName ) const
 {
-    if ( RwTypeSystem::typeInfoBase *rwobjTypeInfo = this->rwobjTypeInfo )
+    const EngineInterface *engineInterface = (const EngineInterface*)this;
+
+    if ( RwTypeSystem::typeInfoBase *rwobjTypeInfo = engineInterface->rwobjTypeInfo )
     {
         // Try to find a type that inherits from RwObject with this name.
-        RwTypeSystem::typeInfoBase *rwTypeInfo = this->typeSystem.FindTypeInfo( typeName, rwobjTypeInfo );
+        RwTypeSystem::typeInfoBase *rwTypeInfo = engineInterface->typeSystem.FindTypeInfo( typeName, rwobjTypeInfo );
 
         if ( rwTypeInfo )
         {
@@ -382,15 +433,18 @@ bool Interface::IsObjectRegistered( const char *typeName ) const
 
 const char* Interface::GetObjectTypeName( const RwObject *rwObj ) const
 {
+    const EngineInterface *engineInterface = (const EngineInterface*)this;
+
     const char *typeName = "unknown";
 
-    const GenericRTTI *rtObj = this->typeSystem.GetTypeStructFromConstAbstractObject( rwObj );
+    const GenericRTTI *rtObj = engineInterface->typeSystem.GetTypeStructFromConstAbstractObject( rwObj );
 
     if ( rtObj )
     {
         RwTypeSystem::typeInfoBase *typeInfo = RwTypeSystem::GetTypeInfoFromTypeStruct( rtObj );
 
         // Return its type name.
+        // This is an IMMUTABLE property, so we are safe.
         typeName = typeInfo->name;
     }
 
@@ -399,17 +453,29 @@ const char* Interface::GetObjectTypeName( const RwObject *rwObj ) const
 
 void Interface::SetWarningManager( WarningManagerInterface *warningMan )
 {
-    this->warningManager = warningMan;
+    EngineInterface *engineInterface = (EngineInterface*)this;
+
+    scoped_rwlock_writer <rwlock> lock( GetReadWriteLock( engineInterface ) );
+
+    engineInterface->warningManager = warningMan;
 }
 
 void Interface::SetWarningLevel( int level )
 {
-    this->warningLevel = level;
+    EngineInterface *engineInterface = (EngineInterface*)this;
+
+    scoped_rwlock_writer <rwlock> lock( GetReadWriteLock( engineInterface ) );
+
+    engineInterface->warningLevel = level;
 }
 
 int Interface::GetWarningLevel( void ) const
 {
-    return this->warningLevel;
+    EngineInterface *engineInterface = (EngineInterface*)this;
+
+    scoped_rwlock_reader <rwlock> lock( GetReadWriteLock( engineInterface ) );
+
+    return engineInterface->warningLevel;
 }
 
 struct warningHandlerPlugin
@@ -434,13 +500,17 @@ static PluginDependantStructRegister <warningHandlerPlugin, RwInterfaceFactory_t
 
 void Interface::PushWarning( const std::string& message )
 {
-    if ( this->warningLevel > 0 )
+    EngineInterface *engineInterface = (EngineInterface*)this;
+
+    scoped_rwlock_writer <rwlock> lock( GetReadWriteLock( engineInterface ) );
+
+    if ( engineInterface->warningLevel > 0 )
     {
         // If we have a warning handler, we redirect the message to it instead.
         // The warning handler is supposed to be an internal class that only the library has access to.
         WarningHandler *currentWarningHandler = NULL;
 
-        warningHandlerPlugin *whandlerEnv = warningHandlerPluginRegister.GetPluginStruct( (EngineInterface*)this );
+        warningHandlerPlugin *whandlerEnv = warningHandlerPluginRegister.GetPluginStruct( engineInterface );
 
         if ( whandlerEnv )
         {
@@ -458,7 +528,7 @@ void Interface::PushWarning( const std::string& message )
         else
         {
             // Else we just post the warning to the runtime.
-            if ( WarningManagerInterface *warningMan = this->warningManager )
+            if ( WarningManagerInterface *warningMan = engineInterface->warningManager )
             {
                 warningMan->OnWarning( message );
             }
@@ -466,22 +536,26 @@ void Interface::PushWarning( const std::string& message )
     }
 }
 
-void GlobalPushWarningHandler( Interface *engineInterface, WarningHandler *theHandler )
+void GlobalPushWarningHandler( EngineInterface *engineInterface, WarningHandler *theHandler )
 {
-    warningHandlerPlugin *whandlerEnv = warningHandlerPluginRegister.GetPluginStruct( (EngineInterface*)engineInterface );
+    warningHandlerPlugin *whandlerEnv = warningHandlerPluginRegister.GetPluginStruct( engineInterface );
 
     if ( whandlerEnv )
     {
+        scoped_rwlock_writer <rwlock> lock( GetReadWriteLock( engineInterface ) );
+
         whandlerEnv->warningHandlerStack.push_back( theHandler );
     }
 }
 
-void GlobalPopWarningHandler( Interface *engineInterface )
+void GlobalPopWarningHandler( EngineInterface *engineInterface )
 {
-    warningHandlerPlugin *whandlerEnv = warningHandlerPluginRegister.GetPluginStruct( (EngineInterface*)engineInterface );
+    warningHandlerPlugin *whandlerEnv = warningHandlerPluginRegister.GetPluginStruct( engineInterface );
 
     if ( whandlerEnv )
     {
+        scoped_rwlock_writer <rwlock> lock( GetReadWriteLock( engineInterface ) );
+
         assert( whandlerEnv->warningHandlerStack.empty() == false );
 
         whandlerEnv->warningHandlerStack.pop_back();
@@ -490,23 +564,35 @@ void GlobalPopWarningHandler( Interface *engineInterface )
 
 void Interface::SetIgnoreSecureWarnings( bool doIgnore )
 {
-    this->ignoreSecureWarnings = doIgnore;
+    EngineInterface *engineInterface = (EngineInterface*)this;
+
+    scoped_rwlock_writer <rwlock> lock( GetReadWriteLock( engineInterface ) );
+
+    engineInterface->ignoreSecureWarnings = doIgnore;
 }
 
 bool Interface::GetIgnoreSecureWarnings( void ) const
 {
-    return this->ignoreSecureWarnings;
+    EngineInterface *engineInterface = (EngineInterface*)this;
+
+    scoped_rwlock_reader <rwlock> lock( GetReadWriteLock( engineInterface ) );
+
+    return engineInterface->ignoreSecureWarnings;
 }
 
 bool Interface::SetPaletteRuntime( ePaletteRuntimeType palRunType )
 {
+    EngineInterface *engineInterface = (EngineInterface*)this;
+
+    scoped_rwlock_writer <rwlock> lock( GetReadWriteLock( engineInterface ) );
+
     // Make sure we support this runtime.
     bool success = false;
 
     if ( palRunType == PALRUNTIME_NATIVE )
     {
         // We always support the native palette system.
-        this->palRuntimeType = palRunType;
+        engineInterface->palRuntimeType = palRunType;
 
         success = true;
     }
@@ -514,7 +600,7 @@ bool Interface::SetPaletteRuntime( ePaletteRuntimeType palRunType )
     else if ( palRunType == PALRUNTIME_PNGQUANT )
     {
         // Depends on whether we compiled with support for it.
-        this->palRuntimeType = palRunType;
+        engineInterface->palRuntimeType = palRunType;
 
         success = true;
     }
@@ -525,50 +611,87 @@ bool Interface::SetPaletteRuntime( ePaletteRuntimeType palRunType )
 
 ePaletteRuntimeType Interface::GetPaletteRuntime( void ) const
 {
-    return this->palRuntimeType;
+    const EngineInterface *engineInterface = (const EngineInterface*)this;
+
+    scoped_rwlock_reader <rwlock> lock( GetReadWriteLock( engineInterface ) );
+
+    return engineInterface->palRuntimeType;
 }
 
 void Interface::SetDXTRuntime( eDXTCompressionMethod dxtRunType )
 {
-    this->dxtRuntimeType = dxtRunType;
+    EngineInterface *engineInterface = (EngineInterface*)this;
+
+    scoped_rwlock_writer <rwlock> lock( GetReadWriteLock( engineInterface ) );
+
+    engineInterface->dxtRuntimeType = dxtRunType;
 }
 
 eDXTCompressionMethod Interface::GetDXTRuntime( void ) const
 {
-    return this->dxtRuntimeType;
+    const EngineInterface *engineInterface = (const EngineInterface*)this;
+
+    scoped_rwlock_reader <rwlock> lock( GetReadWriteLock( engineInterface ) );
+
+    return engineInterface->dxtRuntimeType;
 }
 
 void Interface::SetFixIncompatibleRasters( bool doFix )
 {
-    this->fixIncompatibleRasters = doFix;
+    EngineInterface *engineInterface = (EngineInterface*)this;
+
+    scoped_rwlock_writer <rwlock> lock( GetReadWriteLock( engineInterface ) );
+
+    engineInterface->fixIncompatibleRasters = doFix;
 }
 
 bool Interface::GetFixIncompatibleRasters( void ) const
 {
-    return this->fixIncompatibleRasters;
+    const EngineInterface *engineInterface = (const EngineInterface*)this;
+
+    scoped_rwlock_reader <rwlock> lock( GetReadWriteLock( engineInterface ) );
+
+    return engineInterface->fixIncompatibleRasters;
 }
 
 void Interface::SetDXTPackedDecompression( bool packedDecompress )
 {
-    this->dxtPackedDecompression = packedDecompress;
+    EngineInterface *engineInterface = (EngineInterface*)this;
+
+    scoped_rwlock_writer <rwlock> lock( GetReadWriteLock( engineInterface ) );
+
+    engineInterface->dxtPackedDecompression = packedDecompress;
 }
 
 bool Interface::GetDXTPackedDecompression( void ) const
 {
-    return this->dxtPackedDecompression;
+    const EngineInterface *engineInterface = (const EngineInterface*)this;
+
+    scoped_rwlock_reader <rwlock> lock( GetReadWriteLock( engineInterface ) );
+
+    return engineInterface->dxtPackedDecompression;
 }
 
 void Interface::SetIgnoreSerializationBlockRegions( bool doIgnore )
 {
-    this->ignoreSerializationBlockRegions = doIgnore;
+    EngineInterface *engineInterface = (EngineInterface*)this;
+
+    scoped_rwlock_writer <rwlock> lock( GetReadWriteLock( engineInterface ) );
+
+    engineInterface->ignoreSerializationBlockRegions = doIgnore;
 }
 
 bool Interface::GetIgnoreSerializationBlockRegions( void ) const
 {
-    return this->ignoreSerializationBlockRegions;
+    const EngineInterface *engineInterface = (const EngineInterface*)this;
+
+    scoped_rwlock_reader <rwlock> lock( GetReadWriteLock( engineInterface ) );
+
+    return engineInterface->ignoreSerializationBlockRegions;
 }
 
 // Static library object that takes care of initializing the module dependencies properly.
+extern void registerThreadingEnvironment( void );
 extern void registerEventSystem( void );
 extern void registerTXDPlugins( void );
 extern void registerObjectExtensionsPlugins( void );
@@ -608,8 +731,10 @@ Interface* CreateEngine( LibraryVersion theVersion )
             // Initialize our plugins first.
             warningHandlerPluginRegister.RegisterPlugin( engineFactory );
             refCountRegister.RegisterPlugin( engineFactory );
+            rwlockProvider.RegisterPlugin( engineFactory );
 
             // Now do the main modules.
+            registerThreadingEnvironment();
             registerEventSystem();
             registerStreamGlobalPlugins();
             registerSerializationPlugins();

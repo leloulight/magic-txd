@@ -1,3 +1,5 @@
+#include "txdread.nativetex.hxx"
+
 #include <PVRTextureUtilities.h>
 
 #include "txdread.d3d.genmip.hxx"

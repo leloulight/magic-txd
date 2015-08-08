@@ -21,6 +21,8 @@
 
 #include "txdread.d3d.dxt.hxx"
 
+#include "rwserialize.hxx"
+
 namespace rw
 {
 
@@ -28,7 +30,7 @@ namespace rw
  * Texture Dictionary
  */
 
-TexDictionary* texDictionaryStreamPlugin::CreateTexDictionary( Interface *engineInterface ) const
+TexDictionary* texDictionaryStreamPlugin::CreateTexDictionary( EngineInterface *engineInterface ) const
 {
     GenericRTTI *rttiObj = engineInterface->typeSystem.Construct( engineInterface, this->txdTypeInfo, NULL );
 
@@ -42,7 +44,7 @@ TexDictionary* texDictionaryStreamPlugin::CreateTexDictionary( Interface *engine
     return txdObj;
 }
 
-inline bool isRwObjectInheritingFrom( Interface *engineInterface, RwObject *rwObj, RwTypeSystem::typeInfoBase *baseType )
+inline bool isRwObjectInheritingFrom( EngineInterface *engineInterface, RwObject *rwObj, RwTypeSystem::typeInfoBase *baseType )
 {
     GenericRTTI *rtObj = engineInterface->typeSystem.GetTypeStructFromAbstractObject( rwObj );
 
@@ -60,7 +62,7 @@ inline bool isRwObjectInheritingFrom( Interface *engineInterface, RwObject *rwOb
     return false;
 }
 
-TexDictionary* texDictionaryStreamPlugin::ToTexDictionary( Interface *engineInterface, RwObject *rwObj )
+TexDictionary* texDictionaryStreamPlugin::ToTexDictionary( EngineInterface *engineInterface, RwObject *rwObj )
 {
     if ( isRwObjectInheritingFrom( engineInterface, rwObj, this->txdTypeInfo ) )
     {
@@ -70,8 +72,10 @@ TexDictionary* texDictionaryStreamPlugin::ToTexDictionary( Interface *engineInte
     return NULL;
 }
 
-void texDictionaryStreamPlugin::Deserialize( Interface *engineInterface, BlockProvider& inputProvider, RwObject *objectToDeserialize ) const
+void texDictionaryStreamPlugin::Deserialize( Interface *intf, BlockProvider& inputProvider, RwObject *objectToDeserialize ) const
 {
+    EngineInterface *engineInterface = (EngineInterface*)intf;
+
     // Cast our object.
     TexDictionary *txdObj = (TexDictionary*)objectToDeserialize;
 
@@ -252,11 +256,13 @@ void TexDictionary::clear(void)
     }
 }
 
-TexDictionary* CreateTexDictionary( Interface *engineInterface )
+TexDictionary* CreateTexDictionary( Interface *intf )
 {
+    EngineInterface *engineInterface = (EngineInterface*)intf;
+
     TexDictionary *texDictOut = NULL;
 
-    texDictionaryStreamPlugin *txdStream = texDictionaryStreamStore.GetPluginStruct( (EngineInterface*)engineInterface );
+    texDictionaryStreamPlugin *txdStream = texDictionaryStreamStore.GetPluginStruct( engineInterface );
 
     if ( txdStream )
     {
@@ -266,11 +272,13 @@ TexDictionary* CreateTexDictionary( Interface *engineInterface )
     return texDictOut;
 }
 
-TexDictionary* ToTexDictionary( Interface *engineInterface, RwObject *rwObj )
+TexDictionary* ToTexDictionary( Interface *intf, RwObject *rwObj )
 {
+    EngineInterface *engineInterface = (EngineInterface*)intf;
+
     TexDictionary *texDictOut = NULL;
 
-    texDictionaryStreamPlugin *txdStream = texDictionaryStreamStore.GetPluginStruct( (EngineInterface*)engineInterface );
+    texDictionaryStreamPlugin *txdStream = texDictionaryStreamStore.GetPluginStruct( engineInterface );
 
     if ( txdStream )
     {
@@ -363,8 +371,10 @@ TexDictionary* TextureBase::GetTexDictionary( void ) const
     return this->texDict;
 }
 
-TextureBase* CreateTexture( Interface *engineInterface, Raster *texRaster )
+TextureBase* CreateTexture( Interface *intf, Raster *texRaster )
 {
+    EngineInterface *engineInterface = (EngineInterface*)intf;
+
     TextureBase *textureOut = NULL;
 
     if ( RwTypeSystem::typeInfoBase *textureTypeInfo = engineInterface->textureTypeInfo )
@@ -383,8 +393,10 @@ TextureBase* CreateTexture( Interface *engineInterface, Raster *texRaster )
     return textureOut;
 }
 
-TextureBase* ToTexture( Interface *engineInterface, RwObject *rwObj )
+TextureBase* ToTexture( Interface *intf, RwObject *rwObj )
 {
+    EngineInterface *engineInterface = (EngineInterface*)intf;
+
     if ( isRwObjectInheritingFrom( engineInterface, rwObj, engineInterface->textureTypeInfo ) )
     {
         return (TextureBase*)rwObj;
@@ -397,8 +409,10 @@ TextureBase* ToTexture( Interface *engineInterface, RwObject *rwObj )
  * Native Texture
  */
 
-static PlatformTexture* CreateNativeTexture( Interface *engineInterface, RwTypeSystem::typeInfoBase *nativeTexType )
+static PlatformTexture* CreateNativeTexture( Interface *intf, RwTypeSystem::typeInfoBase *nativeTexType )
 {
+    EngineInterface *engineInterface = (EngineInterface*)intf;
+
     PlatformTexture *texOut = NULL;
     {
         GenericRTTI *rtObj = engineInterface->typeSystem.Construct( engineInterface, nativeTexType, NULL );
@@ -411,8 +425,10 @@ static PlatformTexture* CreateNativeTexture( Interface *engineInterface, RwTypeS
     return texOut;
 }
 
-static PlatformTexture* CloneNativeTexture( Interface *engineInterface, const PlatformTexture *srcNativeTex )
+static PlatformTexture* CloneNativeTexture( Interface *intf, const PlatformTexture *srcNativeTex )
 {
+    EngineInterface *engineInterface = (EngineInterface*)intf;
+
     PlatformTexture *texOut = NULL;
     {
         const GenericRTTI *srcRtObj = engineInterface->typeSystem.GetTypeStructFromConstAbstractObject( srcNativeTex );
@@ -430,8 +446,10 @@ static PlatformTexture* CloneNativeTexture( Interface *engineInterface, const Pl
     return texOut;
 }
 
-static void DeleteNativeTexture( Interface *engineInterface, PlatformTexture *nativeTexture )
+static void DeleteNativeTexture( Interface *intf, PlatformTexture *nativeTexture )
 {
+    EngineInterface *engineInterface = (EngineInterface*)intf;
+
     GenericRTTI *rtObj = engineInterface->typeSystem.GetTypeStructFromAbstractObject( nativeTexture );
 
     if ( rtObj )
@@ -644,7 +662,7 @@ inline bool GetNativeTextureRawBitmapData(
 
 struct nativeTextureStreamPlugin : public serializationProvider
 {
-    inline void Initialize( Interface *engineInterface )
+    inline void Initialize( EngineInterface *engineInterface )
     {
         this->platformTexType = engineInterface->typeSystem.RegisterAbstractType <PlatformTexture> ( "native_texture" );
 
@@ -652,13 +670,13 @@ struct nativeTextureStreamPlugin : public serializationProvider
         LIST_CLEAR( this->texNativeTypes.root );
 
         // Register us in the serialization manager.
-        engineInterface->RegisterSerialization( CHUNK_TEXTURENATIVE, engineInterface->textureTypeInfo, this, RWSERIALIZE_INHERIT );
+        RegisterSerialization( engineInterface, CHUNK_TEXTURENATIVE, engineInterface->textureTypeInfo, this, RWSERIALIZE_INHERIT );
     }
 
-    inline void Shutdown( Interface *engineInterface )
+    inline void Shutdown( EngineInterface *engineInterface )
     {
         // Unregister us again.
-        engineInterface->UnregisterSerialization( CHUNK_TEXTURENATIVE, engineInterface->textureTypeInfo, this );
+        UnregisterSerialization( engineInterface, CHUNK_TEXTURENATIVE, engineInterface->textureTypeInfo, this );
 
         // Unregister all type providers.
         LIST_FOREACH_BEGIN( texNativeTypeProvider, this->texNativeTypes.root, managerData.managerNode )
@@ -676,8 +694,10 @@ struct nativeTextureStreamPlugin : public serializationProvider
         }
     }
 
-    void Serialize( Interface *engineInterface, BlockProvider& outputProvider, RwObject *objectToStore ) const
+    void Serialize( Interface *intf, BlockProvider& outputProvider, RwObject *objectToStore ) const
     {
+        EngineInterface *engineInterface = (EngineInterface*)intf;
+
         // Make sure we are a valid texture.
         if ( !isRwObjectInheritingFrom( engineInterface, objectToStore, engineInterface->textureTypeInfo ) )
         {
@@ -750,8 +770,10 @@ struct nativeTextureStreamPlugin : public serializationProvider
         messages_t message_list;
     };
 
-    void Deserialize( Interface *engineInterface, BlockProvider& inputProvider, RwObject *objectToDeserialize ) const
+    void Deserialize( Interface *intf, BlockProvider& inputProvider, RwObject *objectToDeserialize ) const
     {
+        EngineInterface *engineInterface = (EngineInterface*)intf;
+
         // This is a pretty complicated algorithm that will need revision later on, when networked streams are allowed.
         // It is required because tex native rules have been violated by War Drum Studios.
         // First, we need to analyze the given block; this is done by getting candidates from texNativeTypes that
@@ -1107,27 +1129,27 @@ struct nativeTextureStreamPlugin : public serializationProvider
 
     struct nativeTextureCustomTypeInterface : public RwTypeSystem::typeInterface
     {
-        void Construct( void *mem, Interface *engineInterface, void *construct_params ) const
+        void Construct( void *mem, EngineInterface *engineInterface, void *construct_params ) const override
         {
             this->texTypeProvider->ConstructTexture( this->engineInterface, mem, this->actualObjSize );
         }
 
-        void CopyConstruct( void *mem, const void *srcMem ) const
+        void CopyConstruct( void *mem, const void *srcMem ) const override
         {
             this->texTypeProvider->CopyConstructTexture( this->engineInterface, mem, srcMem, this->actualObjSize );
         }
 
-        void Destruct( void *mem ) const
+        void Destruct( void *mem ) const override
         {
             this->texTypeProvider->DestroyTexture( this->engineInterface, mem, this->actualObjSize );
         }
 
-        size_t GetTypeSize( Interface *engineInterface, void *construct_params ) const
+        size_t GetTypeSize( EngineInterface *engineInterface, void *construct_params ) const override
         {
             return this->actualObjSize;
         }
 
-        size_t GetTypeSizeByObject( Interface *engineInterface, const void *objMem ) const
+        size_t GetTypeSizeByObject( EngineInterface *engineInterface, const void *objMem ) const override
         {
             return this->actualObjSize;
         }
@@ -1137,8 +1159,10 @@ struct nativeTextureStreamPlugin : public serializationProvider
         size_t actualObjSize;
     };
 
-    bool RegisterNativeTextureType( Interface *engineInterface, const char *nativeName, texNativeTypeProvider *typeProvider, size_t memSize )
+    bool RegisterNativeTextureType( Interface *intf, const char *nativeName, texNativeTypeProvider *typeProvider, size_t memSize )
     {
+        EngineInterface *engineInterface = (EngineInterface*)intf;
+
         bool registerSuccess = false;
 
         if ( typeProvider->managerData.isRegistered == false )
@@ -1192,8 +1216,10 @@ struct nativeTextureStreamPlugin : public serializationProvider
         return registerSuccess;
     }
 
-    bool UnregisterNativeTextureType( Interface *engineInterface, const char *nativeName )
+    bool UnregisterNativeTextureType( Interface *intf, const char *nativeName )
     {
+        EngineInterface *engineInterface = (EngineInterface*)intf;
+
         bool unregisterSuccess = false;
 
         // Try removing the type with said name.
@@ -1259,8 +1285,10 @@ bool UnregisterNativeTextureType( Interface *engineInterface, const char *native
     return success;
 }
 
-texNativeTypeProvider* GetNativeTextureTypeProvider( Interface *engineInterface, void *objMem )
+texNativeTypeProvider* GetNativeTextureTypeProvider( Interface *intf, void *objMem )
 {
+    EngineInterface *engineInterface = (EngineInterface*)intf;
+
     texNativeTypeProvider *platformData = NULL;
 
     // We first need the native texture type environment.
@@ -1311,7 +1339,7 @@ void CompatibilityTransformPixelData( Interface *engineInterface, pixelDataTrave
     uint32 srcPaletteSize = pixelData.paletteSize;
     eCompressionType srcCompressionType = pixelData.compressionType;
 
-    uint32 srcMipmapCount = pixelData.mipmaps.size();
+    uint32 srcMipmapCount = (uint32)pixelData.mipmaps.size();
 
     // Now decide the target format depending on the capabilities.
     eRasterFormat dstRasterFormat;
@@ -1360,11 +1388,13 @@ void CompatibilityTransformPixelData( Interface *engineInterface, pixelDataTrave
     }
 }
 
-inline RwTypeSystem::typeInfoBase* GetNativeTextureType( Interface *engineInterface, const char *typeName )
+inline RwTypeSystem::typeInfoBase* GetNativeTextureType( Interface *intf, const char *typeName )
 {
+    EngineInterface *engineInterface = (EngineInterface*)intf;
+
     RwTypeSystem::typeInfoBase *typeInfo = NULL;
 
-    nativeTextureStreamPlugin *nativeTexEnv = nativeTextureStreamStore.GetPluginStruct( (EngineInterface*)engineInterface );
+    nativeTextureStreamPlugin *nativeTexEnv = nativeTextureStreamStore.GetPluginStruct( engineInterface );
 
     if ( nativeTexEnv )
     {
@@ -1381,7 +1411,7 @@ bool ConvertRasterTo( Raster *theRaster, const char *nativeName )
 {
     bool conversionSuccess = false;
 
-    Interface *engineInterface = theRaster->engineInterface;
+    EngineInterface *engineInterface = (EngineInterface*)theRaster->engineInterface;
 
     // First get the native texture environment.
     // This is used to browse for convertible types.
@@ -1553,8 +1583,10 @@ const char* GetNativeTextureImageFormatExtension( Interface *engineInterface, co
     return ext;
 }
 
-platformTypeNameList_t GetAvailableNativeTextureTypes( Interface *engineInterface )
+platformTypeNameList_t GetAvailableNativeTextureTypes( Interface *intf )
 {
+    EngineInterface *engineInterface = (EngineInterface*)intf;
+
     platformTypeNameList_t registeredTypes;
 
     nativeTextureStreamPlugin *nativeTexEnv = nativeTextureStreamStore.GetPluginStruct( (EngineInterface*)engineInterface );
@@ -1583,8 +1615,10 @@ platformTypeNameList_t GetAvailableNativeTextureTypes( Interface *engineInterfac
  * Raster
  */
 
-Raster* CreateRaster( Interface *engineInterface )
+Raster* CreateRaster( Interface *intf )
 {
+    EngineInterface *engineInterface = (EngineInterface*)intf;
+
     RwTypeSystem::typeInfoBase *rasterTypeInfo = engineInterface->rasterTypeInfo;
 
     if ( rasterTypeInfo )
@@ -1627,7 +1661,7 @@ Raster* AcquireRaster( Raster *theRaster )
 
 void DeleteRaster( Raster *theRaster )
 {
-    Interface *engineInterface = theRaster->engineInterface;
+    EngineInterface *engineInterface = (EngineInterface*)theRaster->engineInterface;
 
     // We use reference counting on rasters.
     theRaster->refCount--;

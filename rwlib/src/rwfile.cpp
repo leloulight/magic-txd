@@ -2,6 +2,8 @@
 
 #include <sys/stat.h>
 
+#include "rwinterface.hxx"
+
 namespace rw
 {
 
@@ -75,12 +77,20 @@ static ANSIFileInterface _defaultFileInterface;
 // Use this function to change the location of library file activity.
 void Interface::SetFileInterface( FileInterface *intf )
 {
-    this->customFileInterface = intf;
+    EngineInterface *engineInterface = (EngineInterface*)this;
+
+    scoped_rwlock_writer <rwlock> lock( GetReadWriteLock( engineInterface ) );
+
+    engineInterface->customFileInterface = intf;
 }
 
 FileInterface* Interface::GetFileInterface( void )
 {
-    FileInterface *ourInterface = this->customFileInterface;
+    EngineInterface *engineInterface = (EngineInterface*)this;
+
+    scoped_rwlock_reader <rwlock> lock( GetReadWriteLock( engineInterface ) );
+
+    FileInterface *ourInterface = engineInterface->customFileInterface;
 
     if ( ourInterface == NULL )
     {

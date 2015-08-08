@@ -2,6 +2,8 @@
 
 #include "pluginutil.hxx"
 
+#include "rwserialize.hxx"
+
 namespace rw
 {
 
@@ -58,11 +60,11 @@ struct serializationStorePlugin
 
 static PluginDependantStructRegister <serializationStorePlugin, RwInterfaceFactory_t> serializationStoreRegister;
 
-bool Interface::RegisterSerialization( uint32 chunkID, RwTypeSystem::typeInfoBase *rwType, serializationProvider *serializer, eSerializationTypeMode mode )
+bool RegisterSerialization( Interface *engineInterface, uint32 chunkID, RwTypeSystem::typeInfoBase *rwType, serializationProvider *serializer, eSerializationTypeMode mode )
 {
     bool registerSuccess = false;
 
-    serializationStorePlugin *serializeStore = serializationStoreRegister.GetPluginStruct( (EngineInterface*)this );
+    serializationStorePlugin *serializeStore = serializationStoreRegister.GetPluginStruct( (EngineInterface*)engineInterface );
 
     if ( serializeStore )
     {
@@ -89,11 +91,11 @@ bool Interface::RegisterSerialization( uint32 chunkID, RwTypeSystem::typeInfoBas
     return registerSuccess;
 }
 
-bool Interface::UnregisterSerialization( uint32 chunkID, RwTypeSystem::typeInfoBase *rwType, serializationProvider *serializer )
+bool UnregisterSerialization( Interface *engineInterface, uint32 chunkID, RwTypeSystem::typeInfoBase *rwType, serializationProvider *serializer )
 {
     bool unregisterSuccess = false;
 
-    serializationStorePlugin *serializeStore = serializationStoreRegister.GetPluginStruct( (EngineInterface*)this );
+    serializationStorePlugin *serializeStore = serializationStoreRegister.GetPluginStruct( (EngineInterface*)engineInterface );
 
     if ( serializeStore )
     {
@@ -110,11 +112,11 @@ bool Interface::UnregisterSerialization( uint32 chunkID, RwTypeSystem::typeInfoB
     return unregisterSuccess;
 }
 
-inline serializationProvider* BrowseForSerializer( Interface *engineInterface, RwObject *objectToStore )
+inline serializationProvider* BrowseForSerializer( EngineInterface *engineInterface, RwObject *objectToStore )
 {
     serializationProvider *theSerializer = NULL;
 
-    serializationStorePlugin *serializeStore = serializationStoreRegister.GetPluginStruct( (EngineInterface*)engineInterface );
+    serializationStorePlugin *serializeStore = serializationStoreRegister.GetPluginStruct( engineInterface );
 
     GenericRTTI *rttiObj = RwTypeSystem::GetTypeStructFromObject( objectToStore );
 
@@ -157,8 +159,10 @@ inline serializationProvider* BrowseForSerializer( Interface *engineInterface, R
 
 void Interface::SerializeBlock( RwObject *objectToStore, BlockProvider& outputProvider )
 {
+    EngineInterface *engineInterface = (EngineInterface*)this;
+
     // Find a serializer that can handle this object.
-    serializationProvider *theSerializer = BrowseForSerializer( this, objectToStore );
+    serializationProvider *theSerializer = BrowseForSerializer( engineInterface, objectToStore );
 
     if ( theSerializer )
     {
@@ -213,10 +217,12 @@ void Interface::Serialize( RwObject *objectToStore, Stream *outputStream )
 
 RwObject* Interface::DeserializeBlock( BlockProvider& inputProvider )
 {
+    EngineInterface *engineInterface = (EngineInterface*)this;
+
     RwObject *returnObj = NULL;
 
     // Try reading the block and finding a serializer that can handle it.
-    serializationStorePlugin *serializeStore = serializationStoreRegister.GetPluginStruct( (EngineInterface*)this );
+    serializationStorePlugin *serializeStore = serializationStoreRegister.GetPluginStruct( engineInterface );
 
     if ( serializeStore )
     {
@@ -240,7 +246,7 @@ RwObject* Interface::DeserializeBlock( BlockProvider& inputProvider )
                 // Create an object for deserialization.
                 RwTypeSystem::typeInfoBase *rwTypeInfo = theSerializer->managerData.rwType;
 
-                GenericRTTI *rtObj = this->typeSystem.Construct( this, rwTypeInfo, NULL );
+                GenericRTTI *rtObj = engineInterface->typeSystem.Construct( engineInterface, rwTypeInfo, NULL );
 
                 if ( rtObj )
                 {
@@ -258,7 +264,7 @@ RwObject* Interface::DeserializeBlock( BlockProvider& inputProvider )
                     catch( ... )
                     {
                         // We failed for some reason, so destroy the object again.
-                        this->typeSystem.Destroy( this, rtObj );
+                        engineInterface->typeSystem.Destroy( engineInterface, rtObj );
 
                         throw;
                     }

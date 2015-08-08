@@ -40,9 +40,9 @@ void dxtMobileNativeTextureTypeProvider::SerializeTexture( TextureBase *theTextu
             // Cast to our native format.
             NativeTextureMobileDXT *platformTex = (NativeTextureMobileDXT*)nativeTex;
 
-            uint32 mipmapCount = platformTex->mipmaps.size();
+            size_t mipmapCount = platformTex->mipmaps.size();
 
-            metaHeader.mipmapCount = mipmapCount;
+            metaHeader.mipmapCount = (uint8)mipmapCount;
             metaHeader.unk1 = false;
             metaHeader.hasAlpha = platformTex->hasAlpha;
             metaHeader.pad2 = 0;
@@ -55,7 +55,7 @@ void dxtMobileNativeTextureTypeProvider::SerializeTexture( TextureBase *theTextu
             // Calculate the image data section size.
             uint32 imageDataSectionSize = 0;
 
-            for ( uint32 n = 0; n < mipmapCount; n++ )
+            for ( size_t n = 0; n < mipmapCount; n++ )
             {
                 uint32 dataSize = platformTex->mipmaps[ n ].dataSize;
 
@@ -71,7 +71,7 @@ void dxtMobileNativeTextureTypeProvider::SerializeTexture( TextureBase *theTextu
             texImageDataBlock.write( &metaHeader, sizeof( metaHeader ) );
 
             // Write the mipmap data sizes.
-            for ( uint32 n = 0; n < mipmapCount; n++ )
+            for ( size_t n = 0; n < mipmapCount; n++ )
             {
                 uint32 dataSize = platformTex->mipmaps[ n ].dataSize;
 
@@ -79,7 +79,7 @@ void dxtMobileNativeTextureTypeProvider::SerializeTexture( TextureBase *theTextu
             }
 
             // Write the mipmap texels now.
-            for ( uint32 n = 0; n < mipmapCount; n++ )
+            for ( size_t n = 0; n < mipmapCount; n++ )
             {
                 const NativeTextureMobileDXT::mipmapLayer& mipLayer = platformTex->mipmaps[ n ];
 
@@ -145,11 +145,11 @@ void dxtMobileNativeTextureTypeProvider::GetPixelDataFromTexture( Interface *eng
         getCompressionTypeFromS3TCInternalFormat( nativeTex->internalFormat );
 
     // Copy over mipmap information.
-    uint32 mipmapCount = nativeTex->mipmaps.size();
+    size_t mipmapCount = nativeTex->mipmaps.size();
 
     pixelsOut.mipmaps.resize( mipmapCount );
 
-    for ( uint32 n = 0; n < mipmapCount; n++ )
+    for ( size_t n = 0; n < mipmapCount; n++ )
     {
         const NativeTextureMobileDXT::mipmapLayer& mipLayer = nativeTex->mipmaps[ n ];
 
@@ -274,11 +274,11 @@ void dxtMobileNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engin
     const void *srcPaletteData = pixelsIn.paletteData;
     uint32 srcPaletteSize = pixelsIn.paletteSize;
 
-    uint32 mipmapCount = pixelsIn.mipmaps.size();
+    size_t mipmapCount = pixelsIn.mipmaps.size();
 
     nativeTex->mipmaps.resize( mipmapCount );
 
-    for ( uint32 n = 0; n < mipmapCount; n++ )
+    for ( size_t n = 0; n < mipmapCount; n++ )
     {
         const pixelDataTraversal::mipmapResource& mipLayer = pixelsIn.mipmaps[ n ];
 
@@ -512,9 +512,9 @@ void dxtMobileNativeTextureTypeProvider::GetTextureInfo( Interface *engineInterf
 {
     NativeTextureMobileDXT *nativeTex = (NativeTextureMobileDXT*)objMem;
 
-    uint32 mipmapCount = nativeTex->mipmaps.size();
+    size_t mipmapCount = nativeTex->mipmaps.size();
 
-    infoOut.mipmapCount = mipmapCount;
+    infoOut.mipmapCount = (uint32)mipmapCount;
 
     uint32 baseWidth = 0;
     uint32 baseHeight = 0;

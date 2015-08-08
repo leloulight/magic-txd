@@ -1,3 +1,5 @@
+#include "txdread.nativetex.hxx"
+
 #include "txdread.d3d.genmip.hxx"
 
 #define NATIVE_TEXTURE_XBOX     5

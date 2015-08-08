@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "magic-txd", "Test1.vcxproj", "{3912347B-E2B6-3935-864E-E8C67FC8A20F}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -47,6 +47,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libjpeg", "..\..\rwlib\vendor\libjpeg\build\vs2013\libjpeg.vcxproj", "{23E8246C-A9D6-4966-8B78-D3C5D7672872}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libtiff", "..\..\rwlib\vendor\libtiff\build\vs2013\libtiff.vcxproj", "{024E7ABB-3A5D-4090-B73E-29E79946C127}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NativeExecutive", "..\..\rwlib\vendor\NativeExecutive\vs2013\NativeExecutive.vcxproj", "{7E697733-5C68-49B4-82D4-A313210D49DF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -264,6 +266,30 @@ Global
 		{024E7ABB-3A5D-4090-B73E-29E79946C127}.Release|Win32.ActiveCfg = Release|Win32
 		{024E7ABB-3A5D-4090-B73E-29E79946C127}.Release|Win32.Build.0 = Release|Win32
 		{024E7ABB-3A5D-4090-B73E-29E79946C127}.Release|x64.ActiveCfg = Release|Win32
+		{7E697733-5C68-49B4-82D4-A313210D49DF}.Debug Library|Win32.ActiveCfg = Debug|Win32
+		{7E697733-5C68-49B4-82D4-A313210D49DF}.Debug Library|Win32.Build.0 = Debug|Win32
+		{7E697733-5C68-49B4-82D4-A313210D49DF}.Debug Library|x64.ActiveCfg = Debug|x64
+		{7E697733-5C68-49B4-82D4-A313210D49DF}.Debug Library|x64.Build.0 = Debug|x64
+		{7E697733-5C68-49B4-82D4-A313210D49DF}.Debug_lib|Win32.ActiveCfg = Debug|Win32
+		{7E697733-5C68-49B4-82D4-A313210D49DF}.Debug_lib|Win32.Build.0 = Debug|Win32
+		{7E697733-5C68-49B4-82D4-A313210D49DF}.Debug_lib|x64.ActiveCfg = Debug|x64
+		{7E697733-5C68-49B4-82D4-A313210D49DF}.Debug_lib|x64.Build.0 = Debug|x64
+		{7E697733-5C68-49B4-82D4-A313210D49DF}.Debug|Win32.ActiveCfg = Debug|Win32
+		{7E697733-5C68-49B4-82D4-A313210D49DF}.Debug|Win32.Build.0 = Debug|Win32
+		{7E697733-5C68-49B4-82D4-A313210D49DF}.Debug|x64.ActiveCfg = Debug|x64
+		{7E697733-5C68-49B4-82D4-A313210D49DF}.Debug|x64.Build.0 = Debug|x64
+		{7E697733-5C68-49B4-82D4-A313210D49DF}.Release Library|Win32.ActiveCfg = Release|Win32
+		{7E697733-5C68-49B4-82D4-A313210D49DF}.Release Library|Win32.Build.0 = Release|Win32
+		{7E697733-5C68-49B4-82D4-A313210D49DF}.Release Library|x64.ActiveCfg = Release|x64
+		{7E697733-5C68-49B4-82D4-A313210D49DF}.Release Library|x64.Build.0 = Release|x64
+		{7E697733-5C68-49B4-82D4-A313210D49DF}.Release_lib|Win32.ActiveCfg = Release|Win32
+		{7E697733-5C68-49B4-82D4-A313210D49DF}.Release_lib|Win32.Build.0 = Release|Win32
+		{7E697733-5C68-49B4-82D4-A313210D49DF}.Release_lib|x64.ActiveCfg = Release|x64
+		{7E697733-5C68-49B4-82D4-A313210D49DF}.Release_lib|x64.Build.0 = Release|x64
+		{7E697733-5C68-49B4-82D4-A313210D49DF}.Release|Win32.ActiveCfg = Release|Win32
+		{7E697733-5C68-49B4-82D4-A313210D49DF}.Release|Win32.Build.0 = Release|Win32
+		{7E697733-5C68-49B4-82D4-A313210D49DF}.Release|x64.ActiveCfg = Release|x64
+		{7E697733-5C68-49B4-82D4-A313210D49DF}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -281,5 +307,6 @@ Global
 		{F96E6023-AC18-44CA-8787-730FC792EAD1} = {C11221A6-2A83-474F-B84F-83A229178005}
 		{23E8246C-A9D6-4966-8B78-D3C5D7672872} = {C11221A6-2A83-474F-B84F-83A229178005}
 		{024E7ABB-3A5D-4090-B73E-29E79946C127} = {C11221A6-2A83-474F-B84F-83A229178005}
+		{7E697733-5C68-49B4-82D4-A313210D49DF} = {C11221A6-2A83-474F-B84F-83A229178005}
 	EndGlobalSection
 EndGlobal

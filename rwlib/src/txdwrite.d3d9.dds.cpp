@@ -331,12 +331,13 @@ bool d3d9NativeTextureTypeProvider::IsNativeImageFormat( Interface *engineInterf
 {
     // We check kinda thoroughly.
     endian::little_endian <uint32> magic;
-
-    uint32 magicReadCount = inputStream->read( &magic, sizeof( magic ) );
-
-    if ( magicReadCount != sizeof( magic ) )
     {
-        return false;
+        size_t magicReadCount = inputStream->read( &magic, sizeof( magic ) );
+
+        if ( magicReadCount != sizeof( magic ) )
+        {
+            return false;
+        }
     }
 
     if ( magic != ' SDD' )
@@ -345,12 +346,13 @@ bool d3d9NativeTextureTypeProvider::IsNativeImageFormat( Interface *engineInterf
     }
 
     dds_header header;
-
-    uint32 headerReadCount = inputStream->read( &header, sizeof( header ) );
-
-    if ( headerReadCount != sizeof( header ) )
     {
-        return false;
+        size_t headerReadCount = inputStream->read( &header, sizeof( header ) );
+
+        if ( headerReadCount != sizeof( header ) )
+        {
+            return false;
+        }
     }
 
     // Check some basic semantic properties of the header.
@@ -723,7 +725,7 @@ void d3d9NativeTextureTypeProvider::SerializeNativeImage( Interface *engineInter
     // Simply write out this native texture's content.
     const NativeTextureD3D9 *nativeTex = (const NativeTextureD3D9*)objMem;
 
-    uint32 mipmapCount = nativeTex->mipmaps.size();
+    size_t mipmapCount = nativeTex->mipmaps.size();
 
     if ( mipmapCount == 0 )
     {
@@ -1025,7 +1027,7 @@ void d3d9NativeTextureTypeProvider::SerializeNativeImage( Interface *engineInter
     header.dwWidth = baseLayer.layerWidth;
     header.dwHeight = baseLayer.layerHeight;
     header.dwPitchOrLinearSize = mainSurfacePitchOrLinearSize;
-    header.dwMipmapCount = mipmapCount;
+    header.dwMipmapCount = (uint32)mipmapCount;
     memset( header.dwReserved1, 0, sizeof( header.dwReserved1 ) );
     header.ddspf.dwSize = sizeof( header.ddspf );
     header.ddspf.dwFlags = pixelFlags;
@@ -1045,7 +1047,7 @@ void d3d9NativeTextureTypeProvider::SerializeNativeImage( Interface *engineInter
     inputStream->write( &header, sizeof( header ) );
 
     // Now write the mipmap layers.
-    for ( uint32 n = 0; n < mipmapCount; n++ )
+    for ( size_t n = 0; n < mipmapCount; n++ )
     {
         const NativeTextureD3D9::mipmapLayer& mipLayer = nativeTex->mipmaps[ n ];
 
@@ -1243,23 +1245,25 @@ void d3d9NativeTextureTypeProvider::SerializeNativeImage( Interface *engineInter
 void d3d9NativeTextureTypeProvider::DeserializeNativeImage( Interface *engineInterface, Stream *outputStream, void *objMem ) const
 {
     endian::little_endian <uint32> magic;
-
-    uint32 magicReadCount = outputStream->read( &magic, sizeof( magic ) );
-
-    if ( magicReadCount != sizeof( magic ) || magic != ' SDD' )
     {
-        // Here, instead of in the checking algorithm, we throw descriptive exceptions for malformations.
-        throw RwException( "invalid magic number in DDS file" );
+        size_t magicReadCount = outputStream->read( &magic, sizeof( magic ) );
+
+        if ( magicReadCount != sizeof( magic ) || magic != ' SDD' )
+        {
+            // Here, instead of in the checking algorithm, we throw descriptive exceptions for malformations.
+            throw RwException( "invalid magic number in DDS file" );
+        }
     }
 
     // Read its header.
     dds_header header;
-
-    uint32 headerReadCount = outputStream->read( &header, sizeof( header ) );
-
-    if ( headerReadCount != sizeof( header ) )
     {
-        throw RwException( "failed to read DDS header" );
+        size_t headerReadCount = outputStream->read( &header, sizeof( header ) );
+
+        if ( headerReadCount != sizeof( header ) )
+        {
+            throw RwException( "failed to read DDS header" );
+        }
     }
 
     // Verify some important things.

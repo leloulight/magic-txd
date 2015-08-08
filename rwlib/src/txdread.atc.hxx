@@ -1,3 +1,5 @@
+#include "txdread.nativetex.hxx"
+
 #include "txdread.d3d.genmip.hxx"
 
 #include <ATI_compress.h>

@@ -1,3 +1,5 @@
+#include "txdread.nativetex.hxx"
+
 #include <d3d9.h>
 
 #include "txdread.d3d.genmip.hxx"

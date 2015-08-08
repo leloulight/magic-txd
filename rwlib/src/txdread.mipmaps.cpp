@@ -7,6 +7,8 @@
 
 #include "txdread.common.hxx"
 
+#include "txdread.nativetex.hxx"
+
 namespace rw
 {
 

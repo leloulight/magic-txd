@@ -6,11 +6,15 @@
 
 #include "txdread.common.hxx"
 
+#include "txdread.nativetex.hxx"
+
 namespace rw
 {
 
-void texDictionaryStreamPlugin::Serialize( Interface *engineInterface, BlockProvider& outputProvider, RwObject *objectToSerialize ) const
+void texDictionaryStreamPlugin::Serialize( Interface *intf, BlockProvider& outputProvider, RwObject *objectToSerialize ) const
 {
+    EngineInterface *engineInterface = (EngineInterface*)intf;
+
     // Make sure we got a TXD.
     GenericRTTI *rttiObj = RwTypeSystem::GetTypeStructFromObject( objectToSerialize );
 
