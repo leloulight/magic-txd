@@ -60,7 +60,7 @@ void atcNativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, Pl
         try
         {
             // Write the header with meta information.
-            atitc::textureNativeGenericHeader metaHeader;
+            amdtc::textureNativeGenericHeader metaHeader;
             metaHeader.platformDescriptor = PLATFORM_ATC;
             metaHeader.formatInfo.set( *theTexture );
             
@@ -75,7 +75,7 @@ void atcNativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, Pl
 
             size_t mipmapCount = platformTex->mipmaps.size();
 
-            metaHeader.mipmapCount = (uint32)mipmapCount;
+            metaHeader.mipmapCount = (uint8)mipmapCount;
             metaHeader.unk1 = platformTex->unk1;
             metaHeader.hasAlpha = platformTex->hasAlpha;
             metaHeader.pad2 = 0;

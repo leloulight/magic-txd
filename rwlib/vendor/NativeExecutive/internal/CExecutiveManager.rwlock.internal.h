@@ -206,7 +206,7 @@ class rwlock_reentrant_bythread
 public:
     inline void enter_write( void )
     {
-        ctxLock.enter( (ctxlock_reentrant::context_t)std::this_thread::get_id().hash() );
+        ctxLock.enter( (ctxlock_reentrant::context_t)std::hash <std::thread::id> () ( std::this_thread::get_id() ) );
     }
 
     inline void leave_write( void )

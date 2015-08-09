@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?> 
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  <Type Name="rw::endian::little_endian &lt;*&gt;">
+    <DisplayString>{*($T1*)data}</DisplayString>
+  </Type>
+  <Type Name="rw::endian::big_endian &lt;unsigned char&gt;">
+    <DisplayString>{*(unsigned char*)data}</DisplayString>
+  </Type>
+  <Type Name="rw::endian::big_endian &lt;char&gt;">
+    <DisplayString>{*(char*)data}</DisplayString>
+  </Type>
+  <Type Name="rw::endian::big_endian &lt;unsigned short&gt;">
+    <DisplayString>{(unsigned short)( ( ( *(unsigned short*)data &amp; 0xFF00 ) &gt;&gt; 8 ) | ( ( *(unsigned short*)data &amp; 0xFF ) &lt;&lt; 8 ) )}</DisplayString>
+  </Type>
+  <Type Name="rw::endian::big_endian &lt;short&gt;">
+    <DisplayString>{(short)( ( ( *(unsigned short*)data &amp; 0xFF00 ) &gt;&gt; 8 ) | ( ( *(unsigned short*)data &amp; 0xFF ) &lt;&lt; 8 ) )}</DisplayString>
+  </Type>
+  <Type Name="rw::endian::big_endian &lt;unsigned int&gt;">
+    <DisplayString>{(unsigned int)( ( ( *(unsigned int*)data &amp; 0xFF000000 ) &gt;&gt; 24 ) | ( ( *(unsigned int*)data &amp; 0xFF0000 ) &gt;&gt; 8 ) | ( ( *(unsigned int*)data &amp; 0xFF00 ) &lt;&lt; 8 ) | ( ( *(unsigned int*)data &amp; 0xFF ) &lt;&lt; 24 ) )}</DisplayString>
+  </Type>
+  <Type Name="rw::endian::big_endian &lt;int&gt;">
+    <DisplayString>{(int)( ( ( *(unsigned int*)data &amp; 0xFF000000 ) &gt;&gt; 24 ) | ( ( *(unsigned int*)data &amp; 0xFF0000 ) &gt;&gt; 8 ) | ( ( *(unsigned int*)data &amp; 0xFF00 ) &lt;&lt; 8 ) | ( ( *(unsigned int*)data &amp; 0xFF ) &lt;&lt; 24 ) )}</DisplayString>
+  </Type>
+  <Type Name="rw::endian::big_endian &lt;unsigned __int64&gt;">
+    <DisplayString>{(unsigned __int64)( ( ( *(unsigned __int64*)data &amp; 0xFF00000000000000 ) &gt;&gt; 56 ) | ( ( *(unsigned __int64*)data &amp; 0xFF000000000000 ) &gt;&gt; 40 ) | ( ( *(unsigned __int64*)data &amp; 0xFF0000000000 ) &gt;&gt; 24 ) | ( ( *(unsigned __int64*)data &amp; 0xFF00000000 ) &gt;&gt; 8 ) | ( ( *(unsigned __int64*)data &amp; 0xFF000000 ) &lt;&lt; 8 ) | ( ( *(unsigned __int64*)data &amp; 0xFF0000 ) &lt;&lt; 24 ) | ( ( *(unsigned __int64*)data &amp; 0xFF00 ) &lt;&lt; 40 ) | ( ( *(unsigned __int64*)data &amp; 0xFF ) &lt;&lt; 56 ) )}</DisplayString>
+  </Type>
+  <Type Name="rw::endian::big_endian &lt;__int64&gt;">
+    <DisplayString>{(__int64)( ( ( *(unsigned __int64*)data &amp; 0xFF00000000000000 ) &gt;&gt; 56 ) | ( ( *(unsigned __int64*)data &amp; 0xFF000000000000 ) &gt;&gt; 40 ) | ( ( *(unsigned __int64*)data &amp; 0xFF0000000000 ) &gt;&gt; 24 ) | ( ( *(unsigned __int64*)data &amp; 0xFF00000000 ) &gt;&gt; 8 ) | ( ( *(unsigned __int64*)data &amp; 0xFF000000 ) &lt;&lt; 8 ) | ( ( *(unsigned __int64*)data &amp; 0xFF0000 ) &lt;&lt; 24 ) | ( ( *(unsigned __int64*)data &amp; 0xFF00 ) &lt;&lt; 40 ) | ( ( *(unsigned __int64*)data &amp; 0xFF ) &lt;&lt; 56 ) )}</DisplayString>
+  </Type>
+  <Type Name="rw::LibraryVersion">
+    <DisplayString>{(unsigned int)rwLibMajor}.{(unsigned int)rwLibMinor}.{(unsigned int)rwRevMajor}.{(unsigned int)rwRevMinor}</DisplayString>
+  </Type>
+  <Type Name="rw::Raster">
+    <DisplayString Condition="this == nullptr">none</DisplayString>
+    <DisplayString>Raster: {((RwTypeSystem::typeInfoBase*)((GenericRTTI*)this->platformData - 1)->type_meta)->name,s}</DisplayString>
+    <Expand>
+      <Item Name="Ref Count">refCount</Item>
+      <CustomListItems>
+        <Variable Name="platformTypeData" InitialValue="((RwTypeSystem::typeInfoBase*)((GenericRTTI*)this->platformData - 1)->type_meta)"/>
+        <Variable Name="platformName" InitialValue="platformTypeData->name" />
+        <Item Name="Direct3D 9" Condition='strcmp(platformName,"Direct3D9") == 0'>(rw::NativeTextureD3D9*)this->platformData</Item>
+        <Item Name="Direct3D 8" Condition='strcmp(platformName,"Direct3D8") == 0'>(rw::NativeTextureD3D8*)this->platformData</Item>
+        <Item Name="PlayStation 2" Condition='strcmp(platformName,"PlayStation2") == 0'>(rw::NativeTexturePS2*)this->platformData</Item>
+        <Item Name='XBOX' Condition='strcmp(platformName,"XBOX") == 0'>(rw::NativeTextureXBOX*)this->platformData</Item>
+        <Item Name='Gamecube' Condition='strcmp(platformName,"Gamecube") == 0'>(rw::NativeTextureGC*)this->platformData</Item>
+        <Item Name='PowerVR' Condition='strcmp(platformName,"PowerVR") == 0'>(rw::NativeTexturePVR*)this->platformData</Item>
+        <Item Name='ATI_Compress' Condition='strcmp(platformName,"ATI_Compress") == 0'>(rw::NativeTextureATC*)this->platformData</Item>
+        <Item Name='s3tc_mobile' Condition='strcmp(platformName,"s3tc_mobile") == 0'>(rw::NativeTextureMobileDXT*)this->platformData</Item>
+        <Item Name='uncompressed_mobile' Condition='strcmp(platformName,"uncompressed_mobile") == 0'>(rw::NativeTextureMobileUNC*)this->platformData</Item>
+      </CustomListItems>
+    </Expand>
+  </Type>
+  <Type Name="rw::TextureBase">
+    <DisplayString>{name}</DisplayString>
+    <Expand>
+      <Item Name="Object">(RwObject*)this,nd</Item>
+      <Item Name="Raster">texRaster</Item>
+      <Item Name="Name">name</Item>
+      <Item Name="Mask Name" Condition="maskName[0] != 0">maskName</Item>
+      <Item Name="Filter Mode">filterMode</Item>
+      <Item Name="Horizontal Addressing" Condition="uAddressing != vAddressing">uAddressing</Item>
+      <Item Name="Vertical Addressing" Condition="uAddressing != vAddressing">vAddressing</Item>
+      <Item Name="Addressing" Condition="uAddressing == vAddressing">uAddressing</Item>
+      <Item Name="Dict">texDict</Item>
+    </Expand>
+  </Type>
+  <Type Name="rw::TexDictionary">
+    <DisplayString>Texture Dictionary ({numTextures})</DisplayString>
+    <Expand>
+      <Item Name="Object">(RwObject*)this,nd</Item>
+      <Item Name="[count]">numTextures</Item>
+      <CustomListItems>
+        <Variable Name="nodeptr" InitialValue="textures.root.next"/>
+        <Size>numTextures</Size>
+        <Loop>
+          <Break Condition="nodeptr == &amp;textures.root" />
+          <Item>(rw::TextureBase*)( (char*)nodeptr - (unsigned int)&amp;(((rw::TextureBase*)0)-&gt;texDictNode) )</Item>
+          <Exec>nodeptr = nodeptr->next</Exec>
+        </Loop>
+      </CustomListItems>
+    </Expand>
+  </Type>
+  <Type Name="rw::Interface">
+    <Expand HideRawView="true">
+      <ExpandedItem>(rw::EngineInterface*)this</ExpandedItem>
+    </Expand>
+  </Type>
+</AutoVisualizer>

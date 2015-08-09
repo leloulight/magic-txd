@@ -20,12 +20,6 @@ namespace rw
         obj->engineInterface->DeleteRwObject( obj );
     }
 
-    static void test_thread_runtime( thread_t threadHandle, Interface *engineInterface, void *ud )
-    {
-        // OK.
-        __noop();
-    }
-
     int32 rwmain( Interface *engineInterface )
     {
         // Give information about the running application to the runtime.
@@ -42,20 +36,22 @@ namespace rw
         if ( !rwWindow )
             return -1;
 
+        uint32 wndBaseRefCount = GetRefCount( rwWindow );
+
         // We hold an extra reference.
         AcquireObject( rwWindow );
 
         // Handle the window closing event.
-        RegisterEventHandler( rwWindow, WINDOW_CLOSING, window_closing_event_handler );
-        RegisterEventHandler( rwWindow, WINDOW_QUIT, window_closing_event_handler );
+        RegisterEventHandler( rwWindow, event_t::WINDOW_CLOSING, window_closing_event_handler );
+        RegisterEventHandler( rwWindow, event_t::WINDOW_QUIT, window_closing_event_handler );
 
-        // Set up the window.
+        // Show the window, since we have set it up by now.
         rwWindow->SetVisible( true );
         
         // Create the game renderer.
 
         // Execute the main loop
-        while ( GetRefCount( rwWindow ) > 1 )   // we wait until somebody requested to destroy the window.
+        while ( GetRefCount( rwWindow ) > wndBaseRefCount )   // we wait until somebody requested to destroy the window.
         {
             // Draw the game scene.
 

@@ -4,14 +4,6 @@
     Every platform is assumed to have capabilities of creaing a render surface.
 */
 
-// Windowing system events.
-enum eWindowEvent : event_t
-{
-    WINDOW_RESIZE,
-    WINDOW_CLOSING,
-    WINDOW_QUIT
-};
-
 struct Window : public RwObject
 {
     Window( Interface *engineInterface, void *construction_params );

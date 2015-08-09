@@ -29,7 +29,7 @@ void atcNativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture, 
         {
             if ( texNativeImageStruct.getBlockID() == CHUNK_STRUCT )
             {
-                atitc::textureNativeGenericHeader metaHeader;
+                amdtc::textureNativeGenericHeader metaHeader;
                 texNativeImageStruct.read( &metaHeader, sizeof(metaHeader) );
 
                 uint32 platform = metaHeader.platformDescriptor;
@@ -230,21 +230,21 @@ void atcNativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture, 
     engineInterface->DeserializeExtensions( theTexture, inputProvider );
 }
 
-inline ATI_TC_FORMAT getATITCFormatFromInternalFormat( eATCInternalFormat internalFormat )
+inline AMD_TC_FORMAT getAMDTCFormatFromInternalFormat( eATCInternalFormat internalFormat )
 {
-    ATI_TC_FORMAT actualFormat;
+    AMD_TC_FORMAT actualFormat;
 
     if ( internalFormat == ATC_RGB_AMD )
     {
-        actualFormat = ATI_TC_FORMAT_ATC_RGB;
+        actualFormat = AMD_TC_FORMAT_ATC_RGB;
     }
     else if ( internalFormat == ATC_RGBA_EXPLICIT_ALPHA_AMD )
     {
-        actualFormat = ATI_TC_FORMAT_ATC_RGBA_Explicit;
+        actualFormat = AMD_TC_FORMAT_ATC_RGBA_Explicit;
     }
     else if ( internalFormat == ATC_RGBA_INTERPOLATED_ALPHA_AMD )
     {
-        actualFormat = ATI_TC_FORMAT_ATC_RGBA_Interpolated;
+        actualFormat = AMD_TC_FORMAT_ATC_RGBA_Interpolated;
     }
     else
     {
@@ -254,14 +254,14 @@ inline ATI_TC_FORMAT getATITCFormatFromInternalFormat( eATCInternalFormat intern
     return actualFormat;
 }
 
-inline void getATITCFormatTargetParams(
-    eATCInternalFormat internalFormat, ATI_TC_FORMAT& requiredOutputCodec,
+inline void getAMDTCFormatTargetParams(
+    eATCInternalFormat internalFormat, AMD_TC_FORMAT& requiredOutputCodec,
     eRasterFormat& outputCodecRasterFormat, uint32& outputCodecDepth, eColorOrdering& outputCodecColorOrder
 )
 {
     if ( internalFormat == ATC_RGB_AMD )
     {
-        requiredOutputCodec = ATI_TC_FORMAT_ARGB_8888;
+        requiredOutputCodec = AMD_TC_FORMAT_ARGB_8888;
 
         outputCodecRasterFormat = RASTER_888;
         outputCodecDepth = 32;
@@ -270,7 +270,7 @@ inline void getATITCFormatTargetParams(
     else if ( internalFormat == ATC_RGBA_EXPLICIT_ALPHA_AMD ||
               internalFormat == ATC_RGBA_INTERPOLATED_ALPHA_AMD )
     {
-        requiredOutputCodec = ATI_TC_FORMAT_ARGB_8888;
+        requiredOutputCodec = AMD_TC_FORMAT_ARGB_8888;
 
         outputCodecRasterFormat = RASTER_8888;
         outputCodecDepth = 32;
@@ -288,32 +288,32 @@ inline void DecompressATCMipmap(
     uint32 mipWidth, uint32 mipHeight, uint32 layerWidth, uint32 layerHeight, const void *srcTexels, uint32 srcDataSize,
     eRasterFormat atcRasterFormat, uint32 atcDepth, eColorOrdering atcColorOrder,
     eRasterFormat targetRasterFormat, uint32 targetDepth, uint32 targetRowAlignment, eColorOrdering targetColorOrder,
-    ATI_TC_FORMAT srcRasterATITCFormat, ATI_TC_FORMAT dstRasterATITCFormat,
+    AMD_TC_FORMAT srcRasterATITCFormat, AMD_TC_FORMAT dstRasterATITCFormat,
     void*& dstTexelsOut, uint32& dstDataSizeOut
 )
 {
-    ATI_TC_Texture srcTexture;
-    srcTexture.dwSize = sizeof( ATI_TC_Texture );
+    AMD_TC_Texture srcTexture;
+    srcTexture.dwSize = sizeof( AMD_TC_Texture );
     srcTexture.dwWidth = mipWidth;
     srcTexture.dwHeight = mipHeight;
     srcTexture.dwPitch = 0;
     srcTexture.format = srcRasterATITCFormat;
     srcTexture.dwDataSize = srcDataSize;
-    srcTexture.pData = (ATI_TC_BYTE*)srcTexels;
+    srcTexture.pData = (AMD_TC_BYTE*)srcTexels;
 
-    ATI_TC_Texture dstTexture;
-    dstTexture.dwSize = sizeof( ATI_TC_Texture );
+    AMD_TC_Texture dstTexture;
+    dstTexture.dwSize = sizeof( AMD_TC_Texture );
     dstTexture.dwWidth = mipWidth;
     dstTexture.dwHeight = mipHeight;
     dstTexture.dwPitch = 0;
     dstTexture.format = dstRasterATITCFormat;
-    dstTexture.dwDataSize = ATI_TC_CalculateBufferSize( &dstTexture );
-    dstTexture.pData = (ATI_TC_BYTE*)engineInterface->PixelAllocate( dstTexture.dwDataSize );
+    dstTexture.dwDataSize = AMD_TC_CalculateBufferSize( &dstTexture );
+    dstTexture.pData = (AMD_TC_BYTE*)engineInterface->PixelAllocate( dstTexture.dwDataSize );
 
     // Decompress, wazaaa!
-    ATI_TC_ERROR atcErrorCode = ATI_TC_ConvertTexture( &srcTexture, &dstTexture, NULL, NULL, NULL, NULL );
+    AMD_TC_ERROR atcErrorCode = AMD_TC_ConvertTexture( &srcTexture, &dstTexture, NULL, NULL, NULL, NULL );
 
-    assert( atcErrorCode == ATI_TC_OK );
+    assert( atcErrorCode == AMD_TC_OK );
 
     // Put the texels into a format we want.
     void *dstTexels = dstTexture.pData;
@@ -393,16 +393,16 @@ void atcNativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineInt
     pixelsOut.mipmaps.resize( mipmapCount );
 
     // Calculate the properties of the ATI TC source and destination textures.
-    ATI_TC_FORMAT srcRasterATITCFormat = getATITCFormatFromInternalFormat( internalFormat );
+    AMD_TC_FORMAT srcRasterATITCFormat = getAMDTCFormatFromInternalFormat( internalFormat );
 
     // Fetch format properties that are required as decompression destination surface.
     eRasterFormat atcRasterFormat = RASTER_8888;
     uint32 atcDepth = 32;
     eColorOrdering atcColorOrder = COLOR_RGBA;
 
-    ATI_TC_FORMAT dstRasterATITCFormat;
+    AMD_TC_FORMAT dstRasterATITCFormat;
 
-    getATITCFormatTargetParams( internalFormat, dstRasterATITCFormat, atcRasterFormat, atcDepth, atcColorOrder );
+    getAMDTCFormatTargetParams( internalFormat, dstRasterATITCFormat, atcRasterFormat, atcDepth, atcColorOrder );
 
     for ( uint32 n = 0; n < mipmapCount; n++ )
     {
@@ -470,7 +470,7 @@ inline void CompressMipmapToATC(
     eRasterFormat srcRasterFormat, uint32 srcDepth, uint32 srcRowAlignment, eColorOrdering srcColorOrder, ePaletteType srcPaletteType, const void *srcPaletteData, uint32 srcPaletteSize,
     eRasterFormat feedRasterFormat, uint32 feedDepth, eColorOrdering feedColorOrder,
     uint32 compressionBlockSize,
-    ATI_TC_FORMAT srcTextureFormat, ATI_TC_FORMAT dstTextureFormat,
+    AMD_TC_FORMAT srcTextureFormat, AMD_TC_FORMAT dstTextureFormat,
     uint32& dstWidthOut, uint32& dstHeightOut,
     void*& dstTexelsOut, uint32& dstDataSizeOut
 )
@@ -541,29 +541,29 @@ inline void CompressMipmapToATC(
         {
             // Compress the texture now.
             {
-                ATI_TC_Texture srcTexture;
+                AMD_TC_Texture srcTexture;
                 srcTexture.dwSize = sizeof( srcTexture );
                 srcTexture.dwWidth = mipWidth;
                 srcTexture.dwHeight = mipHeight;
                 srcTexture.dwPitch = 0;
                 srcTexture.format = srcTextureFormat;
                 srcTexture.dwDataSize = feedTextureDataSize;
-                srcTexture.pData = (ATI_TC_BYTE*)feedTexels;
+                srcTexture.pData = (AMD_TC_BYTE*)feedTexels;
 
-                ATI_TC_Texture dstTexture;
+                AMD_TC_Texture dstTexture;
                 dstTexture.dwSize = sizeof( dstTexture );
                 dstTexture.dwWidth = mipWidth;
                 dstTexture.dwHeight = mipHeight;
                 dstTexture.dwPitch = 0;
                 dstTexture.format = dstTextureFormat;
                 dstTexture.dwDataSize = dstDataSize;
-                dstTexture.pData = (ATI_TC_BYTE*)dstTexels;
+                dstTexture.pData = (AMD_TC_BYTE*)dstTexels;
 
                 // Do the conversion.
-                ATI_TC_ERROR atcErrorCode =
-                    ATI_TC_ConvertTexture( &srcTexture, &dstTexture, NULL, NULL, NULL, NULL );
+                AMD_TC_ERROR atcErrorCode =
+                    AMD_TC_ConvertTexture( &srcTexture, &dstTexture, NULL, NULL, NULL, NULL );
 
-                if ( atcErrorCode != ATI_TC_OK )
+                if ( atcErrorCode != AMD_TC_OK )
                 {
                     throw RwException( "unknown error in ATC mipmap encoding" );
                 }
@@ -639,11 +639,11 @@ void atcNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInter
         uint32 feedDepth = 32;
         eColorOrdering feedColorOrder = COLOR_BGRA;
 
-        ATI_TC_FORMAT srcTextureFormat;
+        AMD_TC_FORMAT srcTextureFormat;
 
-        getATITCFormatTargetParams( internalFormat, srcTextureFormat, feedRasterFormat, feedDepth, feedColorOrder );
+        getAMDTCFormatTargetParams( internalFormat, srcTextureFormat, feedRasterFormat, feedDepth, feedColorOrder );
 
-        ATI_TC_FORMAT dstTextureFormat = getATITCFormatFromInternalFormat( internalFormat );
+        AMD_TC_FORMAT dstTextureFormat = getAMDTCFormatFromInternalFormat( internalFormat );
 
         uint32 compressionBlockSize = getATCCompressionBlockSize( internalFormat );
 
@@ -778,11 +778,11 @@ struct atcMipmapManager
         uint32 atcDepth;
         eColorOrdering atcColorOrder;
 
-        ATI_TC_FORMAT dstRasterATITCFormat;
+        AMD_TC_FORMAT dstRasterATITCFormat;
 
-        getATITCFormatTargetParams( internalFormat, dstRasterATITCFormat, atcRasterFormat, atcDepth, atcColorOrder );
+        getAMDTCFormatTargetParams( internalFormat, dstRasterATITCFormat, atcRasterFormat, atcDepth, atcColorOrder );
 
-        ATI_TC_FORMAT srcRasterATITCFormat = getATITCFormatFromInternalFormat( internalFormat );
+        AMD_TC_FORMAT srcRasterATITCFormat = getAMDTCFormatFromInternalFormat( internalFormat );
 
         // Perform it.
         void *dstTexels = NULL;
@@ -885,11 +885,11 @@ struct atcMipmapManager
         uint32 feedDepth = 32;
         eColorOrdering feedColorOrder = COLOR_BGRA;
 
-        ATI_TC_FORMAT srcTextureFormat;
+        AMD_TC_FORMAT srcTextureFormat;
 
-        getATITCFormatTargetParams( internalFormat, srcTextureFormat, feedRasterFormat, feedDepth, feedColorOrder );
+        getAMDTCFormatTargetParams( internalFormat, srcTextureFormat, feedRasterFormat, feedDepth, feedColorOrder );
 
-        ATI_TC_FORMAT dstTextureFormat = getATITCFormatFromInternalFormat( internalFormat );
+        AMD_TC_FORMAT dstTextureFormat = getAMDTCFormatFromInternalFormat( internalFormat );
 
         uint32 compressionBlockSize = getATCCompressionBlockSize( internalFormat );
 

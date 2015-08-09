@@ -3,9 +3,19 @@
     Allows you to register event handlers to objects which can be triggered by the runtime.
 */
 
-typedef uint32 event_t;
+enum class event_t : uint32
+{
+    /*
+        Every event that should be used in the framework is heavily recommended to be put down here.
+        We do not want to have event ID number conflicts, and a unified event descriptor enumeration
+        prevents that.
+    */
 
-#define RW_ANY_EVENT    0xFFFFFFFF
+    // Windowing system events.
+    WINDOW_RESIZE,
+    WINDOW_CLOSING,
+    WINDOW_QUIT,
+};
 
 typedef void (__cdecl*EventHandler_t)( RwObject *obj, event_t triggeredEvent, void *callbackData, void *ud );
 

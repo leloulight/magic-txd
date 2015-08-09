@@ -269,8 +269,13 @@ public:
     // THREAD-SAFE, only as long as it is used only through DynamicTypeSystem!
     struct typeInfoBase abstract
     {
+        inline typeInfoBase( void )
+        { }
+
         virtual ~typeInfoBase( void )
         { }
+
+        typeInfoBase( const typeInfoBase& right ) = delete;
 
         virtual void Cleanup( memAllocType& memAlloc ) = 0;
 
@@ -560,27 +565,27 @@ public:
     {
         struct structTypeInterface : public typeInterface
         {
-            void Construct( void *mem, systemPointer_t *sysPtr, void *construct_params ) const
+            void Construct( void *mem, systemPointer_t *sysPtr, void *construct_params ) const override
             {
                 throw abstraction_construction_exception();
             }
 
-            void CopyConstruct( void *mem, const void *srcMem ) const
+            void CopyConstruct( void *mem, const void *srcMem ) const override
             {
                 throw abstraction_construction_exception();
             }
 
-            void Destruct( void *mem ) const
+            void Destruct( void *mem ) const override
             {
                 return;
             }
 
-            size_t GetTypeSize( systemPointer_t *sysPtr, void *construct_params ) const
+            size_t GetTypeSize( systemPointer_t *sysPtr, void *construct_params ) const override
             {
                 return sizeof( structType );
             }
 
-            size_t GetTypeSizeByObject( systemPointer_t *sysPtr, const void *langObj ) const
+            size_t GetTypeSizeByObject( systemPointer_t *sysPtr, const void *langObj ) const override
             {
                 return (size_t)0;
             }
@@ -620,27 +625,27 @@ public:
     {
         struct structTypeInterface : public typeInterface
         {
-            void Construct( void *mem, systemPointer_t *sysPtr, void *construct_params ) const
+            void Construct( void *mem, systemPointer_t *sysPtr, void *construct_params ) const override
             {
                 new (mem) structType( sysPtr, construct_params );
             }
 
-            void CopyConstruct( void *mem, const void *srcMem ) const
+            void CopyConstruct( void *mem, const void *srcMem ) const override
             {
                 new (mem) structType( *(const structType*)srcMem );
             }
 
-            void Destruct( void *mem ) const
+            void Destruct( void *mem ) const override
             {
                 ((structType*)mem)->~structType();
             }
 
-            size_t GetTypeSize( systemPointer_t *sysPtr, void *construct_params ) const
+            size_t GetTypeSize( systemPointer_t *sysPtr, void *construct_params ) const override
             {
                 return this->structSize;
             }
 
-            size_t GetTypeSizeByObject( systemPointer_t *sysPtr, const void *langObj ) const
+            size_t GetTypeSizeByObject( systemPointer_t *sysPtr, const void *langObj ) const override
             {
                 return this->structSize;
             }
@@ -727,7 +732,7 @@ public:
                 return false;
             }
 
-            void DeleteOnUnregister( void )
+            void DeleteOnUnregister( void ) override
             {
                 _delstruct( this, *typeSys->_memAlloc );
             }
@@ -806,27 +811,27 @@ public:
                 }
             }
 
-            void Construct( void *mem, systemPointer_t *sysPtr, void *construct_params ) const
+            void Construct( void *mem, systemPointer_t *sysPtr, void *construct_params ) const override
             {
                 new (mem) structType( sysPtr, construct_params );
             }
 
-            void CopyConstruct( void *mem, const void *srcMem ) const
+            void CopyConstruct( void *mem, const void *srcMem ) const override
             {
                 new (mem) structType( *(const structType*)srcMem );
             }
 
-            void Destruct( void *mem ) const
+            void Destruct( void *mem ) const override
             {
                 ((structType*)mem)->~structType();
             }
 
-            size_t GetTypeSize( systemPointer_t *sysPtr, void *construct_params ) const
+            size_t GetTypeSize( systemPointer_t *sysPtr, void *construct_params ) const override
             {
                 return meta_info->GetTypeSize( sysPtr, construct_params );
             }
 
-            size_t GetTypeSizeByObject( systemPointer_t *sysPtr, const void *obj ) const
+            size_t GetTypeSizeByObject( systemPointer_t *sysPtr, const void *obj ) const override
             {
                 return meta_info->GetTypeSizeByObject( sysPtr, obj );
             }
@@ -1595,6 +1600,8 @@ public:
     // THREAD-SAFE, because it uses GLOBAL SYSTEM READ LOCK when iterating through the type nodes.
     struct type_iterator
     {
+        const DynamicTypeSystem& typeSys;
+
         // When iterating through types, we must hold a lock.
         scoped_rwlock_read typeConsistencyLock;
 
@@ -1602,10 +1609,27 @@ public:
         RwListEntry <typeInfoBase> *curNode;
 
         inline type_iterator( const DynamicTypeSystem& typeSys )
-            : typeConsistencyLock( typeSys.lockProvider, typeSys.mainLock ),    // WE MUST GET THE LOCK BEFORE WE ACQUIRE THE LIST ROOT, for nicety :3
+            : typeSys( typeSys ),
+              typeConsistencyLock( typeSys.lockProvider, typeSys.mainLock ),    // WE MUST GET THE LOCK BEFORE WE ACQUIRE THE LIST ROOT, for nicety :3
               listRoot( typeSys.registeredTypes )
         {
             this->curNode = listRoot.root.next;
+        }
+
+        inline type_iterator( const type_iterator& right )
+            : typeSys( right.typeSys ),
+              typeConsistencyLock( typeSys.lockProvider, typeSys.mainLock ),
+              listRoot( right.listRoot )
+        {
+            this->curNode = right.curNode;
+        }
+
+        inline type_iterator( type_iterator&& right )
+            : typeSys( right.typeSys ),
+              typeConsistencyLock( typeSys.lockProvider, typeSys.mainLock ),
+              listRoot( right.listRoot )
+        {
+            this->curNode = right.curNode;
         }
 
         inline bool IsEnd( void ) const

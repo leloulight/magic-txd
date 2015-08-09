@@ -1,0 +1,67 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="../../src/main.cpp" />
+    <ClCompile Include="../../src/mainwindow.cpp" />
+    <ClCompile Include="GeneratedFiles\Release\moc_mainwindow.cpp">
+      <Filter>moc</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_mainwindow.cpp">
+      <Filter>moc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\texadddialog.cpp" />
+    <ClCompile Include="GeneratedFiles\Debug\moc_txdlog.cpp">
+      <Filter>moc</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_txdlog.cpp">
+      <Filter>moc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\texformatextensions.cpp" />
+    <ClCompile Include="..\..\src\MagicExport.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="../../include/styles.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="../../include/texinfoitem.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\txdadddialog.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\defs.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\MagicExport.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\texformathelper.hxx">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\magic_api\magfapi.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\magic_api\MagicFormats.h">
+      <Filter>sdk</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{b0ae3eea-bf12-422e-9ee6-c80d0190421c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="moc">
+      <UniqueIdentifier>{e8279e0e-c4b8-4bbe-b754-8de3bc709273}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sdk">
+      <UniqueIdentifier>{22069f19-de31-4428-800e-65881315cee3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="../../include/mainwindow.h">
+      <Filter>include</Filter>
+    </CustomBuild>
+    <CustomBuild Include="../../include/txdlog.h">
+      <Filter>include</Filter>
+    </CustomBuild>
+  </ItemGroup>
+</Project>

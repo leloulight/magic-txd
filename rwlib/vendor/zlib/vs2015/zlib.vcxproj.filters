@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\adler32.c" />
+    <ClCompile Include="..\compress.c" />
+    <ClCompile Include="..\crc32.c" />
+    <ClCompile Include="..\deflate.c" />
+    <ClCompile Include="..\gzio.c" />
+    <ClCompile Include="..\infback.c" />
+    <ClCompile Include="..\inffast.c" />
+    <ClCompile Include="..\inflate.c" />
+    <ClCompile Include="..\inftrees.c" />
+    <ClCompile Include="..\trees.c" />
+    <ClCompile Include="..\uncompr.c" />
+    <ClCompile Include="..\zutil.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\crc32.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\deflate.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\inffast.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\inffixed.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\inflate.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\inftrees.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\trees.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\zconf.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\zconf.in.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\zlib.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\zutil.h">
+      <Filter>include</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{dc26d21c-0e85-46b7-af4c-879187b3f533}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

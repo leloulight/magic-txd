@@ -1,0 +1,325 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug 2013|Win32">
+      <Configuration>Debug 2013</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug 2013|x64">
+      <Configuration>Debug 2013</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug 2015|Win32">
+      <Configuration>Debug 2015</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug 2015|x64">
+      <Configuration>Debug 2015</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release 2013|Win32">
+      <Configuration>Release 2013</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release 2013|x64">
+      <Configuration>Release 2013</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release 2015|Win32">
+      <Configuration>Release 2015</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release 2015|x64">
+      <Configuration>Release 2015</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{024E7ABB-3A5D-4090-B73E-29E79946C127}</ProjectGuid>
+    <RootNamespace>libtiff</RootNamespace>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2015|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2015|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2013|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2013|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release 2015|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release 2013|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release 2013|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug 2015|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2015|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2013|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2013|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release 2015|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release 2013|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release 2013|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2015|Win32'">
+    <OutDir>$(ProjectDir)..\..\lib\</OutDir>
+    <IntDir>$(ProjectDir)..\..\obj\$(Platform)_$(Configuration)_$(PlatformToolset)\</IntDir>
+    <TargetName>libtiff_d_$(PlatformToolset)</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2015|x64'">
+    <IntDir>$(ProjectDir)..\..\obj\$(Platform)_$(Configuration)_$(PlatformToolset)\</IntDir>
+    <TargetName>libtiff_d_$(PlatformToolset)_x64</TargetName>
+    <OutDir>$(ProjectDir)..\..\lib\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2013|Win32'">
+    <OutDir>$(ProjectDir)..\..\lib\</OutDir>
+    <IntDir>$(ProjectDir)..\..\obj\$(Platform)_$(Configuration)_$(PlatformToolset)\</IntDir>
+    <TargetName>libtiff_d_$(PlatformToolset)</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2013|x64'">
+    <IntDir>$(ProjectDir)..\..\obj\$(Platform)_$(Configuration)_$(PlatformToolset)\</IntDir>
+    <TargetName>libtiff_d_$(PlatformToolset)_x64</TargetName>
+    <OutDir>$(ProjectDir)..\..\lib\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release 2015|Win32'">
+    <OutDir>$(ProjectDir)..\..\lib\</OutDir>
+    <IntDir>$(ProjectDir)..\..\obj\$(Platform)_$(Configuration)_$(PlatformToolset)\</IntDir>
+    <TargetName>libtiff_$(PlatformToolset)</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'">
+    <IntDir>$(ProjectDir)..\..\obj\$(Platform)_$(Configuration)_$(PlatformToolset)\</IntDir>
+    <TargetName>libtiff_$(PlatformToolset)_x64</TargetName>
+    <OutDir>$(ProjectDir)..\..\lib\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release 2013|Win32'">
+    <OutDir>$(ProjectDir)..\..\lib\</OutDir>
+    <IntDir>$(ProjectDir)..\..\obj\$(Platform)_$(Configuration)_$(PlatformToolset)\</IntDir>
+    <TargetName>libtiff_$(PlatformToolset)</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release 2013|x64'">
+    <IntDir>$(ProjectDir)..\..\obj\$(Platform)_$(Configuration)_$(PlatformToolset)\</IntDir>
+    <TargetName>libtiff_$(PlatformToolset)_x64</TargetName>
+    <OutDir>$(ProjectDir)..\..\lib\</OutDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2015|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>false</SDLCheck>
+      <AdditionalIncludeDirectories>../../config/</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2015|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>false</SDLCheck>
+      <AdditionalIncludeDirectories>../../config/</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2013|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>false</SDLCheck>
+      <AdditionalIncludeDirectories>../../config/</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2013|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>false</SDLCheck>
+      <AdditionalIncludeDirectories>../../config/</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release 2015|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>false</SDLCheck>
+      <AdditionalIncludeDirectories>../../config/</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>false</SDLCheck>
+      <AdditionalIncludeDirectories>../../config/</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release 2013|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>false</SDLCheck>
+      <AdditionalIncludeDirectories>../../config/</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release 2013|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>false</SDLCheck>
+      <AdditionalIncludeDirectories>../../config/</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\libtiff\t4.h" />
+    <ClInclude Include="..\..\libtiff\tiff.h" />
+    <ClInclude Include="..\..\libtiff\tiffio.h" />
+    <ClInclude Include="..\..\libtiff\tiffio.hxx" />
+    <ClInclude Include="..\..\libtiff\tiffiop.h" />
+    <ClInclude Include="..\..\libtiff\tiffvers.h" />
+    <ClInclude Include="..\..\libtiff\tif_dir.h" />
+    <ClInclude Include="..\..\libtiff\tif_fax3.h" />
+    <ClInclude Include="..\..\libtiff\tif_predict.h" />
+    <ClInclude Include="..\..\libtiff\uvcode.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\libtiff\mkg3states.c" />
+    <ClCompile Include="..\..\libtiff\tif_aux.c" />
+    <ClCompile Include="..\..\libtiff\tif_close.c" />
+    <ClCompile Include="..\..\libtiff\tif_codec.c" />
+    <ClCompile Include="..\..\libtiff\tif_color.c" />
+    <ClCompile Include="..\..\libtiff\tif_compress.c" />
+    <ClCompile Include="..\..\libtiff\tif_dir.c" />
+    <ClCompile Include="..\..\libtiff\tif_dirinfo.c" />
+    <ClCompile Include="..\..\libtiff\tif_dirread.c" />
+    <ClCompile Include="..\..\libtiff\tif_dirwrite.c" />
+    <ClCompile Include="..\..\libtiff\tif_dumpmode.c" />
+    <ClCompile Include="..\..\libtiff\tif_error.c" />
+    <ClCompile Include="..\..\libtiff\tif_extension.c" />
+    <ClCompile Include="..\..\libtiff\tif_fax3.c" />
+    <ClCompile Include="..\..\libtiff\tif_fax3sm.c" />
+    <ClCompile Include="..\..\libtiff\tif_flush.c" />
+    <ClCompile Include="..\..\libtiff\tif_getimage.c" />
+    <ClCompile Include="..\..\libtiff\tif_jbig.c" />
+    <ClCompile Include="..\..\libtiff\tif_jpeg.c" />
+    <ClCompile Include="..\..\libtiff\tif_jpeg_12.c" />
+    <ClCompile Include="..\..\libtiff\tif_luv.c" />
+    <ClCompile Include="..\..\libtiff\tif_lzma.c" />
+    <ClCompile Include="..\..\libtiff\tif_lzw.c" />
+    <ClCompile Include="..\..\libtiff\tif_next.c" />
+    <ClCompile Include="..\..\libtiff\tif_ojpeg.c" />
+    <ClCompile Include="..\..\libtiff\tif_open.c" />
+    <ClCompile Include="..\..\libtiff\tif_packbits.c" />
+    <ClCompile Include="..\..\libtiff\tif_pixarlog.c" />
+    <ClCompile Include="..\..\libtiff\tif_predict.c" />
+    <ClCompile Include="..\..\libtiff\tif_print.c" />
+    <ClCompile Include="..\..\libtiff\tif_read.c" />
+    <ClCompile Include="..\..\libtiff\tif_stream.cxx" />
+    <ClCompile Include="..\..\libtiff\tif_strip.c" />
+    <ClCompile Include="..\..\libtiff\tif_swab.c" />
+    <ClCompile Include="..\..\libtiff\tif_thunder.c" />
+    <ClCompile Include="..\..\libtiff\tif_tile.c" />
+    <ClCompile Include="..\..\libtiff\tif_version.c" />
+    <ClCompile Include="..\..\libtiff\tif_warning.c" />
+    <ClCompile Include="..\..\libtiff\tif_win32.c" />
+    <ClCompile Include="..\..\libtiff\tif_write.c" />
+    <ClCompile Include="..\..\libtiff\tif_zip.c" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

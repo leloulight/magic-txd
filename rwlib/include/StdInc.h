@@ -18,6 +18,18 @@
 
 #include <DynamicTypeSystem.h>
 
+#ifdef DEBUG
+	#define READ_HEADER(x)\
+	header.read(rw);\
+	if (header.type != (x)) {\
+		cerr << filename << " ";\
+		ChunkNotFound((x), rw.tellg());\
+	}
+#else
+	#define READ_HEADER(x)\
+	header.read(rw);
+#endif
+
 namespace rw
 {
 

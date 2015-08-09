@@ -124,6 +124,10 @@ struct windowingSystemWin32
                 }
             }
 
+            // WARNING: from here on the window is not an entire RenderWare object anymore!!!
+            // This means that you must not use it in the ecosystem. Short out every code that
+            // could use it into default handlers!
+            
             // Remove our userdata pointer.
             SetWindowLongW( wndHandle, GWLP_USERDATA, NULL );
 
@@ -261,20 +265,20 @@ struct windowingSystemWin32
                         }
 
                         // Tell the system that this window resized.
-                        TriggerEvent( wndClass, WINDOW_RESIZE, NULL );
+                        TriggerEvent( wndClass, event_t::WINDOW_RESIZE, NULL );
 
                         hasHandled = true;
                         break;
                     case WM_CLOSE:
                         // We call an event.
-                        TriggerEvent( wndClass, WINDOW_CLOSING, NULL );
+                        TriggerEvent( wndClass, event_t::WINDOW_CLOSING, NULL );
                 
                         hasHandled = true;
                         break;
                     case WM_QUIT:
                         // We received a message for immediate termination.
                         // The application layer should get to the exit ASAP!
-                        TriggerEvent( wndClass, WINDOW_QUIT, NULL );
+                        TriggerEvent( wndClass, event_t::WINDOW_QUIT, NULL );
 
                         hasHandled = true;
                         break;

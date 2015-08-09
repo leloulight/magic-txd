@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="../blur.c" />
+    <ClCompile Include="../libimagequant.c" />
+    <ClCompile Include="../mediancut.c" />
+    <ClCompile Include="../mempool.c" />
+    <ClCompile Include="../nearest.c" />
+    <ClCompile Include="../pam.c" />
+    <ClCompile Include="../viter.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="../blur.h" />
+    <ClInclude Include="../libimagequant.h" />
+    <ClInclude Include="../mediancut.h" />
+    <ClInclude Include="../mempool.h" />
+    <ClInclude Include="../nearest.h" />
+    <ClInclude Include="../pam.h" />
+    <ClInclude Include="../viter.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{aef8da17-afcd-4beb-adc7-2d8f5a95d071}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

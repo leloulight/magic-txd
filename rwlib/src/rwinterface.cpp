@@ -699,6 +699,7 @@ extern void registerSerializationPlugins( void );
 extern void registerStreamGlobalPlugins( void );
 extern void registerImagingPlugin( void );
 extern void registerWindowingSystem( void );
+extern void registerDriverEnvironment( void );
 
 static bool hasInitialized = false;
 
@@ -742,6 +743,7 @@ Interface* CreateEngine( LibraryVersion theVersion )
             registerTXDPlugins();
             registerImagingPlugin();
             registerWindowingSystem();
+            registerDriverEnvironment();
 
             hasInitialized = true;
         }
