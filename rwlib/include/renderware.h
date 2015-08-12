@@ -403,6 +403,7 @@ struct RwException
 #include "renderware.events.h"
 #include "renderware.windowing.h"
 #include "renderware.threading.h"
+#include "renderware.driver.h"
 
 // Warning manager interface.
 struct WarningManagerInterface abstract

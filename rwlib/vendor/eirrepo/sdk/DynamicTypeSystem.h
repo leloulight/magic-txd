@@ -1565,7 +1565,21 @@ public:
     inline void DeleteType( typeInfoBase *typeInfo )
     {
         // Make sure we do not inherit from anything anymore.
-        SetTypeInfoInheritingClass( typeInfo, NULL );
+        if ( typeInfo->inheritsFrom != NULL )
+        {
+            scoped_rwlock_write sysLock( this->lockProvider, this->mainLock );
+
+            typeInfoBase *inheritsFrom = typeInfo->inheritsFrom;
+
+            if ( inheritsFrom )
+            {
+                scoped_rwlock_write inheritedLock( this->lockProvider, inheritsFrom->typeLock );
+
+                typeInfo->inheritsFrom = NULL;
+                
+                inheritsFrom->inheritanceCount--;
+            }
+        }
 
         // Make sure all classes that inherit from us do not do that anymore.
         {

@@ -36,8 +36,6 @@ namespace rw
         if ( !rwWindow )
             return -1;
 
-        uint32 wndBaseRefCount = GetRefCount( rwWindow );
-
         // We hold an extra reference.
         AcquireObject( rwWindow );
 
@@ -49,9 +47,18 @@ namespace rw
         rwWindow->SetVisible( true );
         
         // Create the game renderer.
+        Driver *d3dDriver = CreateDriver( engineInterface, "Direct3D12" );
+
+        assert( d3dDriver != NULL );
+
+        // Set up the game resources.
+        DriverSwapChain *swapChain = d3dDriver->CreateSwapChain( rwWindow, 2 ); // we want to double-buffer.
+
+        // We have to get the ref count over here, because the swap chain increases the ref count as well.
+        uint32 wndBaseRefCount = GetRefCount( rwWindow );
 
         // Execute the main loop
-        while ( GetRefCount( rwWindow ) > wndBaseRefCount )   // we wait until somebody requested to destroy the window.
+        while ( GetRefCount( rwWindow ) >= wndBaseRefCount )   // we wait until somebody requested to destroy the window.
         {
             // Draw the game scene.
 
@@ -63,6 +70,17 @@ namespace rw
             // Otherwise our thread would starve everything.
             YieldExecution( 1 );
         }
+
+        // Hide the window.
+        // Do this because terminating resources takes some time and
+        // the user already knows this application is terminating.
+        rwWindow->SetVisible( false );
+
+        // Release the swap chain device resource.
+        d3dDriver->DestroySwapChain( swapChain );
+
+        // Terminate the driver.
+        DestroyDriver( engineInterface, d3dDriver );
 
         // Release our window reference.
         // This will destroy it.

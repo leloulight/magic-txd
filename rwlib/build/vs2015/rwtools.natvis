@@ -80,9 +80,20 @@
       </CustomListItems>
     </Expand>
   </Type>
-  <Type Name="rw::Interface">
-    <Expand HideRawView="true">
+  <Type Name="rw::Interface" Inheritable="false">
+    <Expand>
       <ExpandedItem>(rw::EngineInterface*)this</ExpandedItem>
+    </Expand>
+  </Type>
+  <Type Name="rw::Driver">
+    <DisplayString Condition="this == nullptr">none</DisplayString>
+    <DisplayString>Driver: {((RwTypeSystem::typeInfoBase*)((GenericRTTI*)this - 1)->type_meta)->name,s}</DisplayString>
+    <Expand HideRawView="true">
+      <CustomListItems>
+        <Variable Name="platformTypeData" InitialValue="((RwTypeSystem::typeInfoBase*)((GenericRTTI*)this - 1)->type_meta)"/>
+        <Variable Name="platformName" InitialValue="platformTypeData->name" />
+        <Item Name="Direct3D 12" Condition='strcmp(platformName,"Direct3D12") == 0'>(rw::d3d12NativeDriver*)( this + 1 )</Item>
+      </CustomListItems>
     </Expand>
   </Type>
 </AutoVisualizer>

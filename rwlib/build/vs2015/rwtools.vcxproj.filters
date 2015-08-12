@@ -153,6 +153,9 @@
     <ClInclude Include="..\..\src\rwdriver.d3d12.hxx">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\rwwindowing.hxx">
+      <Filter>Include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\dffread.cpp" />
@@ -210,6 +213,10 @@
     <ClCompile Include="..\..\src\rwthreading.cpp" />
     <ClCompile Include="..\..\src\rwdriver.cpp" />
     <ClCompile Include="..\..\src\rwdriver.d3d12.cpp" />
+    <ClCompile Include="..\..\src\rwdriver.d3d12.geom.cpp" />
+    <ClCompile Include="..\..\src\rwdriver.d3d12.mat.cpp" />
+    <ClCompile Include="..\..\src\rwdriver.d3d12.raster.cpp" />
+    <ClCompile Include="..\..\src\rwdriver.d3d12.swap.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="rwtools.natvis">

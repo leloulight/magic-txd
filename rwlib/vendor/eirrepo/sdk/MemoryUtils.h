@@ -1517,18 +1517,9 @@ private:
     }
 
 public:
-    template <typename allocatorType, typename constructorType>
-    inline classType* ConstructTemplate( allocatorType& memAllocator, constructorType constructor )
+    template <typename constructorType>
+    inline classType* ConstructPlacementEx( void *classMem, const constructorType& constructor )
     {
-        // Attempt to allocate the necessary memory.
-        const size_t baseClassSize = sizeof( classType );
-        const size_t wholeClassSize = this->GetClassSize();
-
-        void *classMem = memAllocator.Allocate( wholeClassSize );
-
-        if ( !classMem )
-            return NULL;
-
         classType *resultObject = NULL;
         {
             classType *intermediateClassObject = NULL;
@@ -1565,17 +1556,12 @@ public:
         {
             this->aliveClasses++;
         }
-        else
-        {
-            // Clean up.
-            memAllocator.Free( classMem, wholeClassSize );
-        }
 
         return resultObject;
     }
 
     template <typename allocatorType, typename constructorType>
-    inline classType* CloneTemplate( allocatorType& memAllocator, const classType *srcObject, constructorType& constructor )
+    inline classType* ConstructTemplate( allocatorType& memAllocator, const constructorType& constructor )
     {
         // Attempt to allocate the necessary memory.
         const size_t baseClassSize = sizeof( classType );
@@ -1586,6 +1572,20 @@ public:
         if ( !classMem )
             return NULL;
 
+        classType *resultObj = ConstructPlacementEx( classMem, constructor );
+
+        if ( !resultObj )
+        {
+            // Clean up.
+            memAllocator.Free( classMem, wholeClassSize );
+        }
+
+        return resultObj;
+    }
+
+    template <typename constructorType>
+    inline classType* ClonePlacementEx( void *classMem, const classType *srcObject, const constructorType& constructor )
+    {
         classType *clonedObject = NULL;
         {
             // Construct a basic class where we assign stuff to.
@@ -1619,6 +1619,23 @@ public:
             }
         }
 
+        return clonedObject;
+    }
+
+    template <typename allocatorType, typename constructorType>
+    inline classType* CloneTemplate( allocatorType& memAllocator, const classType *srcObject, const constructorType& constructor )
+    {
+        // Attempt to allocate the necessary memory.
+        const size_t baseClassSize = sizeof( classType );
+        const size_t wholeClassSize = this->GetClassSize();
+
+        void *classMem = memAllocator.Allocate( wholeClassSize );
+
+        if ( !classMem )
+            return NULL;
+
+        classType *clonedObject = ClonePlacementEx( classMem, srcObject, constructor );
+
         if ( clonedObject == NULL )
         {
             memAllocator.Free( classMem );
@@ -1629,12 +1646,12 @@ public:
 
     struct basicClassConstructor
     {
-        inline classType* Construct( void *mem )
+        inline classType* Construct( void *mem ) const
         {
             return new (mem) classType;
         }
 
-        inline classType* CopyConstruct( void *mem, const classType *srcMem )
+        inline classType* CopyConstruct( void *mem, const classType *srcMem ) const
         {
             return new (mem) classType( *srcMem );
         }
@@ -1648,6 +1665,13 @@ public:
         return ConstructTemplate( memAllocator, constructor );
     }
 
+    inline classType* ConstructPlacement( void *memPtr )
+    {
+        basicClassConstructor constructor;
+
+        return ConstructPlacementEx( memPtr, constructor );
+    }
+
     template <typename allocatorType>
     inline classType* Clone( allocatorType& memAllocator, const classType *srcObject )
     {
@@ -1656,31 +1680,42 @@ public:
         return CloneTemplate( memAllocator, srcObject, constructor );
     }
 
+    inline classType* ClonePlacement( void *memPtr, const classType *srcObject )
+    {
+        basicClassConstructor constructor;
+
+        return ClonePlacementEx( memPtr, srcObject, constructor );
+    }
+
+    inline void DestroyPlacement( classType *classObject )
+    {
+        // Destroy plugin data first.
+        structRegistry.DestroyPluginBlock( classObject );
+
+        try
+        {
+            // Destroy the base class object.
+            classObject->~classType();
+        }
+        catch( ... )
+        {
+            // There was an exception while destroying the base class.
+            // This must not happen either; we have to notify the guys!
+            assert( 0 );
+        }
+
+        // Decrease the number of alive classes.
+        this->aliveClasses--;
+    }
+
     template <typename allocatorType>
     inline void Destroy( allocatorType& memAllocator, classType *classObject )
     {
         if ( classObject == NULL )
             return;
 
-        {
-            // Destroy plugin data first.
-            structRegistry.DestroyPluginBlock( classObject );
-
-            try
-            {
-                // Destroy the base class object.
-                classObject->~classType();
-            }
-            catch( ... )
-            {
-                // There was an exception while destroying the base class.
-                // This must not happen either; we have to notify the guys!
-                assert( 0 );
-            }
-
-            // Decrease the number of alive classes.
-            this->aliveClasses--;
-        }
+        // Invalidate the memory that is in "classObject".
+        DestroyPlacement( classObject );
 
         // Free our memory.
         void *classMem = classObject;

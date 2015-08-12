@@ -638,7 +638,7 @@ struct threadObjectConstructor
         this->entryPoint = entryPoint;
     }
 
-    inline CExecThread* Construct( void *mem )
+    inline CExecThread* Construct( void *mem ) const
     {
         return new (mem) CExecThread( this->manager, this->isRemoteThread, this->userdata, this->stackSize, this->entryPoint );
     }

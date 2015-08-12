@@ -10,6 +10,7 @@ struct driverConstructionProps
     size_t rasterMemSize;
     size_t geomMemSize;
     size_t matMemSize;
+    size_t swapChainMemSize;
 };
 
 /*
@@ -18,67 +19,80 @@ struct driverConstructionProps
 */
 struct nativeDriverImplementation
 {
-    inline nativeDriverImplementation( void )
-    {
-        this->managerData.isRegistered = false;
+    // Driver object creation.
+    virtual void OnDriverConstruct( Interface *engineInterface, void *driverObjMem, size_t driverMemSize ) = 0;
+    virtual void OnDriverCopyConstruct( Interface *engineInterface, void *driverObjMem, const void *srcDriverObjMem, size_t driverMemSize ) = 0;
+    virtual void OnDriverDestroy( Interface *engineInterface, void *driverObjMem, size_t driverMemSize ) = 0;
 
-        // Every driver has to export functionality for instanced objects.
-        this->managerData.driverType = NULL;
-        this->managerData.rasterType = NULL;
-        this->managerData.geometryType = NULL;
-        this->managerData.materialType = NULL;
-    }
+    // Helper macros.
+#define NATIVE_DRIVER_OBJ_CONSTRUCT( canonicalName ) \
+    void On##canonicalName##Construct( Interface *engineInterface, void *driverObjMem, void *objMem, size_t memSize )
+#define NATIVE_DRIVER_OBJ_COPYCONSTRUCT( canonicalName ) \
+    void On##canonicalName##CopyConstruct( Interface *engineInterface, void *objMem, const void *srcObjMem, size_t memSize )
+#define NATIVE_DRIVER_OBJ_DESTROY( canonicalName ) \
+    void On##canonicalName##Destroy( Interface *engineInterface, void *objMem, size_t memSize )
 
-    inline ~nativeDriverImplementation( void )
-    {
-        if ( this->managerData.isRegistered )
-        {
-            LIST_REMOVE( this->managerData.node );
+#define NATIVE_DRIVER_DEFINE_CONSTRUCT_VIRTUAL( canonicalName ) \
+    virtual NATIVE_DRIVER_OBJ_CONSTRUCT( canonicalName ) = 0; \
+    virtual NATIVE_DRIVER_OBJ_COPYCONSTRUCT( canonicalName ) = 0; \
+    virtual NATIVE_DRIVER_OBJ_DESTROY( canonicalName ) = 0;
 
-            this->managerData.isRegistered = false;
-        }
-    }
+#define NATIVE_DRIVER_DEFINE_CONSTRUCT_FORWARD( canonicalName ) \
+    NATIVE_DRIVER_OBJ_CONSTRUCT( canonicalName ); \
+    NATIVE_DRIVER_OBJ_COPYCONSTRUCT( canonicalName ); \
+    NATIVE_DRIVER_OBJ_DESTROY( canonicalName );
 
     // Instanced type creation.
-    virtual void OnRasterConstruct( Interface *engineInterface, void *objMem, size_t memSize ) = 0;
-    virtual void OnRasterCopyConstruct( Interface *engineInterface, void *objMem, const void *srcObjMem, size_t memSize ) = 0;
-    virtual void OnRasterDestroy( Interface *engineInterface, void *objMem, size_t memSize ) = 0;
+    NATIVE_DRIVER_DEFINE_CONSTRUCT_VIRTUAL( Raster );
+    NATIVE_DRIVER_DEFINE_CONSTRUCT_VIRTUAL( Geometry );
+    NATIVE_DRIVER_DEFINE_CONSTRUCT_VIRTUAL( Material );
 
-    virtual void OnGeometryConstruct( Interface *engineInterface, void *objMem, size_t memSize ) = 0;
-    virtual void OnGeometryCopyConstruct( Interface *engineInterface, void *objMem, const void *srcObjMem, size_t memSize ) = 0;
-    virtual void OnGeometryDestroy( Interface *engineInterface, void *objMem, size_t memSizue ) = 0;
+    // Default implementation macros.
+#define NATIVE_DRIVER_OBJ_CONSTRUCT_IMPL( canonicalName, className, driverClassName ) \
+    NATIVE_DRIVER_OBJ_CONSTRUCT( canonicalName ) override \
+    { \
+        new (objMem) className( this, engineInterface, (driverClassName*)driverObjMem ); \
+    } \
+    NATIVE_DRIVER_OBJ_COPYCONSTRUCT( canonicalName ) override \
+    { \
+        new (objMem) className( *(const className*)srcObjMem ); \
+    } \
+    NATIVE_DRIVER_OBJ_DESTROY( canonicalName ) override \
+    { \
+        ((className*)objMem)->~className(); \
+    }
 
-    virtual void OnMaterialConstruct( Interface *engineInterface, void *objMem, size_t memSize ) = 0;
-    virtual void OnMaterialCopyConstruct( Interface *engineInterface, void *objMem, const void *srcObjMem, size_t memSize ) = 0;
-    virtual void OnMaterialDestroy( Interface *engineInterface, void *objMem, size_t memSize ) = 0;
+    // Instancing method helpers.
+#define NATIVE_DRIVER_OBJ_INSTANCE( canonicalName ) \
+    void canonicalName##Instance( Interface *engineInterface, void *driverObjMem, void *objMem, canonicalName *sysObj )
+#define NATIVE_DRIVER_OBJ_UNINSTANCE( canonicalName ) \
+    void canonicalName##Uninstance( Interface *engineInterface, void *driverObjMem, void *objMem )
 
-    // Raster instancing.
-    virtual void RasterInstance( Interface *engineInterface, void *objMem, Raster *sysRaster ) = 0;
-    virtual void RasterUninstance( Interface *engineInterface, void *objMem ) = 0;
+#define NATIVE_DRIVER_DEFINE_INSTANCING_VIRTUAL( canonicalName ) \
+    virtual NATIVE_DRIVER_OBJ_INSTANCE( canonicalName ) = 0; \
+    virtual NATIVE_DRIVER_OBJ_UNINSTANCE( canonicalName ) = 0;
 
-    // Geometry instancing.
-    virtual void GeometryInstance( Interface *engineInterface, void *objMem, Geometry *sysGeom ) = 0;
-    virtual void GeometryUninstance( Interface *engineInterface, void *objMem ) = 0;
+#define NATIVE_DRIVER_DEFINE_INSTANCING_FORWARD( canonicalName ) \
+    NATIVE_DRIVER_OBJ_INSTANCE( canonicalName ); \
+    NATIVE_DRIVER_OBJ_UNINSTANCE( canonicalName );
 
-    // Material instancing.
-    virtual void MaterialInstance( Interface *engineInterface, void *objMem, Material *sysMat ) = 0;
-    virtual void MateríalUninstance( Interface *engineInterface, void *objMem ) = 0;
+    // Instancing declarations.
+    NATIVE_DRIVER_DEFINE_INSTANCING_VIRTUAL( Raster );
+    NATIVE_DRIVER_DEFINE_INSTANCING_VIRTUAL( Geometry );
+    NATIVE_DRIVER_DEFINE_INSTANCING_VIRTUAL( Material );
 
-    // Private manager data.
-    struct
-    {
-        RwTypeSystem::typeInfoBase *driverType;         // actual driver type
-        RwTypeSystem::typeInfoBase *rasterType;         // type of instanced raster
-        RwTypeSystem::typeInfoBase *geometryType;       // type of instanced geometry
-        RwTypeSystem::typeInfoBase *materialType;       // type of instanced material
+    // Drivers need swap chains for windowing system output.
+#define NATIVE_DRIVER_SWAPCHAIN_CONSTRUCT() \
+    void SwapChainConstruct( Interface *engineInterface, void *driverObjMem, void *objMem, Window *sysWnd, uint32 frameCount )
+#define NATIVE_DRIVER_SWAPCHAIN_DESTROY() \
+    void SwapChainDestroy( Interface *engineInterface, void *objMem )
 
-        bool isRegistered;
-        RwListEntry <nativeDriverImplementation> node;
-    } managerData;
+    virtual NATIVE_DRIVER_SWAPCHAIN_CONSTRUCT() = 0;
+    virtual NATIVE_DRIVER_SWAPCHAIN_DESTROY() = 0;
 };
 
 // Driver registration API.
-bool RegisterDriver( EngineInterface *engineInterface, const char *typeName, const driverConstructionProps& props, nativeDriverImplementation *driverIntf );
+bool RegisterDriver( EngineInterface *engineInterface, const char *typeName, const driverConstructionProps& props, nativeDriverImplementation *driverIntf, size_t driverObjSize );
 bool UnregisterDriver( EngineInterface *engineInterface, nativeDriverImplementation *driverIntf );
 
 };

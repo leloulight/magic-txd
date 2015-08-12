@@ -123,46 +123,54 @@
     <OutDir>$(ProjectDir)..\..\output\</OutDir>
     <IntDir>$(ProjectDir)..\..\obj\$(Platform)_$(Configuration)_$(PlatformToolset)\</IntDir>
     <TargetName>rwtools_d_$(PlatformToolset)</TargetName>
+    <IncludePath>$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2013|Win32'">
     <OutDir>$(ProjectDir)..\..\output\</OutDir>
     <IntDir>$(ProjectDir)..\..\obj\$(Platform)_$(Configuration)_$(PlatformToolset)\</IntDir>
     <TargetName>rwtools_d_$(PlatformToolset)</TargetName>
+    <IncludePath>$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2015|x64'">
     <TargetName>rwtools_d_$(PlatformToolset)_x64</TargetName>
     <IntDir>$(ProjectDir)..\..\obj\$(Platform)_$(Configuration)_$(PlatformToolset)\</IntDir>
     <OutDir>$(ProjectDir)..\..\output\</OutDir>
+    <IncludePath>$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2013|x64'">
     <TargetName>rwtools_d_$(PlatformToolset)_x64</TargetName>
     <IntDir>$(ProjectDir)..\..\obj\$(Platform)_$(Configuration)_$(PlatformToolset)\</IntDir>
     <OutDir>$(ProjectDir)..\..\output\</OutDir>
+    <IncludePath>$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release 2015|Win32'">
     <OutDir>$(ProjectDir)..\..\output\</OutDir>
     <IntDir>$(ProjectDir)..\..\obj\$(Platform)_$(Configuration)_$(PlatformToolset)\</IntDir>
     <TargetName>rwtools_$(PlatformToolset)</TargetName>
+    <IncludePath>$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release 2013|Win32'">
     <OutDir>$(ProjectDir)..\..\output\</OutDir>
     <IntDir>$(ProjectDir)..\..\obj\$(Platform)_$(Configuration)_$(PlatformToolset)\</IntDir>
     <TargetName>rwtools_$(PlatformToolset)</TargetName>
+    <IncludePath>$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'">
     <TargetName>rwtools_$(PlatformToolset)_x64</TargetName>
     <OutDir>$(ProjectDir)..\..\output\</OutDir>
     <IntDir>$(ProjectDir)..\..\obj\$(Platform)_$(Configuration)_$(PlatformToolset)\</IntDir>
+    <IncludePath>$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release 2013|x64'">
     <TargetName>rwtools_$(PlatformToolset)_x64</TargetName>
     <OutDir>$(ProjectDir)..\..\output\</OutDir>
     <IntDir>$(ProjectDir)..\..\obj\$(Platform)_$(Configuration)_$(PlatformToolset)\</IntDir>
+    <IncludePath>$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2015|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/amdtc/Header/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/amdtc/Header/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;../../vendor/directx/12/Include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -186,7 +194,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2013|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/amdtc/Header/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/amdtc/Header/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;../../vendor/directx/12/Include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -210,7 +218,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2015|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/amdtc/Header/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/amdtc/Header/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;../../vendor/directx/12/Include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -233,7 +241,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2013|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/amdtc/Header/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/amdtc/Header/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;../../vendor/directx/12/Include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -260,7 +268,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/amdtc/Header/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/amdtc/Header/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;../../vendor/directx/12/Include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -288,7 +296,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/amdtc/Header/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/amdtc/Header/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;../../vendor/directx/12/Include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -316,7 +324,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/amdtc/Header/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/amdtc/Header/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;../../vendor/directx/12/Include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -344,7 +352,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/amdtc/Header/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/amdtc/Header/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;../../vendor/directx/12/Include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -392,6 +400,7 @@
     <ClInclude Include="..\..\src\rwimaging.hxx" />
     <ClInclude Include="..\..\src\rwinterface.hxx" />
     <ClInclude Include="..\..\src\rwserialize.hxx" />
+    <ClInclude Include="..\..\src\rwwindowing.hxx" />
     <ClInclude Include="..\..\src\streamutil.hxx" />
     <ClInclude Include="..\..\src\txdread.atc.hxx" />
     <ClInclude Include="..\..\src\txdread.common.hxx" />
@@ -442,6 +451,10 @@
     <ClCompile Include="..\..\src\rwbmp.cpp" />
     <ClCompile Include="..\..\src\rwdriver.cpp" />
     <ClCompile Include="..\..\src\rwdriver.d3d12.cpp" />
+    <ClCompile Include="..\..\src\rwdriver.d3d12.geom.cpp" />
+    <ClCompile Include="..\..\src\rwdriver.d3d12.mat.cpp" />
+    <ClCompile Include="..\..\src\rwdriver.d3d12.raster.cpp" />
+    <ClCompile Include="..\..\src\rwdriver.d3d12.swap.cpp" />
     <ClCompile Include="..\..\src\rwevents.cpp" />
     <ClCompile Include="..\..\src\rwfile.cpp" />
     <ClCompile Include="..\..\src\rwimaging.bmp.cpp" />
