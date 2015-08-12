@@ -264,7 +264,7 @@ RwObject* Interface::DeserializeBlock( BlockProvider& inputProvider )
                     catch( ... )
                     {
                         // We failed for some reason, so destroy the object again.
-                        engineInterface->typeSystem.Destroy( engineInterface, rtObj );
+                        engineInterface->DeleteRwObject( rwObj );
 
                         throw;
                     }
