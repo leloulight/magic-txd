@@ -182,9 +182,9 @@
       <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName)_2013.pch</PrecompiledHeaderOutputFile>
     </ClCompile>
     <Lib>
-      <AdditionalDependencies>libimagequant_d_$(PlatformToolset).lib;squishd_$(PlatformToolset).lib;ATI_Compress_MT.lib;PVRTexLib.lib;libpng_d_$(PlatformToolset).lib;libjpeg_d_$(PlatformToolset).lib;libtiff_d_$(PlatformToolset).lib;native_exec_d_$(PlatformToolset).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libimagequant_d_$(PlatformToolset).lib;squishd_$(PlatformToolset).lib;ATI_Compress_MT_DLL.lib;PVRTexLib.lib;libpng_d_$(PlatformToolset).lib;libjpeg_d_$(PlatformToolset).lib;libtiff_d_$(PlatformToolset).lib;native_exec_d_$(PlatformToolset).lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>..\..\vendor\libimagequant\lib\static;..\..\vendor\squish-1.11\lib\$(PlatformToolset);..\..\vendor\pvrtexlib\Windows_x86_32\Static;..\..\vendor\atitc\VS2010\MT Debug\Win32;..\..\vendor\amdtc\Libs\VS2013\x86;..\..\vendor\lpng\lib\static\;..\..\vendor\libjpeg\lib\;..\..\vendor\libtiff\lib\;..\..\vendor\NativeExecutive\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\vendor\libimagequant\lib\static;..\..\vendor\squish-1.11\lib\$(PlatformToolset);..\..\vendor\pvrtexlib\Windows_x86_32\Dynamic;..\..\vendor\atitc\VS2010\MT DLL Debug\Win32;..\..\vendor\amdtc\Libs\VS2013\x86;..\..\vendor\lpng\lib\static\;..\..\vendor\libjpeg\lib\;..\..\vendor\libtiff\lib\;..\..\vendor\NativeExecutive\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>LIBCMT;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Lib>
     <ProjectReference>
@@ -279,9 +279,9 @@
       <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName)_2013.pch</PrecompiledHeaderOutputFile>
     </ClCompile>
     <Lib>
-      <AdditionalDependencies>libimagequant_$(PlatformToolset).lib;squish_$(PlatformToolset).lib;ATI_Compress_MT.lib;PVRTexLib.lib;libpng_$(PlatformToolset).lib;libjpeg_$(PlatformToolset).lib;libtiff_$(PlatformToolset).lib;native_exec_$(PlatformToolset).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libimagequant_$(PlatformToolset).lib;squish_$(PlatformToolset).lib;ATI_Compress_MT_DLL.lib;PVRTexLib.lib;libpng_$(PlatformToolset).lib;libjpeg_$(PlatformToolset).lib;libtiff_$(PlatformToolset).lib;native_exec_$(PlatformToolset).lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>..\..\vendor\libimagequant\lib\static;..\..\vendor\squish-1.11\lib\$(PlatformToolset);..\..\vendor\pvrtexlib\Windows_x86_32\Static;..\..\vendor\atitc\VS2010\MT Release\Win32;..\..\vendor\amdtc\Libs\VS2013\x86;..\..\vendor\lpng\lib\static\;..\..\vendor\libjpeg\lib\;..\..\vendor\libtiff\lib\;..\..\vendor\NativeExecutive\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\vendor\libimagequant\lib\static;..\..\vendor\squish-1.11\lib\$(PlatformToolset);..\..\vendor\pvrtexlib\Windows_x86_32\Dynamic;..\..\vendor\atitc\VS2010\MT DLL Release\Win32;..\..\vendor\amdtc\Libs\VS2013\x86;..\..\vendor\lpng\lib\static\;..\..\vendor\libjpeg\lib\;..\..\vendor\libtiff\lib\;..\..\vendor\NativeExecutive\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Lib>

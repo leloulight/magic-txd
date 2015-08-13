@@ -329,7 +329,7 @@
       <OutputFile>$(ProjectDir)/lib/libimagequant_d.lib</OutputFile>
     </Lib>
     <PostBuildEvent>
-      <Command>xcopy /Y "$(ProjectDir)..\bin\libimagequant_d_2013.dll" "$(ProjectDir)..\..\..\..\output\libimagequant_d.dll*"</Command>
+      <Command>xcopy /Y "$(ProjectDir)..\bin\libimagequant_d_$(PlatformToolset).dll" "$(ProjectDir)..\..\..\..\output\libimagequant_d.dll*"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2015|x64'">
@@ -353,7 +353,7 @@
       <OutputFile>$(ProjectDir)/lib/libimagequant_d.lib</OutputFile>
     </Lib>
     <PostBuildEvent>
-      <Command>xcopy /Y "$(ProjectDir)..\bin\libimagequant_d_2013.dll" "$(ProjectDir)..\..\..\..\output\libimagequant_d.dll*"</Command>
+      <Command>xcopy /Y "$(ProjectDir)..\bin\libimagequant_d_$(PlatformToolset)_x64.dll" "$(ProjectDir)..\..\..\..\output\libimagequant_d.dll*"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2013|Win32'">
@@ -377,7 +377,7 @@
       <OutputFile>$(ProjectDir)/lib/libimagequant_d.lib</OutputFile>
     </Lib>
     <PostBuildEvent>
-      <Command>xcopy /Y "$(ProjectDir)..\bin\libimagequant_d_2013.dll" "$(ProjectDir)..\..\..\..\output\libimagequant_d.dll*"</Command>
+      <Command>xcopy /Y "$(ProjectDir)..\bin\libimagequant_d_$(PlatformToolset).dll" "$(ProjectDir)..\..\..\..\output\libimagequant_d.dll*"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2013|x64'">
@@ -401,7 +401,7 @@
       <OutputFile>$(ProjectDir)/lib/libimagequant_d.lib</OutputFile>
     </Lib>
     <PostBuildEvent>
-      <Command>xcopy /Y "$(ProjectDir)..\bin\libimagequant_d_2013.dll" "$(ProjectDir)..\..\..\..\output\libimagequant_d.dll*"</Command>
+      <Command>xcopy /Y "$(ProjectDir)..\bin\libimagequant_d_$(PlatformToolset)_x64.dll" "$(ProjectDir)..\..\..\..\output\libimagequant_d.dll*"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_lib 2015|Win32'">
@@ -532,7 +532,7 @@
       <OutputFile>$(ProjectDir)/lib/libimagequant.lib</OutputFile>
     </Lib>
     <PostBuildEvent>
-      <Command>xcopy /Y "$(ProjectDir)..\bin\libimagequant_2013.dll" "$(ProjectDir)..\..\..\..\output\libimagequant.dll*"</Command>
+      <Command>xcopy /Y "$(ProjectDir)..\bin\libimagequant_$(PlatformToolset).dll" "$(ProjectDir)..\..\..\..\output\libimagequant.dll*"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'">
@@ -563,7 +563,7 @@
       <OutputFile>$(ProjectDir)/lib/libimagequant.lib</OutputFile>
     </Lib>
     <PostBuildEvent>
-      <Command>xcopy /Y "$(ProjectDir)..\bin\libimagequant_2013.dll" "$(ProjectDir)..\..\..\..\output\libimagequant.dll*"</Command>
+      <Command>xcopy /Y "$(ProjectDir)..\bin\libimagequant_$(PlatformToolset)_x64.dll" "$(ProjectDir)..\..\..\..\output\libimagequant.dll*"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_lib 2015|Win32'">
@@ -722,8 +722,7 @@
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Lib>
     <PostBuildEvent>
-      <Command>
-      </Command>
+      <Command>xcopy /Y "$(ProjectDir)..\bin\libimagequant_$(PlatformToolset).dll" "$(ProjectDir)..\..\..\..\output\libimagequant.dll*"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release 2013|x64'">
@@ -754,8 +753,7 @@
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Lib>
     <PostBuildEvent>
-      <Command>
-      </Command>
+      <Command>xcopy /Y "$(ProjectDir)..\bin\libimagequant_$(PlatformToolset)_x64.dll" "$(ProjectDir)..\..\..\..\output\libimagequant.dll*"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

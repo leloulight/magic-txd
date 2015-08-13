@@ -2,6 +2,9 @@
 #include <QApplication>
 #include "styles.h"
 
+#include <QtPlugin>
+Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin)
+
 int main(int argc, char *argv[])
 {
 	QStringList paths = QCoreApplication::libraryPaths();

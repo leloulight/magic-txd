@@ -7,7 +7,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libpng", "libpng\libpng.vcx
 		{65D5E721-48DD-4DA9-9903-6E2FDD90725A} = {65D5E721-48DD-4DA9-9903-6E2FDD90725A}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zlib", "..\..\..\zlib\vs2013\zlib.vcxproj", "{65D5E721-48DD-4DA9-9903-6E2FDD90725A}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zlib", "..\..\..\zlib\vs2015\zlib.vcxproj", "{65D5E721-48DD-4DA9-9903-6E2FDD90725A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
