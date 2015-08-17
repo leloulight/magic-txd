@@ -18,9 +18,10 @@ struct packedVersionStruct
     {
         struct
         {
-            uint16 packedMinor : 8;
-            uint16 pad : 2;
-            uint16 packedMajor : 6;
+            uint16 packedBinaryFormatRev : 6;
+            uint16 packedReleaseMinorRev : 4;
+            uint16 packedReleaseMajorRev : 4;
+            uint16 packedLibraryMajorVer : 2;
         };
         unsigned short libVer;
     };
@@ -54,9 +55,10 @@ inline HeaderInfo::PackedLibraryVersion packVersion( LibraryVersion version )
 
     packedVersionStruct packVer;
 
-    packVer.packedMajor = version.rwLibMinor;
-    packVer.pad = 0;
-    packVer.packedMinor = version.rwRevMinor;
+    packVer.packedLibraryMajorVer = version.rwLibMajor - 3;
+    packVer.packedReleaseMajorRev = version.rwLibMinor;
+    packVer.packedReleaseMinorRev = version.rwRevMajor;
+    packVer.packedBinaryFormatRev = version.rwRevMinor;
 
     packedVersion.packedVer = packVer.libVer;
 
@@ -77,10 +79,10 @@ inline LibraryVersion unpackVersion( HeaderInfo::PackedLibraryVersion packedVers
     packedVersionStruct packVer;
     packVer.libVer = packedVersion.packedVer;
 
-    outVer.rwLibMajor = 3;
-    outVer.rwLibMinor = packVer.packedMajor;
-    outVer.rwRevMajor = 0;
-    outVer.rwRevMinor = packVer.packedMinor;
+    outVer.rwLibMajor = 3 + packVer.packedLibraryMajorVer;
+    outVer.rwLibMinor = packVer.packedReleaseMajorRev;
+    outVer.rwRevMajor = packVer.packedReleaseMinorRev;
+    outVer.rwRevMinor = packVer.packedBinaryFormatRev;
 
     return outVer;
 }

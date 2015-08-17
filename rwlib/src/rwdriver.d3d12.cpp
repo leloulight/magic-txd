@@ -10,9 +10,9 @@ namespace rw
 d3d12DriverInterface::d3d12NativeDriver::d3d12NativeDriver( d3d12DriverInterface *env, Interface *intf )
 {
     EngineInterface *engineInterface = (EngineInterface*)intf;
-
+    
     this->engineInterface = engineInterface;
-
+    
     // Initialize the Direct3D 12 device.
     HRESULT deviceSuccess = 
         env->D3D12CreateDevice(
@@ -27,7 +27,7 @@ d3d12DriverInterface::d3d12NativeDriver::d3d12NativeDriver( d3d12DriverInterface
     }
 
     // Build our main command queue.
-    // This one will be used to issue to render to main render targets.
+    // You issue render commands with this one, basically everything.
     D3D12_COMMAND_QUEUE_DESC queueDesc = {};
     queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
     queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;

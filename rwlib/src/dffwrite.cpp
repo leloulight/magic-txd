@@ -5,6 +5,8 @@ using namespace std;
 
 #include "streamutil.hxx"
 
+#pragma warning(disable: 4244)
+
 namespace rw {
 
 /*

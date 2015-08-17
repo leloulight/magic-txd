@@ -700,6 +700,7 @@ extern void registerStreamGlobalPlugins( void );
 extern void registerImagingPlugin( void );
 extern void registerWindowingSystem( void );
 extern void registerDriverEnvironment( void );
+extern void registerDrawingLayerEnvironment( void );
 
 static bool hasInitialized = false;
 
@@ -744,6 +745,7 @@ Interface* CreateEngine( LibraryVersion theVersion )
             registerImagingPlugin();
             registerWindowingSystem();
             registerDriverEnvironment();
+            registerDrawingLayerEnvironment();
 
             hasInitialized = true;
         }

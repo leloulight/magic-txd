@@ -4,6 +4,8 @@
 
 #include "streamutil.hxx"
 
+#pragma warning(disable: 4244)
+
 using namespace std;
 
 namespace rw {

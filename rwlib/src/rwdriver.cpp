@@ -459,6 +459,9 @@ void Driver::DestroySwapChain( DriverSwapChain *swapChain )
     }
 }
 
+// Registration of driver general sub modules.
+extern void registerDriverResourceEnvironment( void );
+
 // Registration of driver implementations.
 extern void registerD3D12DriverImplementation( void );
 
@@ -466,6 +469,9 @@ void registerDriverEnvironment( void )
 {
     // Put our structure into the engine interface.
     driverEnvRegister.RegisterPlugin( engineFactory );
+
+    // Now register important sub modules.
+    registerDriverResourceEnvironment();
 
     // TODO: register all driver implementations.
     registerD3D12DriverImplementation();

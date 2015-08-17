@@ -1,6 +1,8 @@
 #ifndef _RENDERWARE_DRIVER_FRAMEWORK_
 #define _RENDERWARE_DRIVER_FRAMEWORK_
 
+#include "rwdriver.immbuf.hxx"
+
 namespace rw
 {
 

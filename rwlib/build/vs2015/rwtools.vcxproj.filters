@@ -156,6 +156,24 @@
     <ClInclude Include="..\..\src\rwwindowing.hxx">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\rwdrawing.hxx">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\renderware.drawing.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\rwstatesort.hxx">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\rwcommon.hxx">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\rwdriver.immbuf.hxx">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\renderware.math.h">
+      <Filter>Include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\dffread.cpp" />
@@ -217,6 +235,8 @@
     <ClCompile Include="..\..\src\rwdriver.d3d12.mat.cpp" />
     <ClCompile Include="..\..\src\rwdriver.d3d12.raster.cpp" />
     <ClCompile Include="..\..\src\rwdriver.d3d12.swap.cpp" />
+    <ClCompile Include="..\..\src\rwdrawing.cpp" />
+    <ClCompile Include="..\..\src\rwdriver.immbuf.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="rwtools.natvis">

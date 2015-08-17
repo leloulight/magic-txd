@@ -13,6 +13,7 @@
 #include <assert.h>
 #include <algorithm>
 #include <list>
+#include <tuple>
 
 // Include some special vendor libraries.
 #include <core/CFileSystem.common.h>
@@ -393,6 +394,7 @@ struct RwException
 };
 
 #include "rwendian.h"
+#include "renderware.math.h"
 #include "renderware.stream.h"
 #include "renderware.blockapi.h"
 #include "renderware.txd.h"
@@ -404,6 +406,7 @@ struct RwException
 #include "renderware.windowing.h"
 #include "renderware.threading.h"
 #include "renderware.driver.h"
+#include "renderware.drawing.h"
 
 // Warning manager interface.
 struct WarningManagerInterface abstract
