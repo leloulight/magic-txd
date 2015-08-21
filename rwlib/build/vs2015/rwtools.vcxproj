@@ -385,6 +385,7 @@
     <ClInclude Include="..\..\include\renderware.imaging.h" />
     <ClInclude Include="..\..\include\renderware.material.h" />
     <ClInclude Include="..\..\include\renderware.math.h" />
+    <ClInclude Include="..\..\include\renderware.math.matview.h" />
     <ClInclude Include="..\..\include\renderware.stream.h" />
     <ClInclude Include="..\..\include\renderware.threading.h" />
     <ClInclude Include="..\..\include\renderware.txd.d3d.h" />

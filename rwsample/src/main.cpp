@@ -189,6 +189,23 @@ struct Vector
         return newVec;
     }
 
+    AINLINE FASTMATH bool operator == ( const Vector& right ) const
+    {
+        for ( size_t n = 0; n < dimm; n++ )
+        {
+            if ( this->elems[ n ] != right.elems[ n ] )
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+    AINLINE FASTMATH bool operator != ( const Vector& right ) const
+    {
+        return !( *this == right );
+    }
+
     AINLINE FASTMATH numberType& operator [] ( ptrdiff_t n )
     {
         return elems[ n ];
@@ -790,7 +807,7 @@ struct SquareMatrix
     }
 
 private:
-    AINLINE static void multiplyWith( SquareMatrix& newMat, const SquareMatrix& right )
+    AINLINE static void multiplyWith( SquareMatrix& newMat, const SquareMatrix& left, const SquareMatrix& right )
     {
         for ( size_t y_pos = 0; y_pos < dimm; y_pos++ )
         {
@@ -801,7 +818,7 @@ private:
 
                 for ( size_t dimiter = 0; dimiter < dimm; dimiter++ )
                 {
-                    val += ( newMat[y_pos][dimiter] * right[dimiter][x_pos] );
+                    val += ( left[y_pos][dimiter] * right[dimiter][x_pos] );
                 }
 
                 newMat[ y_pos ][ x_pos ] = val;
@@ -813,16 +830,18 @@ public:
     // Multiply matrices.
     AINLINE SquareMatrix operator * ( const SquareMatrix& right ) const
     {
-        SquareMatrix newMat = *this;
+        SquareMatrix newMat;
 
-        multiplyWith( newMat, right );
+        multiplyWith( newMat, *this, right );
 
         return newMat;
     };
 
     AINLINE SquareMatrix& operator *= ( const SquareMatrix& right )
     {
-        multiplyWith( *this, right );
+        SquareMatrix oldmat = *this;
+
+        multiplyWith( *this, oldmat, right );
 
         return *this;
     }
@@ -860,6 +879,32 @@ public:
     AINLINE const vec_t& operator [] ( ptrdiff_t n ) const
     {
         return vecs[ n ];
+    }
+
+    // Matrix inversion.
+    AINLINE numberType det( void ) const
+    {
+        using namespace rw::mview;
+
+        return detcalc <numberType, SquareMatrix, dimm>::calc( *this );
+    }
+
+    AINLINE bool Invert( void )
+    {
+        double mydet = det();
+
+        if ( mydet == 0 )
+            return false;
+
+        for ( size_t y = 0; y < dimm; y++ )
+        {
+            for ( size_t x = 0; x < dimm; x++ )
+            {
+                this->vecs[y][x] /= mydet;
+            }
+        }
+
+        return true;
     }
 
     // Euler trait.
@@ -983,19 +1028,7 @@ AINLINE Vector <valType, sizeof...(Args)> makevec( Args... theArgs )
     return theVec;
 }
 
-typedef float numType;
-
-#define MATSIZE 4
-
-Vector <numType, MATSIZE> resVec = { 1, 5, 1, 1 };
-Vector <numType, MATSIZE> aVec = { 2, 7, 1, 1 };
-Vector <numType, MATSIZE> bVec = { 8, 1, 1, 1 };
-
-__declspec( dllexport ) Vector <Vector <numType, MATSIZE>, 4> matrix;
-
-__declspec( dllexport ) SquareMatrix <numType, MATSIZE> square_mat;
-
-__declspec( dllexport ) Vector <numType, 4> trans_point;
+__declspec(dllexport) double mydet;
 
 namespace rw
 {
@@ -1019,98 +1052,68 @@ namespace rw
 
     int32 rwmain( Interface *engineInterface )
     {
-        // Do some test vector math.
-        Vector <numType, 3> okvec;
-        Vector <numType, 3> testVec = { 1, 1, 1 };
-        Vector <numType, 3> testVec2( 1, 0, 0.0f );
+        using namespace mview;
 
-        Vector <numType, 3> emptyVec( 1.0f );
+#if 0
+        typedef SquareMatrix <float, 7> mat_t;
 
-        resVec = resVec + resVec * 4;
-
-        Vector <Vector <numType, MATSIZE>, 4> matrix = ::matrix;
-
-        Vector <numType, MATSIZE> aVec = ::aVec;
-        Vector <numType, MATSIZE> bVec = ::bVec;
-        Vector <numType, MATSIZE> resVec = ::resVec;
-
-        matrix[ 0 ] += aVec;
-        matrix[ 1 ] += bVec + aVec;
-        matrix[ 2 ] += resVec;
-        matrix[ 3 ] += aVec + bVec * 2 + resVec / 2;
-
-        matrix[ 0 ] *= 2.0;
-
-        SquareMatrix <numType, 4> regMat =
+        mat_t myMat =
         {
-            { -1.0f, 0.0f, 0.0f, 0.0f },
-            { 0.0f, -1.0f, 0.0f, 0.0f },
-            { 0.0f, 0.0f, -1.0f, 0.0f },
-            { 0.0f, 0.0f, 0.0f, -1.0f }
+            { 3, 7, 2, 8, 3, 5, 8 },
+            { 1, 6, 2, 7, 9, 2, 3 },
+            { 2, 6, 5, 3, 5, 4, 5 },
+            { 9, 6, 1, 4, 1, 7, 2 },
+            { 4, 8, 4, 2, 8, 1, 9 },
+            { 4, 2, 6, 4, 3, 1, 1 },
+            { 5, 2, 7, 4, 8, 3, 5 }
         };
 
-        ::trans_point = regMat * makevec( 1.0f, 1.0, 1.0, 1.0 );
+        // det: -543876
+#else
+#if 0
+        typedef SquareMatrix <float, 6> mat_t;
 
-        ::matrix = matrix;
-
-        ::square_mat = matrix;
-
-        ::square_mat *= 2;
-
-        SquareMatrix <numType, MATSIZE> sec_mat = ::square_mat;
-
-        ::square_mat *= sec_mat;
-
-        SquareMatrix <numType, MATSIZE> first_mat =
+        mat_t myMat =
         {
-            { 111, 111, 111, 0 },
-            { 222, 223, 334, 0 },
-            { 335, 663, 643, 0 },
-            { 810, 110, -250, 1 }
+            { 3, 7, 2, 8, 3, 5 },
+            { 1, 6, 2, 7, 9, 2 },
+            { 2, 6, 5, 3, 5, 4 },
+            { 9, 6, 1, 4, 1, 7 },
+            { 4, 8, 4, 2, 8, 1 },
+            { 4, 2, 6, 4, 3, 1 }
         };
 
-        SquareMatrix <numType, MATSIZE> seco_mat =
+        // det: -43512
+#else
+        typedef SquareMatrix <double, 5> mat_t;
+
+        mat_t myMat =
         {
-            { 583, 421, 321, 0 },
-            { 421, 549, 231, 0 },
-            { 952, 894, 131, 0 },
-            { 600, -444, 1105, 1 }
+            { 3, 7, 2, 8, 3 },
+            { 1, 6, 2, 7, 9 },
+            { 2, 6, 5, 3, 5 },
+            { 9, 6, 1, 4, 1 },
+            { 4, 8, 4, 2, 8 }
         };
 
-        //assert( trans_vec == trans_vec_2 );
+        // det: 3790
+#endif
+#endif
 
-        SquareMatrix <numType, 4> thir_mat;
+        double myDet = myMat.det();
 
-        //SquareMatrix <float, 2>::doesHaveEuler43 *ok;
+        mview::matview <0, 0, matview_skip_x <2>, matview_skip_x <0>, matview_skip_x <0>, matview_skip_x <1>> mview;
 
-        thir_mat.SetRotation( 0, 0, 90 );
+        float val = mview.x;
+        float val2 = mview.y;
 
-        SquareMatrix <numType, 4> four_mat;
+        mat_t cloneMat = myMat;
 
-        four_mat.SetRotation( 0, 90, 0 );
+        //cloneMat.Invert();
 
-        thir_mat[3] = { 110, -53, 10, 1 };
+        mat_t identity = cloneMat * myMat;
 
-        SquareMatrix <numType, 4> trans_mat;
-
-        trans_mat[3] = { 850, -453, 100, 1 };
-
-        // Test matrix multiply properties.
-        auto test_mat = ( ( thir_mat * four_mat ) * trans_mat );
-
-        auto test_mat2 = ( thir_mat * ( four_mat * trans_mat ) );
-
-        __noop();
-
-        Vector <numType, MATSIZE> virtual_point = { 0, 100, 0, 1 };
-
-        Vector <numType, MATSIZE> trans_vec = ( ( four_mat * thir_mat ) * trans_mat ) * virtual_point;
-
-        Vector <numType, MATSIZE> trans_vec_2 = trans_mat * ( thir_mat * ( four_mat * virtual_point ) );
-
-        assert( trans_vec == trans_vec_2 );
-
-        Vector <numType, 4> kVec = ( thir_mat * makevec( (numType)100, 0, 0, 1.0 ) );
+        ::mydet = myDet;
 
         // Give information about the running application to the runtime.
         softwareMetaInfo metaInfo;
