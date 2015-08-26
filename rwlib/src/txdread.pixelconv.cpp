@@ -22,7 +22,7 @@ inline bool decompressTexelsUsingDXT(
 	uint32 x = 0, y = 0;
 
     // Allocate the new texel array.
-	uint32 rowSize = getRasterDataRowSize( texWidth, rawDepth, texRowAlignment );
+	uint32 rowSize = getRasterDataRowSize( texLayerWidth, rawDepth, texRowAlignment );
 
     uint32 dataSize = getRasterDataSizeByRowSize( rowSize, texHeight );
 

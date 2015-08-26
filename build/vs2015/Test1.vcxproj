@@ -234,6 +234,7 @@
       <ProgramDatabaseFile>$(OutDir)$(TargetName)_2013.pdb</ProgramDatabaseFile>
       <ProfileGuidedDatabase>$(OutDir)$(TargetName)_2013.pgd</ProfileGuidedDatabase>
       <Version>1</Version>
+      <ImportLibrary>$(OutDir)$(TargetName).lib</ImportLibrary>
     </Link>
     <Midl>
       <DefaultCharType>Unsigned</DefaultCharType>
@@ -244,8 +245,8 @@
       <PreprocessorDefinitions>_WINDOWS;UNICODE;WIN32;QT_NO_DEBUG;QT_WIDGETS_LIB;QT_GUI_LIB;QT_CORE_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
     <ProjectReference>
-      <UseLibraryDependencyInputs>true</UseLibraryDependencyInputs>
-      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'">
@@ -291,6 +292,7 @@
       <ProgramDatabaseFile>$(OutDir)$(TargetName)_2013.pdb</ProgramDatabaseFile>
       <ProfileGuidedDatabase>$(OutDir)$(TargetName)_2013.pgd</ProfileGuidedDatabase>
       <Version>1</Version>
+      <ImportLibrary>$(OutDir)$(TargetName).lib</ImportLibrary>
     </Link>
     <Midl>
       <DefaultCharType>Unsigned</DefaultCharType>
@@ -301,8 +303,8 @@
       <PreprocessorDefinitions>_WINDOWS;UNICODE;WIN32;QT_NO_DEBUG;QT_WIDGETS_LIB;QT_GUI_LIB;QT_CORE_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
     <ProjectReference>
-      <UseLibraryDependencyInputs>true</UseLibraryDependencyInputs>
-      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release 2013|Win32'">
@@ -333,7 +335,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>glu32.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;imm32.lib;winmm.lib;Qt5PlatformSupport.lib;qwindows.lib;qtmain.lib;Ws2_32.lib;qtpcre.lib;qtfreetype.lib;Qt5Core.lib;Qt5Widgets.lib;Qt5Gui.lib;qtharfbuzzng.lib;rwtools_$(PlatformToolset).lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\vendor\Qt5.5\lib\vs2015\x86\plugins\platforms;..\..\vendor\Qt5.5\lib\vs2015\x86\;..\..\rwlib\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\vendor\Qt5.5\lib\vs2013\x86\plugins\platforms;..\..\vendor\Qt5.5\lib\vs2013\x86\;..\..\rwlib\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>"/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' publicKeyToken='6595b64144ccf1df' language='*' processorArchitecture='*'" %(AdditionalOptions)</AdditionalOptions>
       <DataExecutionPrevention>true</DataExecutionPrevention>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -348,6 +350,7 @@
       <ProgramDatabaseFile>$(OutDir)$(TargetName)_2013.pdb</ProgramDatabaseFile>
       <ProfileGuidedDatabase>$(OutDir)$(TargetName)_2013.pgd</ProfileGuidedDatabase>
       <Version>1</Version>
+      <ImportLibrary>$(OutDir)$(TargetName).lib</ImportLibrary>
     </Link>
     <Midl>
       <DefaultCharType>Unsigned</DefaultCharType>
@@ -358,8 +361,8 @@
       <PreprocessorDefinitions>_WINDOWS;UNICODE;WIN32;QT_NO_DEBUG;QT_WIDGETS_LIB;QT_GUI_LIB;QT_CORE_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
     <ProjectReference>
-      <UseLibraryDependencyInputs>true</UseLibraryDependencyInputs>
-      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release 2013|x64'">
@@ -390,7 +393,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>glu32.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;imm32.lib;winmm.lib;Qt5PlatformSupport.lib;qwindows.lib;qtmain.lib;Ws2_32.lib;qtpcre.lib;qtfreetype.lib;Qt5Core.lib;Qt5Widgets.lib;Qt5Gui.lib;qtharfbuzzng.lib;rwtools_$(PlatformToolset)_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\vendor\Qt5.5\lib\vs2015\x64\plugins\platforms;..\..\vendor\Qt5.5\lib\vs2015\x64\;..\..\rwlib\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\vendor\Qt5.5\lib\vs2013\x64\plugins\platforms;..\..\vendor\Qt5.5\lib\vs2013\x64\;..\..\rwlib\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>"/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' publicKeyToken='6595b64144ccf1df' language='*' processorArchitecture='*'" %(AdditionalOptions)</AdditionalOptions>
       <DataExecutionPrevention>true</DataExecutionPrevention>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -405,6 +408,7 @@
       <ProgramDatabaseFile>$(OutDir)$(TargetName)_2013.pdb</ProgramDatabaseFile>
       <ProfileGuidedDatabase>$(OutDir)$(TargetName)_2013.pgd</ProfileGuidedDatabase>
       <Version>1</Version>
+      <ImportLibrary>$(OutDir)$(TargetName).lib</ImportLibrary>
     </Link>
     <Midl>
       <DefaultCharType>Unsigned</DefaultCharType>
@@ -415,8 +419,8 @@
       <PreprocessorDefinitions>_WINDOWS;UNICODE;WIN32;QT_NO_DEBUG;QT_WIDGETS_LIB;QT_GUI_LIB;QT_CORE_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
     <ProjectReference>
-      <UseLibraryDependencyInputs>true</UseLibraryDependencyInputs>
-      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2015|Win32'">
@@ -456,6 +460,7 @@
       <ProgramDatabaseFile>$(OutDir)$(TargetName)_2013.pdb</ProgramDatabaseFile>
       <ProfileGuidedDatabase>$(OutDir)$(TargetName)_2013.pgd</ProfileGuidedDatabase>
       <Version>1</Version>
+      <ImportLibrary>$(OutDir)$(TargetName).lib</ImportLibrary>
     </Link>
     <Midl>
       <DefaultCharType>Unsigned</DefaultCharType>
@@ -506,6 +511,7 @@
       <ProgramDatabaseFile>$(OutDir)$(TargetName)_2013.pdb</ProgramDatabaseFile>
       <ProfileGuidedDatabase>$(OutDir)$(TargetName)_2013.pgd</ProfileGuidedDatabase>
       <Version>1</Version>
+      <ImportLibrary>$(OutDir)$(TargetName).lib</ImportLibrary>
     </Link>
     <Midl>
       <DefaultCharType>Unsigned</DefaultCharType>
@@ -542,7 +548,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>glu32.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;imm32.lib;winmm.lib;Qt5PlatformSupportd.lib;qwindowsd.lib;qtmaind.lib;Ws2_32.lib;qtpcred.lib;qtfreetyped.lib;Qt5Cored.lib;Qt5Widgetsd.lib;Qt5Guid.lib;qtharfbuzzngd.lib;rwtools_d_$(PlatformToolset).lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\vendor\Qt5.5\lib\vs2015\x86\plugins\platforms;..\..\vendor\Qt5.5\lib\vs2015\x86\;..\..\rwlib\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\vendor\Qt5.5\lib\vs2013\x86\plugins\platforms;..\..\vendor\Qt5.5\lib\vs2013\x86\;..\..\rwlib\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>"/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' publicKeyToken='6595b64144ccf1df' language='*' processorArchitecture='*'" %(AdditionalOptions)</AdditionalOptions>
       <DataExecutionPrevention>true</DataExecutionPrevention>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -556,6 +562,7 @@
       <ProgramDatabaseFile>$(OutDir)$(TargetName)_2013.pdb</ProgramDatabaseFile>
       <ProfileGuidedDatabase>$(OutDir)$(TargetName)_2013.pgd</ProfileGuidedDatabase>
       <Version>1</Version>
+      <ImportLibrary>$(OutDir)$(TargetName).lib</ImportLibrary>
     </Link>
     <Midl>
       <DefaultCharType>Unsigned</DefaultCharType>
@@ -592,7 +599,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>glu32.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;imm32.lib;winmm.lib;Qt5PlatformSupportd.lib;qwindowsd.lib;qtmaind.lib;Ws2_32.lib;qtpcred.lib;qtfreetyped.lib;Qt5Cored.lib;Qt5Widgetsd.lib;Qt5Guid.lib;qtharfbuzzngd.lib;rwtools_d_$(PlatformToolset)_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\vendor\Qt5.5\lib\vs2015\x64\plugins\platforms;..\..\vendor\Qt5.5\lib\vs2015\x64\;..\..\rwlib\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\vendor\Qt5.5\lib\vs2013\x64\plugins\platforms;..\..\vendor\Qt5.5\lib\vs2013\x64\;..\..\rwlib\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>"/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' publicKeyToken='6595b64144ccf1df' language='*' processorArchitecture='*'" %(AdditionalOptions)</AdditionalOptions>
       <DataExecutionPrevention>true</DataExecutionPrevention>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -606,6 +613,7 @@
       <ProgramDatabaseFile>$(OutDir)$(TargetName)_2013.pdb</ProgramDatabaseFile>
       <ProfileGuidedDatabase>$(OutDir)$(TargetName)_2013.pgd</ProfileGuidedDatabase>
       <Version>1</Version>
+      <ImportLibrary>$(OutDir)$(TargetName).lib</ImportLibrary>
     </Link>
     <Midl>
       <DefaultCharType>Unsigned</DefaultCharType>

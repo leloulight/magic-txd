@@ -5,9 +5,17 @@
 #include "texformathelper.hxx"
 
 #ifndef _DEBUG
+#if defined(_M_AMD64)
+#define MAGF_FORMAT_DIR     L"formats_x64"
+#else
 #define MAGF_FORMAT_DIR     L"formats"
+#endif
+#else
+#if defined(_M_AMD64)
+#define MAGF_FORMAT_DIR     L"formats_d_x64"
 #else
 #define MAGF_FORMAT_DIR     L"formats_d"
+#endif
 #endif
 
 typedef MagicFormat *(__cdecl* LPFNDLLFUNC1)(unsigned int&);

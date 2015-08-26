@@ -9,7 +9,32 @@
 #include "AMDCompress.h"
 #include "AMD_Compress_Test_Helpers.h"
 
+
+#ifdef _DEBUG
+
+// Example linking for using AMDCompress_Mxd DLL's
+// Note: Copy the AMDCompress DLL's to your target dir before running the app
+#ifdef  BUILD_MTd_DLL
+#pragma comment(lib,"AMDCompress_MTd_DLL.lib")
+#endif
+
+#ifdef  BUILD_MDd_DLL
+#pragma comment(lib,"AMDCompress_MDd_DLL.lib")
+#endif
+
+// Example static linking for AMDCompress_Mx libs
+#ifdef  BUILD_MTd
+#pragma comment(lib,"AMDCompress_MTd.lib")
+#endif
+
+#ifdef  BUILD MD
+#pragma comment(lib,"AMDCompress_MD.lib")
+#endif
+
+#else  // Building Release 
+
 // Example linking for using AMDCompress_Mx DLL's
+// Note: Copy the AMDCompress DLL's to your target dir before running the app
 #ifdef  BUILD_MT_DLL
 #pragma comment(lib,"AMDCompress_MT_DLL.lib")
 #endif
@@ -25,6 +50,8 @@
 
 #ifdef  BUILD MD
 #pragma comment(lib,"AMDCompress_MD.lib")
+#endif
+
 #endif
 
 

@@ -6,6 +6,7 @@
     <ClCompile Include="..\CExecutiveManager.task.cpp" />
     <ClCompile Include="..\CExecutiveManager.thread.cpp" />
     <ClCompile Include="..\CExecutiveManager.rwlock.cpp" />
+    <ClCompile Include="..\CExecutiveManager.hazards.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\CExecutiveManager.fiber.h">
@@ -35,6 +36,18 @@
     <ClInclude Include="..\internal\CExecutiveManager.rwlock.internal.h">
       <Filter>internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\CExecutiveManager.native.hxx">
+      <Filter>internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CExecutiveManager.hazards.hxx">
+      <Filter>internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CExecutiveManager.fiber.hxx">
+      <Filter>internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CExecutiveManager.hazards.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">
@@ -43,5 +56,12 @@
     <Filter Include="internal">
       <UniqueIdentifier>{a2ef021f-3e60-4410-9faf-1f9046de7f3b}</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="..\native_routines_x64.asm" />
+    <MASM Include="..\native_routines_x86.asm" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\native_shared.inc" />
   </ItemGroup>
 </Project>

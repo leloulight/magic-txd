@@ -155,6 +155,7 @@
     <IntDir>$(SolutionDir)../../obj/formats/$(ProjectName)/$(Platform)_$(Configuration)_$(PlatformToolset)/</IntDir>
     <TargetExt>.magf</TargetExt>
     <OutDir>$(SolutionDir)../../output/formats_x64/</OutDir>
+    <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2013|Win32'">
     <TargetExt>.magf</TargetExt>
@@ -194,7 +195,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)\..\..\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>magictxd_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>magictxd_d_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <Version>1</Version>
     </Link>
   </ItemDefinitionGroup>
@@ -233,11 +234,13 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
       <WholeProgramOptimization>true</WholeProgramOptimization>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)\..\..\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>magictxd_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>magictxd_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <Version>1</Version>
     </Link>
   </ItemDefinitionGroup>
@@ -267,7 +270,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)\..\..\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>magictxd_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>magictxd_d_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <Version>1</Version>
     </Link>
   </ItemDefinitionGroup>
@@ -305,7 +308,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(SolutionDir)\..\..\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>magictxd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>magictxd_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <Version>1</Version>
     </Link>
   </ItemDefinitionGroup>

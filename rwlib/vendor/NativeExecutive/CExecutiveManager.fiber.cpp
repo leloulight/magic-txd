@@ -12,9 +12,14 @@
 
 #include "StdInc.h"
 
+#include "CExecutiveManager.fiber.hxx"
+
 #ifdef _WIN32
 #include <excpt.h>
 #include <windows.h>
+
+#include "CExecutiveManager.native.hxx"
+#include "CExecutiveManager.hazards.hxx"
 
 typedef struct _EXCEPTION_REGISTRATION
 {
@@ -30,7 +35,7 @@ static EXCEPTION_DISPOSITION _defaultHandler( EXCEPTION_REGISTRATION *record, vo
 
 static EXCEPTION_REGISTRATION _baseException =
 {
-    (EXCEPTION_REGISTRATION*)0xFFFFFFFF,
+    (EXCEPTION_REGISTRATION*)-1,
     _defaultHandler
 };
 #endif
@@ -38,54 +43,6 @@ static EXCEPTION_REGISTRATION _baseException =
 BEGIN_NATIVE_EXECUTIVE
 
 #pragma warning(disable:4733)
-
-static void __declspec(naked) _retHandler( FiberStatus *userdata )
-{
-	__asm
-	{
-		// Set thread status to terminated
-		mov eax,[esp+4]
-        mov [eax]FiberStatus.status,FIBER_TERMINATED
-
-        // Cache the termination function
-        mov edx,[eax]FiberStatus.termcb
-
-		mov ecx,eax
-
-        // Apply registers
-        mov eax,[eax]FiberStatus.callee
-        mov ebx,[eax]Fiber.ebx
-        mov edi,[eax]Fiber.edi
-        mov esi,[eax]Fiber.esi
-        mov esp,[eax]Fiber.esp
-        mov ebp,[eax]Fiber.ebp
-
-        push [eax]Fiber.eip // The return address
-		push ecx			// Push userdata as preparation
-
-#ifdef _WIN32
-        // Save the termination function.
-        push edx
-
-        // Apply exception and stack info
-        mov ecx,[eax]Fiber.stack_base
-        mov edx,[eax]Fiber.stack_limit
-        mov fs:[4],ecx
-        mov fs:[8],edx
-        mov ecx,[eax]Fiber.except_info
-        mov fs:[0],ecx
-
-        // Pop the termination function.
-        pop edx
-#endif
-
-		// Terminate our thread
-        call edx
-        add esp,4
-
-        ret
-	}
-}
 
 // Global memory allocation functions.
 static ExecutiveFiber::memalloc_t fiberMemAlloc = NULL;
@@ -99,24 +56,34 @@ Fiber* ExecutiveFiber::newfiber( FiberStatus *userdata, size_t stackSize, FiberP
     if ( stackSize == 0 )
         stackSize = 2 << 17;    // about 128 kilobytes of stack space (is this enough?)
 
-    unsigned int *stack = (unsigned int*)fiberMemAlloc( stackSize );
-    env->stack_base = (unsigned int*)( (unsigned int)stack + stackSize );
+    void *stack = fiberMemAlloc( stackSize );
+    env->stack_base = (char*)( (char*)stack + stackSize );
     env->stack_limit = stack;
 
     stack = env->stack_base;
 
-    // Once entering, the first argument should be the thread
-    *--stack = (unsigned int)userdata;
-    *--stack = (unsigned int)exit;
-    *--stack = (unsigned int)userdata;
-    *--stack = (unsigned int)&_retHandler;
-    env->esp = (unsigned int)stack;
+    env->esp = (regType_t)stack;
 
-    env->eip = (unsigned int)proc;
+#if defined(_M_IX86)
+    // Once entering, the first argument should be the thread
+    env->pushdata( userdata );
+    env->pushdata( &exit );
+    env->pushdata( userdata );
+    env->pushdata( &_fiber86_retHandler );
     
-#ifdef _WIN32
-    env->except_info = &_baseException;
+    // We can enter the procedure directly.
+    env->eip = (regType_t)proc;
+
+#elif defined(_M_AMD64)
+    // This is quite a complicated situation.
+    env->pushdata( userdata );
+    env->pushdata( &exit );     // if returning from start routine, exit.
+
+    // We should enter a custom fiber routine.
+    env->eip = (regType_t)_fiber64_procStart;
 #endif
+
+    env->except_info = &_baseException;
 
     userdata->termcb = termcb;
 
@@ -145,168 +112,30 @@ void ExecutiveFiber::setmemfuncs( ExecutiveFiber::memalloc_t malloc, ExecutiveFi
     fiberMemFree = mfree;
 }
 
-void __declspec(naked) ExecutiveFiber::eswitch( Fiber *from, Fiber *to )
+void ExecutiveFiber::eswitch( Fiber *from, Fiber *to )
 {
-    __asm
-    {
-        // Save current environment
-        mov eax,[esp+4]
-        mov [eax]Fiber.ebx,ebx
-        mov [eax]Fiber.edi,edi
-        mov [eax]Fiber.esi,esi
-        add esp,4
-        mov [eax]Fiber.esp,esp
-        mov ebx,[esp-4]
-        mov [eax]Fiber.eip,ebx
-        mov [eax]Fiber.ebp,ebp
-
-#ifdef _WIN32
-        // Save exception and stack info
-        mov ebx,fs:[0]
-        mov ecx,fs:[4]
-        mov edx,fs:[8]
-        mov [eax]Fiber.stack_base,ecx
-        mov [eax]Fiber.stack_limit,edx
-        mov [eax]Fiber.except_info,ebx
+#if defined(_M_IX86)
+    _fiber86_eswitch( from, to );
+#elif defined(_M_AMD64)
+    _fiber64_eswitch( from, to );
+#else
+#error missing fiber eswitch implementation for platform
 #endif
-
-        // Apply registers
-        mov eax,[esp+4]
-        mov ebx,[eax]Fiber.ebx
-        mov edi,[eax]Fiber.edi
-        mov esi,[eax]Fiber.esi
-        mov esp,[eax]Fiber.esp
-        mov ebp,[eax]Fiber.ebp
-
-#ifdef _WIN32
-        // Apply exception and stack info
-        mov ecx,[eax]Fiber.stack_base
-        mov edx,[eax]Fiber.stack_limit
-        mov fs:[4],ecx
-        mov fs:[8],edx
-        mov ecx,[eax]Fiber.except_info
-        mov fs:[0],ecx
-#endif
-
-        jmp dword ptr[eax]Fiber.eip
-    }
 }
 
 // For use with yielding
-void __declspec(naked) ExecutiveFiber::qswitch( Fiber *from, Fiber *to )
+void ExecutiveFiber::qswitch( Fiber *from, Fiber *to )
 {
-    __asm
-    {
-        // Save current environment
-        mov eax,[esp+4]         // grab the "from" context
-        mov [eax]Fiber.ebx,ebx
-        mov [eax]Fiber.edi,edi
-        mov [eax]Fiber.esi,esi
-        add esp,4
-        mov [eax]Fiber.esp,esp
-        mov ebx,[esp-4]
-        mov [eax]Fiber.eip,ebx
-        mov [eax]Fiber.ebp,ebp
-
-#ifdef _WIN32
-        // Save exception info
-        mov ebx,fs:[0]
-        mov [eax]Fiber.except_info,ebx
+#if defined(_M_IX86)
+    _fiber86_qswitch( from, to );
+#elif defined(_M_AMD64)
+    _fiber64_qswitch( from, to );
+#else
+#error missing fiber qswitch implementation for platform
 #endif
-
-        // Apply registers
-        mov eax,[esp+4]         // grab the "to" context 
-        mov ebx,[eax]Fiber.ebx
-        mov edi,[eax]Fiber.edi
-        mov esi,[eax]Fiber.esi
-        mov esp,[eax]Fiber.esp
-        mov ebp,[eax]Fiber.ebp
-
-#ifdef _WIN32
-        // Apply exception and stack info
-        mov ecx,[eax]Fiber.stack_base
-        mov edx,[eax]Fiber.stack_limit
-        mov fs:[4],ecx
-        mov fs:[8],edx
-        mov ecx,[eax]Fiber.except_info
-        mov fs:[0],ecx
-#endif
-
-        jmp dword ptr[eax]Fiber.eip
-    }
 }
 
-// For use with one-sided context switching.
-// Do not use this routine in complicated C++ prototypes, as the CRT may break!
-void __declspec(naked) ExecutiveFiber::leave( Fiber *to )
-{
-    // To call this function, jump to it using ASM.
-    // Put the first argument into EAX.
-    __asm
-    {
-        // Apply registers
-        //mov eax,[esp]           // grab the "to" context 
-        mov ebx,[eax]Fiber.ebx
-        mov edi,[eax]Fiber.edi
-        mov esi,[eax]Fiber.esi
-        mov esp,[eax]Fiber.esp
-        mov ebp,[eax]Fiber.ebp
-
-#ifdef _WIN32
-        // Apply exception and stack info
-        mov ecx,[eax]Fiber.stack_base
-        mov edx,[eax]Fiber.stack_limit
-        mov fs:[4],ecx
-        mov fs:[8],edx
-        mov ecx,[eax]Fiber.except_info
-        mov fs:[0],ecx
-#endif
-
-        jmp dword ptr[eax]Fiber.eip
-    }
-}
-
-// Management variables for the fiber-stack-per-thread extension.
-struct threadFiberStackPluginInfo
-{
-    struct fiberArrayAllocManager
-    {
-        AINLINE void InitField( CFiber*& fiber )
-        {
-            fiber = NULL;
-        }
-    };
-    typedef growableArray <CFiber*, 2, 0, fiberArrayAllocManager, unsigned int> fiberArray;
-
-    // Fiber stacks per thread!
-    fiberArray fiberStack;
-};
-
-struct privateFiberEnvironment
-{
-    inline privateFiberEnvironment( void )
-    {
-        this->threadFiberStackPluginOffset = ExecutiveManager::threadPluginContainer_t::INVALID_PLUGIN_OFFSET;
-    }
-
-    inline void Initialize( CExecutiveManager *manager )
-    {
-        this->threadFiberStackPluginOffset =
-            manager->threadPlugins.RegisterStructPlugin <threadFiberStackPluginInfo> ( THREAD_PLUGIN_FIBER_STACK );
-    }
-
-    inline void Shutdown( CExecutiveManager *manager )
-    {
-        if ( ExecutiveManager::threadPluginContainer_t::IsOffsetValid( this->threadFiberStackPluginOffset ) )
-        {
-            manager->threadPlugins.UnregisterPlugin( this->threadFiberStackPluginOffset );
-        }
-    }
-
-    ExecutiveManager::threadPluginContainer_t::pluginOffset_t threadFiberStackPluginOffset;
-};
-
-static PluginDependantStructRegister <privateFiberEnvironment, executiveManagerFactory_t> privateFiberEnvironmentRegister;
+privateFiberEnvironmentRegister_t privateFiberEnvironmentRegister;
 
 inline threadFiberStackPluginInfo* GetThreadFiberStackPlugin( CExecutiveManager *manager, CExecThread *theThread )
 {
@@ -373,20 +202,65 @@ void CExecutiveManager::PopFiber( void )
     }
 }
 
-CFiber* CExecutiveManager::GetCurrentFiber( void )
+threadFiberStackIterator::threadFiberStackIterator( CExecThread *thread )
+{
+    this->thread = thread;
+    this->iter = 0;
+}
+
+threadFiberStackIterator::~threadFiberStackIterator( void )
+{
+    return;
+}
+
+bool threadFiberStackIterator::IsEnd( void ) const
+{
+    threadFiberStackPluginInfo *fiberObj = GetThreadFiberStackPlugin( this->thread->manager, this->thread );
+
+    if ( fiberObj )
+    {
+        return ( fiberObj->fiberStack.GetCount() <= this->iter );
+    }
+
+    return true;
+}
+
+void threadFiberStackIterator::Increment( void )
+{
+    this->iter++;
+}
+
+CFiber* threadFiberStackIterator::Resolve( void ) const
+{
+    threadFiberStackPluginInfo *fiberObj = GetThreadFiberStackPlugin( this->thread->manager, this->thread );
+
+    if ( fiberObj )
+    {
+        return fiberObj->fiberStack.Get( this->iter );
+    }
+
+    return NULL;
+}
+
+CFiber* CExecThread::GetCurrentFiber( void )
 {
     CFiber *currentFiber = NULL;
 
-    CExecThread *currentThread = GetCurrentThread();
-
-    if ( threadFiberStackPluginInfo *info = GetThreadFiberStackPlugin( this, currentThread ) )
+    if ( threadFiberStackPluginInfo *info = GetThreadFiberStackPlugin( this->manager, this ) )
     {
-        unsigned int fiberCount = info->fiberStack.GetCount();
+        size_t fiberCount = info->fiberStack.GetCount();
 
         return ( fiberCount != 0 ) ? ( info->fiberStack.Get( fiberCount - 1 ) ) : ( NULL );
     }
 
     return currentFiber;
+}
+
+CFiber* CExecutiveManager::GetCurrentFiber( void )
+{
+    CExecThread *currentThread = GetCurrentThread();
+
+    return currentThread->GetCurrentFiber();
 }
 
 void registerFiberPlugin( void )

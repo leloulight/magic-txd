@@ -46,7 +46,7 @@ template <typename listType>    inline bool LIST_EMPTY( listType& link )        
 
 // These have to be macros unfortunately.
 // Special macros used by RenderWare only.
-#define LIST_GETITEM(type, item, node) ( (type*)( (unsigned int)(item) - offsetof(type, node) ) )
+#define LIST_GETITEM(type, item, node) ( (type*)( (char*)(item) - offsetof(type, node) ) )
 #define LIST_FOREACH_BEGIN(type, root, node) for ( RwListEntry <type> *iter = (root).next, *niter; iter != &(root); iter = niter ) { type *item = LIST_GETITEM(type, iter, node); niter = iter->next;
 #define LIST_FOREACH_END }
 

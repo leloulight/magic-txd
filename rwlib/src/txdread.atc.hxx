@@ -2,32 +2,7 @@
 
 #include "txdread.d3d.genmip.hxx"
 
-//#define _USE_NEW_AMD_COMPRESS
-
-#ifdef _USE_NEW_AMD_COMPRESS
-
 #include <AMDCompress.h>
-
-#else
-
-#include <ATI_compress.h>
-
-typedef ATI_TC_FORMAT AMD_TC_FORMAT;
-typedef ATI_TC_Texture AMD_TC_Texture;
-typedef ATI_TC_BYTE AMD_TC_BYTE;
-typedef ATI_TC_ERROR AMD_TC_ERROR;
-
-#define AMD_TC_FORMAT_ATC_RGB                   ATI_TC_FORMAT_ATC_RGB
-#define AMD_TC_FORMAT_ATC_RGBA_Explicit         ATI_TC_FORMAT_ATC_RGBA_Explicit
-#define AMD_TC_FORMAT_ATC_RGBA_Interpolated     ATI_TC_FORMAT_ATC_RGBA_Interpolated
-#define AMD_TC_FORMAT_ARGB_8888                 ATI_TC_FORMAT_ARGB_8888
-
-#define AMD_TC_CalculateBufferSize              ATI_TC_CalculateBufferSize
-#define AMD_TC_ConvertTexture                   ATI_TC_ConvertTexture
-
-#define AMD_TC_OK                               ATI_TC_OK
-
-#endif
 
 #define PLATFORM_ATC    11
 

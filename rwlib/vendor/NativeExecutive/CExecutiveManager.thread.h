@@ -46,6 +46,8 @@ public:
 
     bool IsCurrent( void );
 
+    CFiber* GetCurrentFiber( void );
+
     void Lock( void );
     void Unlock( void );
 
@@ -56,10 +58,8 @@ public:
 
     bool isRemoteThread;
 
-private:
     CExecutiveManager *manager;
 
-public:
     RwListEntry <CExecThread> managerNode;
 };
 

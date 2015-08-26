@@ -12,18 +12,24 @@
 
 #include "StdInc.h"
 
+#include "CExecutiveManager.hazards.hxx"
+#include "CExecutiveManager.native.hxx"
+
 BEGIN_NATIVE_EXECUTIVE
 
 #ifdef _WIN32
 
 struct nativeThreadPlugin
 {
+    // THESE FIELDS MUST NOT BE MODIFIED.
+    Fiber *terminationReturn;   // if not NULL, the thread yields to this state when it successfully terminated.
+
+    // You are free to modify from here.
     struct nativeThreadPluginInterface *manager;
     CExecThread *self;
     HANDLE hThread;
     mutable CRITICAL_SECTION threadLock;
     volatile eThreadStatus status;
-    Fiber *terminationReturn;   // if not NULL, the thread yields to this state when it successfully terminated.
     volatile bool hasThreadBeenInitialized;
 
     RwListEntry <nativeThreadPlugin> node;
@@ -49,16 +55,48 @@ struct nativeLock
 {
     CRITICAL_SECTION& critical_section;
 
+    bool hasEntered;
+
     AINLINE nativeLock( CRITICAL_SECTION& theSection ) : critical_section( theSection )
     {
         LockSafety::EnterLockSafely( critical_section );
+
+        this->hasEntered = true;
+    }
+
+    AINLINE void Suspend( void )
+    {
+        if ( this->hasEntered )
+        {
+            LockSafety::LeaveLockSafely( critical_section );
+
+            this->hasEntered = false;
+        }
     }
 
     AINLINE ~nativeLock( void )
     {
-        LockSafety::LeaveLockSafely( critical_section );
+        this->Suspend();
     }
 };
+
+void __stdcall _nativeThreadTerminationProto_cpp( CExecThread *termThread )
+{
+    try
+    {
+        throw threadTerminationException( termThread );
+    }
+    catch( ... )
+    {
+        __noop();
+        throw;
+    }
+}
+
+extern "C" void __stdcall _nativeThreadTerminationProto( CExecThread *termThread )
+{
+    _nativeThreadTerminationProto_cpp( termThread );
+}
 
 struct nativeThreadPluginInterface : public ExecutiveManager::threadPluginContainer_t::pluginInterface
 {
@@ -152,18 +190,6 @@ struct nativeThreadPluginInterface : public ExecutiveManager::threadPluginContai
         return ERROR_SUCCESS;
     }
 
-    static void __stdcall _ThreadTerminationProto( void )
-    {
-        CExecThread *thisThread;
-
-        __asm
-        {
-            mov thisThread,ebx
-        }
-
-        throw threadTerminationException( thisThread );
-    }
-
     typedef struct _NT_TIB
     {
         PVOID ExceptionList;
@@ -171,7 +197,7 @@ struct nativeThreadPluginInterface : public ExecutiveManager::threadPluginContai
         PVOID StackLimit;
     } NT_TIB;
 
-    void RtlTerminateThread( nativeThreadPlugin *threadInfo )
+    void RtlTerminateThread( CExecutiveManager *manager, nativeThreadPlugin *threadInfo, nativeLock& ctxLock )
     {
         CExecThread *theThread = threadInfo->self;
 
@@ -201,72 +227,39 @@ struct nativeThreadPluginInterface : public ExecutiveManager::threadPluginContai
             // Only do termination if the thread has been initialized.
             if ( threadInfo->hasThreadBeenInitialized )
             {
-                // NOTE: this is a fucking insecure hack that changes the executing thread of a thread runtime.
-                // It is written with the hope that no code makes assumptions about a certain thread having to execute
-                // termination logic. If this feature will be required, I will still have certain work-arounds!
-
-                // It works, so do not fuck around with it.
-
-                // Create a fiber that we have to walk down the thread context with.
-                Fiber terminationFiber;
-                Fiber returnFiber;
-
-                // Get the complete WIN32 x86 context.
-                CONTEXT currentContext;
-                currentContext.ContextFlags = ( CONTEXT_INTEGER | CONTEXT_CONTROL | CONTEXT_SEGMENTS );
-
-                BOOL threadContextGet = GetThreadContext( threadInfo->hThread, &currentContext );
-
-                if ( threadContextGet == TRUE )
+                // Terminate all possible hazards.
                 {
-                    // Put our context into the fiber.
-                    terminationFiber.ebp = currentContext.Ebp;
-                    terminationFiber.edi = currentContext.Edi;
-                    terminationFiber.esi = currentContext.Esi;
-                    terminationFiber.esp = currentContext.Esp;
+                    executiveHazardManagerEnv *hazardEnv = executiveHazardManagerEnvRegister.GetPluginStruct( (CExecutiveManagerNative*)manager );
 
-                    // Grab exception information of that thread, too!
-                    // This especially is quite an ugly hack.
+                    if ( hazardEnv )
                     {
-                        LDT_ENTRY fsSegmentEntry;
-
-                        BOOL selectorGet = GetThreadSelectorEntry( threadInfo->hThread, currentContext.SegFs, &fsSegmentEntry );
-                        
-                        assert( selectorGet == TRUE );
-
-                        // Construct the real pointer to NT_TIB.
-                        DWORD fsPointer =
-                            ( fsSegmentEntry.BaseLow ) |
-                            ( fsSegmentEntry.HighWord.Bytes.BaseMid << 16 ) |
-                            ( fsSegmentEntry.HighWord.Bytes.BaseHi << 24 );
-
-                        const NT_TIB *threadInfoBlock = (NT_TIB*)fsPointer;
-
-                        terminationFiber.stack_base = (unsigned int*)threadInfoBlock->StackBase;
-                        terminationFiber.stack_limit = (unsigned int*)threadInfoBlock->StackLimit;
-                        terminationFiber.except_info = (void*)threadInfoBlock->ExceptionList;
+                        hazardEnv->PurgeThreadHazards( theThread );
                     }
-
-                    // Modify it so we point to the termination routine.
-                    terminationFiber.ebx = (unsigned int)theThread;
-                    terminationFiber.eip = (unsigned int)_ThreadTerminationProto;
-                        
-                    // Make the thread now that it should jump back here at termination.
-                    threadInfo->terminationReturn = &returnFiber;
-
-                    // Jump!!!
-                    ExecutiveFiber::eswitch( &returnFiber, &terminationFiber );
-
-                    // If we return here, the thread must be terminated.
-                    assert( threadInfo->status == THREAD_TERMINATED );
                 }
+
+                // We do not need the lock anymore.
+                ctxLock.Suspend();
+
+                // We can resume the thread again.
+                ResumeThread( threadInfo->hThread );
+
+                // Wait for thread termination.
+                while ( threadInfo->status != THREAD_TERMINATED )
+                {
+                    WaitForSingleObject( threadInfo->hThread, INFINITE );
+                }
+
+                // If we return here, the thread must be terminated.
+                assert( threadInfo->status == THREAD_TERMINATED );
+            }
+            else
+            {
+                // The thread is now terminated.
+                threadInfo->status = THREAD_TERMINATED;
             }
 
             // We can now terminate the handle.
             TerminateThread( threadInfo->hThread, ERROR_SUCCESS );
-
-            // The thread is now terminated.
-            threadInfo->status = THREAD_TERMINATED;
         }
 
         // If we were the current thread, we cannot reach this point.
@@ -277,35 +270,20 @@ struct nativeThreadPluginInterface : public ExecutiveManager::threadPluginContai
     void OnPluginDestroy( CExecThread *thread, ExecutiveManager::threadPluginContainer_t::pluginOffset_t pluginOffset, ExecutiveManager::threadPluginContainer_t::pluginDescriptor id );
 };
 
-// This is a native ASM routine. In this there can be no language objects, so its perfect for
-// ASM hacks.
-__declspec(naked) void _ThreadProcNative( void )
+extern "C" DWORD WINAPI nativeThreadPluginInterface_ThreadProcCPP( LPVOID param )
 {
-    __asm
-    {
-        // Call the C++ thread runtime with our argument.
-        mov ebx,[esp+4] // nativeThreadPlugin type
-        push ebx
-        call nativeThreadPluginInterface::_ThreadProcCPP
-
-        // Check for a termination fiber.
-        mov edx,[ebx]nativeThreadPlugin.terminationReturn
-
-        test edx,edx
-        jz NoTerminationReturn
-
-        // Since we have a termination return fiber, leave to it.
-        mov eax,edx
-        jmp ExecutiveFiber::leave
-
-NoTerminationReturn:
-        // We return to the WinNT thread dispatcher.
-        ret
-    }
+    // This is an assembler compatible entry point.
+    return nativeThreadPluginInterface::_ThreadProcCPP( param );
 }
 
 bool nativeThreadPluginInterface::OnPluginConstruct( CExecThread *thread, ExecutiveManager::threadPluginContainer_t::pluginOffset_t pluginOffset, ExecutiveManager::threadPluginContainer_t::pluginDescriptor id )
 {
+    // Cannot create threads if we are terminating!
+    if ( this->isTerminating )
+    {
+        return false;
+    }
+
     nativeThreadPlugin *info = ExecutiveManager::threadPluginContainer_t::RESOLVE_STRUCT <nativeThreadPlugin> ( thread, pluginOffset );
 
     // If we are not a remote thread...
@@ -316,7 +294,18 @@ bool nativeThreadPluginInterface::OnPluginConstruct( CExecThread *thread, Execut
         // ... create a local thread!
         DWORD threadIdOut;
 
-        HANDLE hThread = ::CreateThread( NULL, (SIZE_T)thread->stackSize, (LPTHREAD_START_ROUTINE)_ThreadProcNative, info, CREATE_SUSPENDED, &threadIdOut );
+        LPTHREAD_START_ROUTINE startRoutine = NULL;
+
+#if defined(_M_IX86)
+        startRoutine = (LPTHREAD_START_ROUTINE)_thread86_procNative;
+#elif defined(_M_AMD64)
+        startRoutine = (LPTHREAD_START_ROUTINE)_thread64_procNative;
+#endif
+
+        if ( startRoutine == NULL )
+            return false;
+
+        HANDLE hThread = ::CreateThread( NULL, (SIZE_T)thread->stackSize, startRoutine, info, CREATE_SUSPENDED, &threadIdOut );
 
         if ( hThread == NULL )
             return false;
@@ -475,6 +464,8 @@ eThreadStatus CExecThread::GetStatus( void ) const
 // No matter what thread state, this function guarrantees to terminate a thread cleanly according to
 // C++ stack unwinding logic!
 // Termination of a thread is allowed to be executed by another thread (e.g. the "main" thread).
+// NOTE: logic has been changed to be secure. now proper terminating depends on a contract between runtime
+// and the NativeExecutive library.
 bool CExecThread::Terminate( void )
 {
     bool returnVal = false;
@@ -508,13 +499,13 @@ bool CExecThread::Terminate( void )
                 }
                 else
                 {
-                    privateNativeThreadEnvironment *nativeEnv = privateNativeThreadEnvironmentRegister.GetPluginStruct( (CExecutiveManagerNative*)this );
+                    privateNativeThreadEnvironment *nativeEnv = privateNativeThreadEnvironmentRegister.GetPluginStruct( (CExecutiveManagerNative*)this->manager );
 
                     if ( nativeEnv )
                     {
                         // User-mode threads have to be cleanly terminated.
                         // This means going down the exception stack.
-                        nativeEnv->_nativePluginInterface.RtlTerminateThread( info );
+                        nativeEnv->_nativePluginInterface.RtlTerminateThread( this->manager, info, lock );
 
                         // We may not actually get here!
                     }
@@ -652,6 +643,12 @@ struct threadObjectConstructor
 
 CExecThread* CExecutiveManager::CreateThread( CExecThread::threadEntryPoint_t entryPoint, void *userdata, size_t stackSize )
 {
+    // We must not create new threads if the environment is terminating!
+    if ( this->isTerminating )
+    {
+        return NULL;
+    }
+
     // No point in creating threads if we have no native implementation.
     if ( privateNativeThreadEnvironmentRegister.IsRegistered() == false )
         return NULL;
@@ -741,7 +738,8 @@ CExecThread* CExecutiveManager::GetCurrentThread( void )
             }
 
             // If we have not found a thread handle representing this native thread, we should create one.
-            if ( currentThread == NULL && nativeEnv->_nativePluginInterface.isTerminating == false )
+            if ( currentThread == NULL &&
+                 nativeEnv->_nativePluginInterface.isTerminating == false && this->isTerminating == false )
             {
                 // Create the thread.
                 CExecThread *newThreadInfo = NULL;
@@ -825,6 +823,18 @@ void CExecutiveManager::CloseThread( CExecThread *thread )
 #endif
 
         this->threadPlugins.Destroy( ExecutiveManager::moduleAllocator, thread );
+    }
+}
+
+void CExecutiveManager::CheckHazardCondition( void )
+{
+    CExecThread *theThread = GetCurrentThread();
+
+    // If we are terminating, we probably should do that.
+    if ( theThread->GetStatus() == THREAD_TERMINATING )
+    {
+        // We just throw a thread termination exception.
+        throw threadTerminationException( theThread );
     }
 }
 

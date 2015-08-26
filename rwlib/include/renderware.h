@@ -15,6 +15,9 @@
 #include <list>
 #include <tuple>
 
+#define _USE_MATH_DEFINES
+#include <math.h>
+
 // Include some special vendor libraries.
 #include <core/CFileSystem.common.h>
 #include <sdk/rwlist.hpp>

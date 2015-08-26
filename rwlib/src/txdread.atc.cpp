@@ -323,20 +323,20 @@ inline void DecompressATCMipmap(
 
     bool needsNewBuffer = shouldAllocateNewRasterBuffer( mipWidth, atcDepth, atcRowAlignment, targetDepth, targetRowAlignment );
 
-    if ( atcRasterFormat != targetRasterFormat || needsNewBuffer || atcColorOrder != targetColorOrder || mipWidth != layerWidth || mipHeight != layerHeight )
+    if ( atcRasterFormat != targetRasterFormat || mipWidth != layerWidth || mipHeight != layerHeight || needsNewBuffer || atcColorOrder != targetColorOrder )
     {
         void *atcTexels = dstTexels;
 
         uint32 atcRowSize = getRasterDataRowSize( mipWidth, atcDepth, atcRowAlignment );
 
-        if ( needsNewBuffer || mipWidth != layerWidth || mipHeight != layerHeight )
+        uint32 dstRowSize = getRasterDataRowSize( layerWidth, targetDepth, targetRowAlignment );
+
+        if ( mipWidth != layerWidth || mipHeight != layerHeight || needsNewBuffer )
         {
-            dstDataSize = getRasterDataSizeByRowSize( atcRowSize, mipHeight );
+            dstDataSize = getRasterDataSizeByRowSize( dstRowSize, mipHeight );
 
             dstTexels = engineInterface->PixelAllocate( dstDataSize );
         }
-
-        uint32 dstRowSize = getRasterDataRowSize( mipWidth, targetDepth, targetRowAlignment );
 
         colorModelDispatcher <const void> fetchSrcDispatch( atcRasterFormat, atcColorOrder, atcDepth, NULL, 0, PALETTE_NONE );
         colorModelDispatcher <void> putDispatch( targetRasterFormat, targetColorOrder, targetDepth, NULL, 0, PALETTE_NONE );

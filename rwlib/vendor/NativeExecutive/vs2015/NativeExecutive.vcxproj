@@ -94,6 +94,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug 2015|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -297,6 +298,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <MASM Include="..\native_routines_x86.asm">
+      <ExcludedFromBuild Condition="'$(Platform)'!='Win32'">true</ExcludedFromBuild>
+      <FileType>Document</FileType>
+    </MASM>
+    <MASM Include="..\native_routines_x64.asm">
+      <ExcludedFromBuild Condition="'$(Platform)'!='x64'">true</ExcludedFromBuild>
+      <FileType>Document</FileType>
+    </MASM>
     <ClCompile Include="..\CExecutiveManager.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug 2015|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug 2013|Win32'">Create</PrecompiledHeader>
@@ -308,13 +317,18 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release 2013|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\CExecutiveManager.fiber.cpp" />
+    <ClCompile Include="..\CExecutiveManager.hazards.cpp" />
     <ClCompile Include="..\CExecutiveManager.rwlock.cpp" />
     <ClCompile Include="..\CExecutiveManager.task.cpp" />
     <ClCompile Include="..\CExecutiveManager.thread.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\CExecutiveManager.fiber.h" />
+    <ClInclude Include="..\CExecutiveManager.fiber.hxx" />
     <ClInclude Include="..\CExecutiveManager.h" />
+    <ClInclude Include="..\CExecutiveManager.hazards.h" />
+    <ClInclude Include="..\CExecutiveManager.hazards.hxx" />
+    <ClInclude Include="..\CExecutiveManager.native.hxx" />
     <ClInclude Include="..\CExecutiveManager.rwlock.h" />
     <ClInclude Include="..\CExecutiveManager.task.h" />
     <ClInclude Include="..\CExecutiveManager.thread.h" />
@@ -323,7 +337,11 @@
     <ClInclude Include="..\internal\CExecutiveManager.rwlock.internal.h" />
     <ClInclude Include="..\StdInc.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\native_shared.inc" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets" />
   </ImportGroup>
 </Project>

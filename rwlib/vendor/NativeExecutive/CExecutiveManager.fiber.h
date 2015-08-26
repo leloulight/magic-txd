@@ -19,17 +19,49 @@ BEGIN_NATIVE_EXECUTIVE
 
 struct FiberStatus;
 
+typedef SIZE_T regType_t;
+typedef char xmmReg_t[16];
+
 struct Fiber
 {
+#if defined(_M_IX86)
     // Preserve __cdecl
-    unsigned int ebx;   // 0
-    unsigned int edi;   // 4
-    unsigned int esi;   // 8
-    unsigned int esp;   // 12
-    unsigned int eip;   // 16
-    unsigned int ebp;   // 20
+    // If changing any of this, please update the structs inside of native_routines_x86.asm
+    regType_t ebx;   // 0
+    regType_t edi;   // 4
+    regType_t esi;   // 8
+    regType_t esp;   // 12
+    regType_t eip;   // 16
+    regType_t ebp;   // 20
+#elif defined(_M_AMD64)
+    // https://msdn.microsoft.com/en-us/library/9z1stfyw.aspx
+    // If changing any of this, please update the structs inside of native_routines_x64.asm
+    regType_t eip;
+    regType_t esp;
+    regType_t r12;
+    regType_t r13;
+    regType_t r14;
+    regType_t r15;
+    regType_t rdi;
+    regType_t rsi;
+    regType_t rbx;
+    regType_t rbp;
     
-    unsigned int *stack_base, *stack_limit;
+    xmmReg_t xmm6;
+    xmmReg_t xmm7;
+    xmmReg_t xmm8;
+    xmmReg_t xmm9;
+    xmmReg_t xmm10;
+    xmmReg_t xmm11;
+    xmmReg_t xmm12;
+    xmmReg_t xmm13;
+    xmmReg_t xmm14;
+    xmmReg_t xmm15;
+#else
+#error Unsupported architecture for Fibers!
+#endif
+    
+    void *stack_base, *stack_limit;
     void *except_info;
 
     size_t stackSize;
@@ -42,7 +74,7 @@ struct Fiber
     }
 };
 
-enum eFiberStatus
+enum eFiberStatus : DWORD
 {
     FIBER_RUNNING,
     FIBER_SUSPENDED,
@@ -76,9 +108,6 @@ namespace ExecutiveFiber
 
     void __cdecl    eswitch         ( Fiber *from, Fiber *to );
     void __cdecl    qswitch         ( Fiber *from, Fiber *to );
-
-    // Native methods. Use with caution! RTFM!
-    void __cdecl    leave           ( Fiber *to );
 };
 
 class CFiber : public FiberStatus
@@ -156,6 +185,23 @@ public:
     CExecutiveManager *manager;
 
     double resumeTimer;
+};
+
+// Thread fiber stack iterator.
+struct threadFiberStackIterator
+{
+    threadFiberStackIterator( CExecThread *thread );
+    ~threadFiberStackIterator( void );
+
+    bool IsEnd( void ) const;
+    void Increment( void );
+
+    CFiber* Resolve( void ) const;
+
+private:
+    CExecThread *thread;
+
+    size_t iter;
 };
 
 END_NATIVE_EXECUTIVE

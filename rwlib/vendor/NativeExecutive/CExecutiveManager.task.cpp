@@ -16,14 +16,23 @@ BEGIN_NATIVE_EXECUTIVE
 
 static CExecThread *shedulerThread = NULL;
 
-struct hyperSignal
+struct hyperSignal : public hazardPreventionInterface
 {
+    void TerminateHazard( void )
+    {
+        // Set the event to signalled state, and force it.
+        SetEvent( this->pingEvent );
+    }
+
+    bool wantsToTerminate;
+
     AINLINE hyperSignal( void )
     {
         // Create the ping event that makes the sheduler thread wait until there is necessary activity.
-        pingEvent = CreateEvent( NULL, false, false, NULL );
+        pingEvent = CreateEventW( NULL, false, false, NULL );
         isWaiting = false;
         wasSignaled = false;
+        wantsToTerminate = false;
 
         InitializeCriticalSection( &pingLock );
     }
@@ -49,11 +58,16 @@ struct hyperSignal
         }
     }
 
-    AINLINE void WaitForSignal( void )
+    AINLINE void WaitForSignal( CExecutiveManager *manager )
     {
+        hazardousSituation situation( manager, this );
+
         isWaiting = true;
 
         WaitForSingleObject( pingEvent, INFINITE );
+
+        // We need to check for hazard conditions.
+        manager->CheckHazardCondition();
 
         isWaiting = false;
 
@@ -106,7 +120,7 @@ static void __stdcall TaskShedulerThread( CExecThread *threadInfo, void *param )
 {
     while ( true )
     {
-        shedulerPingEvent.WaitForSignal();
+        shedulerPingEvent.WaitForSignal( threadInfo->manager );
 
         while ( ProcessSheduleItem() );
     }
@@ -130,6 +144,8 @@ void CExecutiveManager::ShutdownTasks( void )
     {
         // Shutdown synchronization objects.
         TerminateThread( shedulerThread );
+
+        CloseThread( shedulerThread );
 
         shedulerThread = NULL;
     }

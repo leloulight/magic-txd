@@ -75,8 +75,9 @@ typedef enum
    AMD_TC_FORMAT_DXT5_RGxB,                  ///<    swizzled DXT5 format with the blue component swizzled into the alpha channel. Eight bits per pixel.
    AMD_TC_FORMAT_DXT5_xGxR,                  ///<    two-component swizzled DXT5 format with the red component swizzled into the alpha channel & the green component in the green channel. Eight bits per pixel.
    AMD_TC_FORMAT_ETC_RGB,                    ///< ETC (Ericsson Texture Compression) 
+   AMD_TC_FORMAT_ASTC,						 ///< Currently unsupported: ASTC (Adaptive Scalable Texture Compression) open texture compression standard
    //--------------------------------------------------------------------------------------------------------
-   AMD_TC_FORMAT_MAX = AMD_TC_FORMAT_ETC_RGB
+   AMD_TC_FORMAT_MAX = AMD_TC_FORMAT_ASTC
 } AMD_TC_FORMAT;
 
 /// An enum selecting the speed vs. quality trade-off.

@@ -81,11 +81,17 @@ public:
     static CExecutiveManager* Create( void );
     static void Delete( CExecutiveManager *manager );
 
+private:
+    void            PurgeActiveObjects  ( void );
+
+public:
     CExecThread*    CreateThread        ( CExecThread::threadEntryPoint_t proc, void *userdata, size_t stackSize = 0 );
     void            TerminateThread     ( CExecThread *thread );    // DANGEROUS function!
     void            JoinThread          ( CExecThread *thread );    // safe function :)
     CExecThread*    GetCurrentThread    ( void );
     void            CloseThread         ( CExecThread *thread );
+
+    void            CheckHazardCondition( void );
 
     void            InitThreads         ( void );
     void            ShutdownThreads     ( void );
@@ -130,6 +136,8 @@ public:
 
     CRITICAL_SECTION threadPluginsLock;
 
+    bool isTerminating;     // if true then no new objects are allowed to spawn anymore.
+
     RwList <CExecThread> threads;
     RwList <CFiber> fibers;
     RwList <CExecTask> tasks;
@@ -152,13 +160,11 @@ struct threadTerminationException : public std::exception
     inline threadTerminationException( CExecThread *theThread ) : std::exception( "thread termination" )
     {
         this->terminatedThread = theThread;
-
-        theThread->Lock();
     }
 
     inline ~threadTerminationException( void )
     {
-        this->terminatedThread->Unlock();
+        return;
     }
 
     CExecThread *terminatedThread;
@@ -236,5 +242,7 @@ public:
 };
 
 END_NATIVE_EXECUTIVE
+
+#include "CExecutiveManager.hazards.h"
 
 #endif //_EXECUTIVE_MANAGER_

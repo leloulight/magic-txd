@@ -47,17 +47,19 @@ struct windowingSystemWin32
 
             windowingSystemWin32 *windowSys = msgWnd->windowSys;
 
+            HINSTANCE curHandle = windowSys->_windowClass.hInstance;
+
             // Create a window.
             HWND wndHandle = CreateWindowExA(
-                NULL,
-                (LPCSTR)windowSys->_windowClassHandle,
+                0,
+                (LPCSTR)( windowSys->_windowClassHandle ),
                 windowTitle.c_str(),
                 msgWnd->dwStyle,
                 300, 300,
                 windowRect.right - windowRect.left,
                 windowRect.bottom - windowRect.top,
                 NULL, NULL,
-                GetModuleHandle( NULL ),
+                curHandle,
                 NULL
             );
 
@@ -67,7 +69,7 @@ struct windowingSystemWin32
             }
 
             // Store our class link into the window.
-            SetWindowLongW( wndHandle, GWLP_USERDATA, (LONG)msgWnd );
+            SetWindowLongPtrW( wndHandle, GWLP_USERDATA, (LONG_PTR)msgWnd );
             
             msgWnd->windowHandle = wndHandle;
 
@@ -106,7 +108,7 @@ struct windowingSystemWin32
             // could use it into default handlers!
             
             // Remove our userdata pointer.
-            SetWindowLongW( wndHandle, GWLP_USERDATA, NULL );
+            SetWindowLongPtrW( wndHandle, GWLP_USERDATA, NULL );
 
             // Destroy our window.
             DestroyWindow( wndHandle );
@@ -210,7 +212,7 @@ struct windowingSystemWin32
         {
             // This function must be called from one thread only!
 
-            Win32Window *wndClass = (Win32Window*)GetWindowLongPtr( wndHandle, GWLP_USERDATA );
+            Win32Window *wndClass = (Win32Window*)GetWindowLongPtrW( wndHandle, GWLP_USERDATA );
 
             if ( wndClass )
             {
@@ -292,7 +294,7 @@ struct windowingSystemWin32
     {
         // Register the windowing system class.
 	    _windowClass = { 0 };
-	    _windowClass.cbSize = sizeof(WNDCLASSEX);
+	    _windowClass.cbSize = sizeof(_windowClass);
 	    _windowClass.style = CS_HREDRAW | CS_VREDRAW;
 	    _windowClass.lpfnWndProc = Win32Window::_rwwindow_message_handler_win32;
 	    _windowClass.hInstance = GetModuleHandle( NULL );
@@ -300,6 +302,21 @@ struct windowingSystemWin32
 	    _windowClass.lpszClassName = L"RwWindow_framework";
 	    
         _windowClassHandle = RegisterClassExW(&_windowClass);
+
+#if 0
+        HWND testWnd =
+            CreateWindowEx(
+                0,
+                MAKEINTATOM( _windowClassHandle ),
+                "test",
+                WS_OVERLAPPEDWINDOW,
+                300, 300,
+                100, 100, 
+                NULL, NULL,
+                _windowClass.hInstance,
+                NULL
+            );
+#endif
 
         // Register the window type.
         this->windowTypeInfo = engineInterface->typeSystem.RegisterStructType <Win32Window> ( "window", engineInterface->rwobjTypeInfo );
@@ -341,7 +358,7 @@ struct windowingSystemWin32
         }
 
         // Unregister our window class.
-        UnregisterClassA( (LPCSTR)this->_windowClassHandle, GetModuleHandle( NULL ) );
+        UnregisterClassW( (LPCWSTR)this->_windowClassHandle, _windowClass.hInstance );
     }
 
     inline void Update( void )

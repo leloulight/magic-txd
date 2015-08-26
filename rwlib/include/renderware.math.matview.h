@@ -9,6 +9,8 @@
 
 namespace mview
 {
+#ifdef _SUPPORTS_CONSTEXPR
+
 #define MATVIEW_GENERAL_PROPS   size_t x, size_t y
 #define MATVIEW_GENERAL_IMPL    x, y
 
@@ -439,6 +441,8 @@ namespace mview
             return mat[ item_view::y ][ item_view::x ];
         }
     };
+
+#endif //_SUPPORTS_CONSTEXPR
 };
 
 #endif //_RENDERWARE_MATH_MATVIEW_

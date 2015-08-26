@@ -12,6 +12,8 @@
 
 #include "StdInc.h"
 
+#include "CExecutiveManager.fiber.hxx"
+
 BEGIN_NATIVE_EXECUTIVE
 
 static void __cdecl _FiberTerm( FiberStatus *status )
@@ -62,6 +64,7 @@ executiveManagerFactory_t executiveManagerFactory;
 // Make sure we register all plugins.
 extern void registerThreadPlugin( void );
 extern void registerFiberPlugin( void );
+extern void registerStackHazardManagement( void );
 
 static bool _hasInitialized = false;
 
@@ -72,6 +75,7 @@ CExecutiveManager* CExecutiveManager::Create( void )
         // Register all plugins.
         registerFiberPlugin();
         registerThreadPlugin();
+        registerStackHazardManagement();
 
         _hasInitialized = true;
     }
@@ -89,14 +93,23 @@ CExecutiveManager* CExecutiveManager::Create( void )
 
 void CExecutiveManager::Delete( CExecutiveManager *manager )
 {
+    // Mark this module so that is spawns no more new objects.
+    manager->isTerminating = true;
+
     // Shutdown sub modules.
     manager->ShutdownTasks();
+
+    // Kill all remaining handles.
+    // This is required to properly shut ourselves down.
+    manager->PurgeActiveObjects();
 
     executiveManagerFactory.Destroy( ExecutiveManager::moduleAllocator, (CExecutiveManagerNative*)manager );
 }
 
 CExecutiveManager::CExecutiveManager( void )
 {
+    this->isTerminating = false;    // we are ready to accept connections!
+
     LIST_CLEAR( fibers.root );
     LIST_CLEAR( groups.root );
 
@@ -114,6 +127,19 @@ CExecutiveManager::CExecutiveManager( void )
 
 CExecutiveManager::~CExecutiveManager( void )
 {
+    // Make sure we host no more objects.
+    assert( LIST_EMPTY( this->groups.root ) == true );
+    assert( LIST_EMPTY( this->fibers.root ) == true );
+    assert( LIST_EMPTY( this->threads.root ) == true );
+
+    // Shutdown core modules.
+    ShutdownThreads();
+}
+
+void CExecutiveManager::PurgeActiveObjects( void )
+{
+    // Calling this function makes most sense if the environment is terminating.
+
     // Destroy all groups.
     while ( !LIST_EMPTY( groups.root ) )
     {
@@ -130,13 +156,56 @@ CExecutiveManager::~CExecutiveManager( void )
         CloseFiber( fiber );
     }
 
-    // Shutdown core modules.
-    ShutdownThreads();
+    // Destroy all threads.
+    while ( !LIST_EMPTY( threads.root ) )
+    {
+        CExecThread *thread = LIST_GETITEM( CExecThread, threads.root.next, managerNode );
+
+        CloseThread( thread );
+    }
 }
+
+struct basicFiberObjectConstructor
+{
+    CExecutiveManager *manager;
+
+    AINLINE basicFiberObjectConstructor( CExecutiveManager *manager )
+    {
+        this->manager = manager;
+    }
+
+    AINLINE CFiber* Construct( void *mem ) const
+    {
+        return new (mem) CFiber( this->manager, NULL, NULL );
+    }
+};
 
 CFiber* CExecutiveManager::CreateFiber( CFiber::fiberexec_t proc, void *userdata, size_t stackSize )
 {
-    CFiber *fiber = new CFiber( this, NULL, NULL );
+    if ( this->isTerminating )
+    {
+        return NULL;
+    }
+
+    // Get the fiber environment.
+    privateFiberEnvironment *fiberEnv = privateFiberEnvironmentRegister.GetPluginStruct( (CExecutiveManagerNative*)this );
+
+    if ( !fiberEnv )
+    {
+        return NULL;
+    }
+
+    CFiber *fiber = NULL;
+    {
+        basicFiberObjectConstructor constructor( this );
+
+        fiber = fiberEnv->fiberFact.ConstructTemplate( ExecutiveManager::moduleAllocator, constructor );
+    }
+
+    if ( !fiber )
+    {
+        return NULL;
+    }
 
     // Make sure we have an appropriate stack size.
     if ( stackSize != 0 )
@@ -182,7 +251,7 @@ void CExecutiveManager::TerminateFiber( CFiber *fiber )
     {
         // Throw an exception on the fiber
         env->pushdata( fiber );
-        env->eip = (unsigned int)_FiberExceptTerminate;
+        env->eip = (regType_t)_FiberExceptTerminate;
 
         // We want to eventually return back
         fiber->resume();
@@ -198,12 +267,18 @@ void CExecutiveManager::TerminateFiber( CFiber *fiber )
 
 void CExecutiveManager::CloseFiber( CFiber *fiber )
 {
+    // Get the fiber environment.
+    privateFiberEnvironment *fiberEnv = privateFiberEnvironmentRegister.GetPluginStruct( (CExecutiveManagerNative*)this );
+
+    if ( !fiberEnv )
+        return;
+
     TerminateFiber( fiber );
 
     LIST_REMOVE( fiber->node );
     LIST_REMOVE( fiber->groupNode );
 
-    delete fiber;
+    fiberEnv->fiberFact.Destroy( ExecutiveManager::moduleAllocator, fiber );
 }
 
 CExecutiveGroup* CExecutiveManager::CreateGroup( void )

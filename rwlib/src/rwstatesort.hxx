@@ -292,6 +292,10 @@ struct RwStateManager
 
         delete changeRefDevice;
 
+        // Need to clean up any cached allocators.
+        this->allocator.Shutdown( this->engineInterface );
+        this->changeSetAllocator.Shutdown( this->engineInterface );
+
         DeleteCriticalSection( &localStateLock );
     }
 
@@ -752,7 +756,11 @@ struct RwStateManager
 
         AINLINE ~capturedState( void )
         {
-            Terminate();
+            // Terminate ourselves if we have been intialized.
+            if ( this->manager != NULL )
+            {
+                Terminate();
+            }
 
 #ifdef RENDERWARE_STATEMAN_THREADING_SUPPORT
             DeleteCriticalSection( &stateLock );
@@ -798,6 +806,9 @@ struct RwStateManager
 
             // We are not active anymore, so remove ourselves.
             LIST_REMOVE( activeListNode );
+
+            // We belong to no more manager.
+            this->manager = NULL;
 
             Invalidate();
         }
