@@ -328,7 +328,13 @@ _thread64_procNative PROC
 
     ;ASSUME rcx:PTR nativeThreadPlugin
 
+	; We ACTUALLY have to combat a compiler bug of Visual Studio here.
+	; For some fucking reason the MSVC compiler assumes that there is stack space above its frame to save registers at.
+	; Since we have pretty much a ot of stack space available, we can sacrifice some.
+	; Why, Microsoft?
+	sub rsp,40h
     call nativeThreadPluginInterface_ThreadProcCPP
+	add rsp,40h
 
     ; Check for a termination fiber.
     mov rdx,[rbx].nativeThreadPlugin.terminationReturn
