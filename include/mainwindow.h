@@ -48,6 +48,9 @@ public:
     
     static const char* GetTXDPlatformString( rw::TexDictionary *txd );
 
+private:
+    void DoAddTexture( const TexAddDialog::texAddOperation& params );
+
 public slots:
     void onOpenFile( bool checked );
     void onCloseCurrent( bool checked );

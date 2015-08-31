@@ -13,13 +13,14 @@ struct driverConstructionProps
     size_t geomMemSize;
     size_t matMemSize;
     size_t swapChainMemSize;
+    size_t graphicsStateMemSize;
 };
 
 /*
     This is the driver interface that every render device has to implement.
-    Is is a specialization of the original Criterion pipeline design
+    It is a specialization of the original Criterion pipeline design
 */
-struct nativeDriverImplementation
+struct nativeDriverImplementation abstract
 {
     // Driver object creation.
     virtual void OnDriverConstruct( Interface *engineInterface, void *driverObjMem, size_t driverMemSize ) = 0;
@@ -91,6 +92,18 @@ struct nativeDriverImplementation
 
     virtual NATIVE_DRIVER_SWAPCHAIN_CONSTRUCT() = 0;
     virtual NATIVE_DRIVER_SWAPCHAIN_DESTROY() = 0;
+
+    // Graphics state API.
+    // Those objects are immutable pipeline configurations.
+    // They have to be used by the pipeline to render things using hardware acceleration.
+    // It is best advised to sort their usage as efficiently as possible.
+#define NATIVE_DRIVER_GRAPHICS_STATE_CONSTRUCT() \
+    void GraphicsStateConstruct( Interface *engineInterface, void *driverObjMem, void *objMem, const gfxGraphicsState& gfxState )
+#define NATIVE_DRIVER_GRAPHICS_STATE_DESTROY() \
+    void GraphicsStateDestroy( Interface *engineInterface, void *objMem )
+
+    virtual NATIVE_DRIVER_GRAPHICS_STATE_CONSTRUCT() = 0;
+    virtual NATIVE_DRIVER_GRAPHICS_STATE_DESTROY() = 0;
 };
 
 // Driver registration API.

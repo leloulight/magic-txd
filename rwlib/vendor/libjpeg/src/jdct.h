@@ -90,74 +90,74 @@ typedef FAST_FLOAT FLOAT_MULT_TYPE; /* preferred floating type */
 /* Short forms of external names for systems with brain-damaged linkers. */
 
 #ifdef NEED_SHORT_EXTERNAL_NAMES
-#define jpeg_fdct_islow		jFDislow
-#define jpeg_fdct_ifast		jFDifast
-#define jpeg_fdct_float		jFDfloat
-#define jpeg_fdct_7x7		jFD7x7
-#define jpeg_fdct_6x6		jFD6x6
-#define jpeg_fdct_5x5		jFD5x5
-#define jpeg_fdct_4x4		jFD4x4
-#define jpeg_fdct_3x3		jFD3x3
-#define jpeg_fdct_2x2		jFD2x2
-#define jpeg_fdct_1x1		jFD1x1
-#define jpeg_fdct_9x9		jFD9x9
-#define jpeg_fdct_10x10		jFD10x10
-#define jpeg_fdct_11x11		jFD11x11
-#define jpeg_fdct_12x12		jFD12x12
-#define jpeg_fdct_13x13		jFD13x13
-#define jpeg_fdct_14x14		jFD14x14
-#define jpeg_fdct_15x15		jFD15x15
-#define jpeg_fdct_16x16		jFD16x16
-#define jpeg_fdct_16x8		jFD16x8
-#define jpeg_fdct_14x7		jFD14x7
-#define jpeg_fdct_12x6		jFD12x6
-#define jpeg_fdct_10x5		jFD10x5
-#define jpeg_fdct_8x4		jFD8x4
-#define jpeg_fdct_6x3		jFD6x3
-#define jpeg_fdct_4x2		jFD4x2
-#define jpeg_fdct_2x1		jFD2x1
-#define jpeg_fdct_8x16		jFD8x16
-#define jpeg_fdct_7x14		jFD7x14
-#define jpeg_fdct_6x12		jFD6x12
-#define jpeg_fdct_5x10		jFD5x10
-#define jpeg_fdct_4x8		jFD4x8
-#define jpeg_fdct_3x6		jFD3x6
-#define jpeg_fdct_2x4		jFD2x4
-#define jpeg_fdct_1x2		jFD1x2
-#define jpeg_idct_islow		jRDislow
-#define jpeg_idct_ifast		jRDifast
-#define jpeg_idct_float		jRDfloat
-#define jpeg_idct_7x7		jRD7x7
-#define jpeg_idct_6x6		jRD6x6
-#define jpeg_idct_5x5		jRD5x5
-#define jpeg_idct_4x4		jRD4x4
-#define jpeg_idct_3x3		jRD3x3
-#define jpeg_idct_2x2		jRD2x2
-#define jpeg_idct_1x1		jRD1x1
-#define jpeg_idct_9x9		jRD9x9
-#define jpeg_idct_10x10		jRD10x10
-#define jpeg_idct_11x11		jRD11x11
-#define jpeg_idct_12x12		jRD12x12
-#define jpeg_idct_13x13		jRD13x13
-#define jpeg_idct_14x14		jRD14x14
-#define jpeg_idct_15x15		jRD15x15
-#define jpeg_idct_16x16		jRD16x16
-#define jpeg_idct_16x8		jRD16x8
-#define jpeg_idct_14x7		jRD14x7
-#define jpeg_idct_12x6		jRD12x6
-#define jpeg_idct_10x5		jRD10x5
-#define jpeg_idct_8x4		jRD8x4
-#define jpeg_idct_6x3		jRD6x3
-#define jpeg_idct_4x2		jRD4x2
-#define jpeg_idct_2x1		jRD2x1
-#define jpeg_idct_8x16		jRD8x16
-#define jpeg_idct_7x14		jRD7x14
-#define jpeg_idct_6x12		jRD6x12
-#define jpeg_idct_5x10		jRD5x10
-#define jpeg_idct_4x8		jRD4x8
-#define jpeg_idct_3x6		jRD3x8
-#define jpeg_idct_2x4		jRD2x4
-#define jpeg_idct_1x2		jRD1x2
+#define jpeg_fdct_islow		JLIB_SYMBOLNAME( jFDislow )
+#define jpeg_fdct_ifast		JLIB_SYMBOLNAME( jFDifast )
+#define jpeg_fdct_float		JLIB_SYMBOLNAME( jFDfloat )
+#define jpeg_fdct_7x7		JLIB_SYMBOLNAME( jFD7x7 )
+#define jpeg_fdct_6x6		JLIB_SYMBOLNAME( jFD6x6 )
+#define jpeg_fdct_5x5		JLIB_SYMBOLNAME( jFD5x5 )
+#define jpeg_fdct_4x4		JLIB_SYMBOLNAME( jFD4x4 )
+#define jpeg_fdct_3x3		JLIB_SYMBOLNAME( jFD3x3 )
+#define jpeg_fdct_2x2		JLIB_SYMBOLNAME( jFD2x2 )
+#define jpeg_fdct_1x1		JLIB_SYMBOLNAME( jFD1x1 )
+#define jpeg_fdct_9x9		JLIB_SYMBOLNAME( jFD9x9 )
+#define jpeg_fdct_10x10		JLIB_SYMBOLNAME( jFD10x10 )
+#define jpeg_fdct_11x11		JLIB_SYMBOLNAME( jFD11x11 )
+#define jpeg_fdct_12x12		JLIB_SYMBOLNAME( jFD12x12 )
+#define jpeg_fdct_13x13		JLIB_SYMBOLNAME( jFD13x13 )
+#define jpeg_fdct_14x14		JLIB_SYMBOLNAME( jFD14x14 )
+#define jpeg_fdct_15x15		JLIB_SYMBOLNAME( jFD15x15 )
+#define jpeg_fdct_16x16		JLIB_SYMBOLNAME( jFD16x16 )
+#define jpeg_fdct_16x8		JLIB_SYMBOLNAME( jFD16x8 )
+#define jpeg_fdct_14x7		JLIB_SYMBOLNAME( jFD14x7 )
+#define jpeg_fdct_12x6		JLIB_SYMBOLNAME( jFD12x6 )
+#define jpeg_fdct_10x5		JLIB_SYMBOLNAME( jFD10x5 )
+#define jpeg_fdct_8x4		JLIB_SYMBOLNAME( jFD8x4 )
+#define jpeg_fdct_6x3		JLIB_SYMBOLNAME( jFD6x3 )
+#define jpeg_fdct_4x2		JLIB_SYMBOLNAME( jFD4x2 )
+#define jpeg_fdct_2x1		JLIB_SYMBOLNAME( jFD2x1 )
+#define jpeg_fdct_8x16		JLIB_SYMBOLNAME( jFD8x16 )
+#define jpeg_fdct_7x14		JLIB_SYMBOLNAME( jFD7x14 )
+#define jpeg_fdct_6x12		JLIB_SYMBOLNAME( jFD6x12 )
+#define jpeg_fdct_5x10		JLIB_SYMBOLNAME( jFD5x10 )
+#define jpeg_fdct_4x8		JLIB_SYMBOLNAME( jFD4x8 )
+#define jpeg_fdct_3x6		JLIB_SYMBOLNAME( jFD3x6 )
+#define jpeg_fdct_2x4		JLIB_SYMBOLNAME( jFD2x4 )
+#define jpeg_fdct_1x2		JLIB_SYMBOLNAME( jFD1x2 )
+#define jpeg_idct_islow		JLIB_SYMBOLNAME( jRDislow )
+#define jpeg_idct_ifast		JLIB_SYMBOLNAME( jRDifast )
+#define jpeg_idct_float		JLIB_SYMBOLNAME( jRDfloat )
+#define jpeg_idct_7x7		JLIB_SYMBOLNAME( jRD7x7 )
+#define jpeg_idct_6x6		JLIB_SYMBOLNAME( jRD6x6 )
+#define jpeg_idct_5x5		JLIB_SYMBOLNAME( jRD5x5 )
+#define jpeg_idct_4x4		JLIB_SYMBOLNAME( jRD4x4 )
+#define jpeg_idct_3x3		JLIB_SYMBOLNAME( jRD3x3 )
+#define jpeg_idct_2x2		JLIB_SYMBOLNAME( jRD2x2 )
+#define jpeg_idct_1x1		JLIB_SYMBOLNAME( jRD1x1 )
+#define jpeg_idct_9x9		JLIB_SYMBOLNAME( jRD9x9 )
+#define jpeg_idct_10x10		JLIB_SYMBOLNAME( jRD10x10 )
+#define jpeg_idct_11x11		JLIB_SYMBOLNAME( jRD11x11 )
+#define jpeg_idct_12x12		JLIB_SYMBOLNAME( jRD12x12 )
+#define jpeg_idct_13x13		JLIB_SYMBOLNAME( jRD13x13 )
+#define jpeg_idct_14x14		JLIB_SYMBOLNAME( jRD14x14 )
+#define jpeg_idct_15x15		JLIB_SYMBOLNAME( jRD15x15 )
+#define jpeg_idct_16x16		JLIB_SYMBOLNAME( jRD16x16 )
+#define jpeg_idct_16x8		JLIB_SYMBOLNAME( jRD16x8 )
+#define jpeg_idct_14x7		JLIB_SYMBOLNAME( jRD14x7 )
+#define jpeg_idct_12x6		JLIB_SYMBOLNAME( jRD12x6 )
+#define jpeg_idct_10x5		JLIB_SYMBOLNAME( jRD10x5 )
+#define jpeg_idct_8x4		JLIB_SYMBOLNAME( jRD8x4 )
+#define jpeg_idct_6x3		JLIB_SYMBOLNAME( jRD6x3 )
+#define jpeg_idct_4x2		JLIB_SYMBOLNAME( jRD4x2 )
+#define jpeg_idct_2x1		JLIB_SYMBOLNAME( jRD2x1 )
+#define jpeg_idct_8x16		JLIB_SYMBOLNAME( jRD8x16 )
+#define jpeg_idct_7x14		JLIB_SYMBOLNAME( jRD7x14 )
+#define jpeg_idct_6x12		JLIB_SYMBOLNAME( jRD6x12 )
+#define jpeg_idct_5x10		JLIB_SYMBOLNAME( jRD5x10 )
+#define jpeg_idct_4x8		JLIB_SYMBOLNAME( jRD4x8 )
+#define jpeg_idct_3x6		JLIB_SYMBOLNAME( jRD3x8 )
+#define jpeg_idct_2x4		JLIB_SYMBOLNAME( jRD2x4 )
+#define jpeg_idct_1x2		JLIB_SYMBOLNAME( jRD1x2 )
 #endif /* NEED_SHORT_EXTERNAL_NAMES */
 
 /* Extern declarations for the forward and inverse DCT routines. */

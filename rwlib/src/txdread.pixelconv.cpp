@@ -859,6 +859,22 @@ void ConvertPaletteData(
     }
 }
 
+inline bool isPaletteTypeBigger( ePaletteType left, ePaletteType right )
+{
+    if ( left != PALETTE_NONE && right != PALETTE_NONE )
+    {
+        if ( left == PALETTE_8BIT )
+        {
+            if ( right == PALETTE_4BIT || right == PALETTE_4BIT_LSB )
+            {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 bool ConvertPixelData( Interface *engineInterface, pixelDataTraversal& pixelsToConvert, const pixelFormat pixFormat )
 {
     // We must have stand-alone pixel data.
@@ -943,7 +959,7 @@ bool ConvertPixelData( Interface *engineInterface, pixelDataTraversal& pixelsToC
         ePaletteType srcPaletteType = pixelsToConvert.paletteType;
         ePaletteType dstPaletteType = pixFormat.paletteType;
 
-        if ( srcPaletteType == PALETTE_NONE && dstPaletteType != PALETTE_NONE )
+        if ( ( srcPaletteType == PALETTE_NONE || isPaletteTypeBigger( srcPaletteType, dstPaletteType ) ) && dstPaletteType != PALETTE_NONE )
         {
             // Call into the palettizer.
             // It will do the remainder of the complex job.

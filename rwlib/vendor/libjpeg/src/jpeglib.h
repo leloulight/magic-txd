@@ -888,59 +888,59 @@ typedef JMETHOD(boolean, jpeg_marker_parser_method, (j_decompress_ptr cinfo));
  */
 
 #ifdef NEED_SHORT_EXTERNAL_NAMES
-#define jpeg_std_error		jStdError
-#define jpeg_CreateCompress	jCreaCompress
-#define jpeg_CreateDecompress	jCreaDecompress
-#define jpeg_destroy_compress	jDestCompress
-#define jpeg_destroy_decompress	jDestDecompress
-#define jpeg_stdio_dest		jStdDest
-#define jpeg_stdio_src		jStdSrc
-#define jpeg_mem_dest		jMemDest
-#define jpeg_mem_src		jMemSrc
-#define jpeg_set_defaults	jSetDefaults
-#define jpeg_set_colorspace	jSetColorspace
-#define jpeg_default_colorspace	jDefColorspace
-#define jpeg_set_quality	jSetQuality
-#define jpeg_set_linear_quality	jSetLQuality
-#define jpeg_default_qtables	jDefQTables
-#define jpeg_add_quant_table	jAddQuantTable
-#define jpeg_quality_scaling	jQualityScaling
-#define jpeg_simple_progression	jSimProgress
-#define jpeg_suppress_tables	jSuppressTables
-#define jpeg_alloc_quant_table	jAlcQTable
-#define jpeg_alloc_huff_table	jAlcHTable
-#define jpeg_start_compress	jStrtCompress
-#define jpeg_write_scanlines	jWrtScanlines
-#define jpeg_finish_compress	jFinCompress
-#define jpeg_calc_jpeg_dimensions	jCjpegDimensions
-#define jpeg_write_raw_data	jWrtRawData
-#define jpeg_write_marker	jWrtMarker
-#define jpeg_write_m_header	jWrtMHeader
-#define jpeg_write_m_byte	jWrtMByte
-#define jpeg_write_tables	jWrtTables
-#define jpeg_read_header	jReadHeader
-#define jpeg_start_decompress	jStrtDecompress
-#define jpeg_read_scanlines	jReadScanlines
-#define jpeg_finish_decompress	jFinDecompress
-#define jpeg_read_raw_data	jReadRawData
-#define jpeg_has_multiple_scans	jHasMultScn
-#define jpeg_start_output	jStrtOutput
-#define jpeg_finish_output	jFinOutput
-#define jpeg_input_complete	jInComplete
-#define jpeg_new_colormap	jNewCMap
-#define jpeg_consume_input	jConsumeInput
-#define jpeg_core_output_dimensions	jCoreDimensions
-#define jpeg_calc_output_dimensions	jCalcDimensions
-#define jpeg_save_markers	jSaveMarkers
-#define jpeg_set_marker_processor	jSetMarker
-#define jpeg_read_coefficients	jReadCoefs
-#define jpeg_write_coefficients	jWrtCoefs
-#define jpeg_copy_critical_parameters	jCopyCrit
-#define jpeg_abort_compress	jAbrtCompress
-#define jpeg_abort_decompress	jAbrtDecompress
-#define jpeg_abort		jAbort
-#define jpeg_destroy		jDestroy
-#define jpeg_resync_to_restart	jResyncRestart
+#define jpeg_std_error		JLIB_SYMBOLNAME( jStdError )
+#define jpeg_CreateCompress	JLIB_SYMBOLNAME( jCreaCompress )
+#define jpeg_CreateDecompress	JLIB_SYMBOLNAME( jCreaDecompress )
+#define jpeg_destroy_compress	JLIB_SYMBOLNAME( jDestCompress )
+#define jpeg_destroy_decompress	JLIB_SYMBOLNAME( jDestDecompress )
+#define jpeg_stdio_dest		JLIB_SYMBOLNAME( jStdDest )
+#define jpeg_stdio_src		JLIB_SYMBOLNAME( jStdSrc )
+#define jpeg_mem_dest		JLIB_SYMBOLNAME( jMemDest )
+#define jpeg_mem_src		JLIB_SYMBOLNAME( jMemSrc )
+#define jpeg_set_defaults	JLIB_SYMBOLNAME( jSetDefaults )
+#define jpeg_set_colorspace	JLIB_SYMBOLNAME( jSetColorspace )
+#define jpeg_default_colorspace	JLIB_SYMBOLNAME( jDefColorspace )
+#define jpeg_set_quality	JLIB_SYMBOLNAME( jSetQuality )
+#define jpeg_set_linear_quality	JLIB_SYMBOLNAME( jSetLQuality )
+#define jpeg_default_qtables	JLIB_SYMBOLNAME( jDefQTables )
+#define jpeg_add_quant_table	JLIB_SYMBOLNAME( jAddQuantTable )
+#define jpeg_quality_scaling	JLIB_SYMBOLNAME( jQualityScaling )
+#define jpeg_simple_progression	JLIB_SYMBOLNAME( jSimProgress )
+#define jpeg_suppress_tables	JLIB_SYMBOLNAME( jSuppressTables )
+#define jpeg_alloc_quant_table	JLIB_SYMBOLNAME( jAlcQTable )
+#define jpeg_alloc_huff_table	JLIB_SYMBOLNAME( jAlcHTable )
+#define jpeg_start_compress	JLIB_SYMBOLNAME( jStrtCompress )
+#define jpeg_write_scanlines	JLIB_SYMBOLNAME( jWrtScanlines )
+#define jpeg_finish_compress	JLIB_SYMBOLNAME( jFinCompress )
+#define jpeg_calc_jpeg_dimensions	JLIB_SYMBOLNAME( jCjpegDimensions )
+#define jpeg_write_raw_data	JLIB_SYMBOLNAME( jWrtRawData )
+#define jpeg_write_marker	JLIB_SYMBOLNAME( jWrtMarker )
+#define jpeg_write_m_header	JLIB_SYMBOLNAME( jWrtMHeader )
+#define jpeg_write_m_byte	JLIB_SYMBOLNAME( jWrtMByte )
+#define jpeg_write_tables	JLIB_SYMBOLNAME( jWrtTables )
+#define jpeg_read_header	JLIB_SYMBOLNAME( jReadHeader )
+#define jpeg_start_decompress	JLIB_SYMBOLNAME( jStrtDecompress )
+#define jpeg_read_scanlines	JLIB_SYMBOLNAME( jReadScanlines )
+#define jpeg_finish_decompress	JLIB_SYMBOLNAME( jFinDecompress )
+#define jpeg_read_raw_data	JLIB_SYMBOLNAME( jReadRawData )
+#define jpeg_has_multiple_scans	JLIB_SYMBOLNAME( jHasMultScn )
+#define jpeg_start_output	JLIB_SYMBOLNAME( jStrtOutput )
+#define jpeg_finish_output	JLIB_SYMBOLNAME( jFinOutput )
+#define jpeg_input_complete	JLIB_SYMBOLNAME( jInComplete )
+#define jpeg_new_colormap	JLIB_SYMBOLNAME( jNewCMap )
+#define jpeg_consume_input	JLIB_SYMBOLNAME( jConsumeInput )
+#define jpeg_core_output_dimensions	JLIB_SYMBOLNAME( jCoreDimensions )
+#define jpeg_calc_output_dimensions	JLIB_SYMBOLNAME( jCalcDimensions )
+#define jpeg_save_markers	JLIB_SYMBOLNAME( jSaveMarkers )
+#define jpeg_set_marker_processor	JLIB_SYMBOLNAME( jSetMarker )
+#define jpeg_read_coefficients	JLIB_SYMBOLNAME( jReadCoefs )
+#define jpeg_write_coefficients	JLIB_SYMBOLNAME( jWrtCoefs )
+#define jpeg_copy_critical_parameters	JLIB_SYMBOLNAME( jCopyCrit )
+#define jpeg_abort_compress	JLIB_SYMBOLNAME( jAbrtCompress )
+#define jpeg_abort_decompress	JLIB_SYMBOLNAME( jAbrtDecompress )
+#define jpeg_abort		JLIB_SYMBOLNAME( jAbort )
+#define jpeg_destroy		JLIB_SYMBOLNAME( jDestroy )
+#define jpeg_resync_to_restart	JLIB_SYMBOLNAME( jResyncRestart )
 #endif /* NEED_SHORT_EXTERNAL_NAMES */
 
 

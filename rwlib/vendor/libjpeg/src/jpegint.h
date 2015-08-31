@@ -293,46 +293,46 @@ struct jpeg_color_quantizer {
 /* Short forms of external names for systems with brain-damaged linkers. */
 
 #ifdef NEED_SHORT_EXTERNAL_NAMES
-#define jinit_compress_master	jICompress
-#define jinit_c_master_control	jICMaster
-#define jinit_c_main_controller	jICMainC
-#define jinit_c_prep_controller	jICPrepC
-#define jinit_c_coef_controller	jICCoefC
-#define jinit_color_converter	jICColor
-#define jinit_downsampler	jIDownsampler
-#define jinit_forward_dct	jIFDCT
-#define jinit_huff_encoder	jIHEncoder
-#define jinit_arith_encoder	jIAEncoder
-#define jinit_marker_writer	jIMWriter
-#define jinit_master_decompress	jIDMaster
-#define jinit_d_main_controller	jIDMainC
-#define jinit_d_coef_controller	jIDCoefC
-#define jinit_d_post_controller	jIDPostC
-#define jinit_input_controller	jIInCtlr
-#define jinit_marker_reader	jIMReader
-#define jinit_huff_decoder	jIHDecoder
-#define jinit_arith_decoder	jIADecoder
-#define jinit_inverse_dct	jIIDCT
-#define jinit_upsampler		jIUpsampler
-#define jinit_color_deconverter	jIDColor
-#define jinit_1pass_quantizer	jI1Quant
-#define jinit_2pass_quantizer	jI2Quant
-#define jinit_merged_upsampler	jIMUpsampler
-#define jinit_memory_mgr	jIMemMgr
-#define jdiv_round_up		jDivRound
-#define jround_up		jRound
-#define jzero_far		jZeroFar
-#define jcopy_sample_rows	jCopySamples
-#define jcopy_block_row		jCopyBlocks
-#define jpeg_zigzag_order	jZIGTable
-#define jpeg_natural_order	jZAGTable
-#define jpeg_natural_order7	jZAG7Table
-#define jpeg_natural_order6	jZAG6Table
-#define jpeg_natural_order5	jZAG5Table
-#define jpeg_natural_order4	jZAG4Table
-#define jpeg_natural_order3	jZAG3Table
-#define jpeg_natural_order2	jZAG2Table
-#define jpeg_aritab		jAriTab
+#define jinit_compress_master	JLIB_SYMBOLNAME( jICompress )
+#define jinit_c_master_control	JLIB_SYMBOLNAME( jICMaster )
+#define jinit_c_main_controller	JLIB_SYMBOLNAME( jICMainC )
+#define jinit_c_prep_controller	JLIB_SYMBOLNAME( jICPrepC )
+#define jinit_c_coef_controller	JLIB_SYMBOLNAME( jICCoefC )
+#define jinit_color_converter	JLIB_SYMBOLNAME( jICColor )
+#define jinit_downsampler	JLIB_SYMBOLNAME( jIDownsampler )
+#define jinit_forward_dct	JLIB_SYMBOLNAME( jIFDCT )
+#define jinit_huff_encoder	JLIB_SYMBOLNAME( jIHEncoder )
+#define jinit_arith_encoder	JLIB_SYMBOLNAME( jIAEncoder )
+#define jinit_marker_writer	JLIB_SYMBOLNAME( jIMWriter )
+#define jinit_master_decompress	JLIB_SYMBOLNAME( jIDMaster )
+#define jinit_d_main_controller	JLIB_SYMBOLNAME( jIDMainC )
+#define jinit_d_coef_controller	JLIB_SYMBOLNAME( jIDCoefC )
+#define jinit_d_post_controller	JLIB_SYMBOLNAME( jIDPostC )
+#define jinit_input_controller	JLIB_SYMBOLNAME( jIInCtlr )
+#define jinit_marker_reader	JLIB_SYMBOLNAME( jIMReader )
+#define jinit_huff_decoder	JLIB_SYMBOLNAME( jIHDecoder )
+#define jinit_arith_decoder	JLIB_SYMBOLNAME( jIADecoder )
+#define jinit_inverse_dct	JLIB_SYMBOLNAME( jIIDCT )
+#define jinit_upsampler		JLIB_SYMBOLNAME( jIUpsampler )
+#define jinit_color_deconverter	JLIB_SYMBOLNAME( jIDColor )
+#define jinit_1pass_quantizer	JLIB_SYMBOLNAME( jI1Quant )
+#define jinit_2pass_quantizer	JLIB_SYMBOLNAME( jI2Quant )
+#define jinit_merged_upsampler	JLIB_SYMBOLNAME( jIMUpsampler )
+#define jinit_memory_mgr	JLIB_SYMBOLNAME( jIMemMgr )
+#define jdiv_round_up		JLIB_SYMBOLNAME( jDivRound )
+#define jround_up		JLIB_SYMBOLNAME( jRound )
+#define jzero_far		JLIB_SYMBOLNAME( jZeroFar )
+#define jcopy_sample_rows	JLIB_SYMBOLNAME( jCopySamples )
+#define jcopy_block_row		JLIB_SYMBOLNAME( jCopyBlocks )
+#define jpeg_zigzag_order	JLIB_SYMBOLNAME( jZIGTable )
+#define jpeg_natural_order	JLIB_SYMBOLNAME( jZAGTable )
+#define jpeg_natural_order7	JLIB_SYMBOLNAME( jZAG7Table )
+#define jpeg_natural_order6	JLIB_SYMBOLNAME( jZAG6Table )
+#define jpeg_natural_order5	JLIB_SYMBOLNAME( jZAG5Table )
+#define jpeg_natural_order4	JLIB_SYMBOLNAME( jZAG4Table )
+#define jpeg_natural_order3	JLIB_SYMBOLNAME( jZAG3Table )
+#define jpeg_natural_order2	JLIB_SYMBOLNAME( jZAG2Table )
+#define jpeg_aritab		JLIB_SYMBOLNAME( jAriTab )
 #endif /* NEED_SHORT_EXTERNAL_NAMES */
 
 

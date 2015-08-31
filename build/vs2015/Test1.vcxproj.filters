@@ -56,6 +56,9 @@
     <ClInclude Include="..\..\magic_api\MagicFormats.h">
       <Filter>sdk</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\qtrwutils.hxx">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">
@@ -75,5 +78,10 @@
     <CustomBuild Include="../../include/txdlog.h">
       <Filter>include</Filter>
     </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="qt5.natvis">
+      <Filter>include</Filter>
+    </Natvis>
   </ItemGroup>
 </Project>

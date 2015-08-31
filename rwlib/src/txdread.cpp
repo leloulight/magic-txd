@@ -1611,6 +1611,161 @@ platformTypeNameList_t GetAvailableNativeTextureTypes( Interface *intf )
     return registeredTypes;
 }
 
+bool GetNativeTextureFormatInfo( Interface *intf, const char *nativeName, nativeRasterFormatInfo& infoOut )
+{
+    bool gotInfo = false;
+
+    EngineInterface *engineInterface = (EngineInterface*)intf;
+
+    // Get the type that is associated with the given typeName.
+    RwTypeSystem::typeInfoBase *theType = GetNativeTextureType( engineInterface, nativeName );
+
+    if ( theType )
+    {
+        // Ensure that we are a native texture type and get its manager.
+        nativeTextureStreamPlugin::nativeTextureCustomTypeInterface *nativeIntf = dynamic_cast <nativeTextureStreamPlugin::nativeTextureCustomTypeInterface*> ( theType->tInterface );
+
+        if ( nativeIntf )
+        {
+            // Alright, let us return info about it.
+            texNativeTypeProvider *texProvider = nativeIntf->texTypeProvider;
+
+            storageCapabilities formatStoreCaps;
+            texProvider->GetStorageCapabilities( formatStoreCaps );
+
+            infoOut.isCompressedFormat = formatStoreCaps.isCompressedFormat;
+            infoOut.supportsDXT1 = formatStoreCaps.pixelCaps.supportsDXT1;
+            infoOut.supportsDXT2 = formatStoreCaps.pixelCaps.supportsDXT2;
+            infoOut.supportsDXT3 = formatStoreCaps.pixelCaps.supportsDXT3;
+            infoOut.supportsDXT4 = formatStoreCaps.pixelCaps.supportsDXT4;
+            infoOut.supportsDXT5 = formatStoreCaps.pixelCaps.supportsDXT5;
+            infoOut.supportsPalette = formatStoreCaps.pixelCaps.supportsPalette;
+
+            gotInfo = true;
+        }
+    }
+
+    return gotInfo;
+}
+
+/*
+    Raster helper API.
+    So we have got standardized names in third-party programs.
+*/
+
+const char* GetRasterFormatStandardName( eRasterFormat theFormat )
+{
+    const char *name = "unknown";
+
+    if ( theFormat == RASTER_DEFAULT )
+    {
+        name = "unspecified";
+    }
+    else if ( theFormat == RASTER_1555 )
+    {
+        name = "RASTER_1555";
+    }
+    else if ( theFormat == RASTER_565 )
+    {
+        name = "RASTER_565";
+    }
+    else if ( theFormat == RASTER_4444 )
+    {
+        name = "RASTER_4444";
+    }
+    else if ( theFormat == RASTER_LUM )
+    {
+        name = "RASTER_LUM";
+    }
+    else if ( theFormat == RASTER_8888 )
+    {
+        name = "RASTER_8888";
+    }
+    else if ( theFormat == RASTER_888 )
+    {
+        name = "RASTER_888";
+    }
+    else if ( theFormat == RASTER_16 )
+    {
+        name = "RASTER_16";
+    }
+    else if ( theFormat == RASTER_24 )
+    {
+        name = "RASTER_24";
+    }
+    else if ( theFormat == RASTER_32 )
+    {
+        name = "RASTER_32";
+    }
+    else if ( theFormat == RASTER_555 )
+    {
+        name = "RASTER_555";
+    }
+    // NEW FORMATS.
+    else if ( theFormat == RASTER_LUM_ALPHA )
+    {
+        name = "RASTER_LUM_ALPHA";
+    }
+
+    return name;
+}
+
+eRasterFormat FindRasterFormatByName( const char *theName )
+{
+    // TODO: make this as human-friendly as possible!
+
+    if ( stricmp( theName, "RASTER_1555" ) == 0 ||
+         stricmp( theName, "1555" ) == 0 )
+    {
+        return RASTER_1555;
+    }
+    else if ( stricmp( theName, "RASTER_565" ) == 0 ||
+              stricmp( theName, "565" ) == 0 )
+    {
+        return RASTER_565;
+    }
+    else if ( stricmp( theName, "RASTER_4444" ) == 0 ||
+              stricmp( theName, "4444" ) == 0 )
+    {
+        return RASTER_4444;
+    }
+    else if ( stricmp( theName, "RASTER_LUM" ) == 0 ||
+              stricmp( theName, "LUM" ) == 0 )
+    {
+        return RASTER_LUM;
+    }
+    else if ( stricmp( theName, "RASTER_8888" ) == 0 ||
+              stricmp( theName, "8888" ) == 0 )
+    {
+        return RASTER_8888;
+    }
+    else if ( stricmp( theName, "RASTER_888" ) == 0 ||
+              stricmp( theName, "888" ) == 0 )
+    {
+        return RASTER_888;
+    }
+    else if ( stricmp( theName, "RASTER_16" ) == 0 )
+    {
+        return RASTER_16;
+    }
+    else if ( stricmp( theName, "RASTER_24" ) == 0 )
+    {
+        return RASTER_24;
+    }
+    else if ( stricmp( theName, "RASTER_32" ) == 0 )
+    {
+        return RASTER_32;
+    }
+    else if ( stricmp( theName, "RASTER_555" ) == 0 ||
+              stricmp( theName, "555" ) == 0 )
+    {
+        return RASTER_555;
+    }
+
+    // No idea.
+    return RASTER_DEFAULT;
+}
+
 /*
  * Raster
  */
@@ -1798,12 +1953,7 @@ void Raster::convertToFormat(eRasterFormat newFormat)
 
     bool werePixelsAllocated = pixelData.isNewlyAllocated;
 
-    // Delete any pixels that the texture had previously.
-    typeProvider->UnsetPixelDataFromTexture( engineInterface, platformTex, werePixelsAllocated == true );
-
-    pixelData.SetStandalone();
-
-    try
+    // First check whether replacing is even worth it.
     {
         eRasterFormat rasterFormat = pixelData.rasterFormat;
         ePaletteType paletteType = pixelData.paletteType;
@@ -1814,41 +1964,50 @@ void Raster::convertToFormat(eRasterFormat newFormat)
 
         if ( isCompressed || isPaletteRaster || newFormat != rasterFormat )
         {
-            pixelFormat dstFormat;
-            dstFormat.rasterFormat = newFormat;
-            dstFormat.depth = Bitmap::getRasterFormatDepth( newFormat );
-            dstFormat.rowAlignment = ( isCompressed ? 4 : pixelData.rowAlignment );
-            dstFormat.colorOrder = colorOrder;
-            dstFormat.paletteType = PALETTE_NONE;
-            dstFormat.compressionType = RWCOMPRESS_NONE;
+            // We have now decided to replace the pixel data.
+            // Delete any pixels that the texture had previously.
+            typeProvider->UnsetPixelDataFromTexture( engineInterface, platformTex, werePixelsAllocated == true );
 
-            // Convert the pixels.
-            bool hasUpdated = ConvertPixelData( engineInterface, pixelData, dstFormat );
+            pixelData.SetStandalone();
 
-            if ( hasUpdated )
+            try
             {
-                // Put the texels back into the texture.
-                texNativeTypeProvider::acquireFeedback_t acquireFeedback;
+                pixelFormat dstFormat;
+                dstFormat.rasterFormat = newFormat;
+                dstFormat.depth = Bitmap::getRasterFormatDepth( newFormat );
+                dstFormat.rowAlignment = ( isCompressed ? 4 : pixelData.rowAlignment );
+                dstFormat.colorOrder = colorOrder;
+                dstFormat.paletteType = PALETTE_NONE;
+                dstFormat.compressionType = RWCOMPRESS_NONE;
 
-                typeProvider->SetPixelDataToTexture( engineInterface, platformTex, pixelData, acquireFeedback );
+                // Convert the pixels.
+                bool hasUpdated = ConvertPixelData( engineInterface, pixelData, dstFormat );
 
-                // Free pixel data if required.
-                if ( acquireFeedback.hasDirectlyAcquired == false )
+                if ( hasUpdated )
                 {
-                    pixelData.FreePixels( engineInterface );
-                }
-                else
-                {
-                    pixelData.DetachPixels();
+                    // Put the texels back into the texture.
+                    texNativeTypeProvider::acquireFeedback_t acquireFeedback;
+
+                    typeProvider->SetPixelDataToTexture( engineInterface, platformTex, pixelData, acquireFeedback );
+
+                    // Free pixel data if required.
+                    if ( acquireFeedback.hasDirectlyAcquired == false )
+                    {
+                        pixelData.FreePixels( engineInterface );
+                    }
+                    else
+                    {
+                        pixelData.DetachPixels();
+                    }
                 }
             }
-        }
-    }
-    catch( ... )
-    {
-        pixelData.FreePixels( engineInterface );
+            catch( ... )
+            {
+                pixelData.FreePixels( engineInterface );
 
-        throw;
+                throw;
+            }
+        }
     }
 }
 
@@ -2446,6 +2605,41 @@ void Raster::compress( float quality )
     {
         throw RwException( "could not decide on an optimal DXT compression type" );
     }
+
+    this->compressCustom( targetCompressionType );
+}
+
+void Raster::compressCustom(eCompressionType targetCompressionType)
+{
+    PlatformTexture *platformTex = this->platformData;
+
+    if ( !platformTex )
+    {
+        throw RwException( "no native data" );
+    }
+
+    Interface *engineInterface = this->engineInterface;
+
+    texNativeTypeProvider *texProvider = GetNativeTextureTypeProvider( engineInterface, platformTex );
+
+    if ( !texProvider )
+    {
+        throw RwException( "invalid native data" );
+    }
+
+    // The target raster may already be compressed or the target architecture does its own compression.
+    // Decide about these situations.
+    bool isAlreadyCompressed = texProvider->IsTextureCompressed( platformTex );
+
+    if ( isAlreadyCompressed )
+        return; // do not recompress textures.
+
+    storageCapabilities storeCaps;
+
+    texProvider->GetStorageCapabilities( storeCaps );
+
+    if ( storeCaps.isCompressedFormat )
+        return; // no point in compressing if the architecture will do it already.
 
     // Since we now know about everything, we can take the pixels and perform the compression.
     pixelDataTraversal pixelData;

@@ -48,6 +48,9 @@
     <ClInclude Include="..\zutil.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="..\zprefix.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">

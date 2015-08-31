@@ -14,6 +14,8 @@
 
 #include "textureViewport.h"
 
+#include "qtrwutils.hxx"
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     rwWarnMan( this )
@@ -480,6 +482,10 @@ void MainWindow::updateWindowTitle( void )
 {
     QString windowTitleString = tr( "Magic.TXD" );
 
+#ifdef _M_AMD64
+    windowTitleString += " x64";
+#endif
+
 #ifdef _DEBUG
     windowTitleString += " DEBUG";
 #endif
@@ -605,35 +611,6 @@ void MainWindow::onCloseCurrent( bool checked )
     this->setCurrentTXD( NULL );
 
     this->updateWindowTitle();
-}
-
-inline QImage convertRWBitmapToQImage( const rw::Bitmap& rasterBitmap )
-{
-	rw::uint32 width, height;
-	rasterBitmap.getSize(width, height);
-
-	QImage texImage(width, height, QImage::Format::Format_ARGB32);
-
-	// Copy scanline by scanline.
-	for (int y = 0; y < height; y++)
-	{
-		uchar *scanLineContent = texImage.scanLine(y);
-
-		QRgb *colorItems = (QRgb*)scanLineContent;
-
-		for (int x = 0; x < width; x++)
-		{
-			QRgb *colorItem = (colorItems + x);
-
-			unsigned char r, g, b, a;
-
-			rasterBitmap.browsecolor(x, y, r, g, b, a);
-
-			*colorItem = qRgba(r, g, b, a);
-		}
-	}
-
-    return texImage;
 }
 
 void MainWindow::onTextureItemChanged(QListWidgetItem *listItem, QListWidgetItem *prevTexInfoItem)
@@ -828,6 +805,139 @@ static void serializeRaster( rw::Stream *outputStream, rw::Raster *texRaster, co
     texRaster->writeImage( outputStream, method );
 }
 
+void MainWindow::DoAddTexture( const TexAddDialog::texAddOperation& params )
+{
+    const QString& fileName = params.imgPath;
+
+    // Open a stream to our image.
+    std::wstring unicodeFileName = fileName.toStdWString();
+
+    rw::streamConstructionFileParamW_t fileParam( unicodeFileName.c_str() );
+
+    rw::Stream *imageStream = this->rwEngine->CreateStream( rw::RWSTREAMTYPE_FILE_W, rw::RWSTREAMMODE_READONLY, &fileParam );
+
+    if ( imageStream != NULL )
+    {
+        try
+        {
+            // Create a new raster and deserialize into it.
+            rw::Raster *newRaster = rw::CreateRaster( this->rwEngine );
+
+            if ( newRaster )
+            {
+                try
+                {
+                    // Decide what platform to give this new raster.
+                    const char *platformName = "Direct3D9";
+
+                    if ( rw::TexDictionary *currentTXD = this->currentTXD )
+                    {
+                        const char *txdPlatformName = GetTXDPlatformString( currentTXD );
+
+                        if ( txdPlatformName )
+                        {
+                            platformName = txdPlatformName;
+                        }
+                    }
+
+                    // Give the raster a platform.
+                    newRaster->newNativeData( platformName );
+
+                    // Deserialize.
+                    newRaster->readImage( imageStream );
+
+                    // Format the raster appropriately.
+                    {
+                        rw::eCompressionType compressionType = params.compressionType;
+
+                        if ( compressionType != rw::RWCOMPRESS_NONE )
+                        {
+                            // Just compress it.
+                            newRaster->compressCustom( compressionType );
+                        }
+                        else
+                        {
+                            // We want a specialized format.
+                            // Go ahead.
+                            rw::ePaletteType paletteType = params.paletteType;
+
+                            if ( paletteType != rw::PALETTE_NONE )
+                            {
+                                // Palettize.
+                                newRaster->convertToPalette( paletteType, params.rasterFormat );
+                            }
+                            else
+                            {
+                                // Let us convert to another format.
+                                newRaster->convertToFormat( params.rasterFormat );
+                            }
+                        }
+                    }
+
+                    // Maybe generate mipmaps.
+                    newRaster->generateMipmaps( INFINITE, rw::MIPMAPGEN_DEFAULT );
+
+                    // We want to create a texture and put it into our TXD.
+                    rw::TextureBase *newTexture = rw::CreateTexture( this->rwEngine, newRaster );
+
+                    if ( newTexture )
+                    {
+                        // We need to set default texture rendering properties.
+                        newTexture->SetFilterMode( rw::RWFILTER_LINEAR );
+                        newTexture->SetUAddressing( rw::RWTEXADDRESS_WRAP );
+                        newTexture->SetVAddressing( rw::RWTEXADDRESS_WRAP );
+
+                        // Give it a name.
+                        newTexture->SetName( params.texName.c_str() );
+                        newTexture->SetMaskName( params.maskName.c_str() );
+
+                        // Now put it into the TXD.
+                        newTexture->AddToDictionary( currentTXD );
+
+                        // Update the texture list.
+                        this->updateTextureList();
+                    }
+                    else
+                    {
+                        this->txdLog->showError( "failed to create texture" );
+                    }
+                }
+                catch( ... )
+                {
+                    rw::DeleteRaster( newRaster );
+
+                    throw;
+                }
+
+                // We release our reference from the raster.
+                rw::DeleteRaster( newRaster );
+            }
+            else
+            {
+                this->txdLog->showError( "failed to create raster object" );
+            }
+        }
+        catch( rw::RwException& except )
+        {
+            this->txdLog->showError( QString( "failed to deserialize image: " ) + except.message.c_str() );
+
+            // Continue.
+        }
+        catch( ... )
+        {
+            this->rwEngine->DeleteStream( imageStream );
+
+            throw;
+        }
+
+        this->rwEngine->DeleteStream( imageStream );
+    }
+    else
+    {
+        this->txdLog->showError( QString( "failed to open image stream" ) );
+    }
+}
+
 void MainWindow::onAddTexture( bool checked )
 {
     // Allow importing of a texture.
@@ -899,111 +1009,15 @@ void MainWindow::onAddTexture( bool checked )
 
         if ( fileName.length() != 0 )
         {
-            // Determine the texture name.
-            QFileInfo fileInfo( fileName );
-
-            QString baseName = fileInfo.baseName();
-
-            if ( baseName.length() != 0 )
+            auto cb_lambda = [=] ( const TexAddDialog::texAddOperation& params )
             {
-                std::string ansiBaseName = baseName.toStdString();
+                this->DoAddTexture( params );
+            };
 
-                // Open a stream to our image.
-                std::wstring unicodeFileName = fileName.toStdWString();
+            TexAddDialog *texAddTask = new TexAddDialog( this, fileName, std::move( cb_lambda ) );
 
-                rw::streamConstructionFileParamW_t fileParam( unicodeFileName.c_str() );
-
-                rw::Stream *imageStream = this->rwEngine->CreateStream( rw::RWSTREAMTYPE_FILE_W, rw::RWSTREAMMODE_READONLY, &fileParam );
-
-                if ( imageStream != NULL )
-                {
-                    try
-                    {
-                        // Create a new raster and deserialize into it.
-                        rw::Raster *newRaster = rw::CreateRaster( this->rwEngine );
-
-                        if ( newRaster )
-                        {
-                            try
-                            {
-                                // Decide what platform to give this new raster.
-                                const char *platformName = "Direct3D9";
-
-                                if ( rw::TexDictionary *currentTXD = this->currentTXD )
-                                {
-                                    const char *txdPlatformName = GetTXDPlatformString( currentTXD );
-
-                                    if ( txdPlatformName )
-                                    {
-                                        platformName = txdPlatformName;
-                                    }
-                                }
-
-                                // Give the raster a platform.
-                                newRaster->newNativeData( platformName );
-
-                                // Deserialize.
-                                newRaster->readImage( imageStream );
-
-                                // We want to create a texture and put it into our TXD.
-                                rw::TextureBase *newTexture = rw::CreateTexture( this->rwEngine, newRaster );
-
-                                if ( newTexture )
-                                {
-                                    // We need to set default texture rendering properties.
-                                    newTexture->SetFilterMode( rw::RWFILTER_LINEAR );
-                                    newTexture->SetUAddressing( rw::RWTEXADDRESS_WRAP );
-                                    newTexture->SetVAddressing( rw::RWTEXADDRESS_WRAP );
-
-                                    // Give it a name.
-                                    newTexture->SetName( ansiBaseName.c_str() );
-
-                                    // Now put it into the TXD.
-                                    newTexture->AddToDictionary( currentTXD );
-
-                                    // Update the texture list.
-                                    this->updateTextureList();
-                                }
-                                else
-                                {
-                                    this->txdLog->showError( "failed to create texture" );
-                                }
-                            }
-                            catch( ... )
-                            {
-                                rw::DeleteRaster( newRaster );
-
-                                throw;
-                            }
-
-                            // We release our reference from the raster.
-                            rw::DeleteRaster( newRaster );
-                        }
-                        else
-                        {
-                            this->txdLog->showError( "failed to create raster object" );
-                        }
-                    }
-                    catch( rw::RwException& except )
-                    {
-                        this->txdLog->showError( QString( "failed to deserialize image: " ) + except.message.c_str() );
-
-                        // Continue.
-                    }
-                    catch( ... )
-                    {
-                        this->rwEngine->DeleteStream( imageStream );
-
-                        throw;
-                    }
-
-                    this->rwEngine->DeleteStream( imageStream );
-                }
-                else
-                {
-                    this->txdLog->showError( QString( "failed to open image stream" ) );
-                }
-            }
+            texAddTask->move( 200, 250 );
+            texAddTask->setVisible( true );
         }
     }
 }

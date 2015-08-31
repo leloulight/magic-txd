@@ -3,8 +3,14 @@
     Every good engine needs stable math, so we provide you with it!
 */
 
+// These structs are standardized.
+// You can safely use them in streams!
+
 #ifndef _RENDERWARE_MATH_GLOBALS_
 #define _RENDERWARE_MATH_GLOBALS_
+
+#define DEG2RAD(x)  ( M_PI * x / 180 )
+#define RAD2DEG(x)  ( x / M_PI * 180 )
 
 #pragma warning(push)
 #pragma warning(disable:4520)
@@ -601,8 +607,511 @@ private:
     __m128d data2;
 };
 
+template <typename ...Args, typename valType = std::tuple_element <0, std::tuple <Args...>>::type>
+AINLINE Vector <valType, sizeof...(Args)> makevec( Args... theArgs )
+{
+    Vector <valType, sizeof...(Args)> theVec;
+
+    complex_assign_helper <valType, sizeof...(Args)>::
+        constr_helper <0, Args...>::
+            ConstrVecElem( &theVec[ 0 ], std::forward <Args> ( theArgs )... );
+
+    return theVec;
+}
+
 // Include the matrix view submodule.
 #include "renderware.math.matview.h"
+
+template <typename numberType, size_t dimm>
+struct SquareMatrix
+{
+    typedef Vector <numberType, dimm> vec_t;
+
+    AINLINE SquareMatrix( void )
+    {
+        for ( size_t y = 0; y < dimm; y++ )
+        {
+            for ( size_t x = 0; x < dimm; x++ )
+            {
+                this->vecs[y][x] = (numberType)( x == y ? 1 : 0 );
+            }
+        }
+    }
+    AINLINE SquareMatrix( const SquareMatrix& right )
+    {
+        for ( size_t n = 0; n < dimm; n++ )
+        {
+            this->vecs[ n ] = right.vecs[ n ];
+        }
+    }
+    AINLINE SquareMatrix( SquareMatrix&& right )
+    {
+        for ( size_t n = 0; n < dimm; n++ )
+        {
+            this->vecs[ n ] = std::move( right.vecs[ n ] );
+        }
+    }
+
+    AINLINE SquareMatrix( const Vector <vec_t, dimm>& mat )
+    {
+        for ( size_t y = 0; y < dimm; y++ )
+        {
+            this->vecs[ y ] = mat[ y ];
+        }
+    }
+
+    AINLINE SquareMatrix ( Vector <vec_t, dimm>&& mat )
+    {
+        for ( size_t y = 0; y < dimm; y++ )
+        {
+            this->vecs[ y ] = std::move( mat.elems[ y ] );
+        }
+    }
+
+    AINLINE SquareMatrix( std::initializer_list <vec_t> items )
+    {
+        size_t y = 0;
+
+        for ( vec_t vec : items )
+        {
+            this->vecs[ y ] = vec;
+
+            y++;
+        }
+    }
+
+    AINLINE SquareMatrix& operator = ( const SquareMatrix& right )
+    {
+        for ( size_t n = 0; n < dimm; n++ )
+        {
+            this->vecs[ n ] = right.vecs[ n ];
+        }
+
+        return *this;
+    }
+    AINLINE SquareMatrix& operator = ( SquareMatrix&& right )
+    {
+        for ( size_t n = 0; n < dimm; n++ )
+        {
+            this->vecs[ n ] = std::move( right.vecs[ n ] );
+        }
+
+        return *this;
+    }
+
+    // Addition.
+    AINLINE SquareMatrix operator + ( const SquareMatrix& right ) const
+    {
+        SquareMatrix newMat = *this;
+
+        for ( size_t y = 0; y < dimm; y++ )
+        {
+            newMat.vecs[ y ] += right.vecs[ y ];
+        }
+
+        return newMat;
+    }
+
+    AINLINE SquareMatrix& operator += ( const SquareMatrix& right )
+    {
+        for ( size_t y = 0; y < dimm; y++ )
+        {
+            this->vecs[ y ] += right.vecs[ y ];
+        }
+
+        return *this;
+    }
+
+    // By scalar.
+    AINLINE SquareMatrix operator + ( const numberType& val ) const
+    {
+        SquareMatrix newMat = *this;
+
+        for ( size_t y = 0; y < dimm; y++ )
+        {
+            newMat.vecs[ y ] += val;
+        }
+
+        return newMat;
+    }
+
+    AINLINE SquareMatrix& operator += ( const numberType& val )
+    {
+        for ( size_t y = 0; y < dimm; y++ )
+        {
+            this->vecs[ y ] += val;
+        }
+
+        return *this;
+    }
+
+    // Subtraction.
+    AINLINE SquareMatrix operator - ( const SquareMatrix& right ) const
+    {
+        SquareMatrix newMat = *this;
+
+        for ( size_t y = 0; y < dimm; y++ )
+        {
+            newMat.vecs[ y ] -= right.vecs[ y ];
+        }
+
+        return newMat;
+    }
+
+    AINLINE SquareMatrix& operator -= ( const SquareMatrix& right )
+    {
+        for ( size_t y = 0; y < dimm; y++ )
+        {
+            this->vecs[ y ] -= right.vecs[ y ];
+        }
+
+        return *this;
+    }
+
+    // By scalar.
+    AINLINE SquareMatrix operator - ( const numberType& val ) const
+    {
+        SquareMatrix newMat = *this;
+
+        for ( size_t y = 0; y < dimm; y++ )
+        {
+            newMat.vecs[ y ] -= val;
+        }
+
+        return newMat;
+    }
+
+    AINLINE SquareMatrix& operator -= ( const numberType& val )
+    {
+        for ( size_t y = 0; y < dimm; y++ )
+        {
+            this->vecs[ y ] -= val;
+        }
+
+        return *this;
+    }
+
+    // Multiplication by scalar.
+    AINLINE SquareMatrix operator * ( const numberType& val ) const
+    {
+        SquareMatrix newMat = *this;
+
+        for ( size_t y = 0; y < dimm; y++ )
+        {
+            newMat.vecs[ y ] *= val;
+        }
+
+        return newMat;
+    }
+
+    AINLINE SquareMatrix& operator *= ( const numberType& val )
+    {
+        for ( size_t y = 0; y < dimm; y++ )
+        {
+            this->vecs[ y ] *= val;
+        }
+
+        return *this;
+    }
+
+    // Division by scalar.
+    AINLINE SquareMatrix operator / ( const numberType& val ) const
+    {
+        SquareMatrix newMat = *this;
+
+        for ( size_t y = 0; y < dimm; y++ )
+        {
+            newMat.vecs[ y ] /= val;
+        }
+
+        return newMat;
+    }
+
+    AINLINE SquareMatrix& operator /= ( const numberType& val )
+    {
+        for ( size_t y = 0; y < dimm; y++ )
+        {
+            this->vecs[ y ] /= val;
+        }
+
+        return *this;
+    }
+
+private:
+    AINLINE static void multiplyWith( SquareMatrix& newMat, const SquareMatrix& left, const SquareMatrix& right )
+    {
+        for ( size_t y_pos = 0; y_pos < dimm; y_pos++ )
+        {
+            for ( size_t x_pos = 0; x_pos < dimm; x_pos++ )
+            {
+                // Cross product of row and column vectors.
+                numberType val = numberType();
+
+                for ( size_t dimiter = 0; dimiter < dimm; dimiter++ )
+                {
+                    val += ( left[y_pos][dimiter] * right[dimiter][x_pos] );
+                }
+
+                newMat[ y_pos ][ x_pos ] = val;
+            }
+        }
+    }
+
+public:
+    // Multiply matrices.
+    AINLINE SquareMatrix operator * ( const SquareMatrix& right ) const
+    {
+        SquareMatrix newMat;
+
+        multiplyWith( newMat, *this, right );
+
+        return newMat;
+    };
+
+    AINLINE SquareMatrix& operator *= ( const SquareMatrix& right )
+    {
+        SquareMatrix oldmat = *this;
+
+        multiplyWith( *this, oldmat, right );
+
+        return *this;
+    }
+
+    // Transforming vectors.
+    AINLINE vec_t operator * ( const vec_t& right ) const
+    {
+        vec_t newVec;
+
+        for ( size_t n = 0; n < dimm; n++ )
+        {
+            newVec += ( this->vecs[ n ] * right[ n ] );
+        }
+
+        return newVec;
+    }
+
+    AINLINE vec_t operator * ( vec_t&& right ) const
+    {
+        vec_t newVec;
+
+        for ( size_t n = 0; n < dimm; n++ )
+        {
+            newVec += ( this->vecs[ n ] * right[ n ] );
+        }
+
+        return newVec;
+    }
+
+    AINLINE vec_t& operator [] ( ptrdiff_t n )
+    {
+        return vecs[ n ];
+    }
+
+    AINLINE const vec_t& operator [] ( ptrdiff_t n ) const
+    {
+        return vecs[ n ];
+    }
+
+#ifdef _SUPPORTS_CONSTEXPR
+    // Matrix inversion.
+    AINLINE numberType det( void ) const
+    {
+        using namespace rw::mview;
+
+        return detcalc <numberType, SquareMatrix, dimm>::calc( *this );
+    }
+
+    template <size_t y_iter>
+    struct inverse_matrix_y_iterator
+    {
+        template <size_t x_iter>
+        struct inverse_matrix_x_iterator
+        {
+            AINLINE static void CalculateNative( const SquareMatrix& srcMat, SquareMatrix& matOut )
+            {
+                numberType resultDet =
+                    rw::mview::detcalc <numberType, SquareMatrix, dimm - 1, rw::mview::matview_skip_y <y_iter>, rw::mview::matview_skip_x <x_iter>>::calc( srcMat );
+
+                if ( ( ( y_iter % 2 ) ^ ( x_iter % 2 ) ) == 0 )
+                {
+                    matOut[x_iter][y_iter] = resultDet;
+                }
+                else
+                {
+                    matOut[x_iter][y_iter] = -resultDet;
+                }
+            }
+
+            template <typename = std::enable_if <(x_iter != dimm)>::type>
+            AINLINE static void Calculate( const SquareMatrix& srcMat, SquareMatrix& matOut )
+            {
+                CalculateNative( srcMat, matOut );
+
+                inverse_matrix_x_iterator <x_iter + 1>::Calculate( srcMat, matOut );
+            }
+
+            template <typename = std::enable_if <(x_iter == dimm)>::type>
+            AINLINE static void Calculate( const SquareMatrix& srcMat, SquareMatrix& matOut, int a = 0 )
+            {
+                return;
+            }
+        };
+
+        template <typename = std::enable_if <(y_iter != dimm)>::type>
+        AINLINE static void Calculate( const SquareMatrix& srcMat, SquareMatrix& matOut )
+        {
+            inverse_matrix_x_iterator <0>::Calculate( srcMat, matOut );
+
+            inverse_matrix_y_iterator <y_iter + 1>::Calculate( srcMat, matOut );
+        }
+
+        template <typename = std::enable_if <(y_iter == dimm)>::type>
+        AINLINE static void Calculate( const SquareMatrix& srcMat, SquareMatrix& matOut, int a = 0 )
+        {
+            return;
+        }
+    };
+
+    // Makes no sense to always_inline this piece of code.
+    // You know what I mean.
+    bool Invert( void )
+    {
+        SquareMatrix cofactor_matrix;
+
+        inverse_matrix_y_iterator <0>::Calculate( *this, cofactor_matrix );
+
+        // Quickly calculate the determinant.
+        numberType theDet = 0;
+
+        for ( size_t n = 0; n < dimm; n++ )
+        {
+            theDet += ( (*this)[ 0 ][ n ] * cofactor_matrix[ n ][ 0 ] );
+        }
+
+        if ( theDet == 0 )
+            return false;
+
+        // Inverse matrix time!
+        for ( size_t y = 0; y < dimm; y++ )
+        {
+            for ( size_t x = 0; x < dimm; x++ )
+            {
+                (*this)[ y ][ x ] = cofactor_matrix[ y ][ x ] / theDet;
+            }
+        }
+
+        return true;
+    }
+#endif //_SUPPORTS_CONSTEXPR
+
+#ifdef _SUPPORTS_CONSTEXPR
+    // Euler trait.
+    // SFINAE, bitch! It is a very ridiculous concept, but very great to have :)
+    static constexpr bool canHaveEuler =
+        ( typename std::is_same <float, numberType>::value || typename std::is_same <double, numberType>::value ) &&
+        ( dimm == 3 || dimm == 4 );
+
+    template <typename = std::enable_if <canHaveEuler>::type>
+    inline void SetRotationRad( numberType x, numberType y, numberType z )
+    {
+        numberType ch = (numberType)cos( x );
+        numberType sh = (numberType)sin( x );
+        numberType cb = (numberType)cos( y );
+        numberType sb = (numberType)sin( y );
+        numberType ca = (numberType)cos( z );
+        numberType sa = (numberType)sin( z );
+
+        vec_t& vRight = this->vecs[0];
+        vec_t& vFront = this->vecs[1];
+        vec_t& vUp = this->vecs[2];
+
+        vRight[0] = (numberType)( ca * cb );
+        vRight[1] = (numberType)( -sa * cb );
+        vRight[2] = (numberType)( sb );
+
+        vFront[0] = (numberType)( ca * sb * sh + sa * ch );
+        vFront[1] = (numberType)( ca * ch - sa * sb * sh );
+        vFront[2] = (numberType)( -sh * cb );
+
+        vUp[0] = (numberType)( sa * sh - ca * sb * ch );
+        vUp[1] = (numberType)( sa * sb * ch + ca * sh );
+        vUp[2] = (numberType)( ch * cb );
+    }
+
+    template <typename = std::enable_if <!canHaveEuler>::type>
+    inline void SetRotationRad( numberType x, numberType y, numberType z, int a = 0 )
+    {
+        static_assert( false, "does not support euler rotation" );
+    }
+
+    template <typename = std::enable_if <canHaveEuler>::type>
+    inline void SetRotation( numberType x, numberType y, numberType z )
+    {
+        SetRotationRad( (numberType)DEG2RAD( x ), (numberType)DEG2RAD( y ), (numberType)DEG2RAD( z ) );
+    }
+
+    template <typename = std::enable_if <!canHaveEuler>::type>
+    inline void SetRotation( numberType x, numberType y, numberType z, int a = 0 )
+    {
+        static_assert( false, "does not support euler rotation" );
+    }
+
+    template <typename = std::enable_if <canHaveEuler>::type>
+    inline void GetRotationRad( numberType& x, numberType& y, numberType& z ) const
+    {
+        const vec_t& vRight = this->vecs[0];
+        const vec_t& vFront = this->vecs[1];
+        const vec_t& vUp = this->vecs[2];
+
+        if ( vRight[2] == 1 )
+        {
+            y = (numberType)( M_PI / 2 );
+
+            x = 0;
+            z = (numberType)atan2( vRight[0], vRight[1] );
+        }
+        else if ( vRight[2] == -1 )
+        {
+            y = -(numberType)( M_PI / 2 );
+
+            x = -0;
+            z = (numberType)atan2( vRight[0], vRight[1] );
+        }
+        else
+        {
+            y = asin( vRight[2] );
+
+            x = (numberType)atan2( -vFront[2], vUp[2] );
+            z = (numberType)atan2( -vRight[1], vRight[0] );
+        }
+    }
+
+    template <typename = std::enable_if <!canHaveEuler>::type>
+    inline void GetRotationRad( numberType& x, numberType& y, numberType& z, int a = 0 ) const
+    {
+        static_assert( false, "does not support euler rotation" );
+    }
+
+    template <typename = std::enable_if <canHaveEuler>::type>
+    inline void GetRotation( numberType& x, numberType& y, numberType& z ) const
+    {
+        GetRotationRad( x, y, z );
+
+        x = (numberType)RAD2DEG( x );
+        y = (numberType)RAD2DEG( y );
+        z = (numberType)RAD2DEG( z );
+    }
+
+    template <typename = std::enable_if <!canHaveEuler>::type>
+    inline void GetRotation( numberType& x, numberType& y, numberType& z, int a = 0 ) const
+    {
+        static_assert( false, "does not support euler rotation" );
+    }
+#endif //_SUPPORTS_CONSTEXPR
+
+private:
+    vec_t vecs[ dimm ];
+};
 
 #pragma warning(pop)
 

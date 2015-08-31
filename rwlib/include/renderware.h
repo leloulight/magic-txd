@@ -385,10 +385,16 @@ struct Frame : public RwObject
 };
 
 // Main exception base class of this RenderWare framework.
-// If you want to catch it, please make sure that you compile your project with the same compiler as this framework.
+// If you want to catch it, please make sure that you compile your project with the same compiler as this framework
+// (a.k.a. ABI compatibility).
 struct RwException
 {
     inline RwException( const std::string& msg )
+    {
+        this->message = msg;
+    }
+
+    inline RwException( std::string&& msg )
     {
         this->message = msg;
     }
@@ -410,6 +416,13 @@ struct RwException
 #include "renderware.threading.h"
 #include "renderware.driver.h"
 #include "renderware.drawing.h"
+
+// Some pretty useful mappings.
+typedef Vector <float, 2> RwV2d;
+typedef Vector <float, 3> RwV3d;
+typedef Vector <float, 4> RwV4d;
+
+typedef SquareMatrix <float, 4> RwMatrix;
 
 // Warning manager interface.
 struct WarningManagerInterface abstract

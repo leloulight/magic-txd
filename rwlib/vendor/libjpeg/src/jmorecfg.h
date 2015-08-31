@@ -444,3 +444,11 @@ typedef enum { FALSE = 0, TRUE = 1 } boolean;
 #endif
 
 #endif /* JPEG_INTERNAL_OPTIONS */
+
+/* PATCH PATCH PATCH
+ * In order to prevent linker name resolution problems for this JPEG library we invent
+ * a config item for changing the prefix or postfix for all exported symbols.
+ */
+#define JLIB_SYMBOLNAME( x )            ( rwlib_ ## x )
+
+#define NEED_SHORT_EXTERNAL_NAMES

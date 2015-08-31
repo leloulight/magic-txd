@@ -30,6 +30,7 @@ struct nativeDriverTypeInterface : public RwTypeSystem::typeInterface
         this->geometryType = NULL;
         this->materialType = NULL;
         this->swapChainType = NULL;
+        this->graphicsStateType = NULL;
     }
 
     inline ~nativeDriverTypeInterface( void )
@@ -39,6 +40,7 @@ struct nativeDriverTypeInterface : public RwTypeSystem::typeInterface
         SafeDeleteType( engineInterface, this->geometryType );
         SafeDeleteType( engineInterface, this->materialType );
         SafeDeleteType( engineInterface, this->swapChainType );
+        SafeDeleteType( engineInterface, this->graphicsStateType );
 
         SafeDeleteType( engineInterface, this->driverType );
 
@@ -109,12 +111,21 @@ struct nativeDriverTypeInterface : public RwTypeSystem::typeInterface
             // First we construct the swap chain.
             DriverSwapChain *swapChain = new (mem) DriverSwapChain( engineInterface, theDriver, sysWnd );
 
-            this->driverType->driverImpl->SwapChainConstruct(
-                engineInterface,
-                theDriver->GetImplementation(),
-                swapChain->GetImplementation(),
-                sysWnd, params->frameCount
-            );
+            try
+            {
+                this->driverType->driverImpl->SwapChainConstruct(
+                    engineInterface,
+                    theDriver->GetImplementation(),
+                    swapChain->GetImplementation(),
+                    sysWnd, params->frameCount
+                );
+            }
+            catch( ... )
+            {
+                swapChain->~DriverSwapChain();
+
+                throw;
+            }
         }
 
         void CopyConstruct( void *mem, const void *srcMem ) const override
@@ -150,6 +161,57 @@ struct nativeDriverTypeInterface : public RwTypeSystem::typeInterface
         nativeDriverTypeInterface *driverType;
     };
     nativeDriverSwapChainTypeInterface _driverSwapChainType;
+
+    struct graphics_state_const_params
+    {
+        inline graphics_state_const_params( Driver *theDriver, const gfxGraphicsState& psoState )
+            : theDriver( theDriver ), psoState( psoState )
+        {
+            return;
+        }
+
+        Driver *theDriver;
+        const gfxGraphicsState& psoState;
+    };
+
+    struct nativeDriverGraphicsStateTypeInterface : public RwTypeSystem::typeInterface
+    {
+        void Construct( void *mem, EngineInterface *engineInterface, void *construct_params ) const override
+        {
+            const graphics_state_const_params *params = (const graphics_state_const_params*)construct_params;
+
+            this->driverType->driverImpl->GraphicsStateConstruct(
+                engineInterface, params->theDriver->GetImplementation(),
+                mem, params->psoState
+            );
+        }
+
+        void CopyConstruct( void *mem, const void *srcMem ) const override
+        {
+            throw RwException( "it makes no sense to clone an immutable graphics pso" );
+        }
+
+        void Destruct( void *mem ) const override
+        {
+            this->driverType->driverImpl->GraphicsStateDestroy(
+                this->driverType->engineInterface, mem
+            );
+        }
+
+        size_t GetTypeSize( EngineInterface *engineInterface, void *construct_params ) const override
+        {
+            return this->objMemSize;
+        }
+
+        size_t GetTypeSizeByObject( EngineInterface *engineInterface, const void *srcMem ) const override
+        {
+            return this->objMemSize;
+        }
+
+        size_t objMemSize;
+        nativeDriverTypeInterface *driverType;
+    };
+    nativeDriverGraphicsStateTypeInterface _driverGraphicsStateType;
 
     void Construct( void *mem, EngineInterface *engineInterface, void *construct_params ) const override
     {
@@ -211,6 +273,7 @@ struct nativeDriverTypeInterface : public RwTypeSystem::typeInterface
     RwTypeSystem::typeInfoBase *geometryType;       // type of instanced geometry
     RwTypeSystem::typeInfoBase *materialType;       // type of instanced material
     RwTypeSystem::typeInfoBase *swapChainType;      // type of windowing system buffer
+    RwTypeSystem::typeInfoBase *graphicsStateType;  // type of graphics PSO
 
     bool isRegistered;
     RwListEntry <nativeDriverTypeInterface> node;
@@ -311,6 +374,9 @@ bool RegisterDriver( EngineInterface *engineInterface, const char *typeName, con
             driverTypeInterface->_driverSwapChainType.driverType = driverTypeInterface;
             driverTypeInterface->_driverSwapChainType.objMemSize = props.swapChainMemSize;
 
+            driverTypeInterface->_driverGraphicsStateType.driverType = driverTypeInterface;
+            driverTypeInterface->_driverGraphicsStateType.objMemSize = props.graphicsStateMemSize;
+
             try
             {
                 // Register the driver type.
@@ -327,6 +393,7 @@ bool RegisterDriver( EngineInterface *engineInterface, const char *typeName, con
                     driverTypeInterface->geometryType = engineInterface->typeSystem.RegisterType( "geometry", &driverTypeInterface->_driverTypeGeometry, driverType );  
                     driverTypeInterface->materialType = engineInterface->typeSystem.RegisterType( "material", &driverTypeInterface->_driverTypeMaterial, driverType );
                     driverTypeInterface->swapChainType = engineInterface->typeSystem.RegisterType( "swapchain", &driverTypeInterface->_driverSwapChainType, driverType );
+                    driverTypeInterface->graphicsStateType = engineInterface->typeSystem.RegisterType( "graphics_pso", &driverTypeInterface->_driverGraphicsStateType, driverType );
 
                     // Register our driver.
                     LIST_INSERT( driverEnv->driverTypeList.root, driverTypeInterface->node );
@@ -452,6 +519,45 @@ void Driver::DestroySwapChain( DriverSwapChain *swapChain )
 
     // Simply generically destroy it.
     GenericRTTI *rtObj = RwTypeSystem::GetTypeStructFromObject( swapChain );
+
+    if ( rtObj )
+    {
+        engineInterface->typeSystem.Destroy( engineInterface, rtObj );
+    }
+}
+
+DriverGraphicsState* Driver::CreateGraphicsState( const gfxGraphicsState& psoState )
+{
+    DriverGraphicsState *psoOut = NULL;
+
+    EngineInterface *engineInterface = (EngineInterface*)this->engineInterface;
+
+    if ( nativeDriverTypeInterface *driverInfo = driverEnvironment::GetDriverTypeInterface( this ) )
+    {
+        // Create the object.
+        if ( RwTypeSystem::typeInfoBase *psoTypeInfo = driverInfo->graphicsStateType )
+        {
+            nativeDriverTypeInterface::graphics_state_const_params params( this, psoState );
+
+            GenericRTTI *rtObj =
+                engineInterface->typeSystem.Construct( engineInterface, psoTypeInfo, &params );
+
+            if ( rtObj )
+            {
+                psoOut = (DriverGraphicsState*)RwTypeSystem::GetObjectFromTypeStruct( rtObj );
+            }
+        }
+    }
+
+    return psoOut;
+}
+
+void Driver::DestroyGraphicsState( DriverGraphicsState *pso )
+{
+    // Just delete it generically.
+    EngineInterface *engineInterface = (EngineInterface*)this->engineInterface;
+
+    GenericRTTI *rtObj = RwTypeSystem::GetTypeStructFromObject( pso );
 
     if ( rtObj )
     {

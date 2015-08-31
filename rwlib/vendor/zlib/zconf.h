@@ -329,4 +329,6 @@ typedef uLong FAR uLongf;
 #   pragma map(inflate_copyright,"INCOPY")
 #endif
 
+#include "zprefix.h"
+
 #endif /* ZCONF_H */

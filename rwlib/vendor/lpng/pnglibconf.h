@@ -204,11 +204,15 @@
 #define PNG_USER_WIDTH_MAX 1000000
 #define PNG_WEIGHT_SHIFT 8
 #define PNG_ZBUF_SIZE 8192
-#define PNG_ZLIB_VERNUM 0 /* unknown */
+#define PNG_ZLIB_VERNUM ZLIB_VERNUM /* unknown */
 #define PNG_Z_DEFAULT_COMPRESSION (-1)
 #define PNG_Z_DEFAULT_NOFILTER_STRATEGY 0
 #define PNG_Z_DEFAULT_STRATEGY 1
 #define PNG_sCAL_PRECISION 5
 #define PNG_sRGB_PROFILE_CHECKS 2
 /* end of settings */
+
+#define PNG_PREFIX
+#include "pngprefix.h"
+
 #endif /* PNGLCONF_H */

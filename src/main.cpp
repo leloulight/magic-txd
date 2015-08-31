@@ -2,6 +2,8 @@
 #include <QApplication>
 #include "styles.h"
 
+#include <QImageWriter>
+
 #include <QtPlugin>
 Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin)
 

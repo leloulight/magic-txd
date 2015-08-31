@@ -770,7 +770,9 @@ struct RwStateManager
         AINLINE void ClearSetDeviceStates( void )
         {
             // Reset our device states.
-            for ( unsigned int n = 0; n < deviceStates.GetSizeCount(); n++ )
+            unsigned int sizeCount = deviceStates.GetSizeCount();
+
+            for ( unsigned int n = 0; n < sizeCount; n++ )
             {
                 capturedStateValueType& value = deviceStates.Get( n );
 
@@ -1055,7 +1057,7 @@ struct RwStateManager
 
                 const stateValueType& bucketValue = manager->bucketStates.Get( arrayIndex );
 
-                _asm nop
+                __noop();
 #endif
 
                 if ( arrayIndex < deviceStates.GetSizeCount() )
@@ -1207,7 +1209,7 @@ struct RwStateManager
 
     AINLINE capturedState* CaptureState( void )
     {
-        capturedState *state = allocator.Allocate();
+        capturedState *state = allocator.Allocate( this->engineInterface );
 
         state->SetManager( this );
         state->Capture();
@@ -1218,7 +1220,7 @@ struct RwStateManager
     {
         state->Terminate();
 
-        allocator.Free( state );
+        allocator.Free( this->engineInterface, state );
     }
 
     AINLINE void Initialize( void )

@@ -333,6 +333,16 @@ public:
         height = this->height;
     }
 
+    inline uint32 getWidth( void ) const
+    {
+        return this->width;
+    }
+
+    inline uint32 getHeight( void ) const
+    {
+        return this->height;
+    }
+
     inline uint32 getRowAlignment( void ) const
     {
         return this->rowAlignment;

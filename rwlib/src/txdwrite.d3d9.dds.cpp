@@ -1564,7 +1564,7 @@ void d3d9NativeTextureTypeProvider::DeserializeNativeImage( Interface *engineInt
     {
         bool isComplex = ( header.dwCaps & DDSCAPS_COMPLEX ) != 0;
 
-        if ( isComplex && maybeMipmapCount > 1 )
+        if ( !isComplex && maybeMipmapCount > 1 )
         {
             engineInterface->PushWarning( "DDS file does have mipmaps but is not marked complex" );
         }

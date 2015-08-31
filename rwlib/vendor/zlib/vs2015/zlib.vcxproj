@@ -289,6 +289,7 @@
     <ClInclude Include="..\zconf.h" />
     <ClInclude Include="..\zconf.in.h" />
     <ClInclude Include="..\zlib.h" />
+    <ClInclude Include="..\zprefix.h" />
     <ClInclude Include="..\zutil.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

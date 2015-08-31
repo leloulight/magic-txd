@@ -461,6 +461,7 @@
     <ClCompile Include="..\..\src\rwdriver.d3d12.cpp" />
     <ClCompile Include="..\..\src\rwdriver.d3d12.geom.cpp" />
     <ClCompile Include="..\..\src\rwdriver.d3d12.mat.cpp" />
+    <ClCompile Include="..\..\src\rwdriver.d3d12.pso.cpp" />
     <ClCompile Include="..\..\src\rwdriver.d3d12.raster.cpp" />
     <ClCompile Include="..\..\src\rwdriver.d3d12.swap.cpp" />
     <ClCompile Include="..\..\src\rwdriver.immbuf.cpp" />

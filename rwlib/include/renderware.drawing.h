@@ -37,63 +37,6 @@ enum eRwDeviceCmd : uint32
     RWSTATE_ALPHAREF
 };
 
-typedef uint32 rwDeviceValue_t;
-
-enum rwFogModeState : rwDeviceValue_t
-{
-    RWFOG_DISABLE,
-    RWFOG_LINEAR,
-    RWFOG_EXP,
-    RWFOG_EXP2
-};
-enum rwShadeModeState : rwDeviceValue_t
-{
-    RWSHADE_FLAT = 1,
-    RWSHADE_GOURAUD
-};
-enum rwStencilOpState : rwDeviceValue_t
-{
-    RWSTENCIL_KEEP = 1,
-    RWSTENCIL_ZERO,
-    RWSTENCIL_REPLACE,
-    RWSTENCIL_INCRSAT,
-    RWSTENCIL_DECRSAT,
-    RWSTENCIL_INVERT,
-    RWSTENCIL_INCR,
-    RWSTENCIL_DECR
-};
-enum rwCompareOpState : rwDeviceValue_t
-{
-    RWCMP_NEVER = 1,
-    RWCMP_LESS,
-    RWCMP_EQUAL,
-    RWCMP_LESSEQUAL,
-    RWCMP_GREATER,
-    RWCMP_NOTEQUAL,
-    RWCMP_GREATEREQUAL,
-    RWCMP_ALWAYS
-};
-enum rwCullModeState : rwDeviceValue_t
-{
-    RWCULL_NONE = 1,
-    RWCULL_CLOCKWISE,
-    RWCULL_COUNTERCLOCKWISE
-};
-enum rwBlendModeState : rwDeviceValue_t
-{
-    RWBLEND_ZERO = 1,
-    RWBLEND_ONE,
-    RWBLEND_SRCCOLOR,
-    RWBLEND_INVSRCCOLOR,
-    RWBLEND_SRCALPHA,
-    RWBLEND_INVSRCALPHA,
-    RWBLEND_DESTALPHA,
-    RWBLEND_INVDESTALPHA,
-    RWBLEND_DESTCOLOR,
-    RWBLEND_INVDESTCOLOR,
-    RWBLEND_SRCALPHASAT
-};
-
 // Definition of a 2D drawing layer.
 struct DrawingLayer2D
 {

@@ -83,7 +83,7 @@
 /* Define this if your linker needs global names to be unique in less
  * than the first 15 characters.
  */
-#undef NEED_SHORT_EXTERNAL_NAMES
+//#undef NEED_SHORT_EXTERNAL_NAMES
 
 /* Although a real ANSI C compiler can deal perfectly well with pointers to
  * unspecified structures (see "incomplete types" in the spec), a few pre-ANSI

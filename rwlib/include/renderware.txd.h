@@ -367,6 +367,17 @@ enum eRasterType
     RASTERTYPE_BITMAP = 4
 };
 
+enum eCompressionType
+{
+    RWCOMPRESS_NONE,
+    RWCOMPRESS_DXT1,
+    RWCOMPRESS_DXT2,
+    RWCOMPRESS_DXT3,
+    RWCOMPRESS_DXT4,
+    RWCOMPRESS_DXT5,
+    RWCOMPRESS_NUM
+};
+
 struct Raster
 {
     inline Raster( Interface *engineInterface, void *construction_params )
@@ -404,11 +415,12 @@ struct Raster
     void getFormatString( char *buf, size_t bufSize, size_t& lengthOut ) const;
 
 	void convertToFormat(eRasterFormat format);
-    void convertToPalette(ePaletteType paletteType);
+    void convertToPalette(ePaletteType paletteType, eRasterFormat newRasterFormat = RASTER_DEFAULT);
 
     // Optimization routines.
     void optimizeForLowEnd(float quality);
     void compress(float quality);
+    void compressCustom(eCompressionType format);
 
     // Mipmap utilities.
     uint32 getMipmapCount( void ) const;
@@ -575,17 +587,6 @@ struct TexDictionary : public RwObject
     {
         return this->numTextures;
     }
-};
-
-enum eCompressionType
-{
-    RWCOMPRESS_NONE,
-    RWCOMPRESS_DXT1,
-    RWCOMPRESS_DXT2,
-    RWCOMPRESS_DXT3,
-    RWCOMPRESS_DXT4,
-    RWCOMPRESS_DXT5,
-    RWCOMPRESS_NUM
 };
 
 // Pixel capabilities are required for transporting data properly.
@@ -780,6 +781,26 @@ void* GetNativeTextureDriverInterface( Interface *engineInterface, const char *n
 const char* GetNativeTextureImageFormatExtension( Interface *engineInterface, const char *nativeName );
 
 platformTypeNameList_t GetAvailableNativeTextureTypes( Interface *engineInterface );
+
+struct nativeRasterFormatInfo
+{
+    // Basic information.
+    bool isCompressedFormat;
+    
+    // Support flags.
+    bool supportsDXT1;
+    bool supportsDXT2;
+    bool supportsDXT3;
+    bool supportsDXT4;
+    bool supportsDXT5;
+    bool supportsPalette;
+};
+
+bool GetNativeTextureFormatInfo( Interface *engineInterface, const char *nativeName, nativeRasterFormatInfo& infoOut );
+
+// Format info helper API.
+const char* GetRasterFormatStandardName( eRasterFormat theFormat );
+eRasterFormat FindRasterFormatByName( const char *name );
 
 // Raster API.
 Raster* CreateRaster( Interface *engineInterface );

@@ -122,6 +122,19 @@ struct d3d12DriverInterface : public nativeDriverImplementation
         uint32 m_chainBufferIndex;
     };
 
+    struct d3d12PipelineStateObject
+    {
+        d3d12NativeDriver *driver;
+
+        // Makes no sense to clone an immutable object, so no copy constructor.
+
+        d3d12PipelineStateObject( d3d12DriverInterface *env, Interface *engineInterface, d3d12NativeDriver *driver, const gfxGraphicsState& psoState );
+        ~d3d12PipelineStateObject( void );
+
+        ComPtr <ID3D12RootSignature> rootSignature;
+        ComPtr <ID3D12PipelineState> psoPtr;
+    };
+
     // Special entry points.
     typedef HRESULT (WINAPI*D3D12CreateDevice_t)(
         IUnknown *pAdapter,
@@ -136,6 +149,12 @@ struct d3d12DriverInterface : public nativeDriverImplementation
 #ifdef _DEBUG
     typedef HRESULT (WINAPI*D3D12GetDebugInterface_t)( REFIID riif, void **ppvDebug );
 #endif //_DEBUG
+    typedef HRESULT (WINAPI*D3D12SerializeRootSignature_t)(
+        const D3D12_ROOT_SIGNATURE_DESC *pRootSignature,
+        D3D_ROOT_SIGNATURE_VERSION Version,
+        ID3DBlob **ppBlob,
+        ID3DBlob **ppErrorBlob
+    );
 
     HMODULE d3d12Module;
     HMODULE dxgiModule;
@@ -145,6 +164,7 @@ struct d3d12DriverInterface : public nativeDriverImplementation
 #ifdef _DEBUG
     D3D12GetDebugInterface_t D3D12GetDebugInterface;
 #endif //_DEBUG
+    D3D12SerializeRootSignature_t D3D12SerializeRootSignature;
 
     struct driverFactoryConstructor
     {
@@ -196,10 +216,19 @@ struct d3d12DriverInterface : public nativeDriverImplementation
     {
         new (objMem) d3d12SwapChain( this, engineInterface, (d3d12NativeDriver*)driverObjMem, sysWnd, frameCount );
     }
-
     NATIVE_DRIVER_SWAPCHAIN_DESTROY() override
     {
         ((d3d12SwapChain*)objMem)->~d3d12SwapChain();
+    }
+
+    // Taking care of the pipeline state object mappings.
+    NATIVE_DRIVER_GRAPHICS_STATE_CONSTRUCT()
+    {
+        new (objMem) d3d12PipelineStateObject( this, engineInterface, (d3d12NativeDriver*)driverObjMem, gfxState );
+    }
+    NATIVE_DRIVER_GRAPHICS_STATE_DESTROY()
+    {
+        ((d3d12PipelineStateObject*)objMem)->~d3d12PipelineStateObject();
     }
 
     bool hasRegisteredDriver;
@@ -215,6 +244,7 @@ struct d3d12DriverInterface : public nativeDriverImplementation
 #ifdef _DEBUG
             this->D3D12GetDebugInterface = (D3D12GetDebugInterface_t)GetProcAddress( theModule, "D3D12GetDebugInterface" );
 #endif //_DEBUG
+            this->D3D12SerializeRootSignature = (D3D12SerializeRootSignature_t)GetProcAddress( theModule, "D3D12SerializeRootSignature" );
         }
         else
         {
@@ -222,6 +252,7 @@ struct d3d12DriverInterface : public nativeDriverImplementation
 #ifdef _DEBUG
             this->D3D12GetDebugInterface = NULL;
 #endif //_DEBUG
+            this->D3D12SerializeRootSignature = NULL;
         }
     }
 
@@ -270,6 +301,7 @@ struct d3d12DriverInterface : public nativeDriverImplementation
             props.geomMemSize = sizeof( d3d12NativeGeometry );
             props.matMemSize = sizeof( d3d12NativeMaterial );
             props.swapChainMemSize = sizeof( d3d12SwapChain );
+            props.graphicsStateMemSize = sizeof( d3d12PipelineStateObject );
 
             hasRegistered = RegisterDriver( engineInterface, "Direct3D12", props, this, d3d12DriverFactory.GetClassSize() );
         }

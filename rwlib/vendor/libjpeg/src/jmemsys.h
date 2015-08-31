@@ -22,14 +22,14 @@
 /* Short forms of external names for systems with brain-damaged linkers. */
 
 #ifdef NEED_SHORT_EXTERNAL_NAMES
-#define jpeg_get_small		jGetSmall
-#define jpeg_free_small		jFreeSmall
-#define jpeg_get_large		jGetLarge
-#define jpeg_free_large		jFreeLarge
-#define jpeg_mem_available	jMemAvail
-#define jpeg_open_backing_store	jOpenBackStore
-#define jpeg_mem_init		jMemInit
-#define jpeg_mem_term		jMemTerm
+#define jpeg_get_small		JLIB_SYMBOLNAME( jGetSmall )
+#define jpeg_free_small		JLIB_SYMBOLNAME( jFreeSmall )
+#define jpeg_get_large		JLIB_SYMBOLNAME( jGetLarge )
+#define jpeg_free_large		JLIB_SYMBOLNAME( jFreeLarge )
+#define jpeg_mem_available	JLIB_SYMBOLNAME( jMemAvail )
+#define jpeg_open_backing_store	JLIB_SYMBOLNAME( jOpenBackStore )
+#define jpeg_mem_init		JLIB_SYMBOLNAME( jMemInit )
+#define jpeg_mem_term		JLIB_SYMBOLNAME( jMemTerm )
 #endif /* NEED_SHORT_EXTERNAL_NAMES */
 
 

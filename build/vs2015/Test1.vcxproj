@@ -267,7 +267,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level1</WarningLevel>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/Qt5.4/include/QtWidgets/;../../vendor/Qt5.4/include/;../../vendor/Qt5.4/include/QtCore/;../../vendor/Qt5.4/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
@@ -325,7 +325,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level1</WarningLevel>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/Qt5.4/include/QtWidgets/;../../vendor/Qt5.4/include/;../../vendor/Qt5.4/include/QtCore/;../../vendor/Qt5.4/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
@@ -383,7 +383,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level1</WarningLevel>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/Qt5.4/include/QtWidgets/;../../vendor/Qt5.4/include/;../../vendor/Qt5.4/include/QtCore/;../../vendor/Qt5.4/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
@@ -480,7 +480,7 @@
       <AssemblerListingLocation>
       </AssemblerListingLocation>
       <BrowseInformation>false</BrowseInformation>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <ExceptionHandling>Sync</ExceptionHandling>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <Optimization>Disabled</Optimization>
@@ -492,7 +492,7 @@
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level1</WarningLevel>
       <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/Qt5.4/include/QtWidgets/;../../vendor/Qt5.4/include/;../../vendor/Qt5.4/include/QtCore/;../../vendor/Qt5.4/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -543,7 +543,7 @@
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level1</WarningLevel>
       <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/Qt5.4/include/QtWidgets/;../../vendor/Qt5.4/include/;../../vendor/Qt5.4/include/QtCore/;../../vendor/Qt5.4/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -582,7 +582,7 @@
       <AssemblerListingLocation>
       </AssemblerListingLocation>
       <BrowseInformation>false</BrowseInformation>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <ExceptionHandling>Sync</ExceptionHandling>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <Optimization>Disabled</Optimization>
@@ -594,7 +594,7 @@
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level1</WarningLevel>
       <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/Qt5.4/include/QtWidgets/;../../vendor/Qt5.4/include/;../../vendor/Qt5.4/include/QtCore/;../../vendor/Qt5.4/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -664,6 +664,7 @@
     <ClInclude Include="..\..\include\txdadddialog.h" />
     <ClInclude Include="..\..\magic_api\magfapi.h" />
     <ClInclude Include="..\..\magic_api\MagicFormats.h" />
+    <ClInclude Include="..\..\src\qtrwutils.hxx" />
     <ClInclude Include="..\..\src\texformathelper.hxx" />
     <CustomBuild Include="../../include/mainwindow.h">
       <Command Condition="'$(Configuration)|$(Platform)'=='Release 2015|Win32'">setlocal
@@ -820,6 +821,9 @@ endlocal
     <ProjectReference Include="..\..\rwlib\vendor\zlib\vs2015\zlib.vcxproj">
       <Project>{65d5e721-48dd-4da9-9903-6e2fdd90725a}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="qt5.natvis" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
