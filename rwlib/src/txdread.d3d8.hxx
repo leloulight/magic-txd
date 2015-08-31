@@ -188,6 +188,13 @@ struct d3d8NativeTextureTypeProvider : public texNativeTypeProvider
     void GetTextureInfo( Interface *engineInterface, void *objMem, nativeTextureBatchedInfo& infoOut );
     void GetTextureFormatString( Interface *engineInterface, void *objMem, char *buf, size_t bufLen, size_t& lengthOut ) const;
 
+    eRasterFormat GetTextureRasterFormat( const void *objMem ) override
+    {
+        const NativeTextureD3D8 *nativeTex = (const NativeTextureD3D8*)objMem;
+
+        return nativeTex->rasterFormat;
+    }
+
     ePaletteType GetTexturePaletteType( const void *objMem ) override
     {
         const NativeTextureD3D8 *nativeTex = (const NativeTextureD3D8*)objMem;

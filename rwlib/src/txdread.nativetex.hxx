@@ -73,6 +73,7 @@ struct texNativeTypeProvider abstract
     virtual void            GetTextureInfo( Interface *engineInterface, void *objMem, nativeTextureBatchedInfo& infoOut ) = 0;
     virtual void            GetTextureFormatString( Interface *engineInterface, void *objMen, char *buf, size_t bufSize, size_t& lengthOut ) const = 0;
 
+    virtual eRasterFormat   GetTextureRasterFormat( const void *objMem ) = 0;
     virtual ePaletteType    GetTexturePaletteType( const void *objMem ) = 0;
     virtual bool            IsTextureCompressed( const void *objMem ) = 0;
 

@@ -797,13 +797,34 @@ public:
 
     AINLINE void setColor( texel_t *texelSource, unsigned int index, const abstractColorItem& colorItem ) const
     {
+        eColorModel ourModel = this->usedColorModel;
+
         eColorModel model = colorItem.model;
 
         bool success = false;
 
         if ( model == COLORMODEL_RGBA )
         {
-            success = this->setRGBA( texelSource, index, colorItem.rgbaColor.r, colorItem.rgbaColor.g, colorItem.rgbaColor.b, colorItem.rgbaColor.a );
+            if ( ourModel == COLORMODEL_LUMINANCE )
+            {
+                // We have a default way of converting RGB to luminance.
+                uint32 r = colorItem.rgbaColor.r;
+                uint32 g = colorItem.rgbaColor.g;
+                uint32 b = colorItem.rgbaColor.b;
+                uint8 a = colorItem.rgbaColor.a;
+
+                uint8 lum = ( r + g + b ) / 3;
+
+                success = this->setLuminance( texelSource, index, lum, a );
+            }
+            else if ( ourModel == COLORMODEL_RGBA )
+            {
+                success = this->setRGBA( texelSource, index, colorItem.rgbaColor.r, colorItem.rgbaColor.g, colorItem.rgbaColor.b, colorItem.rgbaColor.a );
+            }
+            else
+            {
+                throw RwException( "invalid color model in abstract color item" );
+            }
         }
         else if ( model == COLORMODEL_LUMINANCE )
         {

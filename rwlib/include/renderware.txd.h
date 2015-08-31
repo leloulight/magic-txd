@@ -804,6 +804,7 @@ eRasterFormat FindRasterFormatByName( const char *name );
 
 // Raster API.
 Raster* CreateRaster( Interface *engineInterface );
+Raster* CloneRaster( const Raster *rasterToClone );
 Raster* AcquireRaster( Raster *theRaster );
 void DeleteRaster( Raster *theRaster );
 

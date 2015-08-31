@@ -160,6 +160,11 @@ struct dxtMobileNativeTextureTypeProvider : public texNativeTypeProvider
     void GetTextureInfo( Interface *engineInterface, void *objMem, nativeTextureBatchedInfo& infoOut );
     void GetTextureFormatString( Interface *engineInterface, void *objMem, char *buf, size_t bufLen, size_t& lengthOut ) const;
 
+    eRasterFormat GetTextureRasterFormat( const void *objMem ) override
+    {
+        return RASTER_DEFAULT;
+    }
+
     ePaletteType GetTexturePaletteType( const void *objMem ) override
     {
         return PALETTE_NONE;

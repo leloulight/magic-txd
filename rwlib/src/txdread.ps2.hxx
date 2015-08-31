@@ -1100,19 +1100,26 @@ struct ps2NativeTextureTypeProvider : public texNativeTypeProvider
     void GetTextureInfo( Interface *engineInterface, void *objMem, nativeTextureBatchedInfo& infoOut );
     void GetTextureFormatString( Interface *engineInterface, void *objMem, char *buf, size_t bufLen, size_t& lengthOut ) const;
 
-    ePaletteType GetTexturePaletteType( const void *objMem )
+    eRasterFormat GetTextureRasterFormat( const void *objMem ) override
+    {
+        const NativeTexturePS2 *nativeTex = (const NativeTexturePS2*)objMem;
+
+        return nativeTex->rasterFormat;
+    }
+
+    ePaletteType GetTexturePaletteType( const void *objMem ) override
     {
         const NativeTexturePS2 *nativeTex = (const NativeTexturePS2*)objMem;
 
         return nativeTex->paletteType;
     }
 
-    bool IsTextureCompressed( const void *objMem )
+    bool IsTextureCompressed( const void *objMem ) override
     {
         return false;
     }
 
-    bool DoesTextureHaveAlpha( const void *objMem )
+    bool DoesTextureHaveAlpha( const void *objMem ) override
     {
         // TODO: this needs a rewrite. PS2 textures do not cache the alpha flag.
 
@@ -1129,7 +1136,7 @@ struct ps2NativeTextureTypeProvider : public texNativeTypeProvider
         return 4;
     }
 
-    uint32 GetDriverIdentifier( void *objMem ) const
+    uint32 GetDriverIdentifier( void *objMem ) const override
     {
         // Always the generic PlayStation 2 driver.
         return 6;

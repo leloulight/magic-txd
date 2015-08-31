@@ -1795,6 +1795,28 @@ Raster* CreateRaster( Interface *intf )
     return NULL;
 }
 
+Raster* CloneRaster( const Raster *rasterToClone )
+{
+    EngineInterface *engineInterface = (EngineInterface*)rasterToClone->engineInterface;
+
+    // We can clone generically.
+    rw::Raster *newRaster = NULL;
+
+    const GenericRTTI *srcRtObj = RwTypeSystem::GetTypeStructFromConstObject( rasterToClone );
+
+    if ( srcRtObj )
+    {
+        GenericRTTI *clonedRtObj = engineInterface->typeSystem.Clone( engineInterface, srcRtObj );
+
+        if ( clonedRtObj )
+        {
+            newRaster = (rw::Raster*)RwTypeSystem::GetObjectFromTypeStruct( clonedRtObj );
+        }
+    }
+
+    return newRaster;
+}
+
 Raster* AcquireRaster( Raster *theRaster )
 {
     // Attempts to get a handle to this raster by referencing it.

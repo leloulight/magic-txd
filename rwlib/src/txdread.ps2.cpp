@@ -1850,10 +1850,6 @@ void ps2NativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInter
             {
                 dstPaletteType = PALETTE_8BIT;
             }
-            else
-            {
-                throw RwException( "unknown palette mapping in PS2 native texture texel data acquisition" );
-            }
 
             // The architecture does not support 8bit PALETTE_4BIT rasters.
             // Fix that.

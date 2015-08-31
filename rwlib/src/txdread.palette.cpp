@@ -559,7 +559,14 @@ void Raster::convertToPalette( ePaletteType paletteType, eRasterFormat newRaster
     ePaletteType currentPaletteType = texProvider->GetTexturePaletteType( platformTex );
 
     if ( currentPaletteType == paletteType )
-        return;
+    {
+        eRasterFormat currentRasterFormat = texProvider->GetTextureRasterFormat( platformTex );
+
+        if ( newRasterFormat == RASTER_DEFAULT || currentRasterFormat == newRasterFormat )
+        {
+            return;
+        }
+    }
 
     // Get palette default capabilities.
     uint32 dstDepth;

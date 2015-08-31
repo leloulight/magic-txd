@@ -2,7 +2,7 @@
 
 #include "qtrwutils.hxx"
 
-static const bool _lockdownPlatform = true;
+static const bool _lockdownPlatform = false;        // SET THIS TO TRUE FOR RELEASE.
 static const size_t _recommendedPlatformMaxName = 32;
 static const bool _enableMaskName = false;
 
@@ -14,66 +14,87 @@ inline QString calculateImageBaseName( QString fileName )
     return fileInfo.baseName();
 }
 
-TexAddDialog::TexAddDialog( MainWindow *mainWnd, QString pathToImage, TexAddDialog::operationCallback_t cb ) : QDialog( mainWnd )
+QString TexAddDialog::GetCurrentPlatform( void )
 {
-    this->mainWnd = mainWnd;
+    QString currentPlatform;
 
-    this->cb = cb;
-    this->imgPath = pathToImage;
+    if ( QLineEdit *editBox = dynamic_cast <QLineEdit*> ( this->platformSelectWidget ) )
+    {
+        currentPlatform = editBox->text();
+    }
+    else if ( QComboBox *comboBox = dynamic_cast <QComboBox*> ( this->platformSelectWidget ) )
+    {
+        currentPlatform = comboBox->currentText();
+    }
 
-    this->setAttribute( Qt::WA_DeleteOnClose );
-    this->setWindowModality( Qt::WindowModality::WindowModal );
-    
-    // We may have a recommended set of properties that we want to start out with.
-    rw::eRasterFormat recommendedRasterFormat = rw::RASTER_8888;
-    rw::uint32 recommendedPreviewWidth = 0;
-    rw::uint32 recommendedPreviewHeight = 0;
-    bool hasRecommendedRasterFormat = false;
+    return currentPlatform;
+}
 
-    // Load the pixmap that is associated with the image path.
+void TexAddDialog::releaseConvRaster( void )
+{
+    if ( rw::Raster *convRaster = this->convRaster )
+    {
+        rw::DeleteRaster( this->convRaster );
+
+        this->convRaster = NULL;
+    }
+}
+
+void TexAddDialog::loadPlatformOriginal( void )
+{
+    // If we have a converted raster, release it.
+    this->releaseConvRaster();
+
     bool hasPreview = false;
 
     try
     {
-        std::wstring unicodePathToImage = pathToImage.toStdWString();
+        // Set the platform of our raster.
+        // If we have no platform, we have no preview.
+        bool hasPlatform = false;
 
-        rw::streamConstructionFileParamW_t wparam( unicodePathToImage.c_str() );
+        QString currentPlatform = this->GetCurrentPlatform();
 
-        rw::Stream *imgStream = mainWnd->rwEngine->CreateStream( rw::RWSTREAMTYPE_FILE_W, rw::RWSTREAMMODE_READONLY, &wparam );
-
-        if ( imgStream )
+        if ( currentPlatform.isEmpty() == false )
         {
-            try
+            std::string ansiNativeName = currentPlatform.toStdString();
+            
+            // Delete any preview native data.
+            this->platformOrigRaster->clearNativeData();
+
+            this->platformOrigRaster->newNativeData( ansiNativeName.c_str() );
+
+            hasPlatform = true;
+        }
+
+        if ( hasPlatform )
+        {
+            // Open a stream to the image data.
+            std::wstring unicodePathToImage = this->imgPath.toStdWString();
+
+            rw::streamConstructionFileParamW_t wparam( unicodePathToImage.c_str() );
+
+            rw::Stream *imgStream = mainWnd->rwEngine->CreateStream( rw::RWSTREAMTYPE_FILE_W, rw::RWSTREAMMODE_READONLY, &wparam );
+
+            if ( imgStream )
             {
-                // Load it.
-                rw::Bitmap rwBmp;
-
-                bool deserializeSuccess = rw::DeserializeImage( imgStream, rwBmp );
-
-                if ( deserializeSuccess )
+                try
                 {
-                    this->pixelsToAdd = convertRWBitmapToQPixmap( rwBmp );
+                    // Load it.
+                    this->platformOrigRaster->readImage( imgStream );
 
-                    // We now have a recommended raster format.
-                    recommendedRasterFormat = rwBmp.getFormat();
-                    recommendedPreviewWidth = rwBmp.getWidth();
-                    recommendedPreviewHeight = rwBmp.getHeight();
-
-                    hasRecommendedRasterFormat = true;
-
+                    // Success!
                     hasPreview = true;
                 }
-                // If deserialization failed, it might still succeed as mipmap.
-                // Very unlikely, but yes.
-            }
-            catch( ... )
-            {
+                catch( ... )
+                {
+                    mainWnd->rwEngine->DeleteStream( imgStream );
+
+                    throw;
+                }
+
                 mainWnd->rwEngine->DeleteStream( imgStream );
-
-                throw;
             }
-
-            mainWnd->rwEngine->DeleteStream( imgStream );
         }
     }
     catch( rw::RwException& err )
@@ -86,10 +107,256 @@ TexAddDialog::TexAddDialog( MainWindow *mainWnd, QString pathToImage, TexAddDial
         mainWnd->txdLog->showError( QString( "error while building preview: " ) + QString::fromStdString( err.message ) );
     }
 
+    this->hasPlatformOriginal = hasPreview;
+
+    // If we have a preview, update the preview widget with its content.
+    if ( hasPreview )
+    {
+        // If we have a preview, we want to limit the properties box.
+        this->propertiesWidget->setMaximumWidth( 300 );
+
+        // Set the recommended sizes.
+        rw::uint32 recWidth, recHeight;
+        this->platformOrigRaster->getSize( recWidth, recHeight );
+
+        this->previewWidget->recommendedWidth = (int)recWidth;
+        this->previewWidget->recommendedHeight = (int)recHeight;
+
+        this->updatePreviewWidget();
+    }
+    else
+    {
+        this->propertiesWidget->setMaximumWidth( 16777215 );
+    }
+
+    // Hide or show the changeable properties.
+    this->platformPropsGroup->setVisible( hasPreview );
+    this->propGenerateMipmaps->setVisible( hasPreview );
+
+    // If we have no preview, then we also cannot push the data to the texture container.
+    // This is why we should disable that possibility.
+    this->applyButton->setDisabled( !hasPreview );
+
+    // Hide or show the preview stuff.
+    this->previewGroupWidget->setVisible( hasPreview );
+}
+
+void TexAddDialog::updatePreviewWidget( void )
+{
+    this->previewWidget->update();
+}
+
+void TexAddDialog::pixelPreviewWidget::paintEvent( QPaintEvent *evt )
+{
+    if ( this->wantsRasterUpdate )
+    {
+        rw::Raster *previewRaster = owner->GetDisplayRaster();
+
+        if ( previewRaster )
+        {
+            try
+            {
+                // Put the contents of the platform original into the preview widget.
+                // We want to transform the raster into a bitmap, basically.
+                rw::Bitmap rasterBmp = previewRaster->getBitmap();
+
+                // Do it.
+                owner->pixelsToAdd = convertRWBitmapToQPixmap( rasterBmp );
+            }
+            catch( rw::RwException& except )
+            {
+                owner->mainWnd->txdLog->showError( QString( "failed to create preview: " ) + QString::fromStdString( except.message ) );
+
+                // Continue normal execution.
+            }
+        }
+
+        this->wantsRasterUpdate = false;
+    }
+
+    QPainter thePainter( this );
+
+    thePainter.drawPixmap( 0, 0, this->width(), this->height(), owner->pixelsToAdd );
+
+    QWidget::paintEvent( evt );
+}
+
+void TexAddDialog::createRasterForConfiguration( void )
+{
+    // This function prepares the raster that will be given to the texture dictionary.
+
+    bool hasConfiguredRaster = false;
+
+    try
+    {
+        rw::eCompressionType compressionType = rw::RWCOMPRESS_NONE;
+
+        rw::eRasterFormat rasterFormat = rw::RASTER_DEFAULT;
+        rw::ePaletteType paletteType = rw::PALETTE_NONE;
+
+        // Now for the properties.
+        if ( this->platformCompressionToggle->isChecked() )
+        {
+            // We are a compressed format, so determine what we actually are.
+            QString selectedCompression = this->platformCompressionSelectProp->currentText();
+
+            if ( selectedCompression == "DXT1" )
+            {
+                compressionType = rw::RWCOMPRESS_DXT1;
+            }
+            else if ( selectedCompression == "DXT2" )
+            {
+                compressionType = rw::RWCOMPRESS_DXT2;
+            }
+            else if ( selectedCompression == "DXT3" )
+            {
+                compressionType = rw::RWCOMPRESS_DXT3;
+            }
+            else if ( selectedCompression == "DXT4" )
+            {
+                compressionType = rw::RWCOMPRESS_DXT4;
+            }
+            else if ( selectedCompression == "DXT5" )
+            {
+                compressionType = rw::RWCOMPRESS_DXT5;
+            }
+            else
+            {
+                throw std::exception( "invalid compression type selected" );
+            }
+
+            rasterFormat = rw::RASTER_DEFAULT;
+            paletteType = rw::PALETTE_NONE;
+        }
+        else
+        {
+            compressionType = rw::RWCOMPRESS_NONE;
+
+            // Now we have a valid raster format selected in the pixel format combo box.
+            // We kinda need one.
+            if ( this->enablePixelFormatSelect )
+            {
+                QString formatName = this->platformPixelFormatSelectProp->currentText();
+
+                std::string ansiFormatName = formatName.toStdString();
+
+                rasterFormat = rw::FindRasterFormatByName( ansiFormatName.c_str() );
+
+                if ( rasterFormat == rw::RASTER_DEFAULT )
+                {
+                    throw std::exception( "invalid pixel format selected" );
+                }
+            }
+
+            // And then we need to know whether it should be a palette or not.
+            if ( this->platformPaletteToggle->isChecked() )
+            {
+                // Alright, then we have to fetch a valid palette type.
+                QString paletteName = this->platformPaletteSelectProp->currentText();
+
+                if ( paletteName == "PAL4" )
+                {
+                    // TODO: some archictures might prefer the MSB version.
+                    // we should detect that automatically!
+
+                    paletteType = rw::PALETTE_4BIT;
+                }
+                else if ( paletteName == "PAL8" )
+                {
+                    paletteType = rw::PALETTE_8BIT;
+                }
+                else
+                {
+                    throw std::exception( "invalid palette type selected" );
+                }
+            }
+            else
+            {
+                paletteType = rw::PALETTE_NONE;
+            }
+        }
+
+        // Create the raster.
+        try
+        {
+            // Clear previous image data.
+            this->releaseConvRaster();
+
+            rw::Raster *convRaster = rw::CloneRaster( this->platformOrigRaster );
+
+            this->convRaster = convRaster;
+
+            // Format the raster appropriately.
+            {
+                if ( compressionType != rw::RWCOMPRESS_NONE )
+                {
+                    // Just compress it.
+                    convRaster->compressCustom( compressionType );
+                }
+                else if ( rasterFormat != rw::RASTER_DEFAULT )
+                {
+                    // We want a specialized format.
+                    // Go ahead.
+                    if ( paletteType != rw::PALETTE_NONE )
+                    {
+                        // Palettize.
+                        convRaster->convertToPalette( paletteType, rasterFormat );
+                    }
+                    else
+                    {
+                        // Let us convert to another format.
+                        convRaster->convertToFormat( rasterFormat );
+                    }
+                }
+            }
+
+            // Success!
+            hasConfiguredRaster = true;
+        }
+        catch( rw::RwException& except )
+        {
+            this->mainWnd->txdLog->showError( QString( "failed to create raster: " ) + QString::fromStdString( except.message ) );
+        }
+    }
+    catch( std::exception& except )
+    {
+        // If we failed to push data to the output stage.
+        this->mainWnd->txdLog->showError( QString( "failed to create raster: " ) + except.what() );
+    }
+
+    // If we do not need a configured raster anymore, release it.
+    if ( !hasConfiguredRaster )
+    {
+        this->releaseConvRaster();
+    }
+
+    // Update the preview.
+    this->updatePreviewWidget();
+}
+
+TexAddDialog::TexAddDialog( MainWindow *mainWnd, QString pathToImage, TexAddDialog::operationCallback_t cb ) : QDialog( mainWnd )
+{
+    this->mainWnd = mainWnd;
+
+    this->cb = cb;
+    this->imgPath = pathToImage;
+
+    this->setAttribute( Qt::WA_DeleteOnClose );
+    this->setWindowModality( Qt::WindowModality::WindowModal );
+    
+    // Create a raster handle that will hold platform original data.
+    this->platformOrigRaster = rw::CreateRaster( mainWnd->rwEngine );
+    this->convRaster = NULL;
+
+    this->enableRawRaster = true;
+    this->enableCompressSelect = true;
+    this->enablePaletteSelect = true;
+    this->enablePixelFormatSelect = true;
+
     // Calculate an appropriate texture name.
     QString textureBaseName = calculateImageBaseName( pathToImage );
 
-    // TODO: verify the texture name is full ANSI.
+    // TODO: verify that the texture name is full ANSI.
 
     this->setWindowTitle( "Add Texture..." );
 
@@ -99,18 +366,10 @@ TexAddDialog::TexAddDialog( MainWindow *mainWnd, QString pathToImage, TexAddDial
     // Add a form to the left, a preview to the right.
     QTabWidget *formHolderWidget = new QTabWidget();
 
-    int req_width = 220;
-    int req_height = 320;
-
-    if ( hasPreview )
-    {
-        // If we have a preview window, we should leave space for the preview pane.
-        formHolderWidget->setMaximumWidth( 300 );
-
-        req_width += 300;
-    }
+    this->propertiesWidget = formHolderWidget;
 
     // Add the contents of the form.
+    QString curPlatformText;
     {
         QWidget *generalTab = new QWidget();
 
@@ -148,8 +407,6 @@ TexAddDialog::TexAddDialog( MainWindow *mainWnd, QString pathToImage, TexAddDial
 
         QWidget *platformDisplayWidget;
 
-        QString curPlatformText;
-
         if ( _lockdownPlatform == false || currentForcedPlatform == NULL )
         {
             QComboBox *platformComboBox = new QComboBox();
@@ -170,6 +427,11 @@ TexAddDialog::TexAddDialog( MainWindow *mainWnd, QString pathToImage, TexAddDial
 
             platformDisplayWidget = platformComboBox;
 
+            if ( currentForcedPlatform != NULL )
+            {
+                platformComboBox->setCurrentText( currentForcedPlatform );
+            }
+
             curPlatformText = platformComboBox->currentText();
         }
         else
@@ -183,6 +445,8 @@ TexAddDialog::TexAddDialog( MainWindow *mainWnd, QString pathToImage, TexAddDial
 
             curPlatformText = platformDisplayEdit->text();
         }
+
+        this->platformSelectWidget = platformDisplayWidget;
 
         formLayout->addRow( new QLabel( "Platform:" ), platformDisplayWidget );
 
@@ -224,6 +488,8 @@ TexAddDialog::TexAddDialog( MainWindow *mainWnd, QString pathToImage, TexAddDial
 
             QComboBox *compressionFormatSelect = new QComboBox();
 
+            connect( compressionFormatSelect, (void (QComboBox::*)( const QString& ))&QComboBox::activated, this, &TexAddDialog::OnTextureCompressionSeelct );
+
             groupContentFormLayout->addRow( compressionFormatToggle, compressionFormatSelect );
 
             this->platformCompressionSelectProp = compressionFormatSelect;
@@ -238,6 +504,8 @@ TexAddDialog::TexAddDialog( MainWindow *mainWnd, QString pathToImage, TexAddDial
 
             paletteFormatSelect->addItem( "PAL4" );
             paletteFormatSelect->addItem( "PAL8" );
+
+            connect( paletteFormatSelect, (void (QComboBox::*)( const QString& ))&QComboBox::activated, this, &TexAddDialog::OnTexturePaletteTypeSelect );
 
             groupContentFormLayout->addRow( paletteFormatToggle, paletteFormatSelect );
 
@@ -257,16 +525,7 @@ TexAddDialog::TexAddDialog( MainWindow *mainWnd, QString pathToImage, TexAddDial
             pixelFormatSelect->addItem( rw::GetRasterFormatStandardName( rw::RASTER_888 ) );
             pixelFormatSelect->addItem( rw::GetRasterFormatStandardName( rw::RASTER_555 ) );
 
-            // Select the recommended raster format.
-            if ( hasRecommendedRasterFormat )
-            {
-                const char *recommendedFormatName = rw::GetRasterFormatStandardName( recommendedRasterFormat );
-
-                if ( recommendedFormatName )
-                {
-                    pixelFormatSelect->setCurrentText( recommendedFormatName );
-                }
-            }
+            connect( pixelFormatSelect, (void (QComboBox::*)( const QString& ))&QComboBox::activated, this, &TexAddDialog::OnTexturePixelFormatSelect );
 
             groupContentFormLayout->addRow( new QLabel( "Pixel Format:" ), pixelFormatSelect );
 
@@ -295,11 +554,15 @@ TexAddDialog::TexAddDialog( MainWindow *mainWnd, QString pathToImage, TexAddDial
 
         QPushButton *cancelButton = new QPushButton( "Cancel" );
 
+        this->cancelButton = cancelButton;
+
         connect( cancelButton, &QPushButton::clicked, this, &TexAddDialog::OnCloseRequest );
 
         bottomControlButtonsGroup->addWidget( cancelButton );
 
         QPushButton *addButton = new QPushButton( "Add" );
+
+        this->applyButton = addButton;
 
         connect( addButton, &QPushButton::clicked, this, &TexAddDialog::OnTextureAddRequest );
 
@@ -310,28 +573,24 @@ TexAddDialog::TexAddDialog( MainWindow *mainWnd, QString pathToImage, TexAddDial
         generalTab->setLayout( generalTabRootLayout );
 
         formHolderWidget->addTab( generalTab, "Properties" );
-
-        // Do initial stuff.
-        {
-            if ( curPlatformText.isEmpty() == false )
-            {
-                this->OnPlatformSelect( curPlatformText );
-            }
-        }
     }
 
     rootHoriLayout->addWidget( formHolderWidget );
 
     this->setLayout( rootHoriLayout );
 
-    if ( hasPreview )
+    // Cached the preview item.
     {
         QGroupBox *previewGroupBox = new QGroupBox();
 
+        this->previewGroupWidget = previewGroupBox;
+
         pixelPreviewWidget *previewWidget = new pixelPreviewWidget( this );
 
-        previewWidget->recommendedWidth = (int)recommendedPreviewWidth;
-        previewWidget->recommendedHeight = (int)recommendedPreviewHeight;
+        this->previewWidget = previewWidget;
+
+        previewWidget->recommendedWidth = 0;
+        previewWidget->recommendedHeight = 0;
         previewWidget->requiredHeight = this->sizeHint().height();
 
         QVBoxLayout *groupBoxLayout = new QVBoxLayout();
@@ -341,9 +600,26 @@ TexAddDialog::TexAddDialog( MainWindow *mainWnd, QString pathToImage, TexAddDial
         previewGroupBox->setLayout( groupBoxLayout );
 
         rootHoriLayout->addWidget( previewGroupBox );
+
+        previewGroupBox->setVisible( false );
     }
 
-    //this->resize( req_width, req_height );
+    // Do initial stuff.
+    {
+        if ( curPlatformText.isEmpty() == false )
+        {
+            this->OnPlatformSelect( curPlatformText );
+        }
+    }
+}
+
+TexAddDialog::~TexAddDialog( void )
+{
+    // Remove the raster that we created.
+    // Remember that it is reference counted.
+    rw::DeleteRaster( this->platformOrigRaster );
+
+    this->releaseConvRaster();
 }
 
 void TexAddDialog::UpdateAccessability( void )
@@ -379,10 +655,32 @@ void TexAddDialog::UpdateAccessability( void )
 
 void TexAddDialog::OnPlatformFormatTypeToggle( bool checked )
 {
+    if ( checked != true )
+        return;
+
     // Since we switched the platform format type, we have to adjust the accessability.
     // The accessability change must not swap items around on the GUI. Rather it should
     // disable items that make no sense.
     this->UpdateAccessability();
+
+    // Since we switched the format type, the texture encoding has changed.
+    // Update the preview.
+    this->createRasterForConfiguration();
+}
+
+void TexAddDialog::OnTextureCompressionSeelct( const QString& newCompression )
+{
+    this->createRasterForConfiguration();
+}
+
+void TexAddDialog::OnTexturePaletteTypeSelect( const QString& newPaletteType )
+{
+    this->createRasterForConfiguration();
+}
+
+void TexAddDialog::OnTexturePixelFormatSelect( const QString& newPixelFormat )
+{
+    this->createRasterForConfiguration();
 }
 
 void TexAddDialog::OnPlatformSelect( const QString& newText )
@@ -480,10 +778,10 @@ void TexAddDialog::OnPlatformSelect( const QString& newText )
         partnerWidget->setVisible( enablePixelFormatSelect );
     }
 
-    // If we have nothing mandatory visible in the platform selection window, we can just hide it.
-    bool showPlatformGroup = ( enableRawRaster || enableCompressSelect || enablePaletteSelect );
-
-    this->platformPropsGroup->setVisible( showPlatformGroup );
+    this->enableRawRaster = enableRawRaster;
+    this->enableCompressSelect = enableCompressSelect;
+    this->enablePaletteSelect = enablePaletteSelect;
+    this->enablePixelFormatSelect = enablePixelFormatSelect;
 
     // Fill in fields depending on capabilities.
     if ( enableCompressSelect )
@@ -577,6 +875,12 @@ void TexAddDialog::OnPlatformSelect( const QString& newText )
 
     // Update what options make sense to the user.
     this->UpdateAccessability();
+
+    // Reload the preview image with what the platform wants us to see.
+    this->loadPlatformOriginal();
+
+    // We want to create a raster special to the configuration.
+    this->createRasterForConfiguration();
 }
 
 void TexAddDialog::OnTextureAddRequest( bool checked )
@@ -584,112 +888,22 @@ void TexAddDialog::OnTextureAddRequest( bool checked )
     // This is where we want to go.
     // Decide the format that the runtime has requested.
 
-    try
-    {
-        rw::eCompressionType compressionType = rw::RWCOMPRESS_NONE;
+    rw::Raster *displayRaster = this->GetDisplayRaster();
 
+    if ( displayRaster )
+    {
         texAddOperation desc;
         desc.texName = this->textureNameEdit->text().toStdString();
-    
+
         if ( this->textureMaskNameEdit )
         {
             desc.maskName = this->textureMaskNameEdit->text().toStdString();
         }
 
-        desc.imgPath = this->imgPath;
-    
-        // Now for the properties.
-        if ( this->platformCompressionToggle->isChecked() )
-        {
-            // We are a compressed format, so determine what we actually are.
-            QString selectedCompression = this->platformCompressionSelectProp->currentText();
-
-            if ( selectedCompression == "DXT1" )
-            {
-                desc.compressionType = rw::RWCOMPRESS_DXT1;
-            }
-            else if ( selectedCompression == "DXT2" )
-            {
-                desc.compressionType = rw::RWCOMPRESS_DXT2;
-            }
-            else if ( selectedCompression == "DXT3" )
-            {
-                desc.compressionType = rw::RWCOMPRESS_DXT3;
-            }
-            else if ( selectedCompression == "DXT4" )
-            {
-                desc.compressionType = rw::RWCOMPRESS_DXT4;
-            }
-            else if ( selectedCompression == "DXT5" )
-            {
-                desc.compressionType = rw::RWCOMPRESS_DXT5;
-            }
-            else
-            {
-                throw std::exception( "invalid compression type selected" );
-            }
-
-            desc.rasterFormat = rw::RASTER_DEFAULT;
-            desc.paletteType = rw::PALETTE_NONE;
-        }
-        else
-        {
-            desc.compressionType = rw::RWCOMPRESS_NONE;
-
-            // Now we have a valid raster format selected in the pixel format combo box.
-            // We kinda need one.
-            {
-                QString formatName = this->platformPixelFormatSelectProp->currentText();
-
-                std::string ansiFormatName = formatName.toStdString();
-
-                desc.rasterFormat = rw::FindRasterFormatByName( ansiFormatName.c_str() );
-
-                if ( desc.rasterFormat == rw::RASTER_DEFAULT )
-                {
-                    throw std::exception( "invalid pixel format selected" );
-                }
-            }
-
-            // And then we need to know whether it should be a palette or not.
-            if ( this->platformPaletteToggle->isChecked() )
-            {
-                // Alright, then we have to fetch a valid palette type.
-                QString paletteName = this->platformPaletteSelectProp->currentText();
-
-                if ( paletteName == "PAL4" )
-                {
-                    // TODO: some archictures might prefer the MSB version.
-                    // we should detect that automatically!
-
-                    desc.paletteType = rw::PALETTE_4BIT;
-                }
-                else if ( paletteName == "PAL8" )
-                {
-                    desc.paletteType = rw::PALETTE_8BIT;
-                }
-                else
-                {
-                    throw std::exception( "invalid palette type selected" );
-                }
-            }
-            else
-            {
-                desc.paletteType = rw::PALETTE_NONE;
-            }
-        }
-
-        // Add some basic properties that count all the time.
         desc.generateMipmaps = this->propGenerateMipmaps->isChecked();
+        desc.raster = rw::AcquireRaster( displayRaster );
 
-        // Now we add the texture.
-        // Error handling should be dealt with by the routine we push to.
         this->cb( desc );
-    }
-    catch( std::exception& except )
-    {
-        // If we failed to push data to the output stage.
-        this->mainWnd->txdLog->showError( QString( "failed to create texture: " ) + except.what() );
     }
 
     // Close ourselves.

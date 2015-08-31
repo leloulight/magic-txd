@@ -227,7 +227,7 @@ inline void DecompressPVRMipmap(
 
                 bool hasColor = false;
 
-                if ( x < pvrWidth )
+                if ( srcRow && x < pvrWidth )
                 {
                     hasColor = fetchDispatch.getRGBA( srcRow, x, r, g, b, a );
                 }
@@ -435,7 +435,7 @@ inline void CompressMipmapToPVR(
 
             uint8 r, g, b, a;
 
-            if ( x < mipWidth )
+            if ( srcRow && x < mipWidth )
             {
                 hasColor = fetchDispatch.getRGBA( srcRow, x, r, g, b, a );
             }

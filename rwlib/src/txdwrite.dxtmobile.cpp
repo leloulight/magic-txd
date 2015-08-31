@@ -234,6 +234,10 @@ void dxtMobileNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engin
             throw RwException( "could not decide on a DXT compression type in s3tc_mobile native texture pixel assignment" );
         }
     }
+    else
+    {
+        canAssignData = true;
+    }
 
     if ( dstCompressionType == RWCOMPRESS_DXT1 )
     {
@@ -245,20 +249,14 @@ void dxtMobileNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engin
         {
             internalFormat = COMPRESSED_RGBA_S3TC_DXT1;
         }
-        
-        canAssignData = true;
     }
     else if ( dstCompressionType == RWCOMPRESS_DXT3 )
     {
         internalFormat = COMPRESSED_RGBA_S3TC_DXT3;
-
-        canAssignData = true;
     }
     else if ( dstCompressionType == RWCOMPRESS_DXT5 )
     {
         internalFormat = COMPRESSED_RGBA_S3TC_DXT5;
-
-        canAssignData = true;
     }
     else
     {

@@ -158,6 +158,19 @@ struct uncNativeTextureTypeProvider : public texNativeTypeProvider
     void GetTextureInfo( Interface *engineInterface, void *objMem, nativeTextureBatchedInfo& infoOut );
     void GetTextureFormatString( Interface *engineInterface, void *objMem, char *buf, size_t bufLen, size_t& lengthOut ) const;
 
+    eRasterFormat GetTextureRasterFormat( const void *objMem ) override
+    {
+        const NativeTextureMobileUNC *nativeTex = (const NativeTextureMobileUNC*)objMem;
+
+        eRasterFormat rasterFormat;
+        uint32 depth;
+        eColorOrdering colorOrder;
+
+        getUNCRasterFormat( nativeTex->hasAlpha, rasterFormat, colorOrder, depth );
+
+        return rasterFormat;
+    }
+
     ePaletteType GetTexturePaletteType( const void *objMem )
     {
         return PALETTE_NONE;

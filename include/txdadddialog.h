@@ -23,16 +23,11 @@ class TexAddDialog : public QDialog
             this->setContentsMargins( 0, 0, 0, 0 );
 
             this->owner = owner;
+
+            this->wantsRasterUpdate = false;
         }
 
-        void paintEvent( QPaintEvent *evt ) override
-        {
-            QPainter thePainter( this );
-
-            thePainter.drawPixmap( 0, 0, this->width(), this->height(), owner->pixelsToAdd );
-
-            QWidget::paintEvent( evt );
-        }
+        void paintEvent( QPaintEvent *evt ) override;
 
         QSize sizeHint( void ) const override
         {
@@ -47,26 +42,31 @@ class TexAddDialog : public QDialog
             return QSize( actualWidth, 0 );
         }
 
+        void update( void )
+        {
+            QWidget::update();
+
+            this->wantsRasterUpdate = true;
+        }
+
         TexAddDialog *owner;
 
         int recommendedWidth;
         int recommendedHeight;
 
         int requiredHeight;
+
+        bool wantsRasterUpdate;
     };
 
 public:
     struct texAddOperation
     {
-        QString imgPath;
-
         // Selected texture properties.
         std::string texName;
         std::string maskName;
 
-        rw::eRasterFormat rasterFormat;
-        rw::ePaletteType paletteType;
-        rw::eCompressionType compressionType;
+        rw::Raster *raster;
 
         bool generateMipmaps;
     };
@@ -74,9 +74,37 @@ public:
     typedef std::function <void (const texAddOperation&)> operationCallback_t;
 
     TexAddDialog( MainWindow *mainWnd, QString pathToImage, operationCallback_t func );
+    ~TexAddDialog( void );
+
+    void loadPlatformOriginal( void );
+    void updatePreviewWidget( void );
+
+    void createRasterForConfiguration( void );
 
 private:
+    void releaseConvRaster( void );
+    
+    inline rw::Raster* GetDisplayRaster( void )
+    {
+        if ( rw::Raster *convRaster = this->convRaster )
+        {
+            return convRaster;
+        }
+
+        if ( this->hasPlatformOriginal )
+        {
+            if ( rw::Raster *origRaster = this->platformOrigRaster )
+            {
+                return origRaster;
+            }
+        }
+
+        return NULL;
+    }
+
     void UpdateAccessability( void );
+
+    QString GetCurrentPlatform( void );
 
 public slots:
     void OnTextureAddRequest( bool checked );
@@ -86,13 +114,23 @@ public slots:
 
     void OnPlatformFormatTypeToggle( bool checked );
 
+    void OnTextureCompressionSeelct( const QString& newCompression );
+    void OnTexturePaletteTypeSelect( const QString& newPaletteType );
+    void OnTexturePixelFormatSelect( const QString& newPixelFormat );
+
 private:
     MainWindow *mainWnd;
 
+    rw::Raster *platformOrigRaster;
+    rw::Raster *convRaster;
+    bool hasPlatformOriginal;
     QPixmap pixelsToAdd;
+
+    QWidget *propertiesWidget;
 
     QLineEdit *textureNameEdit;
     QLineEdit *textureMaskNameEdit;
+    QWidget *platformSelectWidget;
 
     QGroupBox *platformPropsGroup;
     QFormLayout *platformPropForm;
@@ -101,12 +139,26 @@ private:
     QComboBox *platformPaletteSelectProp;
     QComboBox *platformPixelFormatSelectProp;
 
+    bool enableRawRaster;
+    bool enableCompressSelect;
+    bool enablePaletteSelect;
+    bool enablePixelFormatSelect;
+
     QRadioButton *platformRawRasterToggle;
     QRadioButton *platformCompressionToggle;
     QRadioButton *platformPaletteToggle;
 
     // General properties.
     QCheckBox *propGenerateMipmaps;
+
+    // Preview widget stuff.
+    QWidget *previewGroupWidget;
+
+    // The buttons.
+    QPushButton *cancelButton;
+    QPushButton *applyButton;
+
+    pixelPreviewWidget *previewWidget;
 
     operationCallback_t cb;
 

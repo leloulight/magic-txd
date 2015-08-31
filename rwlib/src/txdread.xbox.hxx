@@ -211,6 +211,13 @@ struct xboxNativeTextureTypeProvider : public texNativeTypeProvider
     void GetTextureInfo( Interface *engineInterface, void *objMem, nativeTextureBatchedInfo& infoOut );
     void GetTextureFormatString( Interface *engineInterface, void *objMem, char *buf, size_t bufLen, size_t& lengthOut ) const;
 
+    eRasterFormat GetTextureRasterFormat( const void *objMem ) override
+    {
+        const NativeTextureXBOX *nativeTex = (const NativeTextureXBOX*)objMem;
+
+        return nativeTex->rasterFormat;
+    }
+
     ePaletteType GetTexturePaletteType( const void *objMem )
     {
         const NativeTextureXBOX *nativeTex = (const NativeTextureXBOX*)objMem;

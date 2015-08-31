@@ -262,6 +262,11 @@ QPushButton:hover:!pressed
     border-color: #d1db2f;
 }
 
+QPushButton:disabled
+{
+    background-color: #3D3144;
+}
+
 QPushButton#rwVersionButton
 {
     background-color: rgba(0, 0, 0, 0);
