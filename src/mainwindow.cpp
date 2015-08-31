@@ -875,7 +875,10 @@ void MainWindow::DoAddTexture( const TexAddDialog::texAddOperation& params )
                     }
 
                     // Maybe generate mipmaps.
-                    newRaster->generateMipmaps( INFINITE, rw::MIPMAPGEN_DEFAULT );
+                    if ( params.generateMipmaps )
+                    {
+                        newRaster->generateMipmaps( INFINITE, rw::MIPMAPGEN_DEFAULT );
+                    }
 
                     // We want to create a texture and put it into our TXD.
                     rw::TextureBase *newTexture = rw::CreateTexture( this->rwEngine, newRaster );

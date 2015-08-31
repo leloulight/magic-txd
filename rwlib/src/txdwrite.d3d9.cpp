@@ -501,6 +501,8 @@ void d3d9NativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
     // Check whether we can directly acquire or have to allocate a new copy.
     bool canDirectlyAcquire;
 
+    bool hasRasterFormatLink = false;
+
     if ( rwCompressionType == RWCOMPRESS_NONE )
     {
         // Actually, before we can acquire texels, we MUST make sure they are in
@@ -523,6 +525,10 @@ void d3d9NativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
                 srcRasterFormat, srcDepth, srcRowAlignment, srcColorOrder, srcPaletteType,
                 dstRasterFormat, dstDepth, dstRowAlignment, dstColorOrder, dstPaletteType
             );
+
+        // If we are uncompressed, then we know how to deal with the texture data.
+        // Hence we have a d3dRasterFormatLink!
+        hasRasterFormatLink = true;
     }
     else if ( rwCompressionType == RWCOMPRESS_DXT1 )
     {
@@ -684,9 +690,8 @@ void d3d9NativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
     // We need to set the Direct3D9 format field.
     nativeTex->d3dFormat = d3dTargetFormat;
 
-    // Since we just accepted valid RW types into our native texture, of course we have
-    // a D3D raster format link!
-    nativeTex->d3dRasterFormatLink = true;
+    // Store whether we can directly deal with the data we just got.
+    nativeTex->d3dRasterFormatLink = hasRasterFormatLink;
 
     // We cannot create a texture using an anonymous raster link this way.
     nativeTex->anonymousFormatLink = NULL;
