@@ -274,3 +274,47 @@ QPushButton#rwVersionButton:pressed
 {
     color: #d1db2f;
 }
+
+QDialog
+{
+    background: #0f0520;
+}
+
+QTabBar::tab
+{
+    background: #270461;
+    color: #FFFFFF;
+}
+
+QTabWidget::pane
+{
+    background: #140140;
+    border-top: 1px solid #000000;
+}
+
+QComboBox QAbstractItemView
+{
+    background-color: #FFFFFF;
+    color: #000000;
+    border: 1px solid #14013E;
+}
+
+QComboBox
+{
+    background-color: #FFFFFF;
+}
+
+QGroupBox::title
+{
+    color: #FFC878;
+}
+
+QRadioButton
+{
+    color: #FFFFFF;
+}
+
+QCheckBox
+{
+    color: #BFFFF0;
+}
