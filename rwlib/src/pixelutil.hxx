@@ -112,6 +112,8 @@ AINLINE bool rawMipmapCalculateHasAlpha(
 
         // Alright, the raster can have alpha.
         // If we are palettized, we can just check the palette colors.
+        colorModelDispatcher <const void> fetchDispatch( rasterFormat, colorOrder, depth, NULL, 0, PALETTE_NONE );
+
         if (paletteType != PALETTE_NONE)
         {
             // Determine whether we REALLY use all palette indice.
@@ -156,7 +158,7 @@ AINLINE bool rawMipmapCalculateHasAlpha(
                 {
                     uint8 r, g, b, a;
 
-                    bool hasColor = browsetexelcolor(palColorSource, PALETTE_NONE, NULL, 0, n, rasterFormat, colorOrder, palFormatDepth, r, g, b, a);
+                    bool hasColor = fetchDispatch.getRGBA( palColorSource, n, r, g, b, a);
 
                     if (hasColor && a != 255)
                     {
@@ -181,7 +183,7 @@ AINLINE bool rawMipmapCalculateHasAlpha(
                 {
                     uint8 r, g, b, a;
 
-                    bool hasColor = browsetexelcolor(srcRowData, PALETTE_NONE, NULL, 0, col, rasterFormat, colorOrder, depth, r, g, b, a);
+                    bool hasColor = fetchDispatch.getRGBA(srcRowData, col, r, g, b, a);
 
                     if (hasColor && a != 255)
                     {

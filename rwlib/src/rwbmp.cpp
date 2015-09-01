@@ -230,6 +230,9 @@ void Bitmap::draw(
     uint32 theirWidth = colorSource.getWidth();
     uint32 theirHeight = colorSource.getHeight();
 
+    // Determine the output codec for pixel set.
+    colorModelDispatcher <void> putDispatch( ourFormat, ourOrder, ourDepth, NULL, 0, PALETTE_NONE );
+
     // Calculate drawing parameters.
     double floatOffX = (double)offX;
     double floatOffY = (double)offY;
@@ -334,8 +337,8 @@ void Bitmap::draw(
                 {
                     void *dstRow = getTexelDataRow( ourTexels, ourRowSize, sourceY );
 
-                    puttexelcolor(
-                        dstRow, sourceX, ourFormat, ourOrder, ourDepth,
+                    putDispatch.setRGBA(
+                        dstRow, sourceX,
                         packcolor( resRed ), packcolor( resGreen ), packcolor( resBlue ), packcolor( resAlpha )
                     );
                 }

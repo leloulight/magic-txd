@@ -402,7 +402,7 @@ TexAddDialog::TexAddDialog( MainWindow *mainWnd, QString pathToImage, TexAddDial
             this->textureMaskNameEdit = NULL;
         }
 
-        // If the current TXD already has a platform, we disable editting this platform and simply use it.
+        // If the current TXD already has a platform, we disable editing this platform and simply use it.
         const char *currentForcedPlatform = mainWnd->GetTXDPlatformString( mainWnd->currentTXD );
 
         QWidget *platformDisplayWidget;

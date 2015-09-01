@@ -866,11 +866,13 @@ struct palettizer
 
         uint32 n = 0;
 
+        colorModelDispatcher <void> putDispatch( rasterFormat, colorOrder, palDepth, NULL, 0, PALETTE_NONE );
+
         for ( texelContainer_t::const_iterator iter = texelElimData.begin(); iter != texelElimData.end(); iter++ )
         {
             const texel_t& curTexel = *iter;
 
-            puttexelcolor(paletteData, n++, rasterFormat, colorOrder, palDepth, curTexel.red, curTexel.green, curTexel.blue, curTexel.alpha);
+            putDispatch.setRGBA(paletteData, n++, curTexel.red, curTexel.green, curTexel.blue, curTexel.alpha);
         }
 
         return paletteData;

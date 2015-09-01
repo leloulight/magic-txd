@@ -466,15 +466,31 @@ void PalettizePixelData( Interface *engineInterface, pixelDataTraversal& pixelDa
 
                     uint32 palDepth = Bitmap::getRasterFormatDepth(dstRasterFormat);
 
+                    colorModelDispatcher <void> putDispatch( dstRasterFormat, dstColorOrder, palDepth, NULL, 0, PALETTE_NONE );
+
                     uint32 palDataSize = getPaletteDataSize( newPalItemCount, palDepth );
 
                     void *newPalArray = engineInterface->PixelAllocate( palDataSize );
 
-                    for ( unsigned int n = 0; n < newPalItemCount; n++ )
+                    if ( newPalArray == NULL )
                     {
-                        const liq_color& srcColor = palData->entries[ n ];
+                        throw RwException( "failed to allocate palette color array in libimagequant palettitation algorithm" );
+                    }
 
-                        puttexelcolor(newPalArray, n, dstRasterFormat, dstColorOrder, palDepth, srcColor.r, srcColor.g, srcColor.b, srcColor.a);
+                    try
+                    {
+                        for ( unsigned int n = 0; n < newPalItemCount; n++ )
+                        {
+                            const liq_color& srcColor = palData->entries[ n ];
+                            
+                            putDispatch.setRGBA(newPalArray, n, srcColor.r, srcColor.g, srcColor.b, srcColor.a);
+                        }
+                    }
+                    catch( ... )
+                    {
+                        delete newPalArray;
+
+                        throw;
                     }
 
                     // Update texture properties.
