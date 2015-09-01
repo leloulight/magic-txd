@@ -1038,8 +1038,8 @@ bool ConvertPixelData( Interface *engineInterface, pixelDataTraversal& pixelsToC
                     ConvertPaletteData(
                         srcPaletteTexels, dstPaletteTexels,
                         srcPaletteSize, dstPaletteSize,
-                        srcRasterFormat, srcColorOrder, srcDepth,
-                        dstRasterFormat, dstColorOrder, dstDepth
+                        srcRasterFormat, srcColorOrder, srcPalRasterDepth,
+                        dstRasterFormat, dstColorOrder, dstPalRasterDepth
                     );
                 }
 
