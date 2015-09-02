@@ -6,7 +6,7 @@
 class TexInfoWidget : public QWidget
 {
 public:
-	TexInfoWidget(rw::TextureBase *texItem) : QWidget()
+	TexInfoWidget(QListWidgetItem *listItem, rw::TextureBase *texItem) : QWidget()
     {
         QLabel *texName = new QLabel(QString(), this);
         texName->setFixedHeight(23);
@@ -21,6 +21,8 @@ public:
         this->texNameLabel = texName;
         this->texInfoLabel = texInfo;
         this->rwTextureHandle = texItem;
+
+        this->listItem = listItem;
 
         this->updateInfo();
     }
@@ -87,9 +89,16 @@ public:
         this->texInfoLabel->setText( textureInfo );
     }
 
+    inline void remove( void )
+    {
+        delete this->listItem;
+    }
+
 private:
     QLabel *texNameLabel;
     QLabel *texInfoLabel;
+
+    QListWidgetItem *listItem;
 
     rw::TextureBase *rwTextureHandle;
 };

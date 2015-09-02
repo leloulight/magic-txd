@@ -60,6 +60,34 @@ class TexAddDialog : public QDialog
     };
 
 public:
+    enum eCreationType
+    {
+        CREATE_IMGPATH,
+        CREATE_RASTER
+    };
+
+    struct dialogCreateParams
+    {
+        inline dialogCreateParams( void )
+        {
+            this->overwriteTexName = NULL;
+        }
+
+        QString actionName;
+        eCreationType type;
+        struct
+        {
+            QString imgPath;
+        } img_path;
+        struct
+        {
+            rw::TextureBase *tex;
+        } orig_raster;
+
+        // Optional properties.
+        const QString *overwriteTexName;
+    };
+
     struct texAddOperation
     {
         // Selected texture properties.
@@ -67,13 +95,11 @@ public:
         std::string maskName;
 
         rw::Raster *raster;
-
-        bool generateMipmaps;
     };
 
     typedef std::function <void (const texAddOperation&)> operationCallback_t;
 
-    TexAddDialog( MainWindow *mainWnd, QString pathToImage, operationCallback_t func );
+    TexAddDialog( MainWindow *mainWnd, const dialogCreateParams& create_params, operationCallback_t func );
     ~TexAddDialog( void );
 
     void loadPlatformOriginal( void );
@@ -120,6 +146,8 @@ public slots:
 
 private:
     MainWindow *mainWnd;
+
+    eCreationType dialog_type;
 
     rw::Raster *platformOrigRaster;
     rw::Raster *convRaster;

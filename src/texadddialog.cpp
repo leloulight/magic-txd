@@ -49,52 +49,61 @@ void TexAddDialog::loadPlatformOriginal( void )
 
     try
     {
-        // Set the platform of our raster.
-        // If we have no platform, we have no preview.
-        bool hasPlatform = false;
-
-        QString currentPlatform = this->GetCurrentPlatform();
-
-        if ( currentPlatform.isEmpty() == false )
+        // Depends on what we have.
+        if ( this->dialog_type == CREATE_IMGPATH )
         {
-            std::string ansiNativeName = currentPlatform.toStdString();
-            
-            // Delete any preview native data.
-            this->platformOrigRaster->clearNativeData();
+            // Set the platform of our raster.
+            // If we have no platform, we have no preview.
+            bool hasPlatform = false;
 
-            this->platformOrigRaster->newNativeData( ansiNativeName.c_str() );
+            QString currentPlatform = this->GetCurrentPlatform();
 
-            hasPlatform = true;
-        }
-
-        if ( hasPlatform )
-        {
-            // Open a stream to the image data.
-            std::wstring unicodePathToImage = this->imgPath.toStdWString();
-
-            rw::streamConstructionFileParamW_t wparam( unicodePathToImage.c_str() );
-
-            rw::Stream *imgStream = mainWnd->rwEngine->CreateStream( rw::RWSTREAMTYPE_FILE_W, rw::RWSTREAMMODE_READONLY, &wparam );
-
-            if ( imgStream )
+            if ( currentPlatform.isEmpty() == false )
             {
-                try
-                {
-                    // Load it.
-                    this->platformOrigRaster->readImage( imgStream );
+                std::string ansiNativeName = currentPlatform.toStdString();
+            
+                // Delete any preview native data.
+                this->platformOrigRaster->clearNativeData();
 
-                    // Success!
-                    hasPreview = true;
-                }
-                catch( ... )
-                {
-                    mainWnd->rwEngine->DeleteStream( imgStream );
+                this->platformOrigRaster->newNativeData( ansiNativeName.c_str() );
 
-                    throw;
-                }
-
-                mainWnd->rwEngine->DeleteStream( imgStream );
+                hasPlatform = true;
             }
+
+            if ( hasPlatform )
+            {
+                // Open a stream to the image data.
+                std::wstring unicodePathToImage = this->imgPath.toStdWString();
+
+                rw::streamConstructionFileParamW_t wparam( unicodePathToImage.c_str() );
+
+                rw::Stream *imgStream = mainWnd->rwEngine->CreateStream( rw::RWSTREAMTYPE_FILE_W, rw::RWSTREAMMODE_READONLY, &wparam );
+
+                if ( imgStream )
+                {
+                    try
+                    {
+                        // Load it.
+                        this->platformOrigRaster->readImage( imgStream );
+
+                        // Success!
+                        hasPreview = true;
+                    }
+                    catch( ... )
+                    {
+                        mainWnd->rwEngine->DeleteStream( imgStream );
+
+                        throw;
+                    }
+
+                    mainWnd->rwEngine->DeleteStream( imgStream );
+                }
+            }
+        }
+        else if ( this->dialog_type == CREATE_RASTER )
+        {
+            // We always have a platform original.
+            hasPreview = true;
         }
     }
     catch( rw::RwException& err )
@@ -183,6 +192,9 @@ void TexAddDialog::pixelPreviewWidget::paintEvent( QPaintEvent *evt )
 
 void TexAddDialog::createRasterForConfiguration( void )
 {
+    if ( this->hasPlatformOriginal == false )
+        return;
+
     // This function prepares the raster that will be given to the texture dictionary.
 
     bool hasConfiguredRaster = false;
@@ -286,6 +298,15 @@ void TexAddDialog::createRasterForConfiguration( void )
 
             this->convRaster = convRaster;
 
+            // If we have not created a direct platform raster through image loading, we
+            // should put it into the currect platform over here.
+            if ( this->dialog_type != CREATE_IMGPATH )
+            {
+                std::string currentPlatform = this->GetCurrentPlatform().toStdString();
+
+                rw::ConvertRasterTo( convRaster, currentPlatform.c_str() );
+            }
+
             // Format the raster appropriately.
             {
                 if ( compressionType != rw::RWCOMPRESS_NONE )
@@ -334,19 +355,31 @@ void TexAddDialog::createRasterForConfiguration( void )
     this->updatePreviewWidget();
 }
 
-TexAddDialog::TexAddDialog( MainWindow *mainWnd, QString pathToImage, TexAddDialog::operationCallback_t cb ) : QDialog( mainWnd )
+TexAddDialog::TexAddDialog( MainWindow *mainWnd, const dialogCreateParams& create_params, TexAddDialog::operationCallback_t cb ) : QDialog( mainWnd )
 {
     this->mainWnd = mainWnd;
 
+    this->dialog_type = create_params.type;
+
     this->cb = cb;
-    this->imgPath = pathToImage;
 
     this->setAttribute( Qt::WA_DeleteOnClose );
     this->setWindowModality( Qt::WindowModality::WindowModal );
     
     // Create a raster handle that will hold platform original data.
-    this->platformOrigRaster = rw::CreateRaster( mainWnd->rwEngine );
+    this->platformOrigRaster = NULL;
     this->convRaster = NULL;
+
+    if ( this->dialog_type == CREATE_IMGPATH )
+    {
+        this->platformOrigRaster = rw::CreateRaster( mainWnd->rwEngine );
+
+        this->imgPath = create_params.img_path.imgPath;
+    }
+    else if ( this->dialog_type == CREATE_RASTER )
+    {
+        this->platformOrigRaster = rw::AcquireRaster( create_params.orig_raster.tex->GetRaster() );
+    }
 
     this->enableRawRaster = true;
     this->enableCompressSelect = true;
@@ -354,11 +387,29 @@ TexAddDialog::TexAddDialog( MainWindow *mainWnd, QString pathToImage, TexAddDial
     this->enablePixelFormatSelect = true;
 
     // Calculate an appropriate texture name.
-    QString textureBaseName = calculateImageBaseName( pathToImage );
+    QString textureBaseName;
+    QString textureMaskName;
+
+    if ( this->dialog_type == CREATE_IMGPATH )
+    {
+        textureBaseName = calculateImageBaseName( this->imgPath );
+
+        // screw mask name.
+    }
+    else if ( this->dialog_type == CREATE_RASTER )
+    {
+        textureBaseName = QString::fromStdString( create_params.orig_raster.tex->GetName() );
+        textureMaskName = QString::fromStdString( create_params.orig_raster.tex->GetMaskName() );
+    }
+
+    if ( const QString *overwriteTexName = create_params.overwriteTexName )
+    {
+        textureBaseName = *overwriteTexName;
+    }
 
     // TODO: verify that the texture name is full ANSI.
 
-    this->setWindowTitle( "Add Texture..." );
+    this->setWindowTitle( create_params.actionName + " Texture..." );
 
     // Create our GUI interface.
     QHBoxLayout *rootHoriLayout = new QHBoxLayout();
@@ -389,7 +440,7 @@ TexAddDialog::TexAddDialog( MainWindow *mainWnd, QString pathToImage, TexAddDial
 
         if ( _enableMaskName )
         {
-            QLineEdit *texMaskNameEdit = new QLineEdit();
+            QLineEdit *texMaskNameEdit = new QLineEdit( textureMaskName );
 
             texMaskNameEdit->setMaxLength( _recommendedPlatformMaxName );
 
@@ -560,7 +611,7 @@ TexAddDialog::TexAddDialog( MainWindow *mainWnd, QString pathToImage, TexAddDial
 
         bottomControlButtonsGroup->addWidget( cancelButton );
 
-        QPushButton *addButton = new QPushButton( "Add" );
+        QPushButton *addButton = new QPushButton( create_params.actionName );
 
         this->applyButton = addButton;
 
@@ -900,8 +951,13 @@ void TexAddDialog::OnTextureAddRequest( bool checked )
             desc.maskName = this->textureMaskNameEdit->text().toStdString();
         }
 
-        desc.generateMipmaps = this->propGenerateMipmaps->isChecked();
-        desc.raster = rw::AcquireRaster( displayRaster );
+        // Maybe generate mipmaps.
+        if ( this->propGenerateMipmaps->isChecked() )
+        {
+            displayRaster->generateMipmaps( INFINITE, rw::MIPMAPGEN_DEFAULT );
+        }
+
+        desc.raster = displayRaster;
 
         this->cb( desc );
     }

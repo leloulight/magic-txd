@@ -51,7 +51,23 @@ public:
 private:
     void DoAddTexture( const TexAddDialog::texAddOperation& params );
 
+    inline void setCurrentFilePath( const QString& newPath )
+    {
+        this->openedTXDFileInfo = QFileInfo( newPath );
+        this->hasOpenedTXDFileInfo = true;
+
+        this->updateWindowTitle();
+    }
+
+    inline void clearCurrentFilePath( void )
+    {
+        this->hasOpenedTXDFileInfo = false;
+
+        this->updateWindowTitle();
+    }
+
 public slots:
+    void onCreateNewTXD( bool checked );
     void onOpenFile( bool checked );
     void onCloseCurrent( bool checked );
 
@@ -66,7 +82,14 @@ public slots:
     void onRequestSaveTXD( bool checked );
     void onRequestSaveAsTXD( bool checked );
 
+private:
+    QString requestValidImagePath( void );
+
+public:
     void onAddTexture( bool checked );
+    void onReplaceTexture( bool checked );
+    void onRemoveTexture( bool checked );
+    void onManipulateTexture( bool checked );
     void onExportTexture( bool checked );
 
 protected:
@@ -98,6 +121,7 @@ private:
     TexInfoWidget *currentSelectedTexture;
 
     QFileInfo openedTXDFileInfo;
+    bool hasOpenedTXDFileInfo;
 
     QListWidget *textureListWidget;
 

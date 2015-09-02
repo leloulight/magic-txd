@@ -322,6 +322,10 @@ AINLINE bool dxtMipmapCalculateHasAlpha(
 
 inline bool calculateHasAlpha( const pixelDataTraversal& pixelData )
 {
+    // If we have no mipmaps, we have no alpha.
+    if ( pixelData.mipmaps.size() == 0 )
+        return false;
+
     // For everything that this library supports we should have correct alpha output.
     // Anything new has to be added ASAP.
     eCompressionType compressionType = pixelData.compressionType;

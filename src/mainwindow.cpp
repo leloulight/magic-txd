@@ -30,6 +30,8 @@ MainWindow::MainWindow(QWidget *parent) :
     this->drawMipmapLayers = false;
 	this->showBackground = false;
 
+    this->hasOpenedTXDFileInfo = false;
+
     // Initialize the RenderWare engine.
     rw::LibraryVersion engineVersion;
 
@@ -137,6 +139,11 @@ MainWindow::MainWindow(QWidget *parent) :
 	    /* --- Menu --- */
 	    QMenuBar *menu = new QMenuBar;
 	    QMenu *fileMenu = menu->addMenu(tr("&File"));
+        QAction *actionNew = new QAction("&New", this);
+        fileMenu->addAction(actionNew);
+        
+        connect( actionNew, &QAction::triggered, this, &MainWindow::onCreateNewTXD );
+
 	    QAction *actionOpen = new QAction("&Open", this);
 	    fileMenu->addAction(actionOpen);
 
@@ -169,12 +176,24 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	    QAction *actionReplace = new QAction("&Replace", this);
 	    editMenu->addAction(actionReplace);
+
+        connect( actionReplace, &QAction::triggered, this, &MainWindow::onReplaceTexture );
+
 	    QAction *actionRemove = new QAction("&Remove", this);
 	    editMenu->addAction(actionRemove);
+
+        connect( actionRemove, &QAction::triggered, this, &MainWindow::onRemoveTexture );
+
 	    QAction *actionRename = new QAction("&Rename", this);
 	    editMenu->addAction(actionRename);
 	    QAction *actionResize = new QAction("&Resize", this);
 	    editMenu->addAction(actionResize);
+
+        QAction *actionManipulate = new QAction("&Manipulate", this);
+        editMenu->addAction(actionManipulate);
+
+        connect( actionManipulate, &QAction::triggered, this, &MainWindow::onManipulateTexture );
+
 	    QAction *actionSetPixelFormat = new QAction("&Setup pixel format", this);
 	    editMenu->addAction(actionSetPixelFormat);
 	    QAction *actionSetupMipLevels = new QAction("&Setup mip-levels", this);
@@ -466,7 +485,7 @@ void MainWindow::updateTextureList( void )
 
 	        QListWidgetItem *item = new QListWidgetItem;
 	        listWidget->addItem(item);
-	        listWidget->setItemWidget(item, new TexInfoWidget(texItem) );
+	        listWidget->setItemWidget(item, new TexInfoWidget(item, texItem) );
 		    item->setSizeHint(QSize(listWidget->sizeHintForColumn(0), 54));
 		    // select first item in a list
 		    if (!selected)
@@ -475,6 +494,9 @@ void MainWindow::updateTextureList( void )
 			    selected = true;
 		    }
 	    }
+
+        // We have no more selected texture item.
+        this->currentSelectedTexture = NULL;
     }
 }
 
@@ -492,7 +514,10 @@ void MainWindow::updateWindowTitle( void )
 
     if ( rw::TexDictionary *txd = this->currentTXD )
     {
-        windowTitleString += " (" + QString( this->openedTXDFileInfo.absoluteFilePath() ) + ")";
+        if ( this->hasOpenedTXDFileInfo )
+        {
+            windowTitleString += " (" + QString( this->openedTXDFileInfo.absoluteFilePath() ) + ")";
+        }
     }
 
     setWindowTitle( windowTitleString );
@@ -502,7 +527,18 @@ void MainWindow::updateWindowTitle( void )
     {
         if (rw::TexDictionary *txd = this->currentTXD)
         {
-            this->txdNameLabel->setText(QString(this->openedTXDFileInfo.fileName()));
+            QString topLabelDisplayString;
+
+            if ( this->hasOpenedTXDFileInfo )
+            {
+                topLabelDisplayString = this->openedTXDFileInfo.fileName();
+            }
+            else
+            {
+                topLabelDisplayString = "New";
+            }
+
+            this->txdNameLabel->setText( topLabelDisplayString );
         }
         else
         {
@@ -534,6 +570,35 @@ void MainWindow::updateTextureMetaInfo( void )
     }
 }
 
+void MainWindow::onCreateNewTXD( bool checked )
+{
+    // Just create an empty TXD.
+    rw::TexDictionary *newTXD = NULL;
+
+    try
+    {
+        newTXD = rw::CreateTexDictionary( this->rwEngine );
+    }
+    catch( rw::RwException& except )
+    {
+        this->txdLog->showError( QString( "failed to create TXD: " ) + QString::fromStdString( except.message ) );
+
+        // We failed.
+        return;
+    }
+
+    if ( newTXD == NULL )
+    {
+        this->txdLog->showError( "unknown error in TXD creation" );
+
+        return;
+    }
+
+    this->setCurrentTXD( newTXD );
+
+    this->clearCurrentFilePath();
+}
+
 void MainWindow::onOpenFile( bool checked )
 {
 	this->txdLog->beforeTxdLoading();
@@ -563,7 +628,7 @@ void MainWindow::onOpenFile( bool checked )
             }
             catch( rw::RwException& except )
             {
-				this->txdLog->showError(QString("failed to load the TXD archive: %1").arg(except.message.c_str()));
+				this->txdLog->showError(QString("failed to load the TXD archive: %1").arg(QString::fromStdString(except.message)));
             }
 
             if ( parsedObject )
@@ -577,9 +642,7 @@ void MainWindow::onOpenFile( bool checked )
                     // Set it as our current object in the editor.
                     this->setCurrentTXD( newTXD );
 
-                    this->openedTXDFileInfo = QFileInfo( fileName );
-
-                    this->updateWindowTitle();
+                    this->setCurrentFilePath( fileName );
                 }
                 else
                 {
@@ -759,6 +822,9 @@ void MainWindow::saveCurrentTXDAt( QString txdFullPath )
             try
             {
                 this->rwEngine->Serialize( currentTXD, newTXDStream );
+
+                // Success, so lets update our target filename.
+                this->setCurrentFilePath( txdFullPath );
             }
             catch( rw::RwException& except )
             {
@@ -775,11 +841,18 @@ void MainWindow::onRequestSaveTXD( bool checked )
 {
     if ( this->currentTXD != NULL )
     {
-        QString txdFullPath = this->openedTXDFileInfo.absoluteFilePath();
-
-        if ( txdFullPath.length() != 0 )
+        if ( this->hasOpenedTXDFileInfo )
         {
-            this->saveCurrentTXDAt( txdFullPath );
+            QString txdFullPath = this->openedTXDFileInfo.absoluteFilePath();
+
+            if ( txdFullPath.length() != 0 )
+            {
+                this->saveCurrentTXDAt( txdFullPath );
+            }
+        }
+        else
+        {
+            this->onRequestSaveAsTXD( checked );
         }
     }
 }
@@ -813,12 +886,6 @@ void MainWindow::DoAddTexture( const TexAddDialog::texAddOperation& params )
     {
         try
         {
-            // Maybe generate mipmaps.
-            if ( params.generateMipmaps )
-            {
-                newRaster->generateMipmaps( INFINITE, rw::MIPMAPGEN_DEFAULT );
-            }
-
             // We want to create a texture and put it into our TXD.
             rw::TextureBase *newTexture = rw::CreateTexture( this->rwEngine, newRaster );
 
@@ -850,11 +917,72 @@ void MainWindow::DoAddTexture( const TexAddDialog::texAddOperation& params )
 
             // Just continue.
         }
-
-        // We release our reference from the raster.
-        // If it was added to the texture container, it has gained another reference.
-        rw::DeleteRaster( newRaster );
     }
+}
+
+QString MainWindow::requestValidImagePath( void )
+{
+    // Get the name of a texture to add.
+    // For that we want to construct a list of all possible image extensions.
+    QString imgExtensionSelect;
+
+    bool hasEntry = false;
+
+    const imageFormats_t& avail_formats = this->reg_img_formats;
+
+    // Add any image file.
+    if ( hasEntry )
+    {
+        imgExtensionSelect += ";;";
+    }
+
+    imgExtensionSelect += "Image file (";
+
+    bool hasExtEntry = false;
+
+    for ( imageFormats_t::const_iterator iter = avail_formats.begin(); iter != avail_formats.end(); iter++ )
+    {
+        if ( hasExtEntry )
+        {
+            imgExtensionSelect += ";";
+        }
+
+        const registered_image_format& entry = *iter;
+
+        imgExtensionSelect += QString( "*." ) + QString( entry.defaultExt.c_str() ).toLower();
+
+        hasExtEntry = true;
+    }
+
+    imgExtensionSelect += ")";
+
+    hasEntry = true;
+
+    for ( imageFormats_t::const_iterator iter = avail_formats.begin(); iter != avail_formats.end(); iter++ )
+    {
+        if ( hasEntry )
+        {
+            imgExtensionSelect += ";;";
+        }
+
+        const registered_image_format& entry = *iter;
+
+        imgExtensionSelect += QString( entry.formatName.c_str() ) + QString( " (*." ) + QString( entry.defaultExt.c_str() ).toLower() + QString( ")" );
+
+        hasEntry = true;
+    }
+
+    // Add any file.
+    if ( hasEntry )
+    {
+        imgExtensionSelect += ";;";
+    }
+
+    imgExtensionSelect += "Any file (*.*)";
+
+    hasEntry = true;
+
+    return QFileDialog::getOpenFileName( this, "Import Texture...", QString(), imgExtensionSelect );
 }
 
 void MainWindow::onAddTexture( bool checked )
@@ -864,67 +992,7 @@ void MainWindow::onAddTexture( bool checked )
 
     if ( currentTXD != NULL )
     {
-        // Get the name of a texture to add.
-        // For that we want to construct a list of all possible image extensions.
-        QString imgExtensionSelect;
-
-        bool hasEntry = false;
-
-        const imageFormats_t& avail_formats = this->reg_img_formats;
-
-        // Add any image file.
-        if ( hasEntry )
-        {
-            imgExtensionSelect += ";;";
-        }
-
-        imgExtensionSelect += "Image file (";
-
-        bool hasExtEntry = false;
-
-        for ( imageFormats_t::const_iterator iter = avail_formats.begin(); iter != avail_formats.end(); iter++ )
-        {
-            if ( hasExtEntry )
-            {
-                imgExtensionSelect += ";";
-            }
-
-            const registered_image_format& entry = *iter;
-
-            imgExtensionSelect += QString( "*." ) + QString( entry.defaultExt.c_str() ).toLower();
-
-            hasExtEntry = true;
-        }
-
-        imgExtensionSelect += ")";
-
-        hasEntry = true;
-
-        for ( imageFormats_t::const_iterator iter = avail_formats.begin(); iter != avail_formats.end(); iter++ )
-        {
-            if ( hasEntry )
-            {
-                imgExtensionSelect += ";;";
-            }
-
-            const registered_image_format& entry = *iter;
-
-            imgExtensionSelect += QString( entry.formatName.c_str() ) + QString( " (*." ) + QString( entry.defaultExt.c_str() ).toLower() + QString( ")" );
-
-            hasEntry = true;
-        }
-
-        // Add any file.
-        if ( hasEntry )
-        {
-            imgExtensionSelect += ";;";
-        }
-
-        imgExtensionSelect += "Any file (*.*)";
-
-        hasEntry = true;
-
-        QString fileName = QFileDialog::getOpenFileName( this, "Import Texture...", QString(), imgExtensionSelect );
+        QString fileName = this->requestValidImagePath();
 
         if ( fileName.length() != 0 )
         {
@@ -933,11 +1001,129 @@ void MainWindow::onAddTexture( bool checked )
                 this->DoAddTexture( params );
             };
 
-            TexAddDialog *texAddTask = new TexAddDialog( this, fileName, std::move( cb_lambda ) );
+            TexAddDialog::dialogCreateParams params;
+            params.actionName = "Add";
+            params.type = TexAddDialog::CREATE_IMGPATH;
+            params.img_path.imgPath = fileName;
+
+            TexAddDialog *texAddTask = new TexAddDialog( this, params, std::move( cb_lambda ) );
 
             texAddTask->move( 200, 250 );
             texAddTask->setVisible( true );
         }
+    }
+}
+
+void MainWindow::onReplaceTexture( bool checked )
+{
+    // Replacing a texture means that we search for another texture on disc.
+    // We prompt the user to input a replacement that has exactly the same texture properties
+    // (name, addressing mode, etc) but different raster properties (maybe).
+
+    // We need to have a texture selected to replace.
+    if ( TexInfoWidget *curSelTexItem = this->currentSelectedTexture )
+    {
+        QString replaceImagePath = this->requestValidImagePath();
+
+        if ( replaceImagePath.length() != 0 )
+        {
+            auto cb_lambda = [=] ( const TexAddDialog::texAddOperation& params )
+            {
+                // Replace stuff.
+                rw::TextureBase *tex = curSelTexItem->GetTextureHandle();
+
+                // We have to update names.
+                tex->SetName( params.texName.c_str() );
+                tex->SetMaskName( params.maskName.c_str() );
+                
+                // Update raster handle.
+                tex->SetRaster( params.raster );
+
+                // Update info.
+                this->updateTextureMetaInfo();
+
+                this->updateTextureView();
+            };
+
+            TexAddDialog::dialogCreateParams params;
+            params.actionName = "Replace";
+            params.type = TexAddDialog::CREATE_IMGPATH;
+            params.img_path.imgPath = replaceImagePath;
+
+            // Overwrite some properties.
+            QString overwriteTexName = QString::fromStdString( curSelTexItem->GetTextureHandle()->GetName() );
+
+            params.overwriteTexName = &overwriteTexName;
+
+            TexAddDialog *texAddTask = new TexAddDialog( this, params, std::move( cb_lambda ) );
+
+            texAddTask->move( 200, 250 );
+            texAddTask->setVisible( true );
+        }
+    }
+}
+
+void MainWindow::onRemoveTexture( bool checked )
+{
+    // Pretty simple. We get rid of the currently selected texture item.
+
+    if ( TexInfoWidget *curSelTexItem = this->currentSelectedTexture )
+    {
+        // Forget about this selected item.
+        this->currentSelectedTexture = NULL;
+
+        // We kill the texture in this item.
+        rw::TextureBase *tex = curSelTexItem->GetTextureHandle();
+
+        // First delete this item from the list.
+        curSelTexItem->remove();
+
+        // Now kill the texture.
+        this->rwEngine->DeleteRwObject( tex );
+
+        // If we have no more items in the list widget, we should hide our texture view page.
+        if ( this->textureListWidget->count() == 0 )
+        {
+            this->clearViewImage();
+        }
+    }
+}
+
+void MainWindow::onManipulateTexture( bool checked )
+{
+    // Manipulating a raster is taking that raster and creating a new copy that is more beautiful.
+    // We can easily reuse the texture add dialog for this task.
+
+    // For that we need a selected texture.
+    if ( TexInfoWidget *curSelTexItem = this->currentSelectedTexture )
+    {
+        auto cb_lambda = [=] ( const TexAddDialog::texAddOperation& params )
+        {
+            // Update the stored raster.
+            rw::TextureBase *tex = curSelTexItem->GetTextureHandle();
+
+            // Update names.
+            tex->SetName( params.texName.c_str() );
+            tex->SetMaskName( params.maskName.c_str() );
+
+            // Replace raster handle.
+            tex->SetRaster( params.raster );
+
+            // Update info.
+            this->updateTextureMetaInfo();
+
+            this->updateTextureView();
+        };
+
+        TexAddDialog::dialogCreateParams params;
+        params.actionName = "Modify";
+        params.type = TexAddDialog::CREATE_RASTER;
+        params.orig_raster.tex = curSelTexItem->GetTextureHandle();
+
+        TexAddDialog *texAddTask = new TexAddDialog( this, params, std::move( cb_lambda ) );
+
+        texAddTask->move( 200, 250 );
+        texAddTask->setVisible( true );
     }
 }
 

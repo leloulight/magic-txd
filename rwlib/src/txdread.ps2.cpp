@@ -1500,52 +1500,55 @@ void ps2NativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineInt
     }
 
     // Process the mipmaps.
-    eFormatEncodingType mipmapSwizzleEncodingType = platformTex->swizzleEncodingType;
-
-    eFormatEncodingType mipmapDecodeFormat = getFormatEncodingFromRasterFormat(rasterFormat, paletteType);
-
-    // Make sure there is no unknown format.
-    assert( mipmapSwizzleEncodingType != FORMAT_UNKNOWN && mipmapDecodeFormat != FORMAT_UNKNOWN );
-
-    pixelsOut.mipmaps.resize( mipmapCount );
-
-    for (size_t j = 0; j < mipmapCount; j++)
+    if ( mipmapCount != 0 )
     {
-        NativeTexturePS2::GSMipmap& gsTex = platformTex->mipmaps[ j ];
+        eFormatEncodingType mipmapSwizzleEncodingType = platformTex->swizzleEncodingType;
 
-        // We have to create a new texture buffer that is unswizzled to linear format.
-        uint32 layerWidth = gsTex.width;
-        uint32 layerHeight = gsTex.height;
+        eFormatEncodingType mipmapDecodeFormat = getFormatEncodingFromRasterFormat(rasterFormat, paletteType);
 
-        const void *srcTexels = gsTex.texels;
-        uint32 texDataSize = gsTex.dataSize;
+        // Make sure there is no unknown format.
+        assert( mipmapSwizzleEncodingType != FORMAT_UNKNOWN && mipmapDecodeFormat != FORMAT_UNKNOWN );
 
-        void *dstTexels = NULL;
-        uint32 dstDataSize = 0;
+        pixelsOut.mipmaps.resize( mipmapCount );
 
-        GetPS2TextureTranscodedMipmapData(
-            engineInterface,
-            layerWidth, layerHeight, gsTex.swizzleWidth, gsTex.swizzleHeight, gsTex.texels, gsTex.dataSize,
-            mipmapSwizzleEncodingType, mipmapDecodeFormat,
-            rasterFormat, depth, ps2ColorOrder,
-            rasterFormat, depth, d3dColorOrder,
-            paletteType, palSize,
-            dstTexels, dstDataSize
-        );
+        for (size_t j = 0; j < mipmapCount; j++)
+        {
+            NativeTexturePS2::GSMipmap& gsTex = platformTex->mipmaps[ j ];
 
-        // Move over the texture data to pixel storage.
-        pixelDataTraversal::mipmapResource newLayer;
+            // We have to create a new texture buffer that is unswizzled to linear format.
+            uint32 layerWidth = gsTex.width;
+            uint32 layerHeight = gsTex.height;
 
-        newLayer.width = layerWidth;
-        newLayer.height = layerHeight;
-        newLayer.mipWidth = layerWidth;   // layer dimensions.
-        newLayer.mipHeight = layerHeight;
+            const void *srcTexels = gsTex.texels;
+            uint32 texDataSize = gsTex.dataSize;
 
-        newLayer.texels = dstTexels;
-        newLayer.dataSize = dstDataSize;
+            void *dstTexels = NULL;
+            uint32 dstDataSize = 0;
 
-        // Store the layer.
-        pixelsOut.mipmaps[ j ] = newLayer;
+            GetPS2TextureTranscodedMipmapData(
+                engineInterface,
+                layerWidth, layerHeight, gsTex.swizzleWidth, gsTex.swizzleHeight, gsTex.texels, gsTex.dataSize,
+                mipmapSwizzleEncodingType, mipmapDecodeFormat,
+                rasterFormat, depth, ps2ColorOrder,
+                rasterFormat, depth, d3dColorOrder,
+                paletteType, palSize,
+                dstTexels, dstDataSize
+            );
+
+            // Move over the texture data to pixel storage.
+            pixelDataTraversal::mipmapResource newLayer;
+
+            newLayer.width = layerWidth;
+            newLayer.height = layerHeight;
+            newLayer.mipWidth = layerWidth;   // layer dimensions.
+            newLayer.mipHeight = layerHeight;
+
+            newLayer.texels = dstTexels;
+            newLayer.dataSize = dstDataSize;
+
+            // Store the layer.
+            pixelsOut.mipmaps[ j ] = newLayer;
+        }
     }
 
     // Set up general raster attributes.

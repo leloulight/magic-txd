@@ -836,7 +836,7 @@ struct pngImagingExtension : public imagingFormatExtension
                                 {
                                     uint8 r, g, b, a;
 
-                                    fetchDispatch.getRGBA( texelSource, n, r, g, b, a );
+                                    fetchPalDispatch.getRGBA( paletteData, n, r, g, b, a );
 
                                     // Store it.
                                     unsigned char *alphaValue = (unsigned char*)pngAlphaValues + n;
