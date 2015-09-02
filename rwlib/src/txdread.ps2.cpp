@@ -1041,14 +1041,45 @@ inline void getEffectivePaletteTextureDimensions(ePaletteType paletteType, uint3
     palHeight_out = palHeight;
 }
 
+inline bool doesRequirePlatformDestinationConversion(
+    eColorOrdering srcColorOrder, eColorOrdering dstColorOrder,
+    eRasterFormat srcRasterFormat, eRasterFormat dstRasterFormat,
+    uint32 mipWidth,
+    uint32 srcItemDepth, uint32 srcRowAlignment,
+    uint32 dstItemDepth, uint32 dstRowAlignment,
+    bool fixAlpha
+)
+{
+    return (
+        fixAlpha ||
+        doesRasterFormatNeedConversion(
+            srcRasterFormat, srcItemDepth, srcColorOrder, PALETTE_NONE,
+            dstRasterFormat, dstItemDepth, dstColorOrder, PALETTE_NONE
+        ) ||
+        shouldAllocateNewRasterBuffer(
+            mipWidth,
+            srcItemDepth, srcRowAlignment,
+            dstItemDepth, dstRowAlignment
+        )
+    );
+}
+
 inline void convertTexelsFromPS2(
-    const void *texelSource, void *dstTexels, uint32 mipWidth, uint32 mipHeight,
+    const void *texelSource, void *dstTexels, uint32 mipWidth, uint32 mipHeight, uint32 srcDataSize,
     eRasterFormat srcRasterFormat, uint32 srcDepth, uint32 srcRowAlignment, eColorOrdering srcColorOrder,
     eRasterFormat dstRasterFormat, uint32 dstDepth, uint32 dstRowAlignment, eColorOrdering dstColorOrder,
     bool fixAlpha
 )
 {
-    if ( fixAlpha || srcColorOrder != dstColorOrder || srcRasterFormat != dstRasterFormat || srcDepth != dstDepth )
+    if (doesRequirePlatformDestinationConversion(
+            srcColorOrder, dstColorOrder,
+            srcRasterFormat, dstRasterFormat,
+            mipWidth,
+            srcDepth, srcRowAlignment,
+            dstDepth, dstRowAlignment,
+            fixAlpha
+        )
+    )
     {
         colorModelDispatcher <const void> fetchDispatch( srcRasterFormat, srcColorOrder, srcDepth, NULL, 0, PALETTE_NONE );
         colorModelDispatcher <void> putDispatch( dstRasterFormat, dstColorOrder, dstDepth, NULL, 0, PALETTE_NONE );
@@ -1081,6 +1112,10 @@ inline void convertTexelsFromPS2(
                 putDispatch.setRGBA( dstRow, col, red, green, blue, alpha );
             }
 	    }
+    }
+    else
+    {
+        memcpy( dstTexels, texelSource, srcDataSize );
     }
 }
 
@@ -1133,7 +1168,7 @@ inline void GetPS2TexturePalette(
         getEffectivePaletteTextureDimensions(paletteType, realSwizzleWidth, realSwizzleHeight);
 
         convertTexelsFromPS2(
-            srcTexels, clutPalTexels, realSwizzleWidth, realSwizzleHeight,
+            srcTexels, clutPalTexels, realSwizzleWidth, realSwizzleHeight, srcPalTexDataSize,
             srcRasterFormat, srcPalFormatDepth, getPS2TextureDataRowAlignment(), srcColorOrder,
             dstRasterFormat, dstPalFormatDepth, getPS2TextureDataRowAlignment(), dstColorOrder,
             true
@@ -1279,13 +1314,16 @@ inline void GetPS2TextureTranscodedMipmapData(
                 engineInterface,
                 srcTexels,
                 srcLayerWidth, srcLayerHeight, srcDepth, getPS2TextureDataRowAlignment(),
-                layerWidth, layerHeight, srcRowAlignment, dstDataSize
+                layerWidth, layerHeight, srcRowAlignment, srcTexDataSize
             );
 
             if ( srcTexels == NULL )
             {
                 throw RwException( "failed to truncate PS2 mipmap layer in mipmap transcoding routine" );
             }
+
+            srcLayerWidth = layerWidth;
+            srcLayerHeight = layerHeight;
 
             doesSourceNeedDeletion = true;
         }
@@ -1358,7 +1396,7 @@ inline void GetPS2TextureTranscodedMipmapData(
         if (paletteType == PALETTE_NONE)
         {
             convertTexelsFromPS2(
-                srcTexels, texelData, layerWidth, layerHeight,
+                srcTexels, texelData, layerWidth, layerHeight, srcTexDataSize,
                 srcRasterFormat, srcDepth, srcRowAlignment, srcColorOrder, 
                 dstRasterFormat, dstDepth, dstRowAlignment, dstColorOrder,
                 fixAlpha
@@ -1532,16 +1570,22 @@ void ps2NativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineInt
 }
 
 inline void convertTexelsToPS2(
-    const void *srcTexelData, void *dstTexelData, uint32 mipWidth, uint32 mipHeight,
+    const void *srcTexelData, void *dstTexelData, uint32 mipWidth, uint32 mipHeight, uint32 srcDataSize,
     eRasterFormat srcRasterFormat, eRasterFormat dstRasterFormat,
     uint32 srcItemDepth, uint32 srcRowAlignment, uint32 dstItemDepth, uint32 dstRowAlignment,
     eColorOrdering srcColorOrder, eColorOrdering ps2ColorOrder,
     bool fixAlpha
 )
 {
-    if (
-        fixAlpha || srcColorOrder != ps2ColorOrder || srcRasterFormat != dstRasterFormat ||
-        shouldAllocateNewRasterBuffer( mipWidth, srcItemDepth, srcRowAlignment, dstItemDepth, dstRowAlignment ) )
+    if (doesRequirePlatformDestinationConversion(
+            srcColorOrder, ps2ColorOrder,
+            srcRasterFormat, dstRasterFormat,
+            mipWidth,
+            srcItemDepth, srcRowAlignment,
+            dstItemDepth, dstRowAlignment,
+            fixAlpha
+        )
+    )
     {
         colorModelDispatcher <const void> fetchDispatch( srcRasterFormat, srcColorOrder, srcItemDepth, NULL, 0, PALETTE_NONE );
         colorModelDispatcher <void> putDispatch( dstRasterFormat, ps2ColorOrder, dstItemDepth, NULL, 0, PALETTE_NONE );
@@ -1575,6 +1619,10 @@ inline void convertTexelsToPS2(
             }
 		}
     }
+    else
+    {
+        memcpy( dstTexelData, srcTexelData, srcDataSize );
+    }
 }
 
 inline void ConvertMipmapToPS2Format(
@@ -1598,6 +1646,9 @@ inline void ConvertMipmapToPS2Format(
     {
         fixAlpha = true;
     }
+
+    // TODO: optimize for the situation where we do not need to allocate a new texel buffer but
+    // use the source texel buffer directly.
 
     // Allocate a new copy of the texel data.
     uint32 swizzledRowAlignment = getPS2TextureDataRowAlignment();
@@ -1626,7 +1677,7 @@ inline void ConvertMipmapToPS2Format(
         if (srcPaletteType == PALETTE_NONE)
         {
             convertTexelsToPS2(
-                srcTexelData, dstLinearTexelData, mipWidth, mipHeight,
+                srcTexelData, dstLinearTexelData, mipWidth, mipHeight, srcDataSize,
                 srcRasterFormat, dstRasterFormat,
                 srcItemDepth, srcRowAlignment, dstItemDepth, swizzledRowAlignment,
                 srcColorOrder, dstColorOrder,
@@ -1740,23 +1791,23 @@ inline void GeneratePS2CLUT(
     void*& dstCLUTTexelData, uint32& dstCLUTDataSize
 )
 {
+    uint32 paletteRowAlignment = 1;
+
     // Allocate a new destination texel array.
     void *dstPalTexelData = NULL;
     {
         uint32 palDataSize = getPaletteDataSize(paletteSize, dstPalFormatDepth);
 
         dstPalTexelData = engineInterface->PixelAllocate( palDataSize );
+
+        convertTexelsToPS2(
+            srcPalTexelData, dstPalTexelData, paletteSize, 1, palDataSize,
+            srcRasterFormat, dstRasterFormat,
+            srcPalFormatDepth, paletteRowAlignment, dstPalFormatDepth, paletteRowAlignment,
+            srcColorOrder, dstColorOrder,
+            true
+        );
     }
-
-    uint32 paletteRowAlignment = 1;
-
-    convertTexelsToPS2(
-        srcPalTexelData, dstPalTexelData, paletteSize, 1,
-        srcRasterFormat, dstRasterFormat,
-        srcPalFormatDepth, paletteRowAlignment, dstPalFormatDepth, paletteRowAlignment,
-        srcColorOrder, dstColorOrder,
-        true
-    );
 
     // Generate a palette texture.
     void *newPalTexelData;
@@ -2113,8 +2164,6 @@ struct ps2MipmapManager
 
         // Make sure there is no unknown format.
         assert( mipmapSwizzleEncodingType != FORMAT_UNKNOWN && mipmapDecodeFormat != FORMAT_UNKNOWN );
-
-        bool hasToDeswizzle = ( mipmapSwizzleEncodingType != mipmapDecodeFormat );
 
         // Get the unswizzled texel data.
         void *dstTexels = NULL;
