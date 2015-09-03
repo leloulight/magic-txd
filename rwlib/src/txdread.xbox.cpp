@@ -17,41 +17,6 @@
 namespace rw
 {
 
-inline eCompressionType getDXTCompressionTypeFromXBOX( uint32 xboxCompressionType )
-{
-    eCompressionType rwCompressionType = RWCOMPRESS_NONE;
-
-    if ( xboxCompressionType != 0 )
-    {
-        if ( xboxCompressionType == 0xc )
-        {
-            rwCompressionType = RWCOMPRESS_DXT1;
-        }
-        else if ( xboxCompressionType == 0xd )
-        {
-            rwCompressionType = RWCOMPRESS_DXT2;
-        }
-        else if ( xboxCompressionType == 0xe )
-        {
-            rwCompressionType = RWCOMPRESS_DXT3;
-        }
-        else if ( xboxCompressionType == 0xf )
-        {
-            rwCompressionType = RWCOMPRESS_DXT5;
-        }
-        else if ( xboxCompressionType == 0x10 )
-        {
-            rwCompressionType = RWCOMPRESS_DXT4;
-        }
-        else
-        {
-            assert( 0 );
-        }
-    }
-
-    return rwCompressionType;
-}
-
 inline uint32 getXBOXCompressionTypeFromRW( eCompressionType rwCompressionType )
 {
     uint32 xboxCompressionType = 0;

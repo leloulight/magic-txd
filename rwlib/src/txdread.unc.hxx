@@ -171,17 +171,22 @@ struct uncNativeTextureTypeProvider : public texNativeTypeProvider
         return rasterFormat;
     }
 
-    ePaletteType GetTexturePaletteType( const void *objMem )
+    ePaletteType GetTexturePaletteType( const void *objMem ) override
     {
         return PALETTE_NONE;
     }
 
-    bool IsTextureCompressed( const void *objMem )
+    bool IsTextureCompressed( const void *objMem ) override
     {
         return false;
     }
 
-    bool DoesTextureHaveAlpha( const void *objMem )
+    eCompressionType GetTextureCompressionFormat( const void *objMem ) override
+    {
+        return RWCOMPRESS_NONE;
+    }
+
+    bool DoesTextureHaveAlpha( const void *objMem ) override
     {
         const NativeTextureMobileUNC *nativeTex = (const NativeTextureMobileUNC*)objMem;
 
@@ -195,7 +200,7 @@ struct uncNativeTextureTypeProvider : public texNativeTypeProvider
         return 4;
     }
 
-    uint32 GetDriverIdentifier( void *objMem ) const
+    uint32 GetDriverIdentifier( void *objMem ) const override
     {
         // This was never defined.
         return 0;

@@ -107,31 +107,6 @@ void dxtMobileNativeTextureTypeProvider::SerializeTexture( TextureBase *theTextu
     engineInterface->SerializeExtensions( theTexture, outputProvider );
 }
 
-inline eCompressionType getCompressionTypeFromS3TCInternalFormat( eS3TCInternalFormat internalFormat )
-{
-    eCompressionType rwCompressionType;
-
-    if ( internalFormat == COMPRESSED_RGB_S3TC_DXT1 ||
-         internalFormat == COMPRESSED_RGBA_S3TC_DXT1 )
-    {
-        rwCompressionType = RWCOMPRESS_DXT1;
-    }
-    else if ( internalFormat == COMPRESSED_RGBA_S3TC_DXT3 )
-    {
-        rwCompressionType = RWCOMPRESS_DXT3;
-    }
-    else if ( internalFormat == COMPRESSED_RGBA_S3TC_DXT5 )
-    {
-        rwCompressionType = RWCOMPRESS_DXT5;
-    }
-    else
-    {
-        throw RwException( "invalid internalFormat in s3tc_mobile native texture" );
-    }
-
-    return rwCompressionType;
-}
-
 void dxtMobileNativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineInterface, void *objMem, pixelDataTraversal& pixelsOut )
 {
     // Getting data from this format is very easy and compatible with existing PC formats.

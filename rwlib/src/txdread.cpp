@@ -2033,6 +2033,27 @@ void Raster::convertToFormat(eRasterFormat newFormat)
     }
 }
 
+eRasterFormat Raster::getRasterFormat( void ) const
+{
+    PlatformTexture *platformTex = this->platformData;
+
+    if ( !platformTex )
+    {
+        throw RwException( "no native data" );
+    }
+
+    Interface *engineInterface = this->engineInterface;
+
+    texNativeTypeProvider *texProvider = GetNativeTextureTypeProvider( engineInterface, platformTex );
+
+    if ( !texProvider )
+    {
+        throw RwException( "invalid native data" );
+    }
+
+    return texProvider->GetTextureRasterFormat( platformTex );
+}
+
 Bitmap Raster::getBitmap(void) const
 {
     Interface *engineInterface = this->engineInterface;
@@ -2649,19 +2670,9 @@ void Raster::compressCustom(eCompressionType targetCompressionType)
         throw RwException( "invalid native data" );
     }
 
-    // The target raster may already be compressed or the target architecture does its own compression.
-    // Decide about these situations.
-    bool isAlreadyCompressed = texProvider->IsTextureCompressed( platformTex );
-
-    if ( isAlreadyCompressed )
-        return; // do not recompress textures.
-
-    storageCapabilities storeCaps;
-
-    texProvider->GetStorageCapabilities( storeCaps );
-
-    if ( storeCaps.isCompressedFormat )
-        return; // no point in compressing if the architecture will do it already.
+    // Avoid recompression.
+    if ( this->isCompressed() )
+        return;
 
     // Since we now know about everything, we can take the pixels and perform the compression.
     pixelDataTraversal pixelData;
@@ -2716,6 +2727,63 @@ void Raster::compressCustom(eCompressionType targetCompressionType)
     {
         pixelData.DetachPixels();
     }
+}
+
+bool Raster::isCompressed( void ) const
+{
+    PlatformTexture *platformTex = this->platformData;
+
+    if ( !platformTex )
+    {
+        throw RwException( "no native data" );
+    }
+
+    Interface *engineInterface = this->engineInterface;
+
+    texNativeTypeProvider *texProvider = GetNativeTextureTypeProvider( engineInterface, platformTex );
+
+    if ( !texProvider )
+    {
+        throw RwException( "invalid native data" );
+    }
+
+    // The target raster may already be compressed or the target architecture does its own compression.
+    // Decide about these situations.
+    bool isAlreadyCompressed = texProvider->IsTextureCompressed( platformTex );
+
+    if ( isAlreadyCompressed )
+        return true; // do not recompress textures.
+
+    storageCapabilities storeCaps;
+
+    texProvider->GetStorageCapabilities( storeCaps );
+
+    if ( storeCaps.isCompressedFormat )
+        return true; // no point in compressing if the architecture will do it already.
+
+    // We most likely are not compressed.
+    return false;
+}
+
+eCompressionType Raster::getCompressionFormat( void ) const
+{
+    PlatformTexture *platformTex = this->platformData;
+
+    if ( !platformTex )
+    {
+        throw RwException( "no native data" );
+    }
+
+    Interface *engineInterface = this->engineInterface;
+
+    texNativeTypeProvider *texProvider = GetNativeTextureTypeProvider( engineInterface, platformTex );
+
+    if ( !texProvider )
+    {
+        throw RwException( "invalid native data" );
+    }
+
+    return texProvider->GetTextureCompressionFormat( platformTex );
 }
 
 void Raster::writeImage(Stream *outputStream, const char *method)

@@ -438,6 +438,43 @@ public:
     eColorOrdering colorOrdering;
 };
 
+inline eCompressionType getD3DCompressionType( const NativeTextureD3D9 *nativeTex )
+{
+    eCompressionType rwCompressionType = RWCOMPRESS_NONE;
+
+    uint32 dxtType = nativeTex->dxtCompression;
+
+    if ( dxtType != 0 )
+    {
+        if ( dxtType == 1 )
+        {
+            rwCompressionType = RWCOMPRESS_DXT1;
+        }
+        else if ( dxtType == 2 )
+        {
+            rwCompressionType = RWCOMPRESS_DXT2;
+        }
+        else if ( dxtType == 3 )
+        {
+            rwCompressionType = RWCOMPRESS_DXT3;
+        }
+        else if ( dxtType == 4 )
+        {
+            rwCompressionType = RWCOMPRESS_DXT4;
+        }
+        else if ( dxtType == 5 )
+        {
+            rwCompressionType = RWCOMPRESS_DXT5;
+        }
+        else
+        {
+            throw RwException( "unsupported DXT compression" );
+        }
+    }
+
+    return rwCompressionType;
+}
+
 struct d3d9NativeTextureTypeProvider : public texNativeTypeProvider, d3dpublic::d3dNativeTextureDriverInterface
 {
     void ConstructTexture( Interface *engineInterface, void *objMem, size_t memSize ) override
@@ -545,6 +582,13 @@ struct d3d9NativeTextureTypeProvider : public texNativeTypeProvider, d3dpublic::
         const NativeTextureD3D9 *nativeTex = (const NativeTextureD3D9*)objMem;
 
         return ( nativeTex->dxtCompression != 0 );
+    }
+
+    eCompressionType GetTextureCompressionFormat( const void *objMem ) override
+    {
+        const NativeTextureD3D9 *nativeTex = (const NativeTextureD3D9*)objMem;
+
+        return getD3DCompressionType( nativeTex );
     }
 
     bool DoesTextureHaveAlpha( const void *objMem ) override

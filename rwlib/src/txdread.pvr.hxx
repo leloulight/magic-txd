@@ -182,17 +182,22 @@ struct pvrNativeTextureTypeProvider : public texNativeTypeProvider
         return RASTER_DEFAULT;
     }
 
-    ePaletteType GetTexturePaletteType( const void *objMem )
+    ePaletteType GetTexturePaletteType( const void *objMem ) override
     {
         return PALETTE_NONE;
     }
 
-    bool IsTextureCompressed( const void *objMem )
+    bool IsTextureCompressed( const void *objMem ) override
     {
         return true;
     }
 
-    bool DoesTextureHaveAlpha( const void *objMem )
+    eCompressionType GetTextureCompressionFormat( const void *objMem ) override
+    {
+        return RWCOMPRESS_NONE;
+    }
+
+    bool DoesTextureHaveAlpha( const void *objMem ) override
     {
         const NativeTexturePVR *nativeTex = (const NativeTexturePVR*)objMem;
 
@@ -206,7 +211,7 @@ struct pvrNativeTextureTypeProvider : public texNativeTypeProvider
         return 0;
     }
 
-    uint32 GetDriverIdentifier( void *objMem ) const
+    uint32 GetDriverIdentifier( void *objMem ) const override
     {
         // Has not been officially defined.
         return 0;

@@ -91,6 +91,31 @@ struct NativeTextureMobileDXT
     bool hasAlpha;
 };
 
+inline eCompressionType getCompressionTypeFromS3TCInternalFormat( eS3TCInternalFormat internalFormat )
+{
+    eCompressionType rwCompressionType;
+
+    if ( internalFormat == COMPRESSED_RGB_S3TC_DXT1 ||
+         internalFormat == COMPRESSED_RGBA_S3TC_DXT1 )
+    {
+        rwCompressionType = RWCOMPRESS_DXT1;
+    }
+    else if ( internalFormat == COMPRESSED_RGBA_S3TC_DXT3 )
+    {
+        rwCompressionType = RWCOMPRESS_DXT3;
+    }
+    else if ( internalFormat == COMPRESSED_RGBA_S3TC_DXT5 )
+    {
+        rwCompressionType = RWCOMPRESS_DXT5;
+    }
+    else
+    {
+        throw RwException( "invalid internalFormat in s3tc_mobile native texture" );
+    }
+
+    return rwCompressionType;
+}
+
 struct dxtMobileNativeTextureTypeProvider : public texNativeTypeProvider
 {
     void ConstructTexture( Interface *engineInterface, void *objMem, size_t memSize ) override
@@ -173,6 +198,13 @@ struct dxtMobileNativeTextureTypeProvider : public texNativeTypeProvider
     bool IsTextureCompressed( const void *objMem ) override
     {
         return true;
+    }
+
+    eCompressionType GetTextureCompressionFormat( const void *objMem ) override
+    {
+        const NativeTextureMobileDXT *nativeTex = (const NativeTextureMobileDXT*)objMem;
+
+        return getCompressionTypeFromS3TCInternalFormat( nativeTex->internalFormat );
     }
 
     bool DoesTextureHaveAlpha( const void *objMem ) override

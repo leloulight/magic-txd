@@ -417,10 +417,16 @@ struct Raster
 	void convertToFormat(eRasterFormat format);
     void convertToPalette(ePaletteType paletteType, eRasterFormat newRasterFormat = RASTER_DEFAULT);
 
+    eRasterFormat getRasterFormat( void ) const;
+    ePaletteType getPaletteType( void ) const;
+
     // Optimization routines.
     void optimizeForLowEnd(float quality);
     void compress(float quality);
     void compressCustom(eCompressionType format);
+
+    bool isCompressed( void ) const;
+    eCompressionType getCompressionFormat( void ) const;
 
     // Mipmap utilities.
     uint32 getMipmapCount( void ) const;

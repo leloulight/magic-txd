@@ -142,6 +142,41 @@ struct NativeTextureXBOX
     static void unswizzleMipmap( Interface *engineInterface, swizzleMipmapTraversal& pixelData );
 };
 
+inline eCompressionType getDXTCompressionTypeFromXBOX( uint32 xboxCompressionType )
+{
+    eCompressionType rwCompressionType = RWCOMPRESS_NONE;
+
+    if ( xboxCompressionType != 0 )
+    {
+        if ( xboxCompressionType == 0xc )
+        {
+            rwCompressionType = RWCOMPRESS_DXT1;
+        }
+        else if ( xboxCompressionType == 0xd )
+        {
+            rwCompressionType = RWCOMPRESS_DXT2;
+        }
+        else if ( xboxCompressionType == 0xe )
+        {
+            rwCompressionType = RWCOMPRESS_DXT3;
+        }
+        else if ( xboxCompressionType == 0xf )
+        {
+            rwCompressionType = RWCOMPRESS_DXT5;
+        }
+        else if ( xboxCompressionType == 0x10 )
+        {
+            rwCompressionType = RWCOMPRESS_DXT4;
+        }
+        else
+        {
+            assert( 0 );
+        }
+    }
+
+    return rwCompressionType;
+}
+
 struct xboxNativeTextureTypeProvider : public texNativeTypeProvider
 {
     void ConstructTexture( Interface *engineInterface, void *objMem, size_t memSize )
@@ -218,35 +253,42 @@ struct xboxNativeTextureTypeProvider : public texNativeTypeProvider
         return nativeTex->rasterFormat;
     }
 
-    ePaletteType GetTexturePaletteType( const void *objMem )
+    ePaletteType GetTexturePaletteType( const void *objMem ) override
     {
         const NativeTextureXBOX *nativeTex = (const NativeTextureXBOX*)objMem;
 
         return nativeTex->paletteType;
     }
 
-    bool IsTextureCompressed( const void *objMem )
+    bool IsTextureCompressed( const void *objMem ) override
     {
         const NativeTextureXBOX *nativeTex = (const NativeTextureXBOX*)objMem;
 
         return ( nativeTex->dxtCompression != 0 );
     }
 
-    bool DoesTextureHaveAlpha( const void *objMem )
+    eCompressionType GetTextureCompressionFormat( const void *objMem ) override
+    {
+        const NativeTextureXBOX *nativeTex = (const NativeTextureXBOX*)objMem;
+
+        return getDXTCompressionTypeFromXBOX( nativeTex->dxtCompression );
+    }
+
+    bool DoesTextureHaveAlpha( const void *objMem ) override
     {
         const NativeTextureXBOX *nativeTex = (const NativeTextureXBOX*)objMem;
 
         return nativeTex->hasAlpha;
     }
 
-    uint32 GetTextureDataRowAlignment( void ) const
+    uint32 GetTextureDataRowAlignment( void ) const override
     {
         // The XBOX is assumed to have the same row alignment like Direct3D 8.
         // This means it is aligned to DWORD.
         return getXBOXTextureDataRowAlignment();
     }
 
-    uint32 GetDriverIdentifier( void *objMem ) const
+    uint32 GetDriverIdentifier( void *objMem ) const override
     {
         // Always the generic XBOX driver.
         return 8;

@@ -456,6 +456,18 @@ struct gamecubeNativeTextureTypeProvider : public texNativeTypeProvider
         return ( nativeTex->internalFormat == GVRFMT_CMP );
     }
 
+    eCompressionType GetTextureCompressionFormat( const void *objMem ) override
+    {
+        const NativeTextureGC *nativeTex = (const NativeTextureGC*)objMem;
+
+        if ( nativeTex->internalFormat == GVRFMT_CMP )
+        {
+            return RWCOMPRESS_DXT1;
+        }
+
+        return RWCOMPRESS_NONE;
+    }
+
     bool DoesTextureHaveAlpha( const void *objMem ) override
     {
         const NativeTextureGC *nativeTex = (const NativeTextureGC*)objMem;

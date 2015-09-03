@@ -695,6 +695,27 @@ void Raster::convertToPalette( ePaletteType paletteType, eRasterFormat newRaster
     }
 }
 
+ePaletteType Raster::getPaletteType( void ) const
+{
+    PlatformTexture *platformTex = this->platformData;
+
+    if ( !platformTex )
+    {
+        throw RwException( "no native data" );
+    }
+
+    Interface *engineInterface = this->engineInterface;
+
+    texNativeTypeProvider *texProvider = GetNativeTextureTypeProvider( engineInterface, platformTex );
+
+    if ( !texProvider )
+    {
+        throw RwException( "invalid native data" );
+    }
+
+    return texProvider->GetTexturePaletteType( platformTex );
+}
+
 struct liq_mipmap
 {
     const void *texelSource;

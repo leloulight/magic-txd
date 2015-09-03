@@ -192,6 +192,11 @@ struct atcNativeTextureTypeProvider : public texNativeTypeProvider
         return true;
     }
 
+    eCompressionType GetTextureCompressionFormat( const void *objMem ) override
+    {
+        return RWCOMPRESS_NONE;
+    }
+
     bool DoesTextureHaveAlpha( const void *objMem ) override
     {
         const NativeTextureATC *nativeTex = (const NativeTextureATC*)objMem;

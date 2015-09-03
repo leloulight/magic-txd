@@ -75,7 +75,8 @@ struct texNativeTypeProvider abstract
 
     virtual eRasterFormat   GetTextureRasterFormat( const void *objMem ) = 0;
     virtual ePaletteType    GetTexturePaletteType( const void *objMem ) = 0;
-    virtual bool            IsTextureCompressed( const void *objMem ) = 0;
+    virtual bool                IsTextureCompressed( const void *objMem ) = 0;
+    virtual eCompressionType    GetTextureCompressionFormat( const void *objMem ) = 0;
 
     virtual bool            DoesTextureHaveAlpha( const void *objMem ) = 0;
 

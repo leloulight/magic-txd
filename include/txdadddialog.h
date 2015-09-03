@@ -153,8 +153,9 @@ private:
     rw::Raster *convRaster;
     bool hasPlatformOriginal;
     QPixmap pixelsToAdd;
-
     QWidget *propertiesWidget;
+
+    bool wantsGoodPlatformSetting;
 
     QLineEdit *textureNameEdit;
     QLineEdit *textureMaskNameEdit;
@@ -172,6 +173,7 @@ private:
     bool enablePaletteSelect;
     bool enablePixelFormatSelect;
 
+    QRadioButton *platformOriginalToggle;
     QRadioButton *platformRawRasterToggle;
     QRadioButton *platformCompressionToggle;
     QRadioButton *platformPaletteToggle;

@@ -152,43 +152,6 @@ void d3d9NativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, P
 	engineInterface->SerializeExtensions( theTexture, outputProvider );
 }
 
-inline eCompressionType getD3DCompressionType( const NativeTextureD3D9 *nativeTex )
-{
-    eCompressionType rwCompressionType = RWCOMPRESS_NONE;
-
-    uint32 dxtType = nativeTex->dxtCompression;
-
-    if ( dxtType != 0 )
-    {
-        if ( dxtType == 1 )
-        {
-            rwCompressionType = RWCOMPRESS_DXT1;
-        }
-        else if ( dxtType == 2 )
-        {
-            rwCompressionType = RWCOMPRESS_DXT2;
-        }
-        else if ( dxtType == 3 )
-        {
-            rwCompressionType = RWCOMPRESS_DXT3;
-        }
-        else if ( dxtType == 4 )
-        {
-            rwCompressionType = RWCOMPRESS_DXT4;
-        }
-        else if ( dxtType == 5 )
-        {
-            rwCompressionType = RWCOMPRESS_DXT5;
-        }
-        else
-        {
-            throw RwException( "unsupported DXT compression" );
-        }
-    }
-
-    return rwCompressionType;
-}
-
 // Pixel movement functions.
 void d3d9NativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineInterface, void *objMem, pixelDataTraversal& pixelsOut )
 {

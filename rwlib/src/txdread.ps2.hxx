@@ -1119,6 +1119,11 @@ struct ps2NativeTextureTypeProvider : public texNativeTypeProvider
         return false;
     }
 
+    eCompressionType GetTextureCompressionFormat( const void *objMem ) override
+    {
+        return RWCOMPRESS_NONE;
+    }
+
     bool DoesTextureHaveAlpha( const void *objMem ) override
     {
         // TODO: this needs a rewrite. PS2 textures do not cache the alpha flag.
