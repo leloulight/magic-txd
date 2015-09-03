@@ -414,3 +414,9 @@ QRadioButton::indicator:checked {
 QRadioButton:indicator:checked:hover {
     image: url(resources/dark/radio_checked_hover.png);
 }
+
+QGroupBox {
+	font-family:"Segoe UI Light";
+    font-size: 15px;
+    color: #ffffff;
+}

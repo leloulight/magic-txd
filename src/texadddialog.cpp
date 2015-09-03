@@ -235,7 +235,9 @@ void TexAddDialog::loadPlatformOriginal( void )
         }
 
         // If we have a preview, we want to limit the properties box.
-        this->propertiesWidget->setMaximumWidth( 300 );
+        int reqWidth = this->propertiesWidget->sizeHint().width();
+
+        this->propertiesWidget->setMaximumWidth( reqWidth );
 
         // Set the recommended sizes.
         rw::uint32 recWidth, recHeight;
