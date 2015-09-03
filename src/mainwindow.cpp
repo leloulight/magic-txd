@@ -13,6 +13,7 @@
 #include <QFileDialog>
 
 #include "textureViewport.h"
+#include "rwversiondialog.h"
 
 #include "qtrwutils.hxx"
 
@@ -71,7 +72,7 @@ MainWindow::MainWindow(QWidget *parent) :
     {
 	    /* --- Window --- */
         updateWindowTitle();
-        setMinimumSize(380, 300);
+        setMinimumSize(460, 300);
 	    resize(900, 680);
 
 		/* --- Log --- */
@@ -114,7 +115,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	    txdNameBackground->setFixedHeight(60);
 	    txdNameBackground->setObjectName("txdNameBackground");
 	    QLabel *txdName = new QLabel();
-	    txdName->setObjectName("txdName");
+	    txdName->setObjectName("label36px");
 	    txdName->setAlignment(Qt::AlignCenter);
 
         this->txdNameLabel = txdName;
@@ -122,7 +123,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	    QGridLayout *txdNameLayout = new QGridLayout();
 	    QLabel *starsBox = new QLabel;
 	    QMovie *stars = new QMovie;
-	    stars->setFileName("resources\\styles\\stars_blue.gif");
+	    stars->setFileName("resources\\dark\\stars.gif");
 	    starsBox->setMovie(stars);
 	    stars->start();
 	    txdNameLayout->addWidget(starsBox, 0, 0);
@@ -219,6 +220,8 @@ MainWindow::MainWindow(QWidget *parent) :
 	    editMenu->addSeparator();
 	    QAction *actionSetupTxdVersion = new QAction("&Setup TXD version", this);
 	    editMenu->addAction(actionSetupTxdVersion);
+
+		connect(actionSetupTxdVersion, &QAction::triggered, this, &MainWindow::onSetupTxdVersion);
 
 	    QMenu *exportMenu = menu->addMenu(tr("&Export"));
 
@@ -1228,4 +1231,9 @@ const char* MainWindow::GetTXDPlatformString( rw::TexDictionary *txd )
         return NULL;
 
     return texRaster->getNativeDataTypeName();
+}
+
+void MainWindow::onSetupTxdVersion(bool checked) {
+	RwVersionDialog dialog;
+	dialog.Show();
 }

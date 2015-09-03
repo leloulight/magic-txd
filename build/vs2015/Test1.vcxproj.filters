@@ -59,6 +59,9 @@
     <ClInclude Include="..\..\src\qtrwutils.hxx">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\rwversiondialog.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">

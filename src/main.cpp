@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
 	QCoreApplication::setLibraryPaths(paths);
 
     QApplication a(argc, argv);
-    a.setStyleSheet(styles::get("resources\\main.shell"));
+    a.setStyleSheet(styles::get("resources\\dark.shell"));
     MainWindow w;
     w.show();
 

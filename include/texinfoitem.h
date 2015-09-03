@@ -10,7 +10,7 @@ public:
     {
         QLabel *texName = new QLabel(QString(), this);
         texName->setFixedHeight(23);
-        texName->setObjectName("texName");
+        texName->setObjectName("label19px");
         QLabel *texInfo = new QLabel(QString(), this);
         texInfo->setObjectName("texInfo");
         QVBoxLayout *layout = new QVBoxLayout(this);

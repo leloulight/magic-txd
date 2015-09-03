@@ -82,6 +82,8 @@ public slots:
     void onRequestSaveTXD( bool checked );
     void onRequestSaveAsTXD( bool checked );
 
+	void onSetupTxdVersion(bool checked);
+
 private:
     QString requestValidImagePath( void );
 

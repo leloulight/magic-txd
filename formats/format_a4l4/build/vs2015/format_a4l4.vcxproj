@@ -217,7 +217,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)\..\..\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>magictxd_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>magictxd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <Version>1</Version>
     </Link>
   </ItemDefinitionGroup>
