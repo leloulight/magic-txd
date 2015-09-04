@@ -245,6 +245,7 @@ void TexAddDialog::loadPlatformOriginal( void )
 
         this->previewWidget->recommendedWidth = (int)recWidth;
         this->previewWidget->recommendedHeight = (int)recHeight;
+        this->previewWidget->hasSizeProperties = true;
 
         this->updatePreviewWidget();
     }
@@ -475,6 +476,17 @@ void TexAddDialog::createRasterForConfiguration( void )
     this->updatePreviewWidget();
 }
 
+struct PropHolderWidget : public QTabWidget
+{
+    QSize sizeHint( void ) const override
+    {
+        QSize curSize = this->size();
+        QSize prefSize = QTabWidget::sizeHint();
+
+        return QSize( prefSize.width(), std::max( curSize.height(), prefSize.height() ) );
+    }
+};
+
 TexAddDialog::TexAddDialog( MainWindow *mainWnd, const dialogCreateParams& create_params, TexAddDialog::operationCallback_t cb ) : QDialog( mainWnd )
 {
     this->mainWnd = mainWnd;
@@ -505,6 +517,8 @@ TexAddDialog::TexAddDialog( MainWindow *mainWnd, const dialogCreateParams& creat
     this->enableCompressSelect = true;
     this->enablePaletteSelect = true;
     this->enablePixelFormatSelect = true;
+
+    this->isSystemResize = false;
 
     this->wantsGoodPlatformSetting = true;
 
@@ -537,7 +551,7 @@ TexAddDialog::TexAddDialog( MainWindow *mainWnd, const dialogCreateParams& creat
     QHBoxLayout *rootHoriLayout = new QHBoxLayout();
 
     // Add a form to the left, a preview to the right.
-    QTabWidget *formHolderWidget = new QTabWidget();
+    QTabWidget *formHolderWidget = new PropHolderWidget();
 
     this->propertiesWidget = formHolderWidget;
 
@@ -762,27 +776,23 @@ TexAddDialog::TexAddDialog( MainWindow *mainWnd, const dialogCreateParams& creat
 
     // Cached the preview item.
     {
-        QGroupBox *previewGroupBox = new QGroupBox();
+        QGroupBox *previewGroupBox = new QGroupBox( this );
+
+        rootHoriLayout->addWidget( previewGroupBox );
+
+        QVBoxLayout *groupBoxLayout = new QVBoxLayout( previewGroupBox );
 
         this->previewGroupWidget = previewGroupBox;
 
-        pixelPreviewWidget *previewWidget = new pixelPreviewWidget( this );
+        pixelPreviewWidget *previewWidget = new pixelPreviewWidget( this, previewGroupBox );
+
+        groupBoxLayout->addWidget( previewWidget );
 
         this->previewWidget = previewWidget;
 
         previewWidget->recommendedWidth = 0;
         previewWidget->recommendedHeight = 0;
-        previewWidget->requiredHeight = this->sizeHint().height();
-
-        QVBoxLayout *groupBoxLayout = new QVBoxLayout();
-
-        groupBoxLayout->addWidget( previewWidget );
-
-        previewGroupBox->setLayout( groupBoxLayout );
-
-        rootHoriLayout->addWidget( previewGroupBox );
-
-        previewGroupBox->setVisible( false );
+        previewWidget->requiredHeight = formHolderWidget->sizeHint().height();
     }
 
     // Do initial stuff.
@@ -1079,6 +1089,9 @@ void TexAddDialog::OnPlatformSelect( const QString& newText )
 
     // We want to create a raster special to the configuration.
     this->createRasterForConfiguration();
+
+    // Fix the width.
+    this->previewWidget->fixWidth();
 }
 
 void TexAddDialog::OnTextureAddRequest( bool checked )

@@ -13,6 +13,14 @@
 
 #include "defs.h"
 
+struct SystemEventHandlerWidget abstract
+{
+    ~SystemEventHandlerWidget( void );
+
+    virtual void beginSystemEvent( QEvent *evt ) = 0;
+    virtual void endSystemEvent( QEvent *evt ) = 0;
+};
+
 #include "texinfoitem.h"
 #include "txdlog.h"
 #include "txdadddialog.h"
