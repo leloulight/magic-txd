@@ -773,6 +773,11 @@ void RemapMipmapLayer(
 
     colorModelDispatcher <const void> fetchPalDispatch( palRasterFormat, palColorOrder, palItemDepth, NULL, 0, PALETTE_NONE );
 
+    // Even if the palette size is bigger than the indices can address, we shall only care about the actually addressible colors.
+    uint32 addressiblePaletteSize = (uint32)pow( 2, convItemDepth );
+
+    paletteSize = std::min( addressiblePaletteSize, paletteSize );
+
     if ( palRuntimeType == PALRUNTIME_NATIVE )
     {
         // Do some complex remapping.
