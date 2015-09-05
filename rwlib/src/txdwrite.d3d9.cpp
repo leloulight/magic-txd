@@ -415,6 +415,26 @@ inline void convertCompatibleRasterFormat(
             depth = 8;
             d3dFormatOut = D3DFMT_L8;
         }
+        // NEW formats :3
+        else if ( srcRasterFormat == RASTER_LUM_ALPHA )
+        {
+            if ( srcDepth == 8 )
+            {
+                d3dFormatOut = D3DFMT_A4L4;
+            }
+            else if ( srcDepth == 16 )
+            {
+                d3dFormatOut = D3DFMT_A8L8;
+            }
+            else
+            {
+                // Be safe and convert to maximum quality.
+                rasterFormat = RASTER_8888;
+                depth = 32;
+                colorOrder = COLOR_BGRA;
+                d3dFormatOut = D3DFMT_A8R8G8B8;
+            }
+        }
         else
         {
             // Any unknown raster formats need conversion to full quality.
