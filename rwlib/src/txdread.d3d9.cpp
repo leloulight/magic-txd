@@ -299,19 +299,26 @@ void d3d9NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
                         d3dRasterFormat = RASTER_DEFAULT;
                     }
 
+                    // Check whether the raster format that we calculated matches the raster format that was given by the serialized native texture.
                     eRasterFormat rasterFormat = platformTex->rasterFormat;
 
                     if ( rasterFormat != d3dRasterFormat )
                     {
-                        // We should only warn about a mismatching format if we kinda know what we are doing.
-                        // Otherwise we have already warned the user about the invalid D3DFORMAT entry, that we base upon anyway.
-                        if ( hasReportedStrongWarning == false )
+                        // This is a complicated check.
+                        // We actually allow specialized raster formats that the original RW implementation did not support.
+                        // Warnings to the user should still only be about the RW3 implementation.
+                        if ( !isValidFormat || !isRasterFormatRequired || isSupportedByRW3 )
                         {
-                            if ( isRasterFormatRequired || !engineIgnoreSecureWarnings )
+                            // We should only warn about a mismatching format if we kinda know what we are doing.
+                            // Otherwise we have already warned the user about the invalid D3DFORMAT entry, that we base upon anyway.
+                            if ( hasReportedStrongWarning == false )
                             {
-                                if ( engineWarningLevel >= 3 )
+                                if ( isRasterFormatRequired || !engineIgnoreSecureWarnings )
                                 {
-                                    engineInterface->PushWarning( "texture " + theTexture->GetName() + " has an invalid raster format (ignoring)" );
+                                    if ( engineWarningLevel >= 3 )
+                                    {
+                                        engineInterface->PushWarning( "texture " + theTexture->GetName() + " has an invalid raster format (ignoring)" );
+                                    }
                                 }
                             }
                         }

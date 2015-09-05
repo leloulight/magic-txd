@@ -766,66 +766,71 @@ public:
                     index, rasterFormat, depth,
                     realTexelSource, realColorIndex, realColorDepth
                 );
-            
-            if ( rasterFormat == RASTER_LUM )
-            {
-                if ( realColorDepth == 8 )
+
+            if ( resRealSource )
+            { 
+                if ( rasterFormat == RASTER_LUM )
                 {
-                    struct pixel_t
+                    if ( realColorDepth == 8 )
                     {
-                        uint8 lum;
-                    };
+                        struct pixel_t
+                        {
+                            uint8 lum;
+                        };
 
-                    pixel_t *srcData = ( (pixel_t*)realTexelSource + realColorIndex );
+                        pixel_t *srcData = ( (pixel_t*)realTexelSource + realColorIndex );
 
-                    lum = srcData->lum;
-                    alpha = 255;
+                        lum = srcData->lum;
+                        alpha = 255;
 
-                    success = true;
-                }
-                else if ( realColorDepth == 4 )
-                {
-                    PixelFormat::palette4bit *lumData = (PixelFormat::palette4bit*)realTexelSource;
-
-                    uint8 scaledLum;
-
-                    lumData->getvalue( realColorIndex, scaledLum );
-
-                    lum = ( scaledLum * 255 / 15 );
-                    alpha = 255;
-
-                    success = true;
-                }
-            }
-            else if ( rasterFormat == RASTER_LUM_ALPHA )
-            {
-                if ( realColorDepth == 8 )
-                {
-                    struct pixel_t
+                        success = true;
+                    }
+                    else if ( realColorDepth == 4 )
                     {
-                        uint8 lum : 4;
-                        uint8 alpha : 4;
-                    };
+                        PixelFormat::palette4bit *lumData = (PixelFormat::palette4bit*)realTexelSource;
 
-                    pixel_t *srcData = ( (pixel_t*)realTexelSource + realColorIndex );
+                        uint8 scaledLum;
 
-                    lum = ( srcData->lum * 255 / 15 );
-                    alpha = ( srcData->alpha * 255 / 15 );
+                        lumData->getvalue( realColorIndex, scaledLum );
 
-                    success = true;
+                        lum = ( scaledLum * 255 / 15 );
+                        alpha = 255;
+
+                        success = true;
+                    }
                 }
-                else if ( realColorDepth == 16 )
+                else if ( rasterFormat == RASTER_LUM_ALPHA )
                 {
-                    struct pixel_t
+                    if ( realColorDepth == 8 )
                     {
-                        uint8 lum;
-                        uint8 alpha;
-                    };
+                        struct pixel_t
+                        {
+                            uint8 lum : 4;
+                            uint8 alpha : 4;
+                        };
 
-                    pixel_t *srcData = ( (pixel_t*)realTexelSource + realColorIndex );
+                        pixel_t *srcData = ( (pixel_t*)realTexelSource + realColorIndex );
 
-                    lum = srcData->lum;
-                    alpha = srcData->alpha;
+                        lum = ( srcData->lum * 255 / 15 );
+                        alpha = ( srcData->alpha * 255 / 15 );
+
+                        success = true;
+                    }
+                    else if ( realColorDepth == 16 )
+                    {
+                        struct pixel_t
+                        {
+                            uint8 lum;
+                            uint8 alpha;
+                        };
+
+                        pixel_t *srcData = ( (pixel_t*)realTexelSource + realColorIndex );
+
+                        lum = srcData->lum;
+                        alpha = srcData->alpha;
+
+                        success = true;
+                    }
                 }
             }
         }

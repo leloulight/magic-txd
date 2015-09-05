@@ -250,12 +250,9 @@ inline uint32 generateRasterFormatFlags( eRasterFormat rasterFormat, ePaletteTyp
         {
             serFormat = RWFORMAT3_555;
         }
-        else
-        {
-            // We failed to map to a RenderWare3 format!
-            // This is a safe assertion.
-            assert( 0 );
-        }
+        // otherwise, well we failed.
+        // snap, we dont have a format!
+        // hopefully the implementation knows what it is doing!
     }
 
     rasterFlags |= ( (uint32)serFormat << 8 );

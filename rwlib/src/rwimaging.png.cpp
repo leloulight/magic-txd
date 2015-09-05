@@ -326,13 +326,12 @@ struct pngImagingExtension : public imagingFormatExtension
                 }
                 else if ( color_type == 4 )
                 {
-#if 0
                     if ( png_depth == 8 || png_depth == 16 )
                     {
                         // We are luminance with alpha.
-                        rasterFormat = RASTER_8888;
-                        depth = 32;
-                        itemDepth = 32;
+                        rasterFormat = RASTER_LUM_ALPHA;
+                        depth = 16;
+                        itemDepth = 16;
 
                         // Sadly, we cannot directly acquire this format.
 
@@ -347,9 +346,6 @@ struct pngImagingExtension : public imagingFormatExtension
                     {
                         throw RwException( "unknown .png luminance alpha format" );
                     }
-#else
-                    throw RwException( ".png with luminance and alpha not supported yet (sorry)" );
-#endif
                 }
                 else if ( color_type == 6 )
                 {

@@ -5,7 +5,7 @@
 namespace rw
 {
 
-inline bool getD3DFormatFromRasterType(eRasterFormat paletteRasterType, ePaletteType paletteType, eColorOrdering colorOrder, uint32 itemDepth, D3DFORMAT& d3dFormat)
+inline bool getD3DFormatFromRasterType(eRasterFormat rasterFormat, ePaletteType paletteType, eColorOrdering colorOrder, uint32 itemDepth, D3DFORMAT& d3dFormat)
 {
     bool hasFormat = false;
 
@@ -23,7 +23,7 @@ inline bool getD3DFormatFromRasterType(eRasterFormat paletteRasterType, ePalette
     }
     else
     {
-        if ( paletteRasterType == RASTER_1555 )
+        if ( rasterFormat == RASTER_1555 )
         {
             if ( itemDepth == 16 )
             {
@@ -35,7 +35,7 @@ inline bool getD3DFormatFromRasterType(eRasterFormat paletteRasterType, ePalette
                 }
             }
         }
-        else if ( paletteRasterType == RASTER_565 )
+        else if ( rasterFormat == RASTER_565 )
         {
             if ( itemDepth == 16 )
             {
@@ -47,7 +47,7 @@ inline bool getD3DFormatFromRasterType(eRasterFormat paletteRasterType, ePalette
                 }
             }
         }
-        else if ( paletteRasterType == RASTER_4444 )
+        else if ( rasterFormat == RASTER_4444 )
         {
             if ( itemDepth == 16 )
             {
@@ -59,7 +59,7 @@ inline bool getD3DFormatFromRasterType(eRasterFormat paletteRasterType, ePalette
                 }
             }
         }
-        else if ( paletteRasterType == RASTER_LUM )
+        else if ( rasterFormat == RASTER_LUM )
         {
             if ( itemDepth == 8 )
             {
@@ -69,7 +69,7 @@ inline bool getD3DFormatFromRasterType(eRasterFormat paletteRasterType, ePalette
             }
             // there is also 4bit LUM, but as you see it is not supported by D3D.
         }
-        else if ( paletteRasterType == RASTER_8888 )
+        else if ( rasterFormat == RASTER_8888 )
         {
             if ( itemDepth == 32 )
             {
@@ -87,7 +87,7 @@ inline bool getD3DFormatFromRasterType(eRasterFormat paletteRasterType, ePalette
                 }
             }
         }
-        else if ( paletteRasterType == RASTER_888 )
+        else if ( rasterFormat == RASTER_888 )
         {
             if (colorOrder == COLOR_BGRA)
             {
@@ -114,7 +114,7 @@ inline bool getD3DFormatFromRasterType(eRasterFormat paletteRasterType, ePalette
                 }
             }
         }
-        else if ( paletteRasterType == RASTER_555 )
+        else if ( rasterFormat == RASTER_555 )
         {
             if ( itemDepth == 16 )
             {
@@ -124,6 +124,22 @@ inline bool getD3DFormatFromRasterType(eRasterFormat paletteRasterType, ePalette
 
                     hasFormat = true;
                 }
+            }
+        }
+        // NEW formats :3
+        else if ( rasterFormat == RASTER_LUM_ALPHA )
+        {
+            if ( itemDepth == 8 )
+            {
+                d3dFormat = D3DFMT_A4L4;
+
+                hasFormat = true;
+            }
+            else if ( itemDepth == 16 )
+            {
+                d3dFormat = D3DFMT_A8L8;
+
+                hasFormat = true;
             }
         }
     }
@@ -275,6 +291,16 @@ inline bool getRasterFormatFromD3DFormat(
 
         // Actually, there is no such thing as a color order for luminance textures.
         // We set this field so we make things happy.
+        colorOrderOut = COLOR_BGRA;
+
+        isValidFormat = true;
+    }
+    else if (d3dFormat == D3DFMT_A4L4 ||
+             d3dFormat == D3DFMT_A8L8)
+    {
+        rasterFormatOut = RASTER_LUM_ALPHA;
+
+        // See above.
         colorOrderOut = COLOR_BGRA;
 
         isValidFormat = true;

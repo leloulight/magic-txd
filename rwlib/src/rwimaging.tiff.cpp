@@ -656,11 +656,15 @@ struct tiffImagingExtension : public imagingFormatExtension
                         {
                             if ( tiff_has_alpha_channel )
                             {
-                                // Need to store things in RGBA.
-                                dstRasterFormat = RASTER_8888;
-                                dstDepth = 32;
+                                // We have a special new format to hold this thing.
+                                dstRasterFormat = RASTER_LUM_ALPHA;
+                                dstDepth = 16;
 
-                                // We have no known RW types representation,
+                                if ( photometric_type == PHOTOMETRIC_MINISBLACK )
+                                {
+                                    tiffRasterFormat = RASTER_LUM_ALPHA;
+                                    tiffDepth = ( bits_per_sample * 2 );    // because we have a grayscale and an alpha sample.
+                                }
                             }
                             else
                             {
@@ -671,7 +675,7 @@ struct tiffImagingExtension : public imagingFormatExtension
                                 if ( photometric_type == PHOTOMETRIC_MINISBLACK )
                                 {
                                     tiffRasterFormat = RASTER_LUM;
-                                    tiffDepth = 8;
+                                    tiffDepth = bits_per_sample;
                                 }
                             }
 
