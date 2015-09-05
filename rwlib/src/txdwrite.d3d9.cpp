@@ -101,7 +101,7 @@ void d3d9NativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, P
             metaHeader.hasAlpha = platformTex->hasAlpha;
             metaHeader.isCubeTexture = platformTex->isCubeTexture;
             metaHeader.autoMipMaps = platformTex->autoMipmaps;
-            metaHeader.isNotRwCompatible = ( platformTex->d3dRasterFormatLink == false );   // no valid link to RW original types.
+            metaHeader.isNotRwCompatible = ( platformTex->isOriginalRWCompatible == false );   // no valid link to RW original types.
             metaHeader.pad2 = 0;
 
             texNativeImageStruct.write( &metaHeader, sizeof(metaHeader) );
@@ -466,6 +466,8 @@ void d3d9NativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
 
     bool hasRasterFormatLink = false;
 
+    bool hasOriginalRWCompat = false;
+
     if ( rwCompressionType == RWCOMPRESS_NONE )
     {
         // Actually, before we can acquire texels, we MUST make sure they are in
@@ -492,6 +494,13 @@ void d3d9NativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
         // If we are uncompressed, then we know how to deal with the texture data.
         // Hence we have a d3dRasterFormatLink!
         hasRasterFormatLink = true;
+
+        // We could have original RW compatibility here.
+        // This is of course only possible if we are not compressed/are a raw raster.
+        hasOriginalRWCompat =
+            isRasterFormatOriginalRWCompatible(
+                dstRasterFormat, dstColorOrder, dstDepth, dstPaletteType
+            );
     }
     else if ( rwCompressionType == RWCOMPRESS_DXT1 )
     {
@@ -655,6 +664,9 @@ void d3d9NativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
 
     // Store whether we can directly deal with the data we just got.
     nativeTex->d3dRasterFormatLink = hasRasterFormatLink;
+
+    // Store whether the pixels have a meaning in RW3 terms.
+    nativeTex->isOriginalRWCompatible = hasOriginalRWCompat;
 
     // We cannot create a texture using an anonymous raster link this way.
     nativeTex->anonymousFormatLink = NULL;

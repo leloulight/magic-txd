@@ -118,6 +118,22 @@ inline void getDefaultRasterFormatString( eRasterFormat rasterFormat, uint32 ite
 
             isColorOrderImportant = true;
         }
+        // NEW formats :3
+        else if ( rasterFormat == RASTER_LUM_ALPHA )
+        {
+            if ( itemDepth == 8 )
+            {
+                formatOut += "LUM4_ALPHA4";
+            }
+            else if ( itemDepth == 16 )
+            {
+                formatOut += "LUM8_ALPHA8";
+            }
+            else
+            {
+                formatOut += "LUM_ALPHA";
+            }
+        }
         else
         {
             formatOut += "unknown";

@@ -131,6 +131,64 @@ inline bool getD3DFormatFromRasterType(eRasterFormat paletteRasterType, ePalette
     return hasFormat;
 }
 
+inline bool isRasterFormatOriginalRWCompatible(
+    eRasterFormat rasterFormat, eColorOrdering colorOrder, uint32 depth, ePaletteType paletteType
+)
+{
+    // This function assumes that the format that it gets is compatible with the Direct3D 9 native texture.
+    // For anything else the result is undefined behavior.
+
+    if ( paletteType != PALETTE_NONE )
+    {
+        return true;
+    }
+    else
+    {
+        if ( rasterFormat == RASTER_1555 && depth == 16 && colorOrder == COLOR_BGRA )
+        {
+            return true;
+        }
+        else if ( rasterFormat == RASTER_565 && depth == 16 && colorOrder == COLOR_BGRA )
+        {
+            return true;
+        }
+        else if ( rasterFormat == RASTER_4444 && depth == 16 && colorOrder == COLOR_BGRA )
+        {
+            return true;
+        }
+        else if ( rasterFormat == RASTER_LUM && depth == 8 )
+        {
+            return true;
+        }
+        else if ( rasterFormat == RASTER_8888 && depth == 32 && colorOrder == COLOR_BGRA )
+        {
+            return true;
+        }
+        else if ( rasterFormat == RASTER_888 && depth == 32 && colorOrder == COLOR_BGRA )
+        {
+            return true;
+        }
+        else if ( rasterFormat == RASTER_16 && depth == 16 )
+        {
+            return true;
+        }
+        else if ( rasterFormat == RASTER_24 && depth == 24 )
+        {
+            return true;
+        }
+        else if ( rasterFormat == RASTER_32 && depth == 32 )
+        {
+            return true;
+        }
+        else if ( rasterFormat == RASTER_555 && depth == 16 && colorOrder == COLOR_BGRA )
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 inline bool getRasterFormatFromD3DFormat(
     D3DFORMAT d3dFormat, bool canHaveAlpha,
     eRasterFormat& rasterFormatOut, eColorOrdering& colorOrderOut, bool& isVirtualRasterFormatOut
@@ -320,6 +378,7 @@ struct NativeTextureD3D9 : public d3dpublic::d3dNativeTextureInterface
         this->autoMipmaps = false;
         this->d3dFormat = D3DFMT_A8R8G8B8;
         this->d3dRasterFormatLink = false;
+        this->isOriginalRWCompatible = true;
         this->anonymousFormatLink = NULL;
         this->dxtCompression = 0;
         this->rasterType = 4;
@@ -363,15 +422,16 @@ struct NativeTextureD3D9 : public d3dpublic::d3dNativeTextureInterface
             this->depth = right.depth;
         }
 
-        this->isCubeTexture =       right.isCubeTexture;
-        this->autoMipmaps =         right.autoMipmaps;
-        this->d3dFormat =           right.d3dFormat;
-        this->d3dRasterFormatLink = right.d3dRasterFormatLink;
-        this->anonymousFormatLink = right.anonymousFormatLink;
-        this->dxtCompression =      right.dxtCompression;
-        this->rasterType =          right.rasterType;
-        this->hasAlpha =            right.hasAlpha;
-        this->colorOrdering =       right.colorOrdering;
+        this->isCubeTexture =           right.isCubeTexture;
+        this->autoMipmaps =             right.autoMipmaps;
+        this->d3dFormat =               right.d3dFormat;
+        this->d3dRasterFormatLink =     right.d3dRasterFormatLink;
+        this->isOriginalRWCompatible =  right.isOriginalRWCompatible;
+        this->anonymousFormatLink =     right.anonymousFormatLink;
+        this->dxtCompression =          right.dxtCompression;
+        this->rasterType =              right.rasterType;
+        this->hasAlpha =                right.hasAlpha;
+        this->colorOrdering =           right.colorOrdering;
     }
 
     inline void clearTexelData( void )
@@ -423,6 +483,7 @@ public:
     uint32 rasterType;
 
     bool d3dRasterFormatLink;
+    bool isOriginalRWCompatible;
 
     d3dpublic::nativeTextureFormatHandler *anonymousFormatLink;
 

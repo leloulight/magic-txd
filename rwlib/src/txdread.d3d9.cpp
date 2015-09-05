@@ -126,6 +126,32 @@ void d3d9NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
                         platformTex->dxtCompression = actualCompression;
                     }
                 }
+                // - Verify depth.
+                {
+                    bool hasInvalidDepth = false;
+
+                    if (platformTex->paletteType == PALETTE_4BIT)
+                    {
+                        if (depth != 4 && depth != 8)
+                        {
+                            hasInvalidDepth = true;
+                        }
+                    }
+                    else if (platformTex->paletteType == PALETTE_8BIT)
+                    {
+                        if (depth != 8)
+                        {
+                            hasInvalidDepth = true;
+                        }
+                    }
+
+                    if (hasInvalidDepth == true)
+                    {
+                        throw RwException( "texture " + theTexture->GetName() + " has an invalid depth" );
+
+                        // We cannot fix an invalid depth.
+                    }
+                }
                 // - Verify raster format.
                 bool d3dRasterFormatLink = false;
                 d3dpublic::nativeTextureFormatHandler *usedFormatHandler = NULL;
@@ -220,13 +246,6 @@ void d3d9NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
                                     isRasterFormatRequired = false;
 
                                     isValidFormat = true;
-
-                                    if ( hasExpandedFormatRegion == false )
-                                    {
-                                        // We kinda have a broken texture here.
-                                        // This may not load on the GTA:SA engine.
-                                        engineInterface->PushWarning( "texture " + theTexture->GetName() + " has extended D3DFORMAT link but does not enable 'isNotRwCompatible'" );
-                                    }
                                 }
                             }
                         }
@@ -240,12 +259,6 @@ void d3d9NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
                                 engineInterface->PushWarning( "texture " + theTexture->GetName() + " has an unknown D3DFORMAT link (" + std::to_string( (DWORD)d3dFormat ) + ")" );
 
                                 hasReportedStrongWarning = true;
-                            }
-
-                            // There is an even graver error if the extended format range has been left disabled.
-                            if ( hasExpandedFormatRegion == false )
-                            {
-                                engineInterface->PushWarning( "texture " + theTexture->GetName() + " has an unknown D3DFORMAT link but does not enable 'isNotRwCompatible'" );
                             }
                         }
                     }
@@ -266,12 +279,17 @@ void d3d9NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
 
                     // If we are a valid format, we are actually known, which means we have a D3DFORMAT -> eRasterFormat link.
                     // This allows us to be handled by the Direct3D 9 RW implementation.
+                    bool isSupportedByRW3 = false;
+
                     if ( isValidFormat )
                     {
                         // If the raster format is not required though, then it means that it actually has no link.
                         if ( isRasterFormatRequired )
                         {
                             d3dRasterFormatLink = true;
+
+                            // Decide whether the raster format is supported by the RW3 specification of D3D9.
+                            isSupportedByRW3 = isRasterFormatOriginalRWCompatible( d3dRasterFormat, colorOrder, depth, platformTex->paletteType );
                         }
                     }
                     else
@@ -280,7 +298,7 @@ void d3d9NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
                         // Otherwise we are not entirely sure, so we should keep it as RASTER_DEFAULT.
                         d3dRasterFormat = RASTER_DEFAULT;
                     }
-                    
+
                     eRasterFormat rasterFormat = platformTex->rasterFormat;
 
                     if ( rasterFormat != d3dRasterFormat )
@@ -302,40 +320,29 @@ void d3d9NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
                         platformTex->rasterFormat = d3dRasterFormat;
                     }
 
+                    // Anything that maps directly to RW sample types is compatible by original RW.
+                    // The specification says that each texture should act as an array of samples.
+                    // If we are not compatible to original RW, we can take a more liberal approach and
+                    // see a compressed texture as an array of samples, because it decompresses to it.
+                    // Either way, this flag must be correct, so let's verify it.
+                    if ( !hasExpandedFormatRegion && !isSupportedByRW3 )
+                    {
+                        // We kinda have a broken texture here.
+                        // This may not load on the GTA:SA engine.
+                        engineInterface->PushWarning( "texture " + theTexture->GetName() + " has extended D3DFORMAT link but does not enable 'isNotRwCompatible'" );
+                    }
+
                     // Store the color ordering.
                     platformTex->colorOrdering = colorOrder;
 
                     // Store whether we have the D3D raster format link.
                     platformTex->d3dRasterFormatLink = d3dRasterFormatLink;
 
+                    // Store whether the raster format is actually compatible with RW3.
+                    platformTex->isOriginalRWCompatible = isSupportedByRW3;
+
                     // Maybe we have a format handler.
                     platformTex->anonymousFormatLink = usedFormatHandler;
-                }
-                // - Verify depth.
-                {
-                    bool hasInvalidDepth = false;
-
-                    if (platformTex->paletteType == PALETTE_4BIT)
-                    {
-                        if (depth != 4 && depth != 8)
-                        {
-                            hasInvalidDepth = true;
-                        }
-                    }
-                    else if (platformTex->paletteType == PALETTE_8BIT)
-                    {
-                        if (depth != 8)
-                        {
-                            hasInvalidDepth = true;
-                        }
-                    }
-
-                    if (hasInvalidDepth == true)
-                    {
-                        throw RwException( "texture " + theTexture->GetName() + " has an invalid depth" );
-
-                        // We cannot fix an invalid depth.
-                    }
                 }
 
                 if (platformTex->paletteType != PALETTE_NONE)

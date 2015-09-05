@@ -1523,6 +1523,7 @@ void d3d9NativeTextureTypeProvider::DeserializeNativeImage( Interface *engineInt
 
     // Determine whether this is a direct format link.
     bool d3dRasterFormatLink = false;
+    bool originalRWCompat = false;
 
     // Determine the mapping to original RW types.
     eRasterFormat rasterFormat = RASTER_DEFAULT;
@@ -1542,6 +1543,13 @@ void d3d9NativeTextureTypeProvider::DeserializeNativeImage( Interface *engineInt
         if ( isVirtualMapping == false )
         {
             d3dRasterFormatLink = true;
+
+            // Could be compatible with RW. Let's check.
+            originalRWCompat =
+                isRasterFormatOriginalRWCompatible(
+                    rasterFormat, colorOrder, bitDepth,
+                    PALETTE_NONE    // DDS files never have palettes.
+                );
         }
 
         hasValidMapping = true;
@@ -1946,6 +1954,8 @@ void d3d9NativeTextureTypeProvider::DeserializeNativeImage( Interface *engineInt
 
     nativeTex->d3dRasterFormatLink = d3dRasterFormatLink;
     nativeTex->anonymousFormatLink = usedFormatHandler;
+
+    nativeTex->isOriginalRWCompatible = originalRWCompat;
 
     nativeTex->hasAlpha = shouldHaveAlpha;  // is not always correct, but most of the time.
     nativeTex->isCubeTexture = false;

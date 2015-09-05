@@ -112,11 +112,11 @@ inline eColorModel getColorModelFromRasterFormat( eRasterFormat rasterFormat )
     eColorModel usedColorModel;
 
     if ( rasterFormat == RASTER_1555 ||
-            rasterFormat == RASTER_565 ||
-            rasterFormat == RASTER_4444 ||
-            rasterFormat == RASTER_8888 ||
-            rasterFormat == RASTER_888 ||
-            rasterFormat == RASTER_555 )
+         rasterFormat == RASTER_565 ||
+         rasterFormat == RASTER_4444 ||
+         rasterFormat == RASTER_8888 ||
+         rasterFormat == RASTER_888 ||
+         rasterFormat == RASTER_555 )
     {
         usedColorModel = COLORMODEL_RGBA;
     }
@@ -126,8 +126,8 @@ inline eColorModel getColorModelFromRasterFormat( eRasterFormat rasterFormat )
         usedColorModel = COLORMODEL_LUMINANCE;
     }
     else if ( rasterFormat == RASTER_16 ||
-                rasterFormat == RASTER_24 ||
-                rasterFormat == RASTER_32 )
+              rasterFormat == RASTER_24 ||
+              rasterFormat == RASTER_32 )
     {
         usedColorModel = COLORMODEL_DEPTH;
     }

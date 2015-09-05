@@ -266,6 +266,11 @@ public:
         {
             theDepth = 8;
         }
+        // NEW formats :3
+        else if ( format == RASTER_LUM_ALPHA )
+        {
+            theDepth = 16;
+        }
 
         return theDepth;
     }
