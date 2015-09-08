@@ -123,15 +123,15 @@ inline void getDefaultRasterFormatString( eRasterFormat rasterFormat, uint32 ite
         {
             if ( itemDepth == 8 )
             {
-                formatOut += "LUM4_ALPHA4";
+                formatOut += "LUM4_A4";
             }
             else if ( itemDepth == 16 )
             {
-                formatOut += "LUM8_ALPHA8";
+                formatOut += "LUM8_A8";
             }
             else
             {
-                formatOut += "LUM_ALPHA";
+                formatOut += "LUM_A";
             }
         }
         else

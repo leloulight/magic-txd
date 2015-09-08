@@ -467,16 +467,6 @@ uint32 GetNativeTextureMipmapCount( Interface *engineInterface, PlatformTexture 
     return info.mipmapCount;
 }
 
-inline void GetNativeTextureBaseDimensions( Interface *engineInterface, PlatformTexture *nativeTexture, texNativeTypeProvider *texTypeProvider, uint32& baseWidth, uint32& baseHeight )
-{
-    nativeTextureBatchedInfo info;
-
-    texTypeProvider->GetTextureInfo( engineInterface, nativeTexture, info );
-
-    baseWidth = info.baseWidth;
-    baseHeight = info.baseHeight;
-}
-
 inline bool GetNativeTextureRawBitmapData(
     Interface *engineInterface, PlatformTexture *nativeTexture, texNativeTypeProvider *texTypeProvider, uint32 mipIndex, bool supportsPalette, rawBitmapFetchResult& rawBitmapOut
 )
@@ -2224,46 +2214,6 @@ void Raster::setImageData(const Bitmap& srcImage)
     }
 }
 
-void Raster::resize(uint32 width, uint32 height)
-{
-    // TODO: this routine is pretty cheap, for now.
-    // we should perform good math using downsampling and upsampling filters.
-
-    Bitmap mainBitmap = this->getBitmap();
-
-    Bitmap targetBitmap( mainBitmap.getDepth(), mainBitmap.getFormat(), mainBitmap.getColorOrder() );
-
-    targetBitmap.setSize(width, height);
-
-    targetBitmap.drawBitmap(
-        mainBitmap, 0, 0, width, height,
-        Bitmap::SHADE_ZERO, Bitmap::SHADE_ONE, Bitmap::BLEND_ADDITIVE
-    );
-
-    this->setImageData( targetBitmap );
-}
-
-void Raster::getSize(uint32& width, uint32& height) const
-{
-    PlatformTexture *platformTex = this->platformData;
-
-    if ( !platformTex )
-    {
-        throw RwException( "no native data" );
-    }
-
-    Interface *engineInterface = this->engineInterface;
-
-    texNativeTypeProvider *texProvider = GetNativeTextureTypeProvider( engineInterface, platformTex );
-
-    if ( !texProvider )
-    {
-        throw RwException( "invalid native data" );
-    }
-
-    GetNativeTextureBaseDimensions( engineInterface, platformTex, texProvider, width, height );
-}
-
 void TextureBase::improveFiltering(void)
 {
     // This routine scaled up the filtering settings of this texture.
@@ -3152,6 +3102,9 @@ extern void registerMobileUNCNativePlugin( void );
 extern void registerXBOXNativePlugin( void );
 extern void registerGCNativePlugin( void );
 
+// Sub modules.
+void registerResizeFilteringEnvironment( void );
+
 void registerTXDPlugins( void )
 {
     // First register the main serialization plugins.
@@ -3170,6 +3123,9 @@ void registerTXDPlugins( void )
     registerMobileUNCNativePlugin();
     registerXBOXNativePlugin();
     registerGCNativePlugin();
+
+    // Register pure sub modules.
+    registerResizeFilteringEnvironment();
 }
 
 }

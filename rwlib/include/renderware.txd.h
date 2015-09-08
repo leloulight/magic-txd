@@ -396,7 +396,7 @@ struct Raster
     Bitmap getBitmap(void) const;
     void setImageData(const Bitmap& srcImage);
 
-    void resize(uint32 width, uint32 height);
+    void resize(uint32 width, uint32 height, const char *downsampleMode = NULL, const char *upscaleMode = NULL);
 
     void getSize(uint32& width, uint32& height) const;
 
@@ -709,6 +709,8 @@ struct pixelDataTraversal
 
         uint32 dataSize;
     };
+
+    static void FreeMipmap( Interface *engineInterface, mipmapResource& mipData );
 
     typedef std::vector <mipmapResource> mipmaps_t;
 

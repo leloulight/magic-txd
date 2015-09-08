@@ -167,10 +167,6 @@ inline bool performMipmapFiltering(
             }
         }
     }
-    else
-    {
-        //assert( 0 );
-    }
 
     return success;
 }
@@ -185,6 +181,9 @@ inline void ensurePutIntoArray( dataType dataToPut, containerType& container, ui
 
     container[ putIndex ] = dataToPut;
 }
+
+// TODO: maybe in the future I will combine the resize filtering with this mipmap generation logic.
+// For now I see no need to, especially since both use the same logic.
 
 void Raster::generateMipmaps( uint32 maxMipmapCount, eMipmapGenerationMode mipGenMode )
 {

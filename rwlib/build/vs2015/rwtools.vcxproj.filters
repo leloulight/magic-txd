@@ -177,6 +177,9 @@
     <ClInclude Include="..\..\include\renderware.math.matview.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\txdread.size.hxx">
+      <Filter>Include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\dffread.cpp" />
@@ -241,6 +244,9 @@
     <ClCompile Include="..\..\src\rwdrawing.cpp" />
     <ClCompile Include="..\..\src\rwdriver.immbuf.cpp" />
     <ClCompile Include="..\..\src\rwdriver.d3d12.pso.cpp" />
+    <ClCompile Include="..\..\src\txdread.size.cpp" />
+    <ClCompile Include="..\..\src\txdread.size.blur.cpp" />
+    <ClCompile Include="..\..\src\txdread.size.linear.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="rwtools.natvis">

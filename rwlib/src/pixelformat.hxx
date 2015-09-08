@@ -168,10 +168,17 @@ struct colorModelDispatcher
         this->usedColorModel = getColorModelFromRasterFormat( rasterFormat );
     }
     
-private:
     AINLINE colorModelDispatcher( const colorModelDispatcher& right )
     {
-        throw RwException( "cloning color model dispatcher makes no sense" );
+        // Actually, it does make sense.
+        // BUT ONLY FOR PERFORMANCE REASONS.
+        this->rasterFormat = right.rasterFormat;
+        this->colorOrder = right.colorOrder;
+        this->depth = right.depth;
+        this->paletteData = right.paletteData;
+        this->paletteSize = right.paletteSize;
+        this->paletteType = right.paletteType;
+        this->usedColorModel = right.usedColorModel;
     }
 
 public:
@@ -757,7 +764,7 @@ public:
             uint32 depth = this->depth;
 
             // Get the real fetch source first.
-            texel_t *realTexelSource = NULL;
+            const void *realTexelSource = NULL;
             uint32 realColorIndex, realColorDepth;
 
             bool resRealSource =

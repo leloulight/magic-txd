@@ -250,17 +250,13 @@ public:
 
         uint32 theDepth = 0;
 
-        if ( format == RASTER_8888 || format == RASTER_888 || format == RASTER_32 )
+        if ( format == RASTER_8888 || format == RASTER_888 || format == RASTER_24 || format == RASTER_32 )
         {
             theDepth = 32;
         }
         else if ( format == RASTER_1555 || format == RASTER_565 || format == RASTER_4444 || format == RASTER_555 || format == RASTER_16 )
         {
             theDepth = 16;
-        }
-        else if ( format == RASTER_24 )
-        {
-            theDepth = 24;
         }
         else if ( format == RASTER_LUM )
         {

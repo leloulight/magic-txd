@@ -1202,6 +1202,17 @@ bool PutTexelLuminance(
     return colorModelDispatcher <void> ( rasterFormat, COLOR_RGBA, depth, NULL, 0, PALETTE_NONE ).setLuminance( texelSource, texelIndex, lum, alpha );
 }
 
+void pixelDataTraversal::FreeMipmap( Interface *engineInterface, mipmapResource& mipData )
+{
+    // Free allocatable data.
+    if ( void *texels = mipData.texels )
+    {
+        engineInterface->PixelFree( texels );
+
+        mipData.texels = NULL;
+    }
+}
+
 void pixelDataTraversal::FreePixels( Interface *engineInterface )
 {
     if ( this->isNewlyAllocated )
@@ -1212,12 +1223,7 @@ void pixelDataTraversal::FreePixels( Interface *engineInterface )
         {
             mipmapResource& thisLayer = this->mipmaps[ n ];
 
-            if ( void *texels = thisLayer.texels )
-            {
-                engineInterface->PixelFree( texels );
-
-                thisLayer.texels = NULL;
-            }
+            FreeMipmap( engineInterface, thisLayer );
         }
 
         this->mipmaps.clear();

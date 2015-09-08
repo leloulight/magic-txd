@@ -424,6 +424,7 @@
     <ClInclude Include="..\..\src\txdread.ps2.hxx" />
     <ClInclude Include="..\..\src\txdread.ps2gsman.hxx" />
     <ClInclude Include="..\..\src\txdread.pvr.hxx" />
+    <ClInclude Include="..\..\src\txdread.size.hxx" />
     <ClInclude Include="..\..\src\txdread.unc.hxx" />
     <ClInclude Include="..\..\src\txdread.xbox.hxx" />
     <ClInclude Include="..\..\vendor\eirrepo\sdk\DynamicTypeSystem.h" />
@@ -504,6 +505,9 @@
     <ClCompile Include="..\..\src\txdread.ps2.debug.cpp" />
     <ClCompile Include="..\..\src\txdread.ps2mem.cpp" />
     <ClCompile Include="..\..\src\txdread.pvr.cpp" />
+    <ClCompile Include="..\..\src\txdread.size.blur.cpp" />
+    <ClCompile Include="..\..\src\txdread.size.cpp" />
+    <ClCompile Include="..\..\src\txdread.size.linear.cpp" />
     <ClCompile Include="..\..\src\txdread.unc.cpp" />
     <ClCompile Include="..\..\src\txdread.xbox.cpp" />
     <ClCompile Include="..\..\src\txdread.xbox.swizzle.cpp" />
