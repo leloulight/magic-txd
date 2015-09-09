@@ -501,6 +501,17 @@ void pvrNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInter
     // We can only accept raw bitmaps here.
     assert( pixelsIn.compressionType == RWCOMPRESS_NONE );
 
+    // Verify some mipmap dimension rules.
+    {
+        nativeTextureSizeRules sizeRules;
+        getPVRNativeTextureSizeRules( sizeRules );
+
+        if ( !sizeRules.verifyPixelData( pixelsIn ) )
+        {
+            throw RwException( "invalid mipmap dimensions in PowerVR native texture pixel acquisition" );
+        }
+    }
+
     // Give it common parameters.
     bool hasAlpha = pixelsIn.hasAlpha;
 
@@ -662,6 +673,11 @@ struct pvrMipmapManager
     {
         layerWidth = mipLayer.layerWidth;
         layerHeight = mipLayer.layerHeight;
+    }
+
+    inline void GetSizeRules( nativeTextureSizeRules& rulesOut ) const
+    {
+        getPVRNativeTextureSizeRules( rulesOut );
     }
 
     inline void Deinternalize(

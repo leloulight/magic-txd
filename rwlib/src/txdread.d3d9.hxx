@@ -477,6 +477,14 @@ struct NativeTextureD3D9 : public d3dpublic::d3dNativeTextureInterface
         this->clearTexelData();
     }
 
+    inline static void getSizeRules( uint32 dxtType, nativeTextureSizeRules& rulesOut )
+    {
+        bool isCompressed = ( dxtType != 0 );
+
+        rulesOut.powerOfTwo = ( isCompressed == true );
+        rulesOut.squared = false;
+    }
+
     // Implement the public API.
 
     void GetD3DFormat( DWORD& d3dFormat ) const override
@@ -695,6 +703,16 @@ struct d3d9NativeTextureTypeProvider : public texNativeTypeProvider, d3dpublic::
         // We just conform to what Rockstar and Criterion have thought about here, anyway.
         // I believe that ATI and nVidia have recogized this issue and made sure the alignment is constant!
         return getD3DTextureDataRowAlignment();
+    }
+
+    void GetTextureSizeRules( const void *objMem, nativeTextureSizeRules& rulesOut ) const override
+    {
+        // The rules here are very similar to Direct3D 8.
+        // When we add support for cubemaps, we will have to respect them aswell...
+        // But that is an issue for another day!
+        const NativeTextureD3D9 *nativeTex = (const NativeTextureD3D9*)objMem;
+
+        NativeTextureD3D9::getSizeRules( nativeTex->dxtCompression, rulesOut );
     }
 
     // We want to support output as DirectDraw Surface files, as they are pretty handy.

@@ -108,6 +108,12 @@ struct NativeTexturePVR
     uint32 unk8;
 };
 
+inline void getPVRNativeTextureSizeRules( nativeTextureSizeRules& rulesOut )
+{
+    rulesOut.powerOfTwo = true;
+    rulesOut.squared = false;   // NOT SURE.
+}
+
 struct pvrNativeTextureTypeProvider : public texNativeTypeProvider
 {
     void ConstructTexture( Interface *engineInterface, void *objMem, size_t memSize )
@@ -202,6 +208,13 @@ struct pvrNativeTextureTypeProvider : public texNativeTypeProvider
         const NativeTexturePVR *nativeTex = (const NativeTexturePVR*)objMem;
 
         return nativeTex->hasAlpha;
+    }
+
+    void GetTextureSizeRules( const void *objMem, nativeTextureSizeRules& rulesOut ) const override
+    {
+        // The PowerVR native texture seems to be very optimized, limited and not future proof.
+        // I am uncertain about the exact rules (a throwback to the good old days!).
+        getPVRNativeTextureSizeRules( rulesOut );
     }
 
     uint32 GetTextureDataRowAlignment( void ) const override

@@ -21,6 +21,11 @@ struct d3dMipmapManager
         layerHeight = mipLayer.layerHeight;
     }
 
+    inline void GetSizeRules( nativeTextureSizeRules& rulesOut ) const
+    {
+        // PUT SIZE RULE CALCULATION HERE.
+    }
+
     inline void Deinternalize(
         Interface *engineInterface,
         const NativeTextureD3D::mipmapLayer& mipLayer,
@@ -199,6 +204,17 @@ inline bool virtualAddMipmapLayer(
              layerHeight != layerIn.mipData.mipHeight )
         {
             return false;
+        }
+
+        // Verify some more advanced rules.
+        {
+            nativeTextureSizeRules sizeRules;
+            mipManager.GetSizeRules( sizeRules );
+
+            if ( !sizeRules.IsMipmapSizeValid( layerWidth, layerHeight ) )
+            {
+                return false;
+            }
         }
 
         bool hasDirectlyAcquired;

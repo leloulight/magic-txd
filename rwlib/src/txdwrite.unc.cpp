@@ -166,6 +166,17 @@ void uncNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInter
 
     // Make sure we get only raw bitmap data.
     assert( pixelsIn.compressionType == RWCOMPRESS_NONE );
+
+    // Verify mipmap dimension size rules.
+    {
+        nativeTextureSizeRules sizeRules;
+        getUNCNativeTextureSizeRules( sizeRules );
+
+        if ( !sizeRules.verifyPixelData( pixelsIn ) )
+        {
+            throw RwException( "invalid mipmap dimensions in uncompressed_mobile native texture pixel acquisition" );
+        }
+    }
     
     // Whether we can take those pixels depends on whether the pixels have alpha.
     // This uncompressed raster has a fixed raster format.
@@ -289,6 +300,11 @@ struct uncMipmapManager
     {
         layerWidth = mipLayer.layerWidth;
         layerHeight = mipLayer.layerHeight;
+    }
+
+    inline void GetSizeRules( nativeTextureSizeRules& rulesOut ) const
+    {
+        getUNCNativeTextureSizeRules( rulesOut );
     }
 
     inline void Deinternalize(

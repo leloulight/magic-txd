@@ -50,6 +50,12 @@ inline uint32 getATCCompressionBlockSize( eATCInternalFormat internalFormat )
     return theSize;
 }
 
+inline void getATCMipmapSizeRules( nativeTextureSizeRules& rulesOut )
+{
+    rulesOut.powerOfTwo = true;
+    rulesOut.squared = false;
+}
+
 struct NativeTextureATC
 {
     Interface *engineInterface;
@@ -208,6 +214,13 @@ struct atcNativeTextureTypeProvider : public texNativeTypeProvider
     {
         // Will never be called, because we do not store raw texel data.
         return 0;
+    }
+
+    void GetTextureSizeRules( const void *objMem, nativeTextureSizeRules& rulesOut ) const override
+    {
+        // The size rules do not depend on the native texture.
+        // This is because the format of the native texture does not change very much.
+        getATCMipmapSizeRules( rulesOut );
     }
 
     uint32 GetDriverIdentifier( void *objMem ) const override

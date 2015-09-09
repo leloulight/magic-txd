@@ -606,6 +606,19 @@ void atcNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInter
     // We expect raw bitmaps here.
     assert( pixelsIn.compressionType == RWCOMPRESS_NONE );
 
+    // Verify some qualities of the pixel data.
+    {
+        nativeTextureSizeRules sizeRules;
+        getATCMipmapSizeRules( sizeRules );
+
+        bool isValid = sizeRules.verifyPixelData( pixelsIn );
+
+        if ( !isValid )
+        {
+            throw RwException( "invalid mipmap dimensions in ATC native texture pixel acquisition" );
+        }
+    }
+
     // Free any image data that may have been there.
     //nativeTex->clearImageData();
 
@@ -648,15 +661,15 @@ void atcNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInter
         uint32 compressionBlockSize = getATCCompressionBlockSize( internalFormat );
 
         // Parse all mipmaps.
-        uint32 mipmapCount = (uint32)pixelsIn.mipmaps.size();
+        size_t mipmapCount = pixelsIn.mipmaps.size();
 
         nativeTex->mipmaps.resize( mipmapCount );
 
-        for ( uint32 n = 0; n < mipmapCount; n++ )
+        for ( size_t n = 0; n < mipmapCount; n++ )
         {
             const pixelDataTraversal::mipmapResource& mipLayer = pixelsIn.mipmaps[ n ];
 
-            // Get imporant properties onto stack.
+            // Get important properties onto stack.
             uint32 mipWidth = mipLayer.width;
             uint32 mipHeight = mipLayer.height;
 
@@ -741,6 +754,11 @@ struct atcMipmapManager
     {
         layerWidth = mipLayer.layerWidth;
         layerHeight = mipLayer.layerHeight;
+    }
+
+    inline void GetSizeRules( nativeTextureSizeRules& rulesOut ) const
+    {
+        getATCMipmapSizeRules( rulesOut );
     }
 
     inline void Deinternalize(

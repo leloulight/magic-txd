@@ -579,6 +579,18 @@ void d3d9NativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
         throw RwException( "unknown pixel compression type" );
     }
 
+    // Verify mipmap dimension rules.
+    {
+        nativeTextureSizeRules sizeRules;
+
+        NativeTextureD3D9::getSizeRules( dxtType, sizeRules );
+
+        if ( !sizeRules.verifyPixelData( pixelsIn ) )
+        {
+            throw RwException( "invalid mipmap dimensions in Direct3D 9 native texture pixel acquisition" );
+        }
+    }
+
     // If we have a palette, we must convert it aswell.
     void *dstPaletteData = srcPaletteData;
 
@@ -751,6 +763,11 @@ struct d3d9MipmapManager
     {
         layerWidth = mipLayer.layerWidth;
         layerHeight = mipLayer.layerHeight;
+    }
+
+    inline void GetSizeRules( nativeTextureSizeRules& rulesOut ) const
+    {
+        NativeTextureD3D9::getSizeRules( nativeTex->dxtCompression, rulesOut );
     }
 
     inline void Deinternalize(

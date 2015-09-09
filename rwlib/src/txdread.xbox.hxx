@@ -177,6 +177,12 @@ inline eCompressionType getDXTCompressionTypeFromXBOX( uint32 xboxCompressionTyp
     return rwCompressionType;
 }
 
+inline void getXBOXNativeTextureSizeRules( nativeTextureSizeRules& rulesOut )
+{
+    rulesOut.powerOfTwo = true;
+    rulesOut.squared = false;
+}
+
 struct xboxNativeTextureTypeProvider : public texNativeTypeProvider
 {
     void ConstructTexture( Interface *engineInterface, void *objMem, size_t memSize )
@@ -286,6 +292,13 @@ struct xboxNativeTextureTypeProvider : public texNativeTypeProvider
         // The XBOX is assumed to have the same row alignment like Direct3D 8.
         // This means it is aligned to DWORD.
         return getXBOXTextureDataRowAlignment();
+    }
+
+    void GetTextureSizeRules( const void *objMem, nativeTextureSizeRules& rulesOut ) const override
+    {
+        // The XBOX native texture is a very old format, coming with from a very limited hardware.
+        // So we restrict it very strong, in comparison to Direct3D 8 and 9.
+        getXBOXNativeTextureSizeRules( rulesOut );
     }
 
     uint32 GetDriverIdentifier( void *objMem ) const override

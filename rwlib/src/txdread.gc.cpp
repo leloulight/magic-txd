@@ -440,6 +440,11 @@ struct gcMipmapManager
         layerHeight = mipLayer.layerHeight;
     }
 
+    inline void GetSizeRules( nativeTextureSizeRules& rulesOut )
+    {
+        // TODO.
+    }
+
     inline void Deinternalize(
         Interface *engineInterface,
         const NativeTextureGC::mipmapLayer& mipLayer,

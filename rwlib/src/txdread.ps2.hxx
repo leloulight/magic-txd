@@ -341,7 +341,7 @@ struct textureMetaDataHeader
 
     endian::little_endian <uint32> combinedGPUDataSize;
 
-    // constant (sky mipmap val)
+    // constant (Sky mipmap val)
     // see http://www.gtamodding.com/wiki/Sky_Mipmap_Val_%28RW_Section%29
     endian::little_endian <uint32> skyMipmapVal;
 };
@@ -1026,6 +1026,12 @@ public:
     bool getDebugBitmap( Bitmap& bmpOut ) const;
 };
 
+inline void getPS2NativeTextureSizeRules( nativeTextureSizeRules& rulesOut )
+{
+    rulesOut.powerOfTwo = true;
+    rulesOut.squared = false;
+}
+
 struct ps2NativeTextureTypeProvider : public texNativeTypeProvider
 {
     void ConstructTexture( Interface *engineInterface, void *objMem, size_t memSize )
@@ -1139,6 +1145,12 @@ struct ps2NativeTextureTypeProvider : public texNativeTypeProvider
         // any row alignment. I could be wrong tho. We are safe if we decide for 4 byte alignment.
         // Just report back to us if there is any issue. :-)
         return 4;
+    }
+
+    void GetTextureSizeRules( const void *objMem, nativeTextureSizeRules& rulesOut ) const override
+    {
+        // The PlayStation 2 native texture does not change size rules, thankfully.
+        getPS2NativeTextureSizeRules( rulesOut );
     }
 
     uint32 GetDriverIdentifier( void *objMem ) const override

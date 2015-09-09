@@ -89,6 +89,12 @@ inline void getUNCRasterFormat( bool hasAlpha, eRasterFormat& rasterFormat, eCol
     }
 }
 
+inline void getUNCNativeTextureSizeRules( nativeTextureSizeRules& rulesOut )
+{
+    rulesOut.powerOfTwo = false;
+    rulesOut.squared = false;
+}
+
 struct uncNativeTextureTypeProvider : public texNativeTypeProvider
 {
     void ConstructTexture( Interface *engineInterface, void *objMem, size_t memSize )
@@ -198,6 +204,12 @@ struct uncNativeTextureTypeProvider : public texNativeTypeProvider
         // Who would know something like this anyway? OpenGL can have many alignment sizes,
         // one of 1, 2, 4 or 8. So I define this here, take it or leave it!
         return 4;
+    }
+
+    void GetTextureSizeRules( const void *objMem, nativeTextureSizeRules& rulesOut ) const override
+    {
+        // I let common sense speak here.
+        getUNCNativeTextureSizeRules( rulesOut );
     }
 
     uint32 GetDriverIdentifier( void *objMem ) const override

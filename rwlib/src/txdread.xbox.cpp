@@ -597,6 +597,17 @@ void xboxNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
     // Clear any previous image data.
     //xboxTex->clearTexelData();
 
+    // Verify native texture size rules.
+    {
+        nativeTextureSizeRules sizeRules;
+        getXBOXNativeTextureSizeRules( sizeRules );
+
+        if ( !sizeRules.verifyPixelData( pixelsIn ) )
+        {
+            throw RwException( "invalid mipmap dimensions in XBOX native texture pixel acquisition" );
+        }
+    }
+
     // We need to make sure that the raster data is compatible.
     eRasterFormat srcRasterFormat = pixelsIn.rasterFormat;
     uint32 srcDepth = pixelsIn.depth;
@@ -922,6 +933,11 @@ struct xboxMipmapManager
     {
         layerWidth = mipLayer.layerWidth;
         layerHeight = mipLayer.layerHeight;
+    }
+
+    inline void GetSizeRules( nativeTextureSizeRules& rulesOut ) const
+    {
+        getXBOXNativeTextureSizeRules( rulesOut );
     }
 
     inline void Deinternalize(

@@ -88,6 +88,14 @@ struct NativeTextureD3D8
         this->clearTexelData();
     }
 
+    inline static void getSizeRules( uint32 dxtType, nativeTextureSizeRules& rulesOut )
+    {
+        bool isCompressed = ( dxtType != 0 );
+
+        rulesOut.powerOfTwo = ( isCompressed == true );
+        rulesOut.squared = false;
+    }
+
 public:
     typedef genmip::mipmapLayer mipmapLayer;
 
@@ -265,6 +273,15 @@ struct d3d8NativeTextureTypeProvider : public texNativeTypeProvider
         // Direct3D 8 and 9 work with DWORD aligned texture data rows.
         // We found this out when looking at the return values of GetLevelDesc.
         return getD3DTextureDataRowAlignment();
+    }
+
+    void GetTextureSizeRules( const void *objMem, nativeTextureSizeRules& rulesOut ) const override
+    {
+        // Even though some hardware may not support it, we are very liberal here, to prefer the future.
+        // Only restriction is for instance DXT, which says it MUST be power-of-two.
+        const NativeTextureD3D8 *nativeTex = (const NativeTextureD3D8*)objMem;
+
+        NativeTextureD3D8::getSizeRules( nativeTex->dxtCompression, rulesOut );
     }
 
     uint32 GetDriverIdentifier( void *objMem ) const override

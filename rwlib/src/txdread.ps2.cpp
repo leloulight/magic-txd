@@ -1859,6 +1859,17 @@ void ps2NativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInter
     // Cast to our native format.
     NativeTexturePS2 *ps2tex = (NativeTexturePS2*)objMem;
 
+    // Verify mipmap dimensions.
+    {
+        nativeTextureSizeRules sizeRules;
+        getPS2NativeTextureSizeRules( sizeRules );
+
+        if ( !sizeRules.verifyPixelData( pixelsIn ) )
+        {
+            throw RwException( "invalid mipmap dimension in PS2 native texture pixel acquisition" );
+        }
+    }
+
     LibraryVersion currentVersion = ps2tex->texVersion;
 
     // Make sure that we got uncompressed bitmap data.
@@ -2116,6 +2127,11 @@ struct ps2MipmapManager
     {
         layerWidth = mipLayer.width;
         layerHeight = mipLayer.height;
+    }
+
+    inline void GetSizeRules( nativeTextureSizeRules& rulesOut ) const
+    {
+        getPS2NativeTextureSizeRules( rulesOut );
     }
 
     inline void Deinternalize(

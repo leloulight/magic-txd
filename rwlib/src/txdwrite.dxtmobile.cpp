@@ -174,6 +174,17 @@ void dxtMobileNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engin
 
     NativeTextureMobileDXT *nativeTex = (NativeTextureMobileDXT*)objMem;
 
+    // Verify mipmap dimension rules.
+    {
+        nativeTextureSizeRules sizeRules;
+        getS3TCNativeTextureSizeRules( sizeRules );
+
+        if ( !sizeRules.verifyPixelData( pixelsIn ) )
+        {
+            throw RwException( "invalid mipmap dimensions in S3TC native texture pixel acquisition" );
+        }
+    }
+
     // Check whether we can convert the compression type into a S3TC internalFormat.
     // If we can, then a simple assignment is enough.
     bool canAssignData = false;
@@ -354,6 +365,11 @@ struct dxtMobileMipmapManager
     {
         layerWidth = mipLayer.layerWidth;
         layerHeight = mipLayer.layerHeight;
+    }
+
+    inline void GetSizeRules( nativeTextureSizeRules& rulesOut ) const
+    {
+        getS3TCNativeTextureSizeRules( rulesOut );
     }
 
     inline void Deinternalize(

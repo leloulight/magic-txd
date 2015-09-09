@@ -11,6 +11,74 @@ struct nativeTextureBatchedInfo
     uint32 baseWidth, baseHeight;
 };
 
+struct nativeTextureSizeRules
+{
+    inline nativeTextureSizeRules( void )
+    {
+        // You should fill out the fields you know about.
+        // It is recommended to give as much info as possible, but it is okay if you forget about it
+        // as long as your native texture is correctly represented in the library!
+        this->powerOfTwo = false;
+        this->squared = false;
+    }
+
+    // New fields may come, but addition is backwards compatible.
+    bool powerOfTwo;
+    bool squared;
+
+    // Helper for mipmap size rule validation.
+    // This model expects a texture that holds simple mipmaps (D3D8 style)
+    inline bool IsMipmapSizeValid(
+        uint32 layerWidth, uint32 layerHeight
+    ) const
+    {
+        if ( this->powerOfTwo )
+        {
+            // Verify that the dimensions are power of two.
+            double log2val = log(2.0);
+
+            double expWidth = ( log((double)layerWidth) / log2val );
+            double expHeight = ( log((double)layerHeight) / log2val );
+
+            // Check that dimensions are power-of-two.
+            if ( expWidth != floor(expWidth) || expHeight != floor(expHeight) )
+                return false;
+        }
+
+        if ( this->squared )
+        {
+            // Verify that the dimensions are the same.
+            if ( layerWidth != layerHeight )
+                return false;
+        }
+
+        // We are valid, because we violate no rules.
+        return true;
+    }
+
+    // Helper function to verify a whole pixel data container.
+    inline bool verifyPixelData(
+        const pixelDataTraversal& pixelData
+    )
+    {
+        size_t mipmapCount = pixelData.mipmaps.size();
+
+        for ( size_t n = 0; n < mipmapCount; n++ )
+        {
+            const pixelDataTraversal::mipmapResource& mipLevel = pixelData.mipmaps[ n ];
+
+            bool isValid = this->IsMipmapSizeValid( mipLevel.mipWidth, mipLevel.mipHeight );
+
+            if ( !isValid )
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+};
+
 struct texNativeTypeProvider abstract
 {
     inline texNativeTypeProvider( void )
@@ -85,6 +153,11 @@ struct texNativeTypeProvider abstract
     // Also, RenderWare will make sure that each pixel data that is given to this native texture conforms to it aswell.
     // It is recommended to align native textures to 4 bytes.
     virtual uint32          GetTextureDataRowAlignment( void ) const = 0;
+
+    // Returns the size rules that apply to all textures in the mipmap-chain.
+    // Before putting texture data into the native textures the texture data has to be made conformant to the rules.
+    // Otherwise the native texture must error out in a visible way, to aid usage of this library.
+    virtual void            GetTextureSizeRules( const void *objMem, nativeTextureSizeRules& rulesOut ) const = 0;
 
     // If you extend this method, your native texture can export a public API interface to the application.
     // This will be an optimized junction point between native internals and high level API, so use it with caution.

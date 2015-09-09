@@ -269,6 +269,28 @@ private:
                 prered      = (uint32)prered * 0xFF / 0x1F;
                 pregreen    = (uint32)pregreen * 0xFF / 0x1F;
                 preblue     = (uint32)preblue * 0xFF / 0x1F;
+                prealpha    = (uint32)prealpha * 0xFF;
+
+                hasColor = true;
+            }
+        }
+        else if (rasterFormat == RASTER_555)
+        {
+            if (realColorDepth == 16)
+            {
+                struct pixel_t
+                {
+                    uint16 red : 5;
+                    uint16 green : 5;
+                    uint16 blue : 5;
+                };
+
+                pixel_t *srcData = ( (pixel_t*)realTexelSource + realColorIndex );
+
+                // Scale the color values.
+                prered      = (uint32)srcData->red * 0xFF / 0x1F;
+                pregreen    = (uint32)srcData->green * 0xFF / 0x1F;
+                preblue     = (uint32)srcData->blue * 0xFF / 0x1F;
                 prealpha    = 0xFF;
 
                 hasColor = true;
@@ -516,6 +538,31 @@ private:
                 uint8 alphaScaled =     ( putalpha != 0 ) ? ( 1 ) : ( 0 );
 
                 dstData->setcolor(colorIndex, redScaled, greenScaled, blueScaled, alphaScaled);
+
+                setColor = true;
+            }
+        }
+        else if (rasterFormat == RASTER_555)
+        {
+            if (itemDepth == 16)
+            {
+                struct pixel_t
+                {
+                    uint16 red : 5;
+                    uint16 green : 5;
+                    uint16 blue : 5;
+                };
+
+                pixel_t *dstData = ( (pixel_t*)texelDest + colorIndex );
+
+                // Scale the color values.
+                uint8 redScaled =       scalecolor(putred, 255, 31);
+                uint8 greenScaled =     scalecolor(putgreen, 255, 31);
+                uint8 blueScaled =      scalecolor(putblue, 255, 31);
+
+                dstData->red = redScaled;
+                dstData->green = greenScaled;
+                dstData->blue = blueScaled;
 
                 setColor = true;
             }

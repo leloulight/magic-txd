@@ -116,6 +116,12 @@ inline eCompressionType getCompressionTypeFromS3TCInternalFormat( eS3TCInternalF
     return rwCompressionType;
 }
 
+inline void getS3TCNativeTextureSizeRules( nativeTextureSizeRules& rulesOut )
+{
+    rulesOut.powerOfTwo = true;
+    rulesOut.squared = false;
+}
+
 struct dxtMobileNativeTextureTypeProvider : public texNativeTypeProvider
 {
     void ConstructTexture( Interface *engineInterface, void *objMem, size_t memSize ) override
@@ -219,6 +225,12 @@ struct dxtMobileNativeTextureTypeProvider : public texNativeTypeProvider
         // Row alignment of raw data does not really matter.
         // We will compress to DXT anyway.
         return 0;
+    }
+
+    void GetTextureSizeRules( const void *objMem, nativeTextureSizeRules& rulesOut ) const override
+    {
+        // This is a pretty simple texture aswell which does not change size rules depending on native texture.
+        getS3TCNativeTextureSizeRules( rulesOut );
     }
 
     uint32 GetDriverIdentifier( void *objMem ) const override
