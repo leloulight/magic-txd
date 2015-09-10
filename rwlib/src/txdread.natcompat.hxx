@@ -15,8 +15,12 @@ namespace rw
 // Compatibility routines to make sure that pixel data can be properly pushed to
 // native textures.
 
-inline void CompatibilityTransformPixelData( Interface *engineInterface, pixelDataTraversal& pixelData, const pixelCapabilities& pixelCaps )
+inline void CompatibilityTransformPixelData( Interface *engineInterface, pixelDataTraversal& pixelData, const texNativeTypeProvider *capsProvider )
 {
+    // Get the general capabilities struct that we have to obey.
+    pixelCapabilities pixelCaps;
+    capsProvider->GetPixelCapabilities( pixelCaps );
+
     // Make sure the pixelData does not violate the capabilities struct.
     // This is done by "downcasting". It preserves maximum image quality, but increases memory requirements.
 
@@ -49,6 +53,37 @@ inline void CompatibilityTransformPixelData( Interface *engineInterface, pixelDa
             dstRasterFormat, dstDepth, dstRowAlignment, dstColorOrder, dstPaletteType, dstPaletteData, dstPaletteSize, dstCompressionType,
             pixelCaps, pixelData.hasAlpha
         );
+
+    // Now the destination transformation is definately compatible with the native texture specification,
+    // but there may be pitfalls due to ambiguity in raster format transformations.
+    // Take that into account.
+    if ( engineInterface->GetFixIncompatibleRasters() )
+    {
+        // Only meaningful for raw rasters.
+        if ( dstCompressionType == RWCOMPRESS_NONE )
+        {
+            uint32 recDepth;
+            eColorOrdering recColorOrder;
+
+            bool hasRecDepth, hasRecColorOrder;
+
+            capsProvider->GetRecommendedRasterFormat( dstRasterFormat, dstPaletteType, recDepth, hasRecDepth, recColorOrder, hasRecColorOrder );
+
+            if ( hasRecDepth )
+            {
+                dstDepth = recDepth;
+
+                wantsUpdate = true;
+            }
+
+            if ( hasRecColorOrder )
+            {
+                dstColorOrder = recColorOrder;
+
+                wantsUpdate = true;
+            }
+        }
+    }
 
     if ( wantsUpdate )
     {

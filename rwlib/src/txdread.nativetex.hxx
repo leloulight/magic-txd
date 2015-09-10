@@ -219,6 +219,16 @@ struct texNativeTypeProvider abstract
     virtual void            GetFormatSizeRules( const pixelFormat& format, nativeTextureSizeRules& rulesOut ) const = 0;
     virtual void            GetTextureSizeRules( const void *objMem, nativeTextureSizeRules& rulesOut ) const = 0;
 
+    // Raster formats may have multiple color orderings or depths that they support.
+    // If so, then the native texture type is not guarranteed to support all of them, even if it accepts them.
+    // In this case you can use this function to give a recommended configuration.
+    virtual void            GetRecommendedRasterFormat( eRasterFormat rasterFormat, ePaletteType paletteType, uint32& recDepth, bool& hasRecDepth, eColorOrdering& recColorOrder, bool& hasRecColorOrder ) const
+    {
+        // Returning false means that the given raster format is not ambiguous.
+        hasRecColorOrder = false;
+        hasRecDepth = false;
+    }
+
     // If you extend this method, your native texture can export a public API interface to the application.
     // This will be an optimized junction point between native internals and high level API, so use it with caution.
     // Note that if internals change the application must take that into account.

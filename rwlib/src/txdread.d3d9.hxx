@@ -748,6 +748,36 @@ struct d3d9NativeTextureTypeProvider : public texNativeTypeProvider, d3dpublic::
         NativeTextureD3D9::getSizeRules( nativeTex->dxtCompression, rulesOut );
     }
 
+    void GetRecommendedRasterFormat( eRasterFormat rasterFormat, ePaletteType paletteType, uint32& recDepth, bool& hasRecDepth, eColorOrdering& recColorOrder, bool& hasRecColorOrder ) const override
+    {
+        // There are some pitfalls we want to avoid.
+        // Basically, let us use BGRA color ordering all the time.
+        hasRecColorOrder = false;
+        hasRecDepth = false;
+
+        if ( paletteType == PALETTE_NONE )
+        {
+            if ( rasterFormat == RASTER_1555 ||
+                 rasterFormat == RASTER_565 ||
+                 rasterFormat == RASTER_4444 ||
+                 rasterFormat == RASTER_8888 ||
+                 rasterFormat == RASTER_888 ||
+                 rasterFormat == RASTER_555 )
+            {
+                recColorOrder = COLOR_BGRA;
+
+                hasRecColorOrder = true;
+            }
+
+            if ( rasterFormat == RASTER_888 )
+            {
+                recDepth = 32;
+
+                hasRecDepth = true;
+            }
+        }
+    }
+
     // We want to support output as DirectDraw Surface files, as they are pretty handy.
     const char* GetNativeImageFormatExtension( void ) const override
     {

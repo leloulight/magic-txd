@@ -1402,16 +1402,10 @@ bool ConvertRasterTo( Raster *theRaster, const char *nativeName )
 
                             if ( newNativeTex )
                             {
-                                // 4. Get the pixel capabilities of the target resource and put the texels we fetched in
-                                //    the highest quality format possible.
-                                pixelCapabilities dstSurfaceCaps;
-
-                                dstTypeProvider->GetPixelCapabilities( dstSurfaceCaps );
-
-                                // TODO: make pixels compatible for the target format.
-                                // * First decide what pixel format we have to deduce from the capabilities
-                                //   and then call the "ConvertPixelData" function to do the job.
-                                CompatibilityTransformPixelData( engineInterface, pixelStore, dstSurfaceCaps );
+                                // 4. make pixels compatible for the target format.
+                                // *  First decide what pixel format we have to deduce from the capabilities
+                                //    and then call the "ConvertPixelData" function to do the job.
+                                CompatibilityTransformPixelData( engineInterface, pixelStore, dstTypeProvider );
 
                                 // The texels have to obey size rules of the destination native texture.
                                 // So let us check what size rules we need, right?
@@ -2522,11 +2516,7 @@ void Raster::readImage( rw::Stream *inputStream )
         try
         {
             // Make sure the pixel data is compatible.
-            pixelCapabilities acceptCaps;
-
-            texProvider->GetPixelCapabilities( acceptCaps );
-
-            CompatibilityTransformPixelData( engineInterface, pixelData, acceptCaps );
+            CompatibilityTransformPixelData( engineInterface, pixelData, texProvider );
 
             AdjustPixelDataDimensionsByFormat( engineInterface, texProvider, pixelData );
 
