@@ -20,11 +20,15 @@ struct nativeTextureSizeRules
         // as long as your native texture is correctly represented in the library!
         this->powerOfTwo = false;
         this->squared = false;
+        this->multipleOf = false;
+        this->multipleOfValue = 0;
     }
 
     // New fields may come, but addition is backwards compatible.
     bool powerOfTwo;
     bool squared;
+    bool multipleOf;
+    uint32 multipleOfValue;
 
     // Helper for mipmap size rule validation.
     // This model expects a texture that holds simple mipmaps (D3D8 style)
@@ -52,8 +56,68 @@ struct nativeTextureSizeRules
                 return false;
         }
 
+        if ( this->multipleOf )
+        {
+            // Verify that the dimensions are a multiple of something.
+            uint32 multipleOfValue = this->multipleOfValue;
+
+            if ( ( layerWidth % multipleOfValue ) != 0 || ( layerHeight % multipleOfValue ) != 0 )
+            {
+                return false;
+            }
+        }
+
         // We are valid, because we violate no rules.
         return true;
+    }
+
+    // Helper function for generating new layer dimensions that are actually valid.
+    inline void CalculateValidLayerDimensions(
+        uint32 layerWidth, uint32 layerHeight,
+        uint32& validWidthOut, uint32& validHeightOut
+    ) const
+    {
+        uint32 reqLayerWidth = layerWidth;
+        uint32 reqLayerHeight = layerHeight;
+
+        if ( this->powerOfTwo )
+        {
+            // Scale the layer dimensions up to match power-of-two.
+            double log2val = log(2.0);
+
+            double expWidth = ( log((double)reqLayerWidth) / log2val );
+            double expHeight = ( log((double)reqLayerHeight) / log2val );
+
+            if ( expWidth != floor(expWidth) )
+            {
+                reqLayerWidth = (uint32)( pow( 2, ceil( expWidth ) ) );
+            }
+
+            if ( expHeight != floor(expHeight) )
+            {
+                reqLayerHeight = (uint32)( pow( 2, ceil( expHeight ) ) );
+            }
+        }
+
+        if ( this->squared )
+        {
+            // Dimensions should match themselves.
+            // So we should put them as the biggest of the two.
+            uint32 maxDimm = std::max( reqLayerWidth, reqLayerHeight );
+
+            reqLayerWidth = maxDimm;
+            reqLayerHeight = maxDimm;
+        }
+
+        if ( this->multipleOf )
+        {
+            // Make sure the dimensions are a multiple of the given value.
+            reqLayerWidth = ALIGN_SIZE( reqLayerWidth, this->multipleOfValue );
+            reqLayerHeight = ALIGN_SIZE( reqLayerHeight, this->multipleOfValue );
+        }
+
+        validWidthOut = reqLayerWidth;
+        validHeightOut = reqLayerHeight;
     }
 
     // Helper function to verify a whole pixel data container.
@@ -157,6 +221,7 @@ struct texNativeTypeProvider abstract
     // Returns the size rules that apply to all textures in the mipmap-chain.
     // Before putting texture data into the native textures the texture data has to be made conformant to the rules.
     // Otherwise the native texture must error out in a visible way, to aid usage of this library.
+    virtual void            GetFormatSizeRules( const pixelFormat& format, nativeTextureSizeRules& rulesOut ) const = 0;
     virtual void            GetTextureSizeRules( const void *objMem, nativeTextureSizeRules& rulesOut ) const = 0;
 
     // If you extend this method, your native texture can export a public API interface to the application.

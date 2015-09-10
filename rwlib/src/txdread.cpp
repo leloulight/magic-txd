@@ -23,6 +23,8 @@
 
 #include "rwserialize.hxx"
 
+#include "txdread.natcompat.hxx"
+
 namespace rw
 {
 
@@ -1314,70 +1316,6 @@ texNativeTypeProvider* GetNativeTextureTypeProvider( Interface *intf, void *objM
     return platformData;
 }
 
-void CompatibilityTransformPixelData( Interface *engineInterface, pixelDataTraversal& pixelData, const pixelCapabilities& pixelCaps )
-{
-    // Make sure the pixelData does not violate the capabilities struct.
-    // This is done by "downcasting". It preserves maximum image quality, but increases memory requirements.
-
-    // First get the original parameters onto stack.
-    eRasterFormat srcRasterFormat = pixelData.rasterFormat;
-    uint32 srcDepth = pixelData.depth;
-    uint32 srcRowAlignment = pixelData.rowAlignment;
-    eColorOrdering srcColorOrder = pixelData.colorOrder;
-    ePaletteType srcPaletteType = pixelData.paletteType;
-    void *srcPaletteData = pixelData.paletteData;
-    uint32 srcPaletteSize = pixelData.paletteSize;
-    eCompressionType srcCompressionType = pixelData.compressionType;
-
-    uint32 srcMipmapCount = (uint32)pixelData.mipmaps.size();
-
-    // Now decide the target format depending on the capabilities.
-    eRasterFormat dstRasterFormat;
-    uint32 dstDepth;
-    uint32 dstRowAlignment;
-    eColorOrdering dstColorOrder;
-    ePaletteType dstPaletteType;
-    void *dstPaletteData;
-    uint32 dstPaletteSize;
-    eCompressionType dstCompressionType;
-
-    bool wantsUpdate =
-        TransformDestinationRasterFormat(
-            engineInterface,
-            srcRasterFormat, srcDepth, srcRowAlignment, srcColorOrder, srcPaletteType, srcPaletteData, srcPaletteSize, srcCompressionType,
-            dstRasterFormat, dstDepth, dstRowAlignment, dstColorOrder, dstPaletteType, dstPaletteData, dstPaletteSize, dstCompressionType,
-            pixelCaps, pixelData.hasAlpha
-        );
-
-    if ( wantsUpdate )
-    {
-        // Convert the pixels now.
-        bool hasUpdated;
-        {
-            // Create a destination format struct.
-            pixelFormat dstPixelFormat;
-
-            dstPixelFormat.rasterFormat = dstRasterFormat;
-            dstPixelFormat.depth = dstDepth;
-            dstPixelFormat.rowAlignment = dstRowAlignment;
-            dstPixelFormat.colorOrder = dstColorOrder;
-            dstPixelFormat.paletteType = dstPaletteType;
-            dstPixelFormat.compressionType = dstCompressionType;
-
-            hasUpdated = ConvertPixelData( engineInterface, pixelData, dstPixelFormat );
-        }
-
-        // If we have updated at all, apply changes.
-        if ( hasUpdated )
-        {
-            // We must have the correct parameters.
-            // Here we verify problematic parameters only.
-            // Params like rasterFormat are expected to be handled properly no matter what.
-            assert( pixelData.compressionType == dstCompressionType );
-        }
-    }
-}
-
 inline RwTypeSystem::typeInfoBase* GetNativeTextureType( Interface *intf, const char *typeName )
 {
     EngineInterface *engineInterface = (EngineInterface*)intf;
@@ -1474,6 +1412,10 @@ bool ConvertRasterTo( Raster *theRaster, const char *nativeName )
                                 // * First decide what pixel format we have to deduce from the capabilities
                                 //   and then call the "ConvertPixelData" function to do the job.
                                 CompatibilityTransformPixelData( engineInterface, pixelStore, dstSurfaceCaps );
+
+                                // The texels have to obey size rules of the destination native texture.
+                                // So let us check what size rules we need, right?
+                                AdjustPixelDataDimensionsByFormat( engineInterface, dstTypeProvider, pixelStore );
 
                                 // 5. Put the texels into our texture.
                                 //    Throwing an exception here means that the texture did not apply any of the pixel
@@ -1997,6 +1939,9 @@ void Raster::convertToFormat(eRasterFormat newFormat)
 
                 if ( hasUpdated )
                 {
+                    // Make sure dimensions are correct.
+                    AdjustPixelDataDimensionsByFormat( engineInterface, typeProvider, pixelData );
+
                     // Put the texels back into the texture.
                     texNativeTypeProvider::acquireFeedback_t acquireFeedback;
 
@@ -2193,6 +2138,9 @@ void Raster::setImageData(const Bitmap& srcImage)
         // We do not have to transform for capabilities, since the input is a raw mipmap layer.
         // Raw texture data must be accepted by every native texture format.
 
+        // Sure the dimensions are correct.
+        AdjustPixelDataDimensionsByFormat( engineInterface, texProvider, pixelData );
+
         // Push the data to the texture.
         texProvider->SetPixelDataToTexture( engineInterface, platformTex, pixelData, acquireFeedback );
     }
@@ -2380,360 +2328,6 @@ void* Raster::getDriverNativeInterface( void )
         return NULL;
 
     return texProvider->GetDriverNativeInterface();
-}
-
-void Raster::optimizeForLowEnd(float quality)
-{
-    PlatformTexture *platformTex = this->platformData;
-
-    if ( !platformTex )
-    {
-        throw RwException( "no native data" );
-    }
-
-    Interface *engineInterface = this->engineInterface;
-
-    texNativeTypeProvider *texProvider = GetNativeTextureTypeProvider( engineInterface, platformTex );
-
-    if ( !texProvider )
-    {
-        throw RwException( "invalid native data" );
-    }
-
-    // To make good decisions, we need the storage capabilities of the texture.
-    storageCapabilities storeCaps;
-
-    texProvider->GetStorageCapabilities( storeCaps );
-
-    // Textures that should run on low end hardware should not be too HD.
-    // This routine takes the PlayStation 2 as reference hardware.
-
-    const uint32 maxTexWidth = 256;
-    const uint32 maxTexHeight = 256;
-
-    while ( true )
-    {
-        // Get properties of this texture first.
-        uint32 texWidth, texHeight;
-
-        nativeTextureBatchedInfo nativeInfo;
-
-        texProvider->GetTextureInfo( engineInterface, platformTex, nativeInfo );
-
-        texWidth = nativeInfo.baseWidth;
-        texHeight = nativeInfo.baseHeight;
-
-        // Optimize this texture.
-        bool hasTakenStep = false;
-
-        if ( !hasTakenStep && quality < 1.0f )
-        {
-            // We first must make sure that the texture is not unnecessaringly huge.
-            if ( texWidth > maxTexWidth || texHeight > maxTexHeight )
-            {
-                // Half the texture size until we are at a suitable size.
-                uint32 targetWidth = texWidth;
-                uint32 targetHeight = texHeight;
-
-                do
-                {
-                    targetWidth /= 2;
-                    targetHeight /= 2;
-                }
-                while ( targetWidth > maxTexWidth || targetHeight > maxTexHeight );
-
-                // The texture dimensions are too wide.
-                // We half the texture in size.
-                this->resize( targetWidth, targetHeight );
-
-                hasTakenStep = true;
-            }
-        }
-        
-        if ( !hasTakenStep )
-        {
-            // Can we store palette data?
-            if ( storeCaps.pixelCaps.supportsPalette == true )
-            {
-                // We should decrease the texture size by palettization.
-                ePaletteType currentPaletteType = texProvider->GetTexturePaletteType( platformTex );
-
-                if (currentPaletteType == PALETTE_NONE)
-                {
-                    ePaletteType targetPalette = ( quality > 0.0f ) ? ( PALETTE_8BIT ) : ( PALETTE_4BIT );
-
-                    // TODO: per mipmap alpha checking.
-
-                    if (texProvider->DoesTextureHaveAlpha( platformTex ) == false)
-                    {
-                        // 4bit palette is only feasible for non-alpha textures (at higher quality settings).
-                        // Otherwise counting the colors is too complicated.
-                        
-                        // TODO: still allow 8bit textures.
-                        targetPalette = PALETTE_4BIT;
-                    }
-
-                    // The texture should be palettized for good measure.
-                    this->convertToPalette( targetPalette );
-
-                    // TODO: decide whether 4bit or 8bit palette.
-
-                    hasTakenStep = true;
-                }
-            }
-        }
-
-        if ( !hasTakenStep )
-        {
-            // The texture dimension is important for renderer performance. That is why we need to scale the texture according
-            // to quality settings aswell.
-
-        }
-    
-        if ( !hasTakenStep )
-        {
-            break;
-        }
-    }
-}
-
-void Raster::compress( float quality )
-{
-    // A pretty complicated algorithm that can be used to optimally compress rasters.
-    // Currently this only supports DXT.
-
-    PlatformTexture *platformTex = this->platformData;
-
-    if ( !platformTex )
-    {
-        throw RwException( "no native data" );
-    }
-
-    Interface *engineInterface = this->engineInterface;
-
-    texNativeTypeProvider *texProvider = GetNativeTextureTypeProvider( engineInterface, platformTex );
-
-    if ( !texProvider )
-    {
-        throw RwException( "invalid native data" );
-    }
-
-    // The target raster may already be compressed or the target architecture does its own compression.
-    // Decide about these situations.
-    bool isAlreadyCompressed = texProvider->IsTextureCompressed( platformTex );
-
-    if ( isAlreadyCompressed )
-        return; // do not recompress textures.
-
-    storageCapabilities storeCaps;
-
-    texProvider->GetStorageCapabilities( storeCaps );
-
-    if ( storeCaps.isCompressedFormat )
-        return; // no point in compressing if the architecture will do it already.
-
-    // We want to check what kind of compression the target architecture supports.
-    // If we have any compression support, we proceed to next stage.
-    bool supportsDXT1 = false;
-    bool supportsDXT2 = false;
-    bool supportsDXT3 = false;
-    bool supportsDXT4 = false;
-    bool supportsDXT5 = false;
-
-    pixelCapabilities inputTransferCaps;
-
-    texProvider->GetPixelCapabilities( inputTransferCaps );
-
-    // Now decide upon things.
-    if ( inputTransferCaps.supportsDXT1 && storeCaps.pixelCaps.supportsDXT1 )
-    {
-        supportsDXT1 = true;
-    }
-
-    if ( inputTransferCaps.supportsDXT2 && storeCaps.pixelCaps.supportsDXT2 )
-    {
-        supportsDXT2 = true;
-    }
-
-    if ( inputTransferCaps.supportsDXT3 && storeCaps.pixelCaps.supportsDXT3 )
-    {
-        supportsDXT3 = true;
-    }
-
-    if ( inputTransferCaps.supportsDXT4 && storeCaps.pixelCaps.supportsDXT4 )
-    {
-        supportsDXT4 = true;
-    }
-
-    if ( inputTransferCaps.supportsDXT5 && storeCaps.pixelCaps.supportsDXT5 )
-    {
-        supportsDXT5 = true;
-    }
-
-    if ( supportsDXT1 == false &&
-         supportsDXT2 == false &&
-         supportsDXT3 == false &&
-         supportsDXT4 == false &&
-         supportsDXT5 == false )
-    {
-        throw RwException( "attempted to compress a raster that does not support compression" );
-    }
-
-    // We need to know about the alpha status of the texture to make a good decision.
-    bool texHasAlpha = texProvider->DoesTextureHaveAlpha( platformTex );
-
-    // Decide now what compression we want.
-    eCompressionType targetCompressionType = RWCOMPRESS_NONE;
-
-    bool couldDecide =
-        DecideBestDXTCompressionFormat(
-            engineInterface,
-            texHasAlpha,
-            supportsDXT1, supportsDXT2, supportsDXT3, supportsDXT4, supportsDXT5,
-            quality,
-            targetCompressionType
-        );
-
-    if ( !couldDecide )
-    {
-        throw RwException( "could not decide on an optimal DXT compression type" );
-    }
-
-    this->compressCustom( targetCompressionType );
-}
-
-void Raster::compressCustom(eCompressionType targetCompressionType)
-{
-    PlatformTexture *platformTex = this->platformData;
-
-    if ( !platformTex )
-    {
-        throw RwException( "no native data" );
-    }
-
-    Interface *engineInterface = this->engineInterface;
-
-    texNativeTypeProvider *texProvider = GetNativeTextureTypeProvider( engineInterface, platformTex );
-
-    if ( !texProvider )
-    {
-        throw RwException( "invalid native data" );
-    }
-
-    // Avoid recompression.
-    if ( this->isCompressed() )
-        return;
-
-    // Since we now know about everything, we can take the pixels and perform the compression.
-    pixelDataTraversal pixelData;
-
-    texProvider->GetPixelDataFromTexture( engineInterface, platformTex, pixelData );
-
-    bool hasDirectlyAcquired = false;
-
-    try
-    {
-        // Unset the pixels from the texture and make them standalone.
-        texProvider->UnsetPixelDataFromTexture( engineInterface, platformTex, pixelData.isNewlyAllocated == true );
-
-        pixelData.SetStandalone();
-
-        // Compress things.
-        pixelFormat targetPixelFormat;
-        targetPixelFormat.rasterFormat = pixelData.rasterFormat;
-        targetPixelFormat.depth = pixelData.depth;
-        targetPixelFormat.rowAlignment = 0;
-        targetPixelFormat.colorOrder = pixelData.colorOrder;
-        targetPixelFormat.paletteType = PALETTE_NONE;
-        targetPixelFormat.compressionType = targetCompressionType;
-
-        bool hasCompressed = ConvertPixelData( engineInterface, pixelData, targetPixelFormat );
-
-        if ( !hasCompressed )
-        {
-            throw RwException( "failed to compress raster" );
-        }
-
-        // Put the new pixels into the texture.
-        texNativeTypeProvider::acquireFeedback_t acquireFeedback;
-
-        texProvider->SetPixelDataToTexture( engineInterface, platformTex, pixelData, acquireFeedback );
-
-        hasDirectlyAcquired = acquireFeedback.hasDirectlyAcquired;
-    }
-    catch( ... )
-    {
-        pixelData.FreePixels( engineInterface );
-
-        throw;
-    }
-
-    if ( hasDirectlyAcquired == false )
-    {
-        // Should never happen.
-        pixelData.FreePixels( engineInterface );
-    }
-    else
-    {
-        pixelData.DetachPixels();
-    }
-}
-
-bool Raster::isCompressed( void ) const
-{
-    PlatformTexture *platformTex = this->platformData;
-
-    if ( !platformTex )
-    {
-        throw RwException( "no native data" );
-    }
-
-    Interface *engineInterface = this->engineInterface;
-
-    texNativeTypeProvider *texProvider = GetNativeTextureTypeProvider( engineInterface, platformTex );
-
-    if ( !texProvider )
-    {
-        throw RwException( "invalid native data" );
-    }
-
-    // The target raster may already be compressed or the target architecture does its own compression.
-    // Decide about these situations.
-    bool isAlreadyCompressed = texProvider->IsTextureCompressed( platformTex );
-
-    if ( isAlreadyCompressed )
-        return true; // do not recompress textures.
-
-    storageCapabilities storeCaps;
-
-    texProvider->GetStorageCapabilities( storeCaps );
-
-    if ( storeCaps.isCompressedFormat )
-        return true; // no point in compressing if the architecture will do it already.
-
-    // We most likely are not compressed.
-    return false;
-}
-
-eCompressionType Raster::getCompressionFormat( void ) const
-{
-    PlatformTexture *platformTex = this->platformData;
-
-    if ( !platformTex )
-    {
-        throw RwException( "no native data" );
-    }
-
-    Interface *engineInterface = this->engineInterface;
-
-    texNativeTypeProvider *texProvider = GetNativeTextureTypeProvider( engineInterface, platformTex );
-
-    if ( !texProvider )
-    {
-        throw RwException( "invalid native data" );
-    }
-
-    return texProvider->GetTextureCompressionFormat( platformTex );
 }
 
 void Raster::writeImage(Stream *outputStream, const char *method)
@@ -2933,6 +2527,8 @@ void Raster::readImage( rw::Stream *inputStream )
             texProvider->GetPixelCapabilities( acceptCaps );
 
             CompatibilityTransformPixelData( engineInterface, pixelData, acceptCaps );
+
+            AdjustPixelDataDimensionsByFormat( engineInterface, texProvider, pixelData );
 
             // Set this to the texture now.
             texProvider->SetPixelDataToTexture( engineInterface, platformTex, pixelData, acquireFeedback );

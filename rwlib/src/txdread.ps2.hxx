@@ -1147,6 +1147,11 @@ struct ps2NativeTextureTypeProvider : public texNativeTypeProvider
         return 4;
     }
 
+    void GetFormatSizeRules( const pixelFormat& format, nativeTextureSizeRules& rulesOut ) const override
+    {
+        getPS2NativeTextureSizeRules( rulesOut );
+    }
+
     void GetTextureSizeRules( const void *objMem, nativeTextureSizeRules& rulesOut ) const override
     {
         // The PlayStation 2 native texture does not change size rules, thankfully.

@@ -1,3 +1,6 @@
+#ifndef _RENDERWARE_PIXEL_UTILITIES_
+#define _RENDERWARE_PIXEL_UTILITIES_
+
 // Utilities for working with mipmap and pixel data.
 
 #include "pixelformat.hxx"
@@ -7,7 +10,7 @@
 namespace rw
 {
 
-// Use this format to make a raster format compliant to a pixelCapabilities configuration.
+// Use this routine to make a raster format compliant to a pixelCapabilities configuration.
 // Returns whether the given raster format needs conversion into the new.
 inline bool TransformDestinationRasterFormat(
     Interface *engineInterface,
@@ -363,3 +366,5 @@ inline bool calculateHasAlpha( const pixelDataTraversal& pixelData )
 }
 
 }
+
+#endif //_RENDERWARE_PIXEL_UTILITIES_

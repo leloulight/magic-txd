@@ -52,8 +52,10 @@ inline uint32 getATCCompressionBlockSize( eATCInternalFormat internalFormat )
 
 inline void getATCMipmapSizeRules( nativeTextureSizeRules& rulesOut )
 {
-    rulesOut.powerOfTwo = true;
+    rulesOut.powerOfTwo = false;
     rulesOut.squared = false;
+    rulesOut.multipleOf = true;
+    rulesOut.multipleOfValue = 4u;
 }
 
 struct NativeTextureATC
@@ -214,6 +216,11 @@ struct atcNativeTextureTypeProvider : public texNativeTypeProvider
     {
         // Will never be called, because we do not store raw texel data.
         return 0;
+    }
+
+    void GetFormatSizeRules( const pixelFormat& format, nativeTextureSizeRules& rulesOut ) const override
+    {
+        getATCMipmapSizeRules( rulesOut );
     }
 
     void GetTextureSizeRules( const void *objMem, nativeTextureSizeRules& rulesOut ) const override

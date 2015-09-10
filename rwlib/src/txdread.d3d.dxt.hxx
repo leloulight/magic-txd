@@ -524,10 +524,8 @@ inline bool decompressDXTBlock(
     return hasDecompressed;
 }
 
-inline uint32 getDXTRasterDataSize(uint32 dxtType, uint32 texUnitCount)
+inline uint32 getDXTBlockSize( uint32 dxtType )
 {
-    uint32 texBlockCount = texUnitCount / 16;
-
     uint32 blockSize = 0;
 
     if (dxtType == 1)
@@ -539,6 +537,15 @@ inline uint32 getDXTRasterDataSize(uint32 dxtType, uint32 texUnitCount)
     {
         blockSize = 16;
     }
+
+    return blockSize;
+}
+
+inline uint32 getDXTRasterDataSize(uint32 dxtType, uint32 texUnitCount)
+{
+    uint32 texBlockCount = texUnitCount / 16;
+
+    uint32 blockSize = getDXTBlockSize( dxtType );
 
     return ( texBlockCount * blockSize );
 }

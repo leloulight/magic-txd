@@ -481,8 +481,10 @@ struct NativeTextureD3D9 : public d3dpublic::d3dNativeTextureInterface
     {
         bool isCompressed = ( dxtType != 0 );
 
-        rulesOut.powerOfTwo = ( isCompressed == true );
+        rulesOut.powerOfTwo = false;
         rulesOut.squared = false;
+        rulesOut.multipleOf = isCompressed;
+        rulesOut.multipleOfValue = ( isCompressed ? 4u : 0u );
     }
 
     // Implement the public API.
@@ -703,6 +705,37 @@ struct d3d9NativeTextureTypeProvider : public texNativeTypeProvider, d3dpublic::
         // We just conform to what Rockstar and Criterion have thought about here, anyway.
         // I believe that ATI and nVidia have recogized this issue and made sure the alignment is constant!
         return getD3DTextureDataRowAlignment();
+    }
+
+    void GetFormatSizeRules( const pixelFormat& format, nativeTextureSizeRules& rulesOut ) const override
+    {
+        // We want to know ahead of time before passing in our pixel data what size rules we have to obey.
+        eCompressionType compressionType = format.compressionType;
+
+        uint32 dxtType = 0;
+
+        if ( compressionType == RWCOMPRESS_DXT1 )
+        {
+            dxtType = 1;
+        }
+        else if ( compressionType == RWCOMPRESS_DXT2 )
+        {
+            dxtType = 2;
+        }
+        else if ( compressionType == RWCOMPRESS_DXT3 )
+        {
+            dxtType = 3;
+        }
+        else if ( compressionType == RWCOMPRESS_DXT4 )
+        {
+            dxtType = 4;
+        }
+        else if ( compressionType == RWCOMPRESS_DXT5 )
+        {
+            dxtType = 5;
+        }
+
+        NativeTextureD3D9::getSizeRules( dxtType, rulesOut );
     }
 
     void GetTextureSizeRules( const void *objMem, nativeTextureSizeRules& rulesOut ) const override

@@ -294,10 +294,15 @@ struct xboxNativeTextureTypeProvider : public texNativeTypeProvider
         return getXBOXTextureDataRowAlignment();
     }
 
+    void GetFormatSizeRules( const pixelFormat& format, nativeTextureSizeRules& rulesOut ) const override
+    {
+        getXBOXNativeTextureSizeRules( rulesOut );
+    }
+
     void GetTextureSizeRules( const void *objMem, nativeTextureSizeRules& rulesOut ) const override
     {
-        // The XBOX native texture is a very old format, coming with from a very limited hardware.
-        // So we restrict it very strong, in comparison to Direct3D 8 and 9.
+        // The XBOX native texture is a very old format, derived from very limited hardware.
+        // So we restrict it very firmly, in comparison to Direct3D 8 and 9.
         getXBOXNativeTextureSizeRules( rulesOut );
     }
 

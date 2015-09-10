@@ -1,3 +1,6 @@
+#ifndef _RENDERWARE_COMMON_UTILITIES_PRIVATE_
+#define _RENDERWARE_COMMON_UTILITIES_PRIVATE_
+
 #include "rwserialize.hxx"
 
 namespace rw
@@ -234,3 +237,5 @@ inline eRasterFormat getVirtualRasterFormat( bool hasAlpha, eCompressionType rwC
 }
 
 };
+
+#endif //_RENDERWARE_COMMON_UTILITIES_PRIVATE_

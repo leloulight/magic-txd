@@ -718,7 +718,7 @@ void xboxNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
              )
            )
         {
-            // If any format properity is different, we need to convert.
+            // If any format property is different, we need to convert.
             requiresConversion = true;
         }
     }
@@ -728,8 +728,6 @@ void xboxNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
     bool hasDirectlyAcquired = ( requiresSwizzling == false && requiresConversion == false );
 
     size_t mipmapCount = pixelsIn.mipmaps.size();
-
-    uint32 depth = pixelsIn.depth;
 
     // Allocate the mipmaps on the XBOX texture.
     xboxTex->mipmaps.resize( mipmapCount );
@@ -775,7 +773,7 @@ void xboxNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
 
             swizzleTrav.mipWidth = mipWidth;
             swizzleTrav.mipHeight = mipHeight;
-            swizzleTrav.depth = depth;
+            swizzleTrav.depth = dstDepth;
             swizzleTrav.rowAlignment = dstRowAlignment;
             swizzleTrav.texels = dstTexels;
             swizzleTrav.dataSize = dstDataSize;

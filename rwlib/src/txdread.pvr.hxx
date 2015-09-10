@@ -210,6 +210,11 @@ struct pvrNativeTextureTypeProvider : public texNativeTypeProvider
         return nativeTex->hasAlpha;
     }
 
+    void GetFormatSizeRules( const pixelFormat& format, nativeTextureSizeRules& rulesOut ) const override
+    {
+        getPVRNativeTextureSizeRules( rulesOut );
+    }
+
     void GetTextureSizeRules( const void *objMem, nativeTextureSizeRules& rulesOut ) const override
     {
         // The PowerVR native texture seems to be very optimized, limited and not future proof.

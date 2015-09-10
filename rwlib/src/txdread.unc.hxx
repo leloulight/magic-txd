@@ -206,6 +206,11 @@ struct uncNativeTextureTypeProvider : public texNativeTypeProvider
         return 4;
     }
 
+    void GetFormatSizeRules( const pixelFormat& format, nativeTextureSizeRules& rulesOut ) const override
+    {
+        getUNCNativeTextureSizeRules( rulesOut );
+    }
+
     void GetTextureSizeRules( const void *objMem, nativeTextureSizeRules& rulesOut ) const override
     {
         // I let common sense speak here.

@@ -481,6 +481,11 @@ struct gamecubeNativeTextureTypeProvider : public texNativeTypeProvider
         return 4;
     }
 
+    void GetFormatSizeRules( const pixelFormat& format, nativeTextureSizeRules& rulesOut ) const override
+    {
+        // TODO.
+    }
+
     void GetTextureSizeRules( const void *objMem, nativeTextureSizeRules& rulesOut ) const override
     {
         // TODO.

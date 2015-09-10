@@ -10,6 +10,8 @@
 
 #include "txdread.palette.hxx"
 
+#include "txdread.natcompat.hxx"
+
 #ifdef RWLIB_INCLUDE_LIBIMAGEQUANT
 // Include the libimagequant library headers.
 #include <libimagequant.h>
@@ -669,6 +671,9 @@ void Raster::convertToPalette( ePaletteType paletteType, eRasterFormat newRaster
         {
             throw RwException( "pixel conversion failed in palettization routine" );
         }
+
+        // Adjust dimensions, so they are correct.
+        AdjustPixelDataDimensionsByFormat( engineInterface, texProvider, pixelData );
 
         // Now set the pixels to the texture again.
         texNativeTypeProvider::acquireFeedback_t acquireFeedback;

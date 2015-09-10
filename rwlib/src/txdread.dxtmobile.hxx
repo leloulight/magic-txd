@@ -118,8 +118,10 @@ inline eCompressionType getCompressionTypeFromS3TCInternalFormat( eS3TCInternalF
 
 inline void getS3TCNativeTextureSizeRules( nativeTextureSizeRules& rulesOut )
 {
-    rulesOut.powerOfTwo = true;
+    rulesOut.powerOfTwo = false;
     rulesOut.squared = false;
+    rulesOut.multipleOf = true;
+    rulesOut.multipleOfValue = 4u;
 }
 
 struct dxtMobileNativeTextureTypeProvider : public texNativeTypeProvider
@@ -225,6 +227,11 @@ struct dxtMobileNativeTextureTypeProvider : public texNativeTypeProvider
         // Row alignment of raw data does not really matter.
         // We will compress to DXT anyway.
         return 0;
+    }
+
+    void GetFormatSizeRules( const pixelFormat& format, nativeTextureSizeRules& rulesOut ) const override
+    {
+        getS3TCNativeTextureSizeRules( rulesOut );
     }
 
     void GetTextureSizeRules( const void *objMem, nativeTextureSizeRules& rulesOut ) const override
