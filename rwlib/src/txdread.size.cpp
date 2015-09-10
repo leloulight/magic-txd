@@ -881,6 +881,35 @@ void Raster::resize(uint32 newWidth, uint32 newHeight, const char *downsampleMod
 
     texProvider->GetPixelDataFromTexture( engineInterface, platformTex, pixelData );
 
+    // Verify that the dimensions are even accepted by the native texture.
+    // If they are, we can safely go on. Otherwise we have to tell the user to pick better dimensions!
+    try
+    {
+        nativeTextureSizeRules sizeRules;
+
+        pixelFormat pixFormat;
+        pixFormat.rasterFormat = pixelData.rasterFormat;
+        pixFormat.depth = pixelData.depth;
+        pixFormat.rowAlignment = pixelData.rowAlignment;
+        pixFormat.colorOrder = pixelData.colorOrder;
+        pixFormat.paletteType = pixelData.paletteType;
+        pixFormat.compressionType = pixelData.compressionType;
+
+        texProvider->GetFormatSizeRules( pixFormat, sizeRules );
+
+        if ( sizeRules.IsMipmapSizeValid( newWidth, newHeight ) == false )
+        {
+            throw RwException( "dimensions given for raster resize routine are invalid for that native texture type" );
+        }
+    }
+    catch( ... )
+    {
+        // Make sure we release if encounter any error.
+        pixelData.FreePixels( engineInterface );
+
+        throw;
+    }
+
     // Since we will replace all mipmaps, free the data in the texture.
     texProvider->UnsetPixelDataFromTexture( engineInterface, platformTex, pixelData.isNewlyAllocated == true );
 

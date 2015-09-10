@@ -127,19 +127,14 @@ struct nativeTextureSizeRules
     {
         size_t mipmapCount = pixelData.mipmaps.size();
 
-        for ( size_t n = 0; n < mipmapCount; n++ )
-        {
-            const pixelDataTraversal::mipmapResource& mipLevel = pixelData.mipmaps[ n ];
+        if ( mipmapCount == 0 )
+            return true;    // no mipmaps means stuff is valid.
 
-            bool isValid = this->IsMipmapSizeValid( mipLevel.mipWidth, mipLevel.mipHeight );
+        // We verify the base layer only.
+        // If it is valid, then the mipmap chain must be valid as well.
+        const pixelDataTraversal::mipmapResource& baseLevel = pixelData.mipmaps[ 0 ];
 
-            if ( !isValid )
-            {
-                return false;
-            }
-        }
-
-        return true;
+        return this->IsMipmapSizeValid( baseLevel.mipWidth, baseLevel.mipHeight );
     }
 };
 

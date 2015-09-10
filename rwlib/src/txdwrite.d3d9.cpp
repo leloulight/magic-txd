@@ -326,6 +326,8 @@ inline void convertCompatibleRasterFormat(
             assert( 0 );
         }
 
+        // TODO: not all palette raster formats are supported; fix this.
+
         // All palettes have RGBA color order.
         colorOrder = COLOR_RGBA;
 

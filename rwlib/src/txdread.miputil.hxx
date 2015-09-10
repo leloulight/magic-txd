@@ -206,6 +206,10 @@ inline bool virtualAddMipmapLayer(
             return false;
         }
 
+        // Actually, no. Mipmaps only ~inherit properties from the base layer dimensions.
+        // For instance, if the base layer is power-of-two, the mipmaps are also power-of-two.
+        // Does not count for every property tho, but it does not matter.
+#if 0
         // Verify some more advanced rules.
         {
             nativeTextureSizeRules sizeRules;
@@ -216,6 +220,7 @@ inline bool virtualAddMipmapLayer(
                 return false;
             }
         }
+#endif
 
         bool hasDirectlyAcquired;
         bool hasAcquiredPalette = false;    // TODO?
