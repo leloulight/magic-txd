@@ -67,6 +67,12 @@ void TexAddDialog::loadPlatformOriginal( void )
 
                 this->platformOrigRaster->newNativeData( ansiNativeName.c_str() );
 
+                // We have to set the version of the raster since it has reset.
+                if ( rw::TexDictionary *texDictionary = this->mainWnd->currentTXD )
+                {
+                    this->platformOrigRaster->SetEngineVersion( texDictionary->GetEngineVersion() );
+                }
+
                 hasPlatform = true;
             }
 

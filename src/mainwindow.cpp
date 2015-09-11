@@ -26,6 +26,7 @@ MainWindow::MainWindow(QWidget *parent) :
     this->txdNameLabel = NULL;
     this->currentSelectedTexture = NULL;
     this->txdLog = NULL;
+    this->verDlg = NULL;
     this->rwVersionButton = NULL;
 
     this->drawMipmapLayers = false;
@@ -332,6 +333,8 @@ MainWindow::MainWindow(QWidget *parent) :
         rwVersionButton->hide();
         rwVerLayout->addWidget(rwVersionButton);
         rwVerLayout->setAlignment(Qt::AlignRight);
+
+        connect( rwVersionButton, &QPushButton::clicked, this, &MainWindow::onSetupTxdVersion );
 
         // Layout to mix menu and rw version label/button
         QGridLayout *menuVerLayout = new QGridLayout();
@@ -1233,7 +1236,35 @@ const char* MainWindow::GetTXDPlatformString( rw::TexDictionary *txd )
     return texRaster->getNativeDataTypeName();
 }
 
+void MainWindow::SetTXDPlatformString( rw::TexDictionary *txd, const char *platform )
+{
+    // To change the platform of a TXD we have to set all of it's textures platforms.
+    for ( rw::TexDictionary::texIter_t iter( txd->GetTextureIterator() ); !iter.IsEnd(); iter.Increment() )
+    {
+        rw::TextureBase *texHandle = iter.Resolve();
+
+        rw::Raster *texRaster = texHandle->GetRaster();
+
+        if ( texRaster )
+        {
+            rw::ConvertRasterTo( texRaster, platform );
+        }
+    }
+}
+
 void MainWindow::onSetupTxdVersion(bool checked) {
-	RwVersionDialog dialog;
-	dialog.Show();
+    if ( checked == true )
+        return;
+
+    if ( RwVersionDialog *curDlg = this->verDlg )
+    {
+        curDlg->setFocus();
+    }
+    else
+    {
+	    RwVersionDialog *dialog = new RwVersionDialog( this );
+	    dialog->setVisible( true );
+
+        this->verDlg = dialog;
+    }
 }

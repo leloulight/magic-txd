@@ -8,6 +8,10 @@
 #include <QLabel>
 #include <QLineEdit>
 
+#include <regex>
+#include <string>
+#include <sstream>
+
 struct RwVersionTemplate {
 	std::string name;
 
@@ -17,13 +21,284 @@ struct RwVersionTemplate {
 
 class RwVersionDialog : public QDialog
 {
-	//Q_OBJECT
+	//Q_OBJECT why would we need this?
+
+    MainWindow *mainWnd;
+
+    QLineEdit *versionLineEdit;
+    QLineEdit *buildLineEdit;
+
+    QPushButton *applyButton;
+
+    QComboBox *gameSelectBox;
+
+    bool GetSelectedVersion( rw::LibraryVersion& verOut ) const
+    {
+        QString currentVersionString = this->versionLineEdit->text();
+
+        std::string ansiCurrentVersionString = currentVersionString.toStdString();
+
+        rw::LibraryVersion theVersion;
+
+        bool hasValidVersion = false;
+
+        // Verify whether our version is valid while creating our local version struct.
+        unsigned int rwLibMajor, rwLibMinor, rwRevMajor, rwRevMinor;
+        bool hasProperMatch = false;
+        {
+            std::regex ver_regex( "(\\d)\\.(\\d{1,2})\\.(\\d{1,2})\\.(\\d{1,2})" );
+
+            std::smatch ver_match;
+
+            std::regex_match( ansiCurrentVersionString, ver_match, ver_regex );
+
+            if ( ver_match.size() == 5 )
+            {
+                rwLibMajor = std::stoul( ver_match[ 1 ] );
+                rwLibMinor = std::stoul( ver_match[ 2 ] );
+                rwRevMajor = std::stoul( ver_match[ 3 ] );
+                rwRevMinor = std::stoul( ver_match[ 4 ] );
+
+                hasProperMatch = true;
+            }
+        }
+
+        if ( hasProperMatch )
+        {
+            if ( ( rwLibMajor >= 3 && rwLibMajor <= 6 ) &&
+                 ( rwLibMinor <= 15 ) &&
+                 ( rwRevMajor <= 15 ) && 
+                 ( rwRevMinor <= 63 ) )
+            {
+                theVersion.rwLibMajor = rwLibMajor;
+                theVersion.rwLibMinor = rwLibMinor;
+                theVersion.rwRevMajor = rwRevMajor;
+                theVersion.rwRevMinor = rwRevMinor;
+
+                hasValidVersion = true;
+            }
+        }
+
+        if ( hasValidVersion )
+        {
+            // Also set the build number, if valid.
+            QString buildNumber = this->buildLineEdit->text();
+
+            std::string ansiBuildNumber = buildNumber.toStdString();
+
+            unsigned int buildNum;
+
+            int matchCount = sscanf( ansiBuildNumber.c_str(), "%u", &buildNum );
+
+            if ( matchCount == 1 )
+            {
+                if ( buildNum <= 65535 )
+                {
+                    theVersion.buildNumber = buildNum;
+                }
+            }
+
+            // Having an invalid build number does not mean that our version is invalid.
+            // The build number is just candy anyway.
+        }
+
+        if ( hasValidVersion )
+        {
+            verOut = theVersion;
+        }
+
+        return hasValidVersion;
+    }
+
+    void UpdateAccessibility( void )
+    {
+        rw::LibraryVersion libVer;
+
+        // Check whether we should even enable input.
+        // This is only if the user selected "Custom".
+        bool shouldAllowInput = ( this->gameSelectBox->currentText() == "Custom" );
+
+        this->versionLineEdit->setDisabled( !shouldAllowInput );
+        this->buildLineEdit->setDisabled( !shouldAllowInput );
+
+        bool hasValidVersion = this->GetSelectedVersion( libVer );
+
+        // Alright, set enabled-ness based on valid version.
+        this->applyButton->setDisabled( !hasValidVersion );
+    }
+
+public slots:
+    void OnChangeVersion( const QString& newText )
+    {
+        // The version must be validated.
+        this->UpdateAccessibility();
+    }
+
+    void OnChangeSelectedGame( const QString& newItem )
+    {
+        // If we selected a game that we know, then set the version into the edits.
+        rw::LibraryVersion libVer;
+        bool hasGameVer = true;
+        
+        if ( newItem == "GTA San Andreas" )
+        {
+            libVer = rw::KnownVersions::getGameVersion( rw::KnownVersions::SA );
+        }
+        else if ( newItem == "GTA Vice City" )
+        {
+            libVer = rw::KnownVersions::getGameVersion( rw::KnownVersions::VC_PC );
+        }
+        else if ( newItem == "GTA III" )
+        {
+            libVer = rw::KnownVersions::getGameVersion( rw::KnownVersions::GTA3 );
+        }
+        else if ( newItem == "Manhunt" )
+        {
+            libVer = rw::KnownVersions::getGameVersion( rw::KnownVersions::MANHUNT );
+        }
+        else
+        {
+            hasGameVer = false;
+        }
+
+        if ( hasGameVer )
+        {
+            std::string verString =
+                std::to_string( libVer.rwLibMajor ) + "." +
+                std::to_string( libVer.rwLibMinor ) + "." +
+                std::to_string( libVer.rwRevMajor ) + "." +
+                std::to_string( libVer.rwRevMinor );
+
+            std::string buildString;
+
+            if ( libVer.buildNumber != 0xFFFF )
+            {
+                std::stringstream hex_stream;
+
+                hex_stream << std::hex << libVer.buildNumber;
+
+                buildString = hex_stream.str();
+            }
+
+            this->versionLineEdit->setText( QString::fromStdString( verString ) );
+            this->buildLineEdit->setText( QString::fromStdString( buildString ) );
+        }
+        
+        // We want to update the accessibility.
+        this->UpdateAccessibility();
+    }
+
+    void OnRequestAccept( bool clicked )
+    {
+        // Set the version and close.
+        rw::LibraryVersion libVer;
+
+        bool hasVersion = this->GetSelectedVersion( libVer );
+
+        if ( !hasVersion )
+            return;
+
+        // Set the version of the entire TXD.
+        // Also patch the platform is feasible.
+        if ( rw::TexDictionary *currentTXD = this->mainWnd->currentTXD )
+        {
+            bool patchD3D8 = false;
+            bool patchD3D9 = false;
+            bool shouldPatch = true;
+
+            // TODO: maybe make this "fix" optional.
+
+            QString currentGame = this->gameSelectBox->currentText();
+
+            if ( currentGame == "GTA San Andreas" )
+            {
+                patchD3D8 = true;
+            }
+            else if ( currentGame == "GTA Vice City" ||
+                      currentGame == "GTA III" ||
+                      currentGame == "Manhunt" )
+            {
+                patchD3D9 = true;
+            }
+            else
+            {
+                shouldPatch = false;
+            }
+
+            currentTXD->SetEngineVersion( libVer );
+
+            bool didPatchPlatform = false;
+
+            // Also have to set the version of each texture.
+            for ( rw::TexDictionary::texIter_t iter( currentTXD->GetTextureIterator() ); !iter.IsEnd(); iter.Increment() )
+            {
+                rw::TextureBase *texHandle = iter.Resolve();
+
+                texHandle->SetEngineVersion( libVer );
+
+                // Maybe change platform.
+                if ( shouldPatch )
+                {
+                    rw::Raster *texRaster = texHandle->GetRaster();
+
+                    if ( texRaster )
+                    {
+                        const char *texPlatform = texRaster->getNativeDataTypeName();
+
+                        const char *newTarget = NULL;
+
+                        if ( patchD3D8 && strcmp( texPlatform, "Direct3D8" ) == 0 )
+                        {
+                            newTarget = "Direct3D9";
+                        }
+                        else if ( patchD3D9 && strcmp( texPlatform, "Direct3D9" ) == 0 )
+                        {
+                            newTarget = "Direct3D8";
+                        }
+
+                        if ( newTarget )
+                        {
+                            bool hasChanged = rw::ConvertRasterTo( texRaster, newTarget );
+
+                            if ( hasChanged )
+                            {
+                                didPatchPlatform = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // The user might want to be notified of the platform change.
+            if ( didPatchPlatform )
+            {
+                this->mainWnd->txdLog->addLogMessage( "changed the TXD platform to match version", LOGMSG_INFO );
+            }
+
+            // Done. :)
+        }
+
+        // Update the MainWindow stuff.
+        this->mainWnd->updateWindowTitle();
+
+        this->close();
+    }
+
+    void OnRequestCancel( bool clicked )
+    {
+        this->close();
+    }
 
 public:
-	RwVersionDialog() {
+	RwVersionDialog( MainWindow *mainWnd ) : QDialog( mainWnd ) {
 		setObjectName("txdOptionsBackground");
 		setWindowTitle(tr("TXD Version Setup"));
-		setWindowFlags(Qt::WindowTitleHint | Qt::WindowCloseButtonHint);
+		//setWindowFlags(Qt::WindowTitleHint | Qt::WindowCloseButtonHint);
+        setAttribute( Qt::WA_DeleteOnClose );
+
+        setWindowModality( Qt::WindowModal );
+
+        this->mainWnd = mainWnd;
 
 		QVBoxLayout *verticalLayout = new QVBoxLayout(this);
 
@@ -41,6 +316,10 @@ public:
 		gameComboBox->addItem(tr("GTA III"));
 		gameComboBox->addItem(tr("Manhunt"));
 		gameComboBox->addItem(tr("Custom"));
+
+        this->gameSelectBox = gameComboBox;
+
+        connect( gameComboBox, (void (QComboBox::*)( const QString& ))&QComboBox::activated, this, &RwVersionDialog::OnChangeSelectedGame );
 
 		selectGameLayout->addWidget(gameLabel);
 		selectGameLayout->addWidget(gameComboBox);
@@ -78,11 +357,18 @@ public:
 		//versionNumbersLayout->setSpacing(2);
 		versionNumbersLayout->setMargin(0);
 
+        this->versionLineEdit = versionLine1;
+
+        connect( versionLine1, &QLineEdit::textChanged, this, &RwVersionDialog::OnChangeVersion );
+
 		QLabel *buildLabel = new QLabel(tr("Build"));
 		buildLabel->setObjectName("label25px");
 		QLineEdit *buildLine = new QLineEdit;
 		buildLine->setInputMask("HHHH");
+        buildLine->clear();
 		buildLine->setFixedWidth(50);
+
+        this->buildLineEdit = buildLine;
 
 		versionLayout->addWidget(versionLabel);
 		versionLayout->addLayout(versionNumbersLayout);
@@ -101,6 +387,11 @@ public:
 		QPushButton *buttonAccept = new QPushButton(tr("Accept"));
 		QPushButton *buttonCancel = new QPushButton(tr("Cancel"));
 
+        this->applyButton = buttonAccept;
+
+        connect( buttonAccept, &QPushButton::clicked, this, &RwVersionDialog::OnRequestAccept );
+        connect( buttonCancel, &QPushButton::clicked, this, &RwVersionDialog::OnRequestCancel );
+
 		buttonsLayout->addWidget(buttonAccept);
 		buttonsLayout->addWidget(buttonCancel);
 		buttonsLayout->setAlignment(Qt::AlignRight);
@@ -115,9 +406,14 @@ public:
 		verticalLayout->setMargin(0);
 
 		verticalLayout->setSizeConstraint(QLayout::SetFixedSize);
+
+        // Initiate the ready dialog.
+        this->OnChangeSelectedGame( gameComboBox->currentText() );
 	}
 
-	void Show() {
-		exec();
-	}
+    ~RwVersionDialog( void )
+    {
+        // There can only be one version dialog.
+        this->mainWnd->verDlg = NULL;
+    }
 };

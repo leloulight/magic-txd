@@ -32,6 +32,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
     friend class TexAddDialog;
+    friend class RwVersionDialog;
 
 public:
     MainWindow(QWidget *parent = 0);
@@ -55,6 +56,8 @@ public:
 	void clearViewImage( void );
     
     static const char* GetTXDPlatformString( rw::TexDictionary *txd );
+
+    static void SetTXDPlatformString( rw::TexDictionary *txd, const char *platform );
 
 private:
     void DoAddTexture( const TexAddDialog::texAddOperation& params );
@@ -95,7 +98,7 @@ public slots:
 private:
     QString requestValidImagePath( void );
 
-public:
+public slots:
     void onAddTexture( bool checked );
     void onReplaceTexture( bool checked );
     void onRemoveTexture( bool checked );
@@ -146,6 +149,8 @@ private:
 	bool showBackground;
 
 	TxdLog *txdLog; // log management class
+
+    RwVersionDialog *verDlg; // txd version setup class
 
     struct magf_extension
     {

@@ -1402,36 +1402,53 @@ bool ConvertRasterTo( Raster *theRaster, const char *nativeName )
 
                             if ( newNativeTex )
                             {
-                                // 4. make pixels compatible for the target format.
-                                // *  First decide what pixel format we have to deduce from the capabilities
-                                //    and then call the "ConvertPixelData" function to do the job.
-                                CompatibilityTransformPixelData( engineInterface, pixelStore, dstTypeProvider );
-
-                                // The texels have to obey size rules of the destination native texture.
-                                // So let us check what size rules we need, right?
-                                AdjustPixelDataDimensionsByFormat( engineInterface, dstTypeProvider, pixelStore );
-
-                                // 5. Put the texels into our texture.
-                                //    Throwing an exception here means that the texture did not apply any of the pixel
-                                //    information. We can safely free pixelStore.
-                                texNativeTypeProvider::acquireFeedback_t acquireFeedback;
-
-                                dstTypeProvider->SetPixelDataToTexture( engineInterface, newNativeTex, pixelStore, acquireFeedback );
-
-                                if ( acquireFeedback.hasDirectlyAcquired == false )
+                                try
                                 {
-                                    // We need to release the pixels from the storage.
-                                    pixelStore.FreePixels( engineInterface );
-                                }
-                                else
-                                {
-                                    // Since the texture now owns the pixels, we just detach.
-                                    pixelStore.DetachPixels();
-                                }
+                                    // Transfer the version of the raster.
+                                    {
+                                        LibraryVersion srcVersion = origTypeProvider->GetTextureVersion( nativeTex );
 
-                                // 6. Link the new native texture!
-                                //    Also delete the old one.
-                                DeleteNativeTexture( engineInterface, nativeTex );
+                                        dstTypeProvider->SetTextureVersion( engineInterface, newNativeTex, srcVersion );
+                                    }
+
+                                    // 4. make pixels compatible for the target format.
+                                    // *  First decide what pixel format we have to deduce from the capabilities
+                                    //    and then call the "ConvertPixelData" function to do the job.
+                                    CompatibilityTransformPixelData( engineInterface, pixelStore, dstTypeProvider );
+
+                                    // The texels have to obey size rules of the destination native texture.
+                                    // So let us check what size rules we need, right?
+                                    AdjustPixelDataDimensionsByFormat( engineInterface, dstTypeProvider, pixelStore );
+
+                                    // 5. Put the texels into our texture.
+                                    //    Throwing an exception here means that the texture did not apply any of the pixel
+                                    //    information. We can safely free pixelStore.
+                                    texNativeTypeProvider::acquireFeedback_t acquireFeedback;
+
+                                    dstTypeProvider->SetPixelDataToTexture( engineInterface, newNativeTex, pixelStore, acquireFeedback );
+
+                                    if ( acquireFeedback.hasDirectlyAcquired == false )
+                                    {
+                                        // We need to release the pixels from the storage.
+                                        pixelStore.FreePixels( engineInterface );
+                                    }
+                                    else
+                                    {
+                                        // Since the texture now owns the pixels, we just detach.
+                                        pixelStore.DetachPixels();
+                                    }
+
+                                    // 6. Link the new native texture!
+                                    //    Also delete the old one.
+                                    DeleteNativeTexture( engineInterface, nativeTex );
+                                }
+                                catch( ... )
+                                {
+                                    // If any exception happened, we must clean up things.
+                                    DeleteNativeTexture( engineInterface, newNativeTex );
+
+                                    throw;
+                                }
 
                                 theRaster->platformData = newNativeTex;
 
