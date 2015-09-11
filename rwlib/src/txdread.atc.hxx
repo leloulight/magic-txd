@@ -56,6 +56,8 @@ inline void getATCMipmapSizeRules( nativeTextureSizeRules& rulesOut )
     rulesOut.squared = false;
     rulesOut.multipleOf = true;
     rulesOut.multipleOfValue = 4u;
+    rulesOut.maximum = true;
+    rulesOut.maxVal = 2048;
 }
 
 struct NativeTextureATC

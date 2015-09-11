@@ -6,6 +6,9 @@ struct TexNameWindow : public QDialog
 {
     inline TexNameWindow( MainWindow *mainWnd, TexInfoWidget *texInfo ) : QDialog( mainWnd )
     {
+        this->setWindowTitle( "Texture Name" );
+        this->setWindowFlags( this->windowFlags() & ~Qt::WindowContextHelpButtonHint );
+
         this->mainWnd = mainWnd;
         this->texInfo = texInfo;
         

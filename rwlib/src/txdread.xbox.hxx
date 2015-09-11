@@ -181,6 +181,8 @@ inline void getXBOXNativeTextureSizeRules( nativeTextureSizeRules& rulesOut )
 {
     rulesOut.powerOfTwo = true;
     rulesOut.squared = false;
+    rulesOut.maximum = true;
+    rulesOut.maxVal = 2048;
 }
 
 struct xboxNativeTextureTypeProvider : public texNativeTypeProvider

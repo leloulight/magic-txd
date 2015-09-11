@@ -22,6 +22,8 @@ struct nativeTextureSizeRules
         this->squared = false;
         this->multipleOf = false;
         this->multipleOfValue = 0;
+        this->maximum = false;
+        this->maxVal = 0;
     }
 
     // New fields may come, but addition is backwards compatible.
@@ -29,6 +31,8 @@ struct nativeTextureSizeRules
     bool squared;
     bool multipleOf;
     uint32 multipleOfValue;
+    bool maximum;
+    uint32 maxVal;
 
     // Helper for mipmap size rule validation.
     // This model expects a texture that holds simple mipmaps (D3D8 style)
@@ -62,6 +66,17 @@ struct nativeTextureSizeRules
             uint32 multipleOfValue = this->multipleOfValue;
 
             if ( ( layerWidth % multipleOfValue ) != 0 || ( layerHeight % multipleOfValue ) != 0 )
+            {
+                return false;
+            }
+        }
+
+        if ( this->maximum )
+        {
+            // Verify that no dimensions is above the maximum.
+            uint32 maxVal = this->maxVal;
+
+            if ( layerWidth > maxVal || layerHeight > maxVal )
             {
                 return false;
             }
@@ -114,6 +129,15 @@ struct nativeTextureSizeRules
             // Make sure the dimensions are a multiple of the given value.
             reqLayerWidth = ALIGN_SIZE( reqLayerWidth, this->multipleOfValue );
             reqLayerHeight = ALIGN_SIZE( reqLayerHeight, this->multipleOfValue );
+        }
+
+        if ( this->maximum )
+        {
+            // Simply clamp to maximum.
+            uint32 maxVal = this->maxVal;
+
+            reqLayerWidth = std::min( reqLayerWidth, maxVal );
+            reqLayerHeight = std::min( reqLayerHeight, maxVal );
         }
 
         validWidthOut = reqLayerWidth;

@@ -34,6 +34,8 @@ class MainWindow : public QMainWindow
     friend class TexAddDialog;
     friend class RwVersionDialog;
     friend class TexNameWindow;
+    friend class RenderPropWindow;
+    friend class TexResizeWindow;
 
 public:
     MainWindow(QWidget *parent = 0);
@@ -95,6 +97,7 @@ public slots:
     void onRequestSaveTXD( bool checked );
     void onRequestSaveAsTXD( bool checked );
 
+    void onSetupRenderingProps( bool checked );
 	void onSetupTxdVersion(bool checked);
 
 private:
@@ -105,6 +108,7 @@ public slots:
     void onReplaceTexture( bool checked );
     void onRemoveTexture( bool checked );
     void onRenameTexture( bool checked );
+    void onResizeTexture( bool checked );
     void onManipulateTexture( bool checked );
     void onExportTexture( bool checked );
 
@@ -154,6 +158,8 @@ private:
 	TxdLog *txdLog; // log management class
     RwVersionDialog *verDlg; // txd version setup class
     TexNameWindow *texNameDlg; // dialog to change texture name
+    RenderPropWindow *renderPropDlg; // change a texture's wrapping or filtering
+    TexResizeWindow *resizeDlg; // change raster dimensions
 
     struct magf_extension
     {

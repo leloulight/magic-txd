@@ -296,7 +296,7 @@ public:
 	RwVersionDialog( MainWindow *mainWnd ) : QDialog( mainWnd ) {
 		setObjectName("txdOptionsBackground");
 		setWindowTitle(tr("TXD Version Setup"));
-		//setWindowFlags(Qt::WindowTitleHint | Qt::WindowCloseButtonHint);
+        setWindowFlags( this->windowFlags() & ~Qt::WindowContextHelpButtonHint );
         setAttribute( Qt::WA_DeleteOnClose );
 
         setWindowModality( Qt::WindowModal );

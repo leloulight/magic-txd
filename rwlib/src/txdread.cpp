@@ -1870,6 +1870,63 @@ LibraryVersion Raster::GetEngineVersion( void ) const
     return texProvider->GetTextureVersion( platformTex );
 }
 
+void Raster::getSizeRules( rasterSizeRules& rulesOut ) const
+{
+    // We need to fetch that from the native texture.
+    PlatformTexture *platformTex = this->platformData;
+
+    if ( !platformTex )
+    {
+        throw RwException( "no native data" );
+    }
+
+    Interface *engineInterface = this->engineInterface;
+
+    texNativeTypeProvider *texProvider = GetNativeTextureTypeProvider( engineInterface, platformTex );
+
+    if ( !texProvider )
+    {
+        throw RwException( "invalid native data" );
+    }
+
+    nativeTextureSizeRules nativeSizeRules;
+    texProvider->GetTextureSizeRules( platformTex, nativeSizeRules );
+
+    // Give opaque data to the runtime.
+    rulesOut.powerOfTwo = nativeSizeRules.powerOfTwo;
+    rulesOut.squared = nativeSizeRules.squared;
+    rulesOut.multipleOf = nativeSizeRules.multipleOf;
+    rulesOut.multipleOfValue = nativeSizeRules.multipleOfValue;
+    rulesOut.maximum = nativeSizeRules.maximum;
+    rulesOut.maxVal = nativeSizeRules.maxVal;
+}
+
+bool rasterSizeRules::verifyDimensions( uint32 width, uint32 height ) const
+{
+    nativeTextureSizeRules nativeSizeRules;
+    nativeSizeRules.powerOfTwo = this->powerOfTwo;
+    nativeSizeRules.squared = this->squared;
+    nativeSizeRules.multipleOf = this->multipleOf;
+    nativeSizeRules.multipleOfValue = this->multipleOfValue;
+    nativeSizeRules.maximum = this->maximum;
+    nativeSizeRules.maxVal = this->maxVal;
+
+    return nativeSizeRules.IsMipmapSizeValid( width, height );
+}
+
+void rasterSizeRules::adjustDimensions( uint32 width, uint32 height, uint32& newWidth, uint32& newHeight ) const
+{
+    nativeTextureSizeRules nativeSizeRules;
+    nativeSizeRules.powerOfTwo = this->powerOfTwo;
+    nativeSizeRules.squared = this->squared;
+    nativeSizeRules.multipleOf = this->multipleOf;
+    nativeSizeRules.multipleOfValue = this->multipleOfValue;
+    nativeSizeRules.maximum = this->maximum;
+    nativeSizeRules.maxVal = this->maxVal;
+
+    nativeSizeRules.CalculateValidLayerDimensions( width, height, newWidth, newHeight );
+}
+
 void Raster::getFormatString( char *buf, size_t bufSize, size_t& lengthOut ) const
 {
     // Ask the native platform texture to deliver us a format string.

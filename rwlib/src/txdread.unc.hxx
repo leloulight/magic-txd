@@ -93,6 +93,8 @@ inline void getUNCNativeTextureSizeRules( nativeTextureSizeRules& rulesOut )
 {
     rulesOut.powerOfTwo = false;
     rulesOut.squared = false;
+    rulesOut.maximum = true;
+    rulesOut.maxVal = 2048;
 }
 
 struct uncNativeTextureTypeProvider : public texNativeTypeProvider

@@ -112,6 +112,8 @@ inline void getPVRNativeTextureSizeRules( nativeTextureSizeRules& rulesOut )
 {
     rulesOut.powerOfTwo = true;
     rulesOut.squared = false;   // NOT SURE.
+    rulesOut.maximum = true;
+    rulesOut.maxVal = 2048;
 }
 
 struct pvrNativeTextureTypeProvider : public texNativeTypeProvider

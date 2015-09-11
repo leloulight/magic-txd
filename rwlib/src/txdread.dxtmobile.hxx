@@ -122,6 +122,8 @@ inline void getS3TCNativeTextureSizeRules( nativeTextureSizeRules& rulesOut )
     rulesOut.squared = false;
     rulesOut.multipleOf = true;
     rulesOut.multipleOfValue = 4u;
+    rulesOut.maximum = true;
+    rulesOut.maxVal = 2048;
 }
 
 struct dxtMobileNativeTextureTypeProvider : public texNativeTypeProvider

@@ -95,6 +95,29 @@ public:
     void set(const TextureBase& inTex );
 };
 
+struct rasterSizeRules
+{
+    inline rasterSizeRules( void )
+    {
+        this->powerOfTwo = false;
+        this->squared = false;
+        this->multipleOf = false;
+        this->multipleOfValue = 0;
+        this->maximum = false;
+        this->maxVal = 0;
+    }
+
+    bool powerOfTwo;
+    bool squared;
+    bool multipleOf;
+    uint32 multipleOfValue;
+    bool maximum;
+    uint32 maxVal;
+
+    bool verifyDimensions( uint32 width, uint32 height ) const;
+    void adjustDimensions( uint32 width, uint32 height, uint32& newWidth, uint32& newHeight ) const;
+};
+
 #include "renderware.txd.pixelformat.h"
 
 // This is our library-wide supported sample format enumeration.
@@ -408,6 +431,8 @@ struct Raster
 
     void* getNativeInterface( void );
     void* getDriverNativeInterface( void );
+
+    void getSizeRules( rasterSizeRules& rulesOut ) const;
 
     void getFormatString( char *buf, size_t bufSize, size_t& lengthOut ) const;
 

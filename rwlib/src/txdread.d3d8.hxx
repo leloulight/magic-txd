@@ -96,6 +96,8 @@ struct NativeTextureD3D8
         rulesOut.squared = false;
         rulesOut.multipleOf = isCompressed;
         rulesOut.multipleOfValue = ( isCompressed ? 4u : 0u );
+        rulesOut.maximum = true;
+        rulesOut.maxVal = 4096;
     }
 
 public:

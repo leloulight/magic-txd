@@ -485,6 +485,8 @@ struct NativeTextureD3D9 : public d3dpublic::d3dNativeTextureInterface
         rulesOut.squared = false;
         rulesOut.multipleOf = isCompressed;
         rulesOut.multipleOfValue = ( isCompressed ? 4u : 0u );
+        rulesOut.maximum = true;
+        rulesOut.maxVal = 4096;
     }
 
     // Implement the public API.

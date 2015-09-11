@@ -65,6 +65,12 @@
     <ClInclude Include="..\..\include\texnamewindow.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\renderpropwindow.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\resizewindow.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">

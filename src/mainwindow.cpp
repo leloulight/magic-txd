@@ -15,6 +15,8 @@
 #include "textureViewport.h"
 #include "rwversiondialog.h"
 #include "texnamewindow.h"
+#include "renderpropwindow.h"
+#include "resizewindow.h"
 
 #include "qtrwutils.hxx"
 
@@ -29,6 +31,8 @@ MainWindow::MainWindow(QWidget *parent) :
     this->txdLog = NULL;
     this->verDlg = NULL;
     this->texNameDlg = NULL;
+    this->renderPropDlg = NULL;
+    this->resizeDlg = NULL;
     this->rwVersionButton = NULL;
 
     this->drawMipmapLayers = false;
@@ -196,6 +200,8 @@ MainWindow::MainWindow(QWidget *parent) :
 	    QAction *actionResize = new QAction("&Resize", this);
 	    editMenu->addAction(actionResize);
 
+        connect( actionResize, &QAction::triggered, this, &MainWindow::onResizeTexture );
+
         QAction *actionManipulate = new QAction("&Manipulate", this);
         editMenu->addAction(actionManipulate);
 
@@ -215,6 +221,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	    QAction *actionSetupRenderingProperties = new QAction("&Setup rendering properties", this);
 	    editMenu->addAction(actionSetupRenderingProperties);
+
+        connect( actionSetupRenderingProperties, &QAction::triggered, this, &MainWindow::onSetupRenderingProps );
+
 	    editMenu->addSeparator();
 	    QAction *actionViewAllChanges = new QAction("&View all changes", this);
 	    editMenu->addAction(actionViewAllChanges);
@@ -1134,6 +1143,24 @@ void MainWindow::onRenameTexture( bool checked )
     }
 }
 
+void MainWindow::onResizeTexture( bool checked )
+{
+    // Change the texture dimensions.
+
+    if ( TexInfoWidget *texInfo = this->currentSelectedTexture )
+    {
+        if ( TexResizeWindow *curDlg = this->resizeDlg )
+        {
+            curDlg->setFocus();
+        }
+        else
+        {
+            TexResizeWindow *dialog = new TexResizeWindow( this, texInfo );
+            dialog->setVisible( true );
+        }
+    }
+}
+
 void MainWindow::onManipulateTexture( bool checked )
 {
     // Manipulating a raster is taking that raster and creating a new copy that is more beautiful.
@@ -1287,6 +1314,25 @@ void MainWindow::SetTXDPlatformString( rw::TexDictionary *txd, const char *platf
         if ( texRaster )
         {
             rw::ConvertRasterTo( texRaster, platform );
+        }
+    }
+}
+
+void MainWindow::onSetupRenderingProps( bool checked )
+{
+    if ( checked == true )
+        return;
+
+    if ( TexInfoWidget *texInfo = this->currentSelectedTexture )
+    {
+        if ( RenderPropWindow *curDlg = this->renderPropDlg )
+        {
+            curDlg->setFocus();
+        }
+        else
+        {
+            RenderPropWindow *dialog = new RenderPropWindow( this, texInfo );
+            dialog->setVisible( true );
         }
     }
 }
