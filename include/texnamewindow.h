@@ -1,3 +1,5 @@
+#pragma once
+
 #include <QDialog>
 
 struct TexNameWindow : public QDialog
@@ -116,6 +118,23 @@ private:
         QString curTexName = texNameEdit->text();
 
         bool shouldAllowSet = ( curTexName.isEmpty() == false );
+
+        if ( shouldAllowSet )
+        {
+            if ( TexInfoWidget *texInfo = this->texInfo )
+            {
+                if ( rw::TextureBase *texHandle = texInfo->GetTextureHandle() )
+                {
+                    // Setting an already set texture name makes no sense.
+                    std::string ansiCurTexName = curTexName.toStdString();
+
+                    if ( ansiCurTexName == texHandle->GetName() )
+                    {
+                        shouldAllowSet = false;
+                    }
+                }
+            }
+        }
         
         // TODO: validate the texture name aswell.
 
