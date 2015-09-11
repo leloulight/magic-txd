@@ -33,6 +33,7 @@ class MainWindow : public QMainWindow
 
     friend class TexAddDialog;
     friend class RwVersionDialog;
+    friend class TexNameWindow;
 
 public:
     MainWindow(QWidget *parent = 0);
@@ -48,6 +49,7 @@ public:
 
     void updateWindowTitle( void );
     void updateTextureMetaInfo( void );
+    void updateAllTextureMetaInfo( void );
 
     void updateTextureView( void );
 
@@ -102,6 +104,7 @@ public slots:
     void onAddTexture( bool checked );
     void onReplaceTexture( bool checked );
     void onRemoveTexture( bool checked );
+    void onRenameTexture( bool checked );
     void onManipulateTexture( bool checked );
     void onExportTexture( bool checked );
 
@@ -149,8 +152,8 @@ private:
 	bool showBackground;
 
 	TxdLog *txdLog; // log management class
-
     RwVersionDialog *verDlg; // txd version setup class
+    TexNameWindow *texNameDlg; // dialog to change texture name
 
     struct magf_extension
     {

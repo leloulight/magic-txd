@@ -240,7 +240,7 @@ public slots:
                 if ( shouldPatch )
                 {
                     rw::Raster *texRaster = texHandle->GetRaster();
-
+                    
                     if ( texRaster )
                     {
                         const char *texPlatform = texRaster->getNativeDataTypeName();
@@ -273,6 +273,9 @@ public slots:
             if ( didPatchPlatform )
             {
                 this->mainWnd->txdLog->addLogMessage( "changed the TXD platform to match version", LOGMSG_INFO );
+
+                // Also update texture item info, because it may have changed.
+                this->mainWnd->updateAllTextureMetaInfo();
             }
 
             // Done. :)

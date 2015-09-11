@@ -14,6 +14,7 @@
 
 #include "textureViewport.h"
 #include "rwversiondialog.h"
+#include "texnamewindow.h"
 
 #include "qtrwutils.hxx"
 
@@ -27,6 +28,7 @@ MainWindow::MainWindow(QWidget *parent) :
     this->currentSelectedTexture = NULL;
     this->txdLog = NULL;
     this->verDlg = NULL;
+    this->texNameDlg = NULL;
     this->rwVersionButton = NULL;
 
     this->drawMipmapLayers = false;
@@ -188,6 +190,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	    QAction *actionRename = new QAction("&Rename", this);
 	    editMenu->addAction(actionRename);
+
+        connect( actionRename, &QAction::triggered, this, &MainWindow::onRenameTexture );
+
 	    QAction *actionResize = new QAction("&Resize", this);
 	    editMenu->addAction(actionResize);
 
@@ -573,6 +578,25 @@ void MainWindow::updateTextureMetaInfo( void )
     {
         // Update it.
         infoWidget->updateInfo();
+    }
+}
+
+void MainWindow::updateAllTextureMetaInfo( void )
+{
+    QListWidget *textureList = this->textureListWidget;
+
+    int rowCount = textureList->count();
+
+    for ( int row = 0; row < rowCount; row++ )
+    {
+        QListWidgetItem *item = textureList->item( row );
+
+        TexInfoWidget *texInfo = dynamic_cast <TexInfoWidget*> ( textureList->itemWidget( item ) );
+
+        if ( texInfo )
+        {
+            texInfo->updateInfo();
+        }
     }
 }
 
@@ -1092,6 +1116,21 @@ void MainWindow::onRemoveTexture( bool checked )
         {
             this->clearViewImage();
         }
+    }
+}
+
+void MainWindow::onRenameTexture( bool checked )
+{
+    // Change the name of the currently selected texture.
+
+    if ( this->texNameDlg )
+        return;
+
+    if ( TexInfoWidget *texInfo = this->currentSelectedTexture )
+    {
+        TexNameWindow *texNameDlg = new TexNameWindow( this, texInfo );
+
+        texNameDlg->setVisible( true );
     }
 }
 
