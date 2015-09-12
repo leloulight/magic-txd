@@ -30,6 +30,7 @@
     <ClCompile Include="GeneratedFiles\Debug 2015\moc_txdlog.cpp">
       <Filter>moc</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\renderpropwindow.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="../../include/styles.h">

@@ -81,7 +81,9 @@ inline HeaderInfo::PackedLibraryVersion packVersion( LibraryVersion version )
 
     if ( isNewStyleVer )
     {
-        packedVersion.rev2.buildNumber = version.buildNumber;
+        HeaderInfo::PackedLibraryVersion_rev2& rev2 = packedVersion.GetRevision2();
+
+        rev2.buildNumber = version.buildNumber;
 
         packedVersionStruct_rev2 packVer;
 
@@ -90,7 +92,7 @@ inline HeaderInfo::PackedLibraryVersion packVersion( LibraryVersion version )
         packVer.packedReleaseMinorRev = version.rwRevMajor;
         packVer.packedBinaryFormatRev = version.rwRevMinor;
 
-        packedVersion.rev2.packedVer = packVer.libVer;
+        rev2.packedVer = packVer.libVer;
     }
     else
     {
@@ -102,7 +104,7 @@ inline HeaderInfo::PackedLibraryVersion packVersion( LibraryVersion version )
         packVer.packedReleaseMinorRev = version.rwRevMajor;
         packVer.pad = 0;    // remember to zero things out nicely.
 
-        packedVersion.rev1.packedVer = packVer.libVer;
+        packedVersion.GetRevision1().packedVer = packVer.libVer;
     }
 
     return packedVersion;
@@ -122,10 +124,12 @@ inline LibraryVersion unpackVersion( HeaderInfo::PackedLibraryVersion packedVers
 
     if ( isNewStyleVer )
     {
-        outVer.buildNumber = packedVersion.rev2.buildNumber;
+        const HeaderInfo::PackedLibraryVersion_rev2& rev2 = packedVersion.GetRevision2();
+
+        outVer.buildNumber = rev2.buildNumber;
 
         packedVersionStruct_rev2 packVer;
-        packVer.libVer = packedVersion.rev2.packedVer;
+        packVer.libVer = rev2.packedVer;
 
         outVer.rwLibMajor = 3 + packVer.packedLibraryMajorVer;
         outVer.rwLibMinor = packVer.packedReleaseMajorRev;
@@ -138,7 +142,7 @@ inline LibraryVersion unpackVersion( HeaderInfo::PackedLibraryVersion packedVers
         outVer.buildNumber = 0xFFFF;
 
         packedVersionStruct_rev1 packVer;
-        packVer.libVer = packedVersion.rev1.packedVer;
+        packVer.libVer = packedVersion.GetRevision1().packedVer;
 
         outVer.rwLibMajor = packVer.packedLibraryMajorVer;
         outVer.rwLibMinor = packVer.packedReleaseMajorRev;

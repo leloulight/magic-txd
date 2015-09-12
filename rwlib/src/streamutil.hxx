@@ -73,35 +73,22 @@ struct HeaderInfo
 
     struct PackedLibraryVersion
     {
-        inline PackedLibraryVersion( void ) : _version()
-        {}
+        // Can be rev1 or rev2.
+        uint32 _version;
 
-        inline PackedLibraryVersion( const PackedLibraryVersion& right ) : _version( right._version )
-        {}
-
-        inline PackedLibraryVersion( PackedLibraryVersion&& right ) : _version( right._version )
-        {}
-
-        inline void operator = ( const PackedLibraryVersion&& right )
+        inline PackedLibraryVersion_rev1& GetRevision1( void )
         {
-            this->_version = right._version;
+            return *(PackedLibraryVersion_rev1*)&this->_version;
         }
 
-        inline void operator = ( PackedLibraryVersion&& right )
+        inline PackedLibraryVersion_rev2& GetRevision2( void )
         {
-            this->_version = right._version;
+            return *(PackedLibraryVersion_rev2*)&this->_version;
         }
 
-        union
+        inline bool isNewStyle( void )
         {
-            PackedLibraryVersion_rev1 rev1;
-            PackedLibraryVersion_rev2 rev2;
-            uint32 _version;
-        };
-
-        inline bool isNewStyle( void ) const
-        {
-            return ( rev2.packedVer != 0 );
+            return ( GetRevision2().packedVer != 0 );
         }
     };
 

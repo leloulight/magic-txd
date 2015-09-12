@@ -233,7 +233,7 @@ void Interface::SerializeExtensions( const RwObject *rwObj, BlockProvider& outpu
             if ( extStore )
             {
                 // Write all sections.
-                extStore->WriteExtensions( this, outputProvider );
+                extStore->WriteExtensions( this, extensionBlock );
             }
         }
     }
