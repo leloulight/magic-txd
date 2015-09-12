@@ -149,22 +149,8 @@ struct resizeFilterLinearPlugin : public rasterResizeFilterInterface
 
         if ( !gotTargetColor )
         {
-            // We try to get the color before instead.
-            abstractColorItem subColor;
-
-            bool gotSubColor = srcBmp.fetchcolor( srcX - vecX, srcY - vecY, subColor );
-
-            if ( gotSubColor )
-            {
-                interpolateTarget =
-                    linearInterpolateColorItem(
-                        interpolateSource, subColor, 0.5
-                    );
-            }
-            else
-            {
-                interpolateTarget = interpolateSource;
-            }
+            // We will do a copy operation.
+            interpolateTarget = interpolateSource;
         }
 
         uint32 intColorDist = ( scaleXOffset + scaleYOffset + 1 );

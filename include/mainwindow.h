@@ -36,6 +36,7 @@ class MainWindow : public QMainWindow
     friend class TexNameWindow;
     friend class RenderPropWindow;
     friend class TexResizeWindow;
+    friend class PlatformSelWindow;
 
 public:
     MainWindow(QWidget *parent = 0);
@@ -91,6 +92,7 @@ public slots:
     void onToggleShowMipmapLayers( bool checked );
 	void onToggleShowBackground(bool checked);
     void onToggleShowLog( bool checked );
+    void onSelectPlatform( bool checked );
     void onSetupMipmapLayers( bool checked );
     void onClearMipmapLayers( bool checked );
 
@@ -160,6 +162,7 @@ private:
     TexNameWindow *texNameDlg; // dialog to change texture name
     RenderPropWindow *renderPropDlg; // change a texture's wrapping or filtering
     TexResizeWindow *resizeDlg; // change raster dimensions
+    PlatformSelWindow *platformDlg; // set TXD platform
 
     struct magf_extension
     {

@@ -161,6 +161,8 @@ public:
 
     void createRasterForConfiguration( void );
 
+    static QComboBox* createPlatformSelectComboBox( MainWindow *mainWnd );
+
 private:
     void releaseConvRaster( void );
     

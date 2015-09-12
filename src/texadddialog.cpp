@@ -482,6 +482,25 @@ void TexAddDialog::createRasterForConfiguration( void )
     this->updatePreviewWidget();
 }
 
+QComboBox* TexAddDialog::createPlatformSelectComboBox( MainWindow *mainWnd )
+{
+    QComboBox *platformComboBox = new QComboBox();
+
+    // Fill out the combo box with available platforms.
+    {
+        rw::platformTypeNameList_t platforms = rw::GetAvailableNativeTextureTypes( mainWnd->rwEngine );
+
+        for ( rw::platformTypeNameList_t::const_reverse_iterator iter = platforms.crbegin(); iter != platforms.crend(); iter++ )
+        {
+            const std::string& platName = *iter;
+
+            platformComboBox->addItem( platName.c_str() );
+        }
+    }
+
+    return platformComboBox;
+}
+
 struct PropHolderWidget : public QTabWidget
 {
     QSize sizeHint( void ) const override
@@ -602,19 +621,7 @@ TexAddDialog::TexAddDialog( MainWindow *mainWnd, const dialogCreateParams& creat
 
         if ( _lockdownPlatform == false || currentForcedPlatform == NULL )
         {
-            QComboBox *platformComboBox = new QComboBox();
-
-            // Fill out the combo box with available platforms.
-            {
-                rw::platformTypeNameList_t platforms = rw::GetAvailableNativeTextureTypes( mainWnd->rwEngine );
-
-                for ( rw::platformTypeNameList_t::const_reverse_iterator iter = platforms.crbegin(); iter != platforms.crend(); iter++ )
-                {
-                    const std::string& platName = *iter;
-
-                    platformComboBox->addItem( platName.c_str() );
-                }
-            }
+            QComboBox *platformComboBox = createPlatformSelectComboBox( mainWnd );
 
             connect( platformComboBox, (void (QComboBox::*)(const QString&))&QComboBox::activated, this, &TexAddDialog::OnPlatformSelect );
 

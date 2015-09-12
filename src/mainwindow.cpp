@@ -17,6 +17,7 @@
 #include "texnamewindow.h"
 #include "renderpropwindow.h"
 #include "resizewindow.h"
+#include "platformselwindow.h"
 
 #include "qtrwutils.hxx"
 
@@ -33,6 +34,7 @@ MainWindow::MainWindow(QWidget *parent) :
     this->texNameDlg = NULL;
     this->renderPropDlg = NULL;
     this->resizeDlg = NULL;
+    this->platformDlg = NULL;
     this->rwVersionButton = NULL;
 
     this->drawMipmapLayers = false;
@@ -207,8 +209,11 @@ MainWindow::MainWindow(QWidget *parent) :
 
         connect( actionManipulate, &QAction::triggered, this, &MainWindow::onManipulateTexture );
 
-	    QAction *actionSetPixelFormat = new QAction("&Setup pixel format", this);
+	    QAction *actionSetPixelFormat = new QAction("&Platform", this);
 	    editMenu->addAction(actionSetPixelFormat);
+
+        connect( actionSetPixelFormat, &QAction::triggered, this, &MainWindow::onSelectPlatform );
+
 	    QAction *actionSetupMipLevels = new QAction("&Setup mip-levels", this);
 	    editMenu->addAction(actionSetupMipLevels);
 
@@ -706,6 +711,7 @@ void MainWindow::onOpenFile( bool checked )
 void MainWindow::onCloseCurrent( bool checked )
 {
     this->currentSelectedTexture = NULL;
+    this->hasOpenedTXDFileInfo = false;
 
 	clearViewImage();
 
@@ -794,6 +800,28 @@ void MainWindow::onToggleShowLog( bool checked )
 {
     // Make sure the log is visible.
 	this->txdLog->show();
+}
+
+void MainWindow::onSelectPlatform( bool checked )
+{
+    // Show the window with a combo box of all available platforms.
+
+    if ( this->currentTXD == NULL )
+        return;
+
+    // No point in setting a platform if there are no textures.
+    if ( this->currentTXD->GetTextureCount() == 0 )
+        return;
+
+    if ( PlatformSelWindow *curDlg = this->platformDlg )
+    {
+        curDlg->setFocus();
+    }
+    else
+    {
+        PlatformSelWindow *dialog = new PlatformSelWindow( this );
+        dialog->setVisible( true );
+    }
 }
 
 void MainWindow::onSetupMipmapLayers( bool checked )

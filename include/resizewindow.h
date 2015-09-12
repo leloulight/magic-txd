@@ -53,6 +53,8 @@ struct TexResizeWindow : public QDialog
         // We want a basic dialog with two dimension line edits and our typical two buttons.
         QVBoxLayout *rootLayout = new QVBoxLayout( this );
 
+        rootLayout->setSizeConstraint( QLayout::SetFixedSize );
+
         // A form layout might do it.
         QFormLayout *dimmForm = new QFormLayout();
 

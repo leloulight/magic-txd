@@ -661,6 +661,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\include\defs.h" />
     <ClInclude Include="..\..\include\MagicExport.h" />
+    <ClInclude Include="..\..\include\platformselwindow.h" />
     <ClInclude Include="..\..\include\renderpropwindow.h" />
     <ClInclude Include="..\..\include\resizewindow.h" />
     <ClInclude Include="..\..\include\rwversiondialog.h" />
