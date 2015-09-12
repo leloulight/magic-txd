@@ -724,7 +724,7 @@ public:
 
         if ( model == COLORMODEL_RGBA )
         {
-            success = this->setRGBA( texelSource, index, lum, lum, lum, 255 );
+            success = this->setRGBA( texelSource, index, lum, lum, lum, alpha );
         }
         else if ( model == COLORMODEL_LUMINANCE )
         {

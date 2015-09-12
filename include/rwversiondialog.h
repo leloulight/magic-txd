@@ -276,6 +276,9 @@ public slots:
 
                 // Also update texture item info, because it may have changed.
                 this->mainWnd->updateAllTextureMetaInfo();
+
+                // The visuals of the texture _may_ have changed.
+                this->mainWnd->updateTextureView();
             }
 
             // Done. :)
