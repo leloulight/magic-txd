@@ -12,7 +12,22 @@ struct rwBlockHeader
     HeaderInfo::PackedLibraryVersion libVer;
 };
 
-struct packedVersionStruct
+struct packedVersionStruct_rev1
+{
+    union
+    {
+        struct
+        {
+            uint16 packedReleaseMinorRev : 4;
+            uint16 packedReleaseMajorRev : 4;
+            uint16 packedLibraryMajorVer : 2;
+            uint16 pad : 6;
+        };
+        uint16 libVer;
+    };
+};
+
+struct packedVersionStruct_rev2
 {
     union
     {
@@ -23,7 +38,7 @@ struct packedVersionStruct
             uint16 packedReleaseMajorRev : 4;
             uint16 packedLibraryMajorVer : 2;
         };
-        unsigned short libVer;
+        uint16 libVer;
     };
 };
 
@@ -47,20 +62,48 @@ uint32 HeaderInfo::write(std::ostream &rw)
 	return 3*sizeof(uint32);
 }
 
+inline bool isNewStyleVersioning( const LibraryVersion& libVer )
+{
+    return ( libVer.rwLibMajor == 3 && libVer.rwLibMinor >= 1 && ( libVer.rwRevMajor >= 1 || libVer.rwRevMinor >= 1 ) ||
+             libVer.rwLibMajor >  3 ) ||
+           ( libVer.buildNumber != 0xFFFF ) ||  // kind of want to support everything the user throws at us.
+           ( libVer.rwRevMinor != 0 );
+}
+
 inline HeaderInfo::PackedLibraryVersion packVersion( LibraryVersion version )
 {
     HeaderInfo::PackedLibraryVersion packedVersion;
 
-    packedVersion.buildNumber = version.buildNumber;
+    // Here, there can be two different versioning schemes.
+    // Apparently, any version 3.1.0.0 and below use the rev1 version scheme, where
+    // there is no build number. We have to obey that.
+    bool isNewStyleVer = isNewStyleVersioning( version );
 
-    packedVersionStruct packVer;
+    if ( isNewStyleVer )
+    {
+        packedVersion.rev2.buildNumber = version.buildNumber;
 
-    packVer.packedLibraryMajorVer = version.rwLibMajor - 3;
-    packVer.packedReleaseMajorRev = version.rwLibMinor;
-    packVer.packedReleaseMinorRev = version.rwRevMajor;
-    packVer.packedBinaryFormatRev = version.rwRevMinor;
+        packedVersionStruct_rev2 packVer;
 
-    packedVersion.packedVer = packVer.libVer;
+        packVer.packedLibraryMajorVer = version.rwLibMajor - 3;
+        packVer.packedReleaseMajorRev = version.rwLibMinor;
+        packVer.packedReleaseMinorRev = version.rwRevMajor;
+        packVer.packedBinaryFormatRev = version.rwRevMinor;
+
+        packedVersion.rev2.packedVer = packVer.libVer;
+    }
+    else
+    {
+        // Old stuff. Does not support build numbers.
+        packedVersionStruct_rev1 packVer;
+        
+        packVer.packedLibraryMajorVer = version.rwLibMajor;
+        packVer.packedReleaseMajorRev = version.rwLibMinor;
+        packVer.packedReleaseMinorRev = version.rwRevMajor;
+        packVer.pad = 0;    // remember to zero things out nicely.
+
+        packedVersion.rev1.packedVer = packVer.libVer;
+    }
 
     return packedVersion;
 }
@@ -74,15 +117,34 @@ inline LibraryVersion unpackVersion( HeaderInfo::PackedLibraryVersion packedVers
 {
     LibraryVersion outVer;
 
-    outVer.buildNumber = packedVersion.buildNumber;
+    // Now we basically decide on the binary format of the packed struct.
+    bool isNewStyleVer = packedVersion.isNewStyle();
 
-    packedVersionStruct packVer;
-    packVer.libVer = packedVersion.packedVer;
+    if ( isNewStyleVer )
+    {
+        outVer.buildNumber = packedVersion.rev2.buildNumber;
 
-    outVer.rwLibMajor = 3 + packVer.packedLibraryMajorVer;
-    outVer.rwLibMinor = packVer.packedReleaseMajorRev;
-    outVer.rwRevMajor = packVer.packedReleaseMinorRev;
-    outVer.rwRevMinor = packVer.packedBinaryFormatRev;
+        packedVersionStruct_rev2 packVer;
+        packVer.libVer = packedVersion.rev2.packedVer;
+
+        outVer.rwLibMajor = 3 + packVer.packedLibraryMajorVer;
+        outVer.rwLibMinor = packVer.packedReleaseMajorRev;
+        outVer.rwRevMajor = packVer.packedReleaseMinorRev;
+        outVer.rwRevMinor = packVer.packedBinaryFormatRev;
+    }
+    else
+    {
+        // Ugly old version ;)
+        outVer.buildNumber = 0xFFFF;
+
+        packedVersionStruct_rev1 packVer;
+        packVer.libVer = packedVersion.rev1.packedVer;
+
+        outVer.rwLibMajor = packVer.packedLibraryMajorVer;
+        outVer.rwLibMinor = packVer.packedReleaseMajorRev;
+        outVer.rwRevMajor = packVer.packedReleaseMinorRev;
+        outVer.rwRevMinor = 0;  // not used.
+    }
 
     return outVer;
 }

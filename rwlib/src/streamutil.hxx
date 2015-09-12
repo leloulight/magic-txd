@@ -60,10 +60,49 @@ namespace rw
 struct HeaderInfo
 {
     // Packed library version.
-    struct PackedLibraryVersion
+    struct PackedLibraryVersion_rev1
+    {
+        endian::little_endian <uint32> packedVer;
+    };
+
+    struct PackedLibraryVersion_rev2
     {
         endian::little_endian <uint16> buildNumber;
         endian::little_endian <uint16> packedVer;
+    };
+
+    struct PackedLibraryVersion
+    {
+        inline PackedLibraryVersion( void ) : _version()
+        {}
+
+        inline PackedLibraryVersion( const PackedLibraryVersion& right ) : _version( right._version )
+        {}
+
+        inline PackedLibraryVersion( PackedLibraryVersion&& right ) : _version( right._version )
+        {}
+
+        inline void operator = ( const PackedLibraryVersion&& right )
+        {
+            this->_version = right._version;
+        }
+
+        inline void operator = ( PackedLibraryVersion&& right )
+        {
+            this->_version = right._version;
+        }
+
+        union
+        {
+            PackedLibraryVersion_rev1 rev1;
+            PackedLibraryVersion_rev2 rev2;
+            uint32 _version;
+        };
+
+        inline bool isNewStyle( void ) const
+        {
+            return ( rev2.packedVer != 0 );
+        }
     };
 
 private:
