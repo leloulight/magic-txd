@@ -1,5 +1,7 @@
 #include <StdInc.h>
 
+#ifdef RWLIB_INCLUDE_NATIVETEX_XBOX
+
 #include "txdread.xbox.hxx"
 
 #include "txdread.d3d.hxx"
@@ -172,3 +174,5 @@ void xboxNativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, P
 }
 
 };
+
+#endif //RWLIB_INCLUDE_NATIVETEX_XBOX

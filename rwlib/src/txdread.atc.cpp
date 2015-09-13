@@ -1,5 +1,7 @@
 #include <StdInc.h>
 
+#ifdef RWLIB_INCLUDE_NATIVETEX_ATC_MOBILE
+
 #include "pixelformat.hxx"
 
 #include "txdread.atc.hxx"
@@ -1041,3 +1043,5 @@ void registerATCNativePlugin( void )
 }
 
 };
+
+#endif //RWLIB_INCLUDE_NATIVETEX_ATC_MOBILE

@@ -1,3 +1,5 @@
+#ifdef RWLIB_INCLUDE_NATIVETEX_UNC_MOBILE
+
 #include "txdread.nativetex.hxx"
 
 // Platform descriptor, not that important.
@@ -267,3 +269,5 @@ struct textureNativeGenericHeader
 };
 
 };
+
+#endif //RWLIB_INCLUDE_NATIVETEX_UNC_MOBILE

@@ -1,3 +1,5 @@
+#ifdef RWLIB_INCLUDE_NATIVETEX_S3TC_MOBILE
+
 #include "txdread.nativetex.hxx"
 
 #include "txdread.d3d.genmip.hxx"
@@ -290,3 +292,5 @@ struct textureNativeGenericHeader
 };
 
 };
+
+#endif //RWLIB_INCLUDE_NATIVETEX_S3TC_MOBILE

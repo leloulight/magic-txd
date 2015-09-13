@@ -1,5 +1,7 @@
 #include <StdInc.h>
 
+#ifdef RWLIB_INCLUDE_NATIVETEX_PLAYSTATION2
+
 #include "txdread.ps2.hxx"
 
 #include "txdread.ps2gsman.hxx"
@@ -1690,3 +1692,5 @@ bool NativeTexturePS2::getDebugBitmap( Bitmap& bmpOut ) const
 }
 
 }
+
+#endif //RWLIB_INCLUDE_NATIVETEX_PLAYSTATION2

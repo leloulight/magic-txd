@@ -1,3 +1,5 @@
+#ifdef RWLIB_INCLUDE_NATIVETEX_XBOX
+
 #include "txdread.nativetex.hxx"
 
 #include "txdread.d3d.genmip.hxx"
@@ -182,7 +184,7 @@ inline void getXBOXNativeTextureSizeRules( nativeTextureSizeRules& rulesOut )
     rulesOut.powerOfTwo = true;
     rulesOut.squared = false;
     rulesOut.maximum = true;
-    rulesOut.maxVal = 2048;
+    rulesOut.maxVal = 1024;
 }
 
 struct xboxNativeTextureTypeProvider : public texNativeTypeProvider
@@ -347,3 +349,5 @@ struct textureMetaHeaderStructXbox
 #pragma pack()
 
 };
+
+#endif //RWLIB_INCLUDE_NATIVETEX_XBOX

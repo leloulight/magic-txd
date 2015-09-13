@@ -1,5 +1,7 @@
 #include "StdInc.h"
 
+#ifdef RWLIB_INCLUDE_NATIVETEX_S3TC_MOBILE
+
 #include "txdread.dxtmobile.hxx"
 
 #include "streamutil.hxx"
@@ -552,3 +554,5 @@ void dxtMobileNativeTextureTypeProvider::GetTextureFormatString( Interface *engi
 }
 
 };
+
+#endif //RWLIB_INCLUDE_NATIVETEX_S3TC_MOBILE

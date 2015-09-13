@@ -1,5 +1,7 @@
 #include "StdInc.h"
 
+#ifdef RWLIB_INCLUDE_NATIVETEX_D3D9
+
 #include "txdread.common.hxx"
 
 #include "txdread.d3d9.hxx"
@@ -1967,3 +1969,5 @@ void d3d9NativeTextureTypeProvider::DeserializeNativeImage( Interface *engineInt
 }
 
 };
+
+#endif //RWLIB_INCLUDE_NATIVETEX_D3D9

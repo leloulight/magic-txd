@@ -5,6 +5,18 @@
 #ifndef _RENDERWARE_CONFIGURATION_
 #define _RENDERWARE_CONFIGURATION_
 
+// Define these macros to configure the inclusion of standard native textures.
+// It is safe to remove any native textures because the engine is structured in plugin format.
+#define RWLIB_INCLUDE_NATIVETEX_D3D8
+#define RWLIB_INCLUDE_NATIVETEX_D3D9
+#define RWLIB_INCLUDE_NATIVETEX_PLAYSTATION2
+#define RWLIB_INCLUDE_NATIVETEX_XBOX
+//#define RWLIB_INCLUDE_NATIVETEX_GAMECUBE  This one will be done later.. not really important.
+#define RWLIB_INCLUDE_NATIVETEX_S3TC_MOBILE
+#define RWLIB_INCLUDE_NATIVETEX_POWERVR_MOBILE
+#define RWLIB_INCLUDE_NATIVETEX_UNC_MOBILE
+#define RWLIB_INCLUDE_NATIVETEX_ATC_MOBILE
+
 // Define this macro if you have a "xdk/" folder in your vendors with all the
 // XBOX Development Kit headers. This will use correct and optimized swizzling
 // algorithms. Having this macro defined is recommended.

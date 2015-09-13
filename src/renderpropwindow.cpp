@@ -50,7 +50,7 @@ struct addrToNatural
 
 typedef naturalModeList <addrToNatural> addrToNaturalList_t;
 
-const addrToNaturalList_t addrToNaturalList =
+static const addrToNaturalList_t addrToNaturalList =
 {
     { rw::RWTEXADDRESS_WRAP, "wrap" },
     { rw::RWTEXADDRESS_CLAMP, "clamp" },
@@ -76,7 +76,7 @@ struct filterToNatural
 
 typedef naturalModeList <filterToNatural> filterToNaturalList_t;
 
-const filterToNaturalList_t filterToNaturalList =
+static const filterToNaturalList_t filterToNaturalList =
 {
     { rw::RWFILTER_POINT, "point", false },
     { rw::RWFILTER_LINEAR, "linear", false },

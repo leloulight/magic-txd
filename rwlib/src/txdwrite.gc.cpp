@@ -1,5 +1,7 @@
 #include "StdInc.h"
 
+#ifdef RWLIB_INCLUDE_NATIVETEX_GAMECUBE
+
 #include "txdread.gc.hxx"
 
 #include "pluginutil.hxx"
@@ -201,7 +203,7 @@ void gamecubeNativeTextureTypeProvider::SerializeTexture( TextureBase *theTextur
 
 void gamecubeNativeTextureTypeProvider::GetPixelDataFromTexture( Interface *engineInterface, void *objMem, pixelDataTraversal& pixelsOut )
 {
-
+    
 }
 
 void gamecubeNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInterface, void *objMem, const pixelDataTraversal& pixelsIn, texNativeTypeProvider::acquireFeedback_t& acquireFeedback )
@@ -222,3 +224,5 @@ void registerGCNativePlugin( void )
 }
 
 };
+
+#endif //RWLIB_INCLUDE_NATIVETEX_GAMECUBE

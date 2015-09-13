@@ -1,5 +1,7 @@
 #include <StdInc.h>
 
+#ifdef RWLIB_INCLUDE_NATIVETEX_PLAYSTATION2
+
 #include <bitset>
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -570,6 +572,12 @@ void ps2NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture, 
                             platformTex->mipmaps.reserve( maxMipmaps );
 
                             ps2MipmapTransmissionData _origMipmapTransData[ maxMipmaps ];
+                            bool _hasOrigMipmapTransData[ maxMipmaps ];
+
+                            for ( uint32 n = 0; n < maxMipmaps; n++ )
+                            {
+                                _hasOrigMipmapTransData[ n ] = false;
+                            }
 
                             // TODO: are PS2 rasters always RGBA?
                             // If not, adjust the color order parameter!
@@ -656,6 +664,9 @@ void ps2NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture, 
                                 {
                                     // Verify this mipmap.
                                     verifyTexture( newMipmap, hasHeader, imageEncodingType, actualEncodingType, _origMipmapTransData[i] );
+
+                                    // Remember that we have an original transmission offset.
+                                    _hasOrigMipmapTransData[ i ] = true;
                                 }
                                 else
                                 {
@@ -831,11 +842,14 @@ void ps2NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture, 
                                     const ps2MipmapTransmissionData& srcTransData = _origMipmapTransData[ n ];
                                     const ps2MipmapTransmissionData& dstTransData = mipmapTransData[ n ];
 
-                                    if ( srcTransData.destX != dstTransData.destX ||
-                                         srcTransData.destY != dstTransData.destY )
+                                    if ( _hasOrigMipmapTransData[ n ] )
                                     {
-                                        hasValidTransmissionRects = false;
-                                        break;
+                                        if ( srcTransData.destX != dstTransData.destX ||
+                                             srcTransData.destY != dstTransData.destY )
+                                        {
+                                            hasValidTransmissionRects = false;
+                                            break;
+                                        }
                                     }
                                 }
 
@@ -2422,3 +2436,5 @@ void ps2NativeTextureTypeProvider::GetTextureFormatString( Interface *engineInte
 }
 
 };
+
+#endif //RWLIB_INCLUDE_NATIVETEX_PLAYSTATION2

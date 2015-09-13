@@ -1,5 +1,7 @@
 #include <StdInc.h>
 
+#ifdef RWLIB_INCLUDE_NATIVETEX_XBOX
+
 #include "txdread.xbox.hxx"
 
 #ifdef _USE_XBOX_SDK_
@@ -473,3 +475,5 @@ void NativeTextureXBOX::unswizzleMipmap( Interface *engineInterface, swizzleMipm
 }
 
 }
+
+#endif //RWLIB_INCLUDE_NATIVETEX_XBOX

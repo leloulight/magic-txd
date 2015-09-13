@@ -1,4 +1,7 @@
 #include <StdInc.h>
+
+#ifdef RWLIB_INCLUDE_NATIVETEX_PLAYSTATION2
+
 #include <cstring>
 #include <assert.h>
 #include <math.h>
@@ -538,6 +541,15 @@ uint32 NativeTexturePS2::GSTexture::writeGIFPacket(
 
         // Now write the image data header.
         {
+            // There is a limit based on the register loop writes.
+            // It could only be solved if we change the pipeline to allow multiple packets for a single texture.
+            uint32 texData_nloopCount = ( this->dataSize / ( sizeof(unsigned long long) * 2 ) );
+
+            if ( texData_nloopCount >= 0x8000 )
+            {
+                throw RwException( "failed to write texture because the data size exceeds the GIF image packet hardware register write count" );
+            }
+
             GIFtag imgDataTag;
             imgDataTag.pad1 = 0;
             imgDataTag.regs = 0;
@@ -546,7 +558,7 @@ uint32 NativeTexturePS2::GSTexture::writeGIFPacket(
             imgDataTag.prim = 0;
             imgDataTag.flg = 2;
             imgDataTag.nreg = 0;
-            imgDataTag.nloop = ( this->dataSize / ( sizeof(unsigned long long) * 2 ) );
+            imgDataTag.nloop = texData_nloopCount;
 
             GIFtag imgDataTag_ser;
             imgDataTag_ser = imgDataTag;
@@ -1014,3 +1026,5 @@ void ps2NativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, Pl
 }
 
 };
+
+#endif //RWLIB_INCLUDE_NATIVETEX_PLAYSTATION2

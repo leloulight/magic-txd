@@ -1,5 +1,7 @@
 #include <StdInc.h>
 
+#ifdef RWLIB_INCLUDE_NATIVETEX_POWERVR_MOBILE
+
 #include "pixelformat.hxx"
 
 #include "txdread.d3d.hxx"
@@ -979,3 +981,5 @@ void pvrNativeTextureTypeProvider::GetTextureFormatString( Interface *engineInte
 }
 
 };
+
+#endif //RWLIB_INCLUDE_NATIVETEX_POWERVR_MOBILE

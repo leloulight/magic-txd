@@ -1,5 +1,7 @@
 #include "StdInc.h"
 
+#ifdef RWLIB_INCLUDE_NATIVETEX_S3TC_MOBILE
+
 #include "txdread.dxtmobile.hxx"
 
 #include "pluginutil.hxx"
@@ -298,3 +300,5 @@ void registerMobileDXTNativePlugin( void )
 }
 
 };
+
+#endif //RWLIB_INCLUDE_NATIVETEX_S3TC_MOBILE

@@ -1,5 +1,7 @@
 #include "StdInc.h"
 
+#ifdef RWLIB_INCLUDE_NATIVETEX_D3D9
+
 #include "txdread.d3d9.hxx"
 
 namespace rw
@@ -62,3 +64,5 @@ bool d3d9NativeTextureTypeProvider::UnregisterFormatHandler( DWORD formatNumber 
 }
 
 };
+
+#endif //RWLIB_INCLUDE_NATIVETEX_D3D9

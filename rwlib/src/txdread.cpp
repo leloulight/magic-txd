@@ -2752,15 +2752,33 @@ void wardrumFormatInfo::set(const TextureBase& inTex)
 }
 
 // Initializator for TXD plugins, as it cannot be done statically.
+#ifdef RWLIB_INCLUDE_NATIVETEX_ATC_MOBILE
 extern void registerATCNativePlugin( void );
+#endif //RWLIB_INCLUDE_NATIVETEX_ATC_MOBILE
+#ifdef RWLIB_INCLUDE_NATIVETEX_D3D8
 extern void registerD3D8NativePlugin( void );
+#endif //RWLIB_INCLUDE_NATIVETEX_D3D8
+#ifdef RWLIB_INCLUDE_NATIVETEX_D3D9
 extern void registerD3D9NativePlugin( void );
+#endif //RWLIB_INCLUDE_NATIVETEX_D3D9
+#ifdef RWLIB_INCLUDE_NATIVETEX_S3TC_MOBILE
 extern void registerMobileDXTNativePlugin( void );
+#endif //RWLIB_INCLUDE_NATIVETEX_S3TC_MOBILE
+#ifdef RWLIB_INCLUDE_NATIVETEX_PLAYSTATION2
 extern void registerPS2NativePlugin( void );
+#endif //RWLIB_INCLUDE_NATIVETEX_PLAYSTATION2
+#ifdef RWLIB_INCLUDE_NATIVETEX_POWERVR_MOBILE
 extern void registerPVRNativePlugin( void );
+#endif //RWLIB_INCLUDE_NATIVETEX_POWERVR_MOBILE
+#ifdef RWLIB_INCLUDE_NATIVETEX_UNC_MOBILE
 extern void registerMobileUNCNativePlugin( void );
+#endif //RWLIB_INCLUDE_NATIVETEX_UNC_MOBILE
+#ifdef RWLIB_INCLUDE_NATIVETEX_XBOX
 extern void registerXBOXNativePlugin( void );
+#endif //RWLIB_INCLUDE_NATIVETEX_XBOX
+#ifdef RWLIB_INCLUDE_NATIVETEX_GAMECUBE
 extern void registerGCNativePlugin( void );
+#endif //RWLIB_INCLUDE_NATIVETEX_GAMECUBE
 
 // Sub modules.
 void registerResizeFilteringEnvironment( void );
@@ -2774,15 +2792,33 @@ void registerTXDPlugins( void )
     nativeTextureStreamStore.RegisterPlugin( engineFactory );
 
     // Now register sub module plugins.
+#ifdef RWLIB_INCLUDE_NATIVETEX_ATC_MOBILE
     registerATCNativePlugin();
+#endif //RWLIB_INCLUDE_NATIVETEX_ATC_MOBILE
+#ifdef RWLIB_INCLUDE_NATIVETEX_D3D8
     registerD3D8NativePlugin();
+#endif //RWLIB_INCLUDE_NATIVETEX_D3D8
+#ifdef RWLIB_INCLUDE_NATIVETEX_D3D9
     registerD3D9NativePlugin();
+#endif //RWLIB_INCLUDE_NATIVETEX_D3D9
+#ifdef RWLIB_INCLUDE_NATIVETEX_S3TC_MOBILE
     registerMobileDXTNativePlugin();
+#endif //RWLIB_INCLUDE_NATIVETEX_S3TC_MOBILE
+#ifdef RWLIB_INCLUDE_NATIVETEX_PLAYSTATION2
     registerPS2NativePlugin();
+#endif //RWLIB_INCLUDE_NATIVETEX_PLAYSTATION2
+#ifdef RWLIB_INCLUDE_NATIVETEX_POWERVR_MOBILE
     registerPVRNativePlugin();
+#endif //RWLIB_INCLUDE_NATIVETEX_POWERVR_MOBILE
+#ifdef RWLIB_INCLUDE_NATIVETEX_UNC_MOBILE
     registerMobileUNCNativePlugin();
+#endif //RWLIB_INCLUDE_NATIVETEX_UNC_MOBILE
+#ifdef RWLIB_INCLUDE_NATIVETEX_XBOX
     registerXBOXNativePlugin();
+#endif //RWLIB_INCLUDE_NATIVETEX_XBOX
+#ifdef RWLIB_INCLUDE_NATIVETEX_GAMECUBE
     registerGCNativePlugin();
+#endif //RWLIB_INCLUDE_NATIVETEX_GAMECUBE
 
     // Register pure sub modules.
     registerResizeFilteringEnvironment();

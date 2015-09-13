@@ -1,3 +1,5 @@
+#ifdef RWLIB_INCLUDE_NATIVETEX_PLAYSTATION2
+
 #include "txdread.nativetex.hxx"
 
 #define PS2_FOURCC 0x00325350 /* "PS2\0" */
@@ -1031,7 +1033,7 @@ inline void getPS2NativeTextureSizeRules( nativeTextureSizeRules& rulesOut )
     rulesOut.powerOfTwo = true;
     rulesOut.squared = false;
     rulesOut.maximum = true;
-    rulesOut.maxVal = 2048;
+    rulesOut.maxVal = 1024;
 }
 
 struct ps2NativeTextureTypeProvider : public texNativeTypeProvider
@@ -1323,3 +1325,5 @@ inline void genpalettetexeldata(
 }
 
 }
+
+#endif //RWLIB_INCLUDE_NATIVETEX_PLAYSTATION2

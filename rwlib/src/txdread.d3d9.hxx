@@ -1,3 +1,5 @@
+#ifdef RWLIB_INCLUDE_NATIVETEX_D3D9
+
 #include "txdread.d3d.hxx"
 
 #define PLATFORM_D3D9   9
@@ -873,3 +875,5 @@ struct textureMetaHeaderStructGeneric
 };
 
 }
+
+#endif //RWLIB_INCLUDE_NATIVETEX_D3D9

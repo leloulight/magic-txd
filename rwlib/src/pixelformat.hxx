@@ -107,6 +107,11 @@ AINLINE uint8 scalecolor(uint8 color, uint32 curMax, uint32 newMax)
     return (uint8)( (double)color / (double)curMax * (double)newMax );
 }
 
+AINLINE uint8 rgb2lum( uint8 red, uint8 green, uint8 blue )
+{
+    return ( (uint32)red + (uint32)green + (uint32)blue ) / 3;
+}
+
 inline eColorModel getColorModelFromRasterFormat( eRasterFormat rasterFormat )
 {
     eColorModel usedColorModel;
@@ -700,7 +705,7 @@ public:
             // We have to set calculate the luminance of this color.
             // Default way of converting RGB to luminance.
             // If you want a better way, write your own filter.
-            uint8 lum = ( (uint32)red + (uint32)green + (uint32)blue ) / 3;
+            uint8 lum = rgb2lum( red, green, blue );
 
             success =
                 this->setLuminance(
@@ -805,7 +810,19 @@ public:
 
         bool success = false;
 
-        if ( model == COLORMODEL_LUMINANCE )
+        if ( model == COLORMODEL_RGBA )
+        {
+            uint8 red, green, blue;
+
+            success =
+                this->getRGBA( texelSource, index, red, green, blue, alpha );
+
+            if ( success )
+            {
+                lum = rgb2lum( red, green, blue );
+            }
+        }
+        else if ( model == COLORMODEL_LUMINANCE )
         {
             eRasterFormat rasterFormat = this->rasterFormat;
             uint32 depth = this->depth;

@@ -1,5 +1,7 @@
 #include <StdInc.h>
 
+#ifdef RWLIB_INCLUDE_NATIVETEX_D3D8
+
 #include "txdread.d3d8.hxx"
 
 #include "pixelformat.hxx"
@@ -388,3 +390,5 @@ void registerD3D8NativePlugin( void )
 }
 
 };
+
+#endif //RWLIB_INCLUDE_NATIVETEX_D3D8

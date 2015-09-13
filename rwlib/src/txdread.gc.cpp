@@ -1,5 +1,7 @@
 #include "StdInc.h"
 
+#ifdef RWLIB_INCLUDE_NATIVETEX_GAMECUBE
+
 #include "txdread.gc.hxx"
 
 #include "txdread.common.hxx"
@@ -422,6 +424,106 @@ void gamecubeNativeTextureTypeProvider::DeserializeTexture( TextureBase *theText
     engineInterface->DeserializeExtensions( theTexture, inputProvider );
 }
 
+void ConvertGCMipmapToRasterFormat(
+    Interface *engineInterface,
+    uint32 mipWidth, uint32 mipHeight, uint32 layerWidth, uint32 layerHeight, void *texelSource, uint32 dataSize,
+    eGCNativeTextureFormat internalFormat, eGCPixelFormat palettePixelFormat,
+    ePaletteType paletteType, const void *paletteData, uint32 paletteSize,
+    eRasterFormat& rasterFormatOut, uint32& depthOut, uint32& rowAlignmentOut, eColorOrdering& colorOrderOut,
+    eCompressionType& compressionTypeOut,
+    uint32& dstSurfWidthOut, uint32& dstSurfHeightOut,
+    void*& dstTexelDataOut, uint32& dstDataSizeOut
+)
+{
+    // Decide the destination raster format.
+    eRasterFormat dstRasterFormat;
+    uint32 dstDepth;
+    uint32 dstRowAlignment = 4; // for good measure.
+    eColorOrdering dstColorOrder;
+    ePaletteType dstPaletteType;
+    eCompressionType dstCompressionType = RWCOMPRESS_NONE;
+
+    bool hasFormat =
+        getGCNativeTextureRasterFormat(
+            internalFormat, palettePixelFormat,
+            dstRasterFormat, dstDepth, dstColorOrder, dstPaletteType
+        );
+
+    // Temporary.
+    if ( !hasFormat )
+    {
+        dstRasterFormat = RASTER_8888;
+        dstDepth = 32;
+        dstColorOrder = COLOR_BGRA;
+        dstPaletteType = PALETTE_NONE;
+    }
+
+    uint32 srcDepth = getGCInternalFormatDepth( internalFormat );
+
+    // Set up the GC color dispatcher.
+    gcColorDispatch srcDispatch(
+        internalFormat, palettePixelFormat,
+        srcDepth, paletteType, paletteData, paletteSize
+    );
+
+    // We need a destination dispatcher.
+    colorModelDispatcher <void> dstDispatch(
+        dstRasterFormat, dstColorOrder, dstDepth,
+        NULL, 0, PALETTE_NONE
+    );
+
+    // Allocate the destination buffer.
+    uint32 dstRowSize = getRasterDataRowSize( mipWidth, dstDepth, dstRowAlignment );
+
+    uint32 dstDataSize = getRasterDataSizeByRowSize( dstRowSize, mipHeight );
+
+    void *dstTexels = engineInterface->PixelAllocate( dstDataSize );
+
+    if ( !dstTexels )
+    {
+        throw RwException( "failed to allocate texel buffer for Gamecube mipmap decoding" );
+    }
+
+    try
+    {
+        uint32 srcRowSize = getGCRasterDataRowSize( mipWidth, srcDepth );
+
+        for ( uint32 y = 0; y < mipHeight; y++ )
+        {
+            const void *srcRow = getConstTexelDataRow( texelSource, srcRowSize, y );
+
+            void *dstRow = getTexelDataRow( dstTexels, dstRowSize, y );
+
+            for ( uint32 x = 0; x < mipWidth; x++ )
+            {
+                abstractColorItem colorItem;
+
+                srcDispatch.getColor( srcRow, x, colorItem );
+
+                dstDispatch.setColor( dstRow, x, colorItem );
+            }
+        }
+    }
+    catch( ... )
+    {
+        engineInterface->PixelFree( dstTexels );
+
+        throw;
+    }
+
+    // Return the buffer.
+    rasterFormatOut = dstRasterFormat;
+    depthOut = dstDepth;
+    rowAlignmentOut = dstRowAlignment;
+    colorOrderOut = dstColorOrder;
+    compressionTypeOut = dstCompressionType;
+
+    dstSurfWidthOut = mipWidth;
+    dstSurfHeightOut = mipHeight;
+    dstTexelDataOut = dstTexels;
+    dstDataSizeOut = dstDataSize;
+}
+
 struct gcMipmapManager
 {
     NativeTextureGC *nativeTex;
@@ -442,22 +544,78 @@ struct gcMipmapManager
 
     inline void GetSizeRules( nativeTextureSizeRules& rulesOut )
     {
-        // TODO.
+        NativeTextureGC::getSizeRules( nativeTex->internalFormat, rulesOut );
     }
 
     inline void Deinternalize(
         Interface *engineInterface,
         const NativeTextureGC::mipmapLayer& mipLayer,
         uint32& widthOut, uint32& heightOut, uint32& layerWidthOut, uint32& layerHeightOut,
-        eRasterFormat& dstRasterFormat, eColorOrdering& dstColorOrder, uint32& dstDepth,
-        uint32& dstRowAlignment,
-        ePaletteType& dstPaletteType, void*& dstPaletteData, uint32& dstPaletteSize,
-        eCompressionType& dstCompressionType, bool& hasAlpha,
+        eRasterFormat& dstRasterFormatOut, eColorOrdering& dstColorOrderOut, uint32& dstDepthOut,
+        uint32& dstRowAlignmentOut,
+        ePaletteType& dstPaletteTypeOut, void*& dstPaletteDataOut, uint32& dstPaletteSizeOut,
+        eCompressionType& dstCompressionTypeOut, bool& hasAlphaOut,
         void*& dstTexelsOut, uint32& dstDataSizeOut,
-        bool& isNewlyAllocatedOut, bool& isPaletteNewlyAllocated
+        bool& isNewlyAllocatedOut, bool& isPaletteNewlyAllocatedOut
     )
     {
-        // TODO.
+        // Do a basic decode.
+        // Not even complete yet.
+        eRasterFormat dstRasterFormat;
+        uint32 dstDepth;
+        uint32 dstRowAlignment;
+        eColorOrdering dstColorOrder;
+        ePaletteType dstPaletteType = PALETTE_NONE;
+        void *dstPaletteData = NULL;
+        uint32 dstPaletteSize = 0;
+        eCompressionType dstCompressionType;
+
+        uint32 mipWidth = mipLayer.width;
+        uint32 mipHeight = mipLayer.height;
+
+        uint32 layerWidth = mipLayer.layerWidth;
+        uint32 layerHeight = mipLayer.layerHeight;
+
+        void *srcTexels = mipLayer.texels;
+        uint32 srcDataSize = mipLayer.dataSize;
+
+        uint32 dstSurfWidth, dstSurfHeight;
+        void *dstTexels;
+        uint32 dstDataSize;
+
+        ConvertGCMipmapToRasterFormat(
+            engineInterface,
+            mipWidth, mipHeight, layerWidth, layerHeight, srcTexels, srcDataSize,
+            nativeTex->internalFormat, nativeTex->palettePixelFormat,
+            nativeTex->paletteType, nativeTex->palette, nativeTex->paletteSize,
+            dstRasterFormat, dstDepth, dstRowAlignment, dstColorOrder,
+            dstCompressionType,
+            dstSurfWidth, dstSurfHeight,
+            dstTexels, dstDataSize
+        );
+
+        // Return stuff.
+        dstRasterFormatOut = dstRasterFormat;
+        dstDepthOut = dstDepth;
+        dstRowAlignmentOut = dstRowAlignment;
+        dstColorOrderOut = dstColorOrder;
+        dstPaletteTypeOut = dstPaletteType;
+        dstPaletteDataOut = dstPaletteData;
+        dstPaletteSizeOut = dstPaletteSize;
+        dstCompressionTypeOut = dstCompressionType;
+
+        hasAlphaOut = nativeTex->hasAlpha;
+
+        widthOut = dstSurfWidth;
+        heightOut = dstSurfHeight;
+        layerWidthOut = layerWidth;
+        layerHeightOut = layerHeight;
+
+        dstTexelsOut = dstTexels;
+        dstDataSizeOut = dstDataSize;
+
+        isNewlyAllocatedOut = true;
+        isPaletteNewlyAllocatedOut = false;
     }
 
     inline void Internalize(
@@ -477,8 +635,6 @@ struct gcMipmapManager
 
 bool gamecubeNativeTextureTypeProvider::GetMipmapLayer( Interface *engineInterface, void *objMem, uint32 mipIndex, rawMipmapLayer& layerOut )
 {
-    return false;
-
     NativeTextureGC *nativeTex = (NativeTextureGC*)objMem;
 
     gcMipmapManager mipMan( nativeTex );
@@ -624,3 +780,5 @@ void gamecubeNativeTextureTypeProvider::GetTextureFormatString( Interface *engin
 }
 
 };
+
+#endif //RWLIB_INCLUDE_NATIVETEX_GAMECUBE

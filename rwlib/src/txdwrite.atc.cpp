@@ -1,5 +1,7 @@
 #include <StdInc.h>
 
+#ifdef RWLIB_INCLUDE_NATIVETEX_ATC_MOBILE
+
 #include "pixelformat.hxx"
 
 #include "txdread.d3d.hxx"
@@ -136,3 +138,5 @@ void atcNativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, Pl
 }
 
 };
+
+#endif //RWLIB_INCLUDE_NATIVETEX_ATC_MOBILE

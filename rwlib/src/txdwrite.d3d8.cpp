@@ -1,5 +1,7 @@
 #include <StdInc.h>
 
+#ifdef RWLIB_INCLUDE_NATIVETEX_D3D8
+
 #include "pixelformat.hxx"
 
 #include "txdread.d3d8.hxx"
@@ -766,3 +768,5 @@ void d3d8NativeTextureTypeProvider::GetTextureFormatString( Interface *engineInt
 }
 
 }
+
+#endif //RWLIB_INCLUDE_NATIVETEX_D3D8

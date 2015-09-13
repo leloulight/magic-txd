@@ -1,5 +1,7 @@
 #include "StdInc.h"
 
+#ifdef RWLIB_INCLUDE_NATIVETEX_UNC_MOBILE
+
 #include "txdread.unc.hxx"
 
 #include "pluginutil.hxx"
@@ -254,3 +256,5 @@ void registerMobileUNCNativePlugin( void )
 }
 
 };
+
+#endif //RWLIB_INCLUDE_NATIVETEX_UNC_MOBILE

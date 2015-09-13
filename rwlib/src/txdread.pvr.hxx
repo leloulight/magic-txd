@@ -1,3 +1,5 @@
+#ifdef RWLIB_INCLUDE_NATIVETEX_POWERVR_MOBILE
+
 #include "txdread.nativetex.hxx"
 
 #include <PVRTextureUtilities.h>
@@ -280,3 +282,5 @@ struct textureMetaHeaderGeneric
 };
 
 };
+
+#endif //RWLIB_INCLUDE_NATIVETEX_POWERVR_MOBILE

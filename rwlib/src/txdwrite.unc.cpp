@@ -1,5 +1,7 @@
 #include "StdInc.h"
 
+#ifdef RWLIB_INCLUDE_NATIVETEX_UNC_MOBILE
+
 #include "pixelformat.hxx"
 
 #include "txdread.d3d.hxx"
@@ -465,3 +467,5 @@ void uncNativeTextureTypeProvider::GetTextureFormatString( Interface *engineInte
 }
 
 };
+
+#endif //RWLIB_INCLUDE_NATIVETEX_UNC_MOBILE
