@@ -668,6 +668,18 @@ void xboxNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
             {
                 assert( 0 );
             }
+
+            // Make sure we have a supported raster format aswell.
+            if ( srcRasterFormat != RASTER_1555 &&
+                 srcRasterFormat != RASTER_565 &&
+                 srcRasterFormat != RASTER_4444 &&
+                 srcRasterFormat != RASTER_LUM &&
+                 srcRasterFormat != RASTER_8888 &&
+                 srcRasterFormat != RASTER_888 &&
+                 srcRasterFormat != RASTER_555 )
+            {
+                dstRasterFormat = RASTER_8888;
+            }
         }
         else
         {
@@ -694,6 +706,16 @@ void xboxNativeTextureTypeProvider::SetPixelDataToTexture( Interface *engineInte
             else if ( srcRasterFormat == RASTER_555 )
             {
                 dstDepth = 16;
+            }
+            else if ( srcRasterFormat == RASTER_LUM )
+            {
+                dstDepth = 8;
+            }
+            else
+            {
+                // Unsupported/unknown format, we have to convert it to something safe.
+                dstRasterFormat = RASTER_8888;
+                dstDepth = 32;
             }
         }
 

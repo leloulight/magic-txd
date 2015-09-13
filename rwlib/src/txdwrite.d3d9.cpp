@@ -334,6 +334,19 @@ inline void convertCompatibleRasterFormat(
         colorOrder = COLOR_RGBA;
 
         d3dFormatOut = D3DFMT_P8;
+
+        // Also verify raster formats.
+        if ( srcRasterFormat != RASTER_1555 &&
+             srcRasterFormat != RASTER_565 &&
+             srcRasterFormat != RASTER_4444 &&
+             srcRasterFormat != RASTER_LUM &&
+             srcRasterFormat != RASTER_8888 &&
+             srcRasterFormat != RASTER_888 &&
+             srcRasterFormat != RASTER_555 )
+        {
+            // Anything unknown should be expanded to full color.
+            rasterFormat = RASTER_8888;
+        }
     }
     else
     {

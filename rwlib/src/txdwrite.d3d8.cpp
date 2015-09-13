@@ -249,6 +249,20 @@ inline void convertCompatibleRasterFormat(
 
         // All palettes have RGBA color order.
         colorOrder = COLOR_RGBA;
+
+        // Also verify raster formats.
+        // Should be fairly similar to XBOX compatibility.
+        if ( srcRasterFormat != RASTER_1555 &&
+             srcRasterFormat != RASTER_565 &&
+             srcRasterFormat != RASTER_4444 &&
+             srcRasterFormat != RASTER_LUM &&
+             srcRasterFormat != RASTER_8888 &&
+             srcRasterFormat != RASTER_888 &&
+             srcRasterFormat != RASTER_555 )
+        {
+            // Anything unknown should be expanded to full color.
+            rasterFormat = RASTER_8888;
+        }
     }
     else
     {
