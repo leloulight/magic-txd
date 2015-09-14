@@ -32,6 +32,61 @@ public:
         return this->rwTextureHandle;
     }
 
+    inline static QString getRasterFormatString( const rw::Raster *rasterInfo )
+    {
+        char platformTexInfoBuf[ 256 + 1 ];
+
+        size_t localPlatformTexInfoLength = 0;
+        {
+            // Note that the format string is only put into our buffer as much space as we have in it.
+            // If the format string is longer, then that does not count as an error.
+            // lengthOut will always return the format string length of the real thing, so be careful here.
+            const size_t availableStringCharSpace = ( sizeof( platformTexInfoBuf ) - 1 );
+
+            size_t platformTexInfoLength = 0;
+
+            rasterInfo->getFormatString( platformTexInfoBuf, availableStringCharSpace, platformTexInfoLength );
+
+            // Get the trimmed string length.
+            localPlatformTexInfoLength = std::min( platformTexInfoLength, availableStringCharSpace );
+        }
+
+        // Zero terminate it.
+        platformTexInfoBuf[ localPlatformTexInfoLength ] = '\0';
+
+        return QString( (const char*)platformTexInfoBuf );
+    }
+
+    inline static QString getDefaultRasterInfoString( const rw::Raster *rasterInfo )
+    {
+        QString textureInfo;
+
+        // First part is the texture size.
+        rw::uint32 width, height;
+        rasterInfo->getSize( width, height );
+
+        textureInfo += QString::number( width ) + QString( "x" ) + QString::number( height );
+
+        // Then is the platform format info.
+        textureInfo += " " + getRasterFormatString( rasterInfo );
+
+        // After that how many mipmap levels we have.
+        rw::uint32 mipCount = rasterInfo->getMipmapCount();
+
+        textureInfo += " " + QString::number( mipCount );
+
+        if ( mipCount == 1 )
+        {
+            textureInfo += " level";
+        }
+        else
+        {
+            textureInfo += " levels";
+        }
+
+        return textureInfo;
+    }
+
     inline void updateInfo( void )
     {
         // Construct some information about our texture item.
@@ -39,50 +94,7 @@ public:
 
         if ( rw::Raster *rasterInfo = this->rwTextureHandle->GetRaster() )
         {
-            // First part is the texture size.
-            rw::uint32 width, height;
-            rasterInfo->getSize( width, height );
-
-            textureInfo += QString::number( width ) + QString( "x" ) + QString::number( height );
-
-            // Then is the platform format info.
-            {
-                char platformTexInfoBuf[ 256 + 1 ];
-
-                size_t localPlatformTexInfoLength = 0;
-                {
-                    // Note that the format string is only put into our buffer as much space as we have in it.
-                    // If the format string is longer, then that does not count as an error.
-                    // lengthOut will always return the format string length of the real thing, so be careful here.
-                    const size_t availableStringCharSpace = ( sizeof( platformTexInfoBuf ) - 1 );
-
-                    size_t platformTexInfoLength = 0;
-
-                    rasterInfo->getFormatString( platformTexInfoBuf, availableStringCharSpace, platformTexInfoLength );
-
-                    // Get the trimmed string length.
-                    localPlatformTexInfoLength = std::min( platformTexInfoLength, availableStringCharSpace );
-                }
-
-                // Zero terminate it.
-                platformTexInfoBuf[ localPlatformTexInfoLength ] = '\0';
-
-                textureInfo += " " + QString( (const char*)platformTexInfoBuf );
-            }
-
-            // After that how many mipmap levels we have.
-            rw::uint32 mipCount = rasterInfo->getMipmapCount();
-
-            textureInfo += " " + QString::number( mipCount );
-
-            if ( mipCount == 1 )
-            {
-                textureInfo += " level";
-            }
-            else
-            {
-                textureInfo += " levels";
-            }
+            textureInfo = getDefaultRasterInfoString( rasterInfo );
         }
 
         this->texNameLabel->setText( tr( this->rwTextureHandle->GetName().c_str() ) );
