@@ -1,0 +1,112 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Include">
+      <UniqueIdentifier>{f526d02a-0831-4429-8078-c8011e76a6db}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="zipExtension">
+      <UniqueIdentifier>{d823b4c8-e11b-4cdc-b90c-35972e987b86}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="zipExtension\include">
+      <UniqueIdentifier>{5ad48d5f-90fe-4ba9-a850-c465f58fc032}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="imgExtension">
+      <UniqueIdentifier>{c2fd7030-8163-4e6b-b72c-804ae2b6964a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="imgExtension\Include">
+      <UniqueIdentifier>{8342bc35-567f-4e33-ba69-c76958955485}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\CFileSystem.common.stl.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\CFileSystem.common.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\CFileSystem.common.filePath.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\CFileSystem.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\fsinternal\CFileSystem.internal.common.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\fsinternal\CFileSystem.internal.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\fsinternal\CFileSystem.internal.repo.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\fsinternal\CFileSystem.stream.buffered.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\fsinternal\CFileSystem.stream.raw.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\fsinternal\CFileSystem.translator.pathutil.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\fsinternal\CFileSystem.translator.system.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\CFileSystem.Utils.hxx">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\fsinternal\CFileSystem.vfs.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\StdInc.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\CFileSystemInterface.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\fsinternal\CFileSystem.zip.public.h">
+      <Filter>zipExtension\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\fsinternal\CFileSystem.zip.internal.h">
+      <Filter>zipExtension\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\CFileSystem.zip.h">
+      <Filter>zipExtension\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\fsinternal\CFileSystem.zip.utils.hxx">
+      <Filter>zipExtension\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\CFileSystem.img.h">
+      <Filter>imgExtension\Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\fsinternal\CFileSystem.img.internal.h">
+      <Filter>imgExtension\Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\fsinternal\CFileSystem.img.public.h">
+      <Filter>imgExtension\Include</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\CFileSystem.cpp" />
+    <ClCompile Include="..\..\src\fsinternal\CFileSystem.stream.buffered.cpp" />
+    <ClCompile Include="..\..\src\fsinternal\CFileSystem.stream.raw.cpp" />
+    <ClCompile Include="..\..\src\fsinternal\CFileSystem.translator.pathutil.cpp" />
+    <ClCompile Include="..\..\src\fsinternal\CFileSystem.translator.system.cpp" />
+    <ClCompile Include="..\..\src\fsinternal\CFileSystem.vfs.cpp" />
+    <ClCompile Include="..\..\src\main.cpp" />
+    <ClCompile Include="..\..\src\fsinternal\CFileSystem.zip.translator.cpp">
+      <Filter>zipExtension</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\CFileSystem.zip.cpp">
+      <Filter>zipExtension</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\fsinternal\CFileSystem.img.translator.compress.cpp">
+      <Filter>imgExtension</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\CFileSystem.img.cpp">
+      <Filter>imgExtension</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\fsinternal\CFileSystem.img.translator.cpp">
+      <Filter>imgExtension</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

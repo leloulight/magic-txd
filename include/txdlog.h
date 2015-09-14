@@ -63,8 +63,6 @@ public:
 
 class TxdLog : public QObject
 {
-	Q_OBJECT
-
 public:
 	TxdLog(QWidget *ParentWidget)
 	{
@@ -78,27 +76,27 @@ public:
 		/* --- Top panel --- */
 		QPushButton *buttonSave = new QPushButton("Save");
 
-		connect(buttonSave, SIGNAL(clicked()), this, SLOT(onLogSaveRequest()));
+		connect(buttonSave, &QPushButton::clicked, this, &TxdLog::onLogSaveRequest);
 
 		buttonSave->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 		QPushButton *buttonCopy = new QPushButton("Copy");
 
-		connect(buttonCopy, SIGNAL(clicked()), this, SLOT(onCopyLogLinesRequest()));
+		connect(buttonCopy, &QPushButton::clicked, this, &TxdLog::onCopyLogLinesRequest);
 
 		buttonSave->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 		QPushButton *buttonCopyAll = new QPushButton("Copy All");
 
-		connect(buttonCopyAll, SIGNAL(clicked()), this, SLOT(onCopyAllLogLinesRequest()));
+		connect(buttonCopyAll, &QPushButton::clicked, this, &TxdLog::onCopyAllLogLinesRequest);
 
 		buttonCopyAll->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 		QPushButton *buttonClear = new QPushButton("Clear");
 
-		connect(buttonClear, SIGNAL(clicked()), this, SLOT(onLogClearRequest()));
+		connect(buttonClear, &QPushButton::clicked, this, &TxdLog::onLogClearRequest);
 
 		buttonClear->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 		QPushButton *buttonClose = new QPushButton("Close");
 
-		connect(buttonClose, SIGNAL(clicked()), this, SLOT(onWindowHideRequest()));
+		connect(buttonClose, &QPushButton::clicked, this, &TxdLog::onWindowHideRequest);
 
 		buttonClose->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 		QHBoxLayout *buttonsLayout = new QHBoxLayout;

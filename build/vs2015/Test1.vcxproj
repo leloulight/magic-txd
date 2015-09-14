@@ -632,30 +632,6 @@
     <ClCompile Include="..\..\src\renderpropwindow.cpp" />
     <ClCompile Include="..\..\src\texadddialog.cpp" />
     <ClCompile Include="..\..\src\texformatextensions.cpp" />
-    <ClCompile Include="GeneratedFiles\Debug 2013\moc_mainwindow.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)'!='Debug 2013'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Debug 2015\moc_mainwindow.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)'!='Debug 2015'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Debug 2013\moc_txdlog.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)'!='Debug 2013'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Debug 2015\moc_txdlog.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)'!='Debug 2015'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release 2013\moc_mainwindow.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)'!='Release 2013'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release 2015\moc_mainwindow.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)'!='Release 2015'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release 2013\moc_txdlog.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)'!='Release 2013'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release 2015\moc_txdlog.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)'!='Release 2015'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="../../src/main.cpp" />
     <ClCompile Include="../../src/mainwindow.cpp" />
   </ItemGroup>
@@ -668,174 +644,19 @@
     <ClInclude Include="..\..\include\rwversiondialog.h" />
     <ClInclude Include="..\..\include\texnamewindow.h" />
     <ClInclude Include="..\..\include\txdadddialog.h" />
+    <ClInclude Include="..\..\include\txdlog.h" />
+    <ClInclude Include="..\..\include\txdlogwindow.h" />
     <ClInclude Include="..\..\magic_api\magfapi.h" />
     <ClInclude Include="..\..\magic_api\MagicFormats.h" />
     <ClInclude Include="..\..\src\qtrwutils.hxx" />
     <ClInclude Include="..\..\src\texformathelper.hxx" />
-    <CustomBuild Include="../../include/mainwindow.h">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release 2015|Win32'">setlocal
-if errorlevel 1 goto VCEnd
-
-if errorlevel 1 goto VCEnd
-endlocal
-"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp"  -D_WINDOWS -DUNICODE -DWIN32 -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DNDEBUG</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'">setlocal
-if errorlevel 1 goto VCEnd
-
-if errorlevel 1 goto VCEnd
-endlocal
-"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp"  -D_WINDOWS -DUNICODE -DWIN32 -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DNDEBUG</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release 2013|Win32'">setlocal
-if errorlevel 1 goto VCEnd
-
-if errorlevel 1 goto VCEnd
-endlocal
-"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp"  -D_WINDOWS -DUNICODE -DWIN32 -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DNDEBUG</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release 2013|x64'">setlocal
-if errorlevel 1 goto VCEnd
-
-if errorlevel 1 goto VCEnd
-endlocal
-"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp"  -D_WINDOWS -DUNICODE -DWIN32 -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DNDEBUG</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release 2015|Win32'">Moc%27ing mainwindow.h...</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'">Moc%27ing mainwindow.h...</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release 2013|Win32'">Moc%27ing mainwindow.h...</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release 2013|x64'">Moc%27ing mainwindow.h...</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug 2015|Win32'">setlocal
-if errorlevel 1 goto VCEnd
-
-if errorlevel 1 goto VCEnd
-endlocal
-"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp"  -D_WINDOWS -DUNICODE -DWIN32 -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug 2015|x64'">setlocal
-if errorlevel 1 goto VCEnd
-
-if errorlevel 1 goto VCEnd
-endlocal
-"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp"  -D_WINDOWS -DUNICODE -DWIN32 -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug 2013|Win32'">setlocal
-if errorlevel 1 goto VCEnd
-
-if errorlevel 1 goto VCEnd
-endlocal
-"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp"  -D_WINDOWS -DUNICODE -DWIN32 -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug 2013|x64'">setlocal
-if errorlevel 1 goto VCEnd
-
-if errorlevel 1 goto VCEnd
-endlocal
-"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp"  -D_WINDOWS -DUNICODE -DWIN32 -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug 2015|Win32'">Moc%27ing mainwindow.h...</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug 2015|x64'">Moc%27ing mainwindow.h...</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug 2013|Win32'">Moc%27ing mainwindow.h...</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug 2013|x64'">Moc%27ing mainwindow.h...</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug 2015|Win32'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug 2015|x64'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug 2013|Win32'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug 2013|x64'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release 2015|Win32'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release 2013|Win32'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release 2013|x64'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug 2015|Win32'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug 2015|x64'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug 2013|Win32'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug 2013|x64'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release 2015|Win32'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release 2013|Win32'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release 2013|x64'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>
-    </CustomBuild>
-    <CustomBuild Include="../../include/txdlog.h">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release 2015|Win32'">setlocal
-if errorlevel 1 goto VCEnd
-
-if errorlevel 1 goto VCEnd
-endlocal
-"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp"  -D_WINDOWS -DUNICODE -DWIN32 -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DNDEBUG</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'">setlocal
-if errorlevel 1 goto VCEnd
-
-if errorlevel 1 goto VCEnd
-endlocal
-"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp"  -D_WINDOWS -DUNICODE -DWIN32 -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DNDEBUG</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release 2013|Win32'">setlocal
-if errorlevel 1 goto VCEnd
-
-if errorlevel 1 goto VCEnd
-endlocal
-"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp"  -D_WINDOWS -DUNICODE -DWIN32 -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DNDEBUG</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release 2013|x64'">setlocal
-if errorlevel 1 goto VCEnd
-
-if errorlevel 1 goto VCEnd
-endlocal
-"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp"  -D_WINDOWS -DUNICODE -DWIN32 -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DNDEBUG</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release 2015|Win32'">Moc%27ing txdlog.h...</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'">Moc%27ing txdlog.h...</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release 2013|Win32'">Moc%27ing txdlog.h...</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release 2013|x64'">Moc%27ing txdlog.h...</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug 2015|Win32'">setlocal
-if errorlevel 1 goto VCEnd
-
-if errorlevel 1 goto VCEnd
-endlocal
-"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp"  -D_WINDOWS -DUNICODE -DWIN32 -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug 2015|x64'">setlocal
-if errorlevel 1 goto VCEnd
-
-if errorlevel 1 goto VCEnd
-endlocal
-"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp"  -D_WINDOWS -DUNICODE -DWIN32 -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug 2013|Win32'">setlocal
-if errorlevel 1 goto VCEnd
-
-if errorlevel 1 goto VCEnd
-endlocal
-"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp"  -D_WINDOWS -DUNICODE -DWIN32 -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug 2013|x64'">setlocal
-if errorlevel 1 goto VCEnd
-
-if errorlevel 1 goto VCEnd
-endlocal
-"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp"  -D_WINDOWS -DUNICODE -DWIN32 -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug 2015|Win32'">Moc%27ing txdlog.h...</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug 2015|x64'">Moc%27ing txdlog.h...</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug 2013|Win32'">Moc%27ing txdlog.h...</Message>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug 2013|x64'">Moc%27ing txdlog.h...</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug 2015|Win32'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug 2015|x64'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug 2013|Win32'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug 2013|x64'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release 2015|Win32'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release 2013|Win32'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release 2013|x64'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug 2015|Win32'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug 2015|x64'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug 2013|Win32'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug 2013|x64'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release 2015|Win32'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release 2013|Win32'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release 2013|x64'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>
-    </CustomBuild>
+    <ClInclude Include="..\..\include\mainwindow.h" />
     <ClInclude Include="../../include/texinfoitem.h" />
     <ClInclude Include="../../include/styles.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\rwlib\vendor\zlib\vs2015\zlib.vcxproj">
-      <Project>{65d5e721-48dd-4da9-9903-6e2fdd90725a}</Project>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="qt5.natvis" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
-  <ProjectExtensions>
-    <VisualStudio>
-      <UserProperties UicDir=".\GeneratedFiles" RccDir=".\GeneratedFiles" Qt5Version_x0020_Win32="msvc2013_opengl" />
-    </VisualStudio>
-  </ProjectExtensions>
 </Project>

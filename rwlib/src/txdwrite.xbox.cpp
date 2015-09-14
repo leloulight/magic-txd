@@ -101,7 +101,9 @@ void xboxNativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, P
                 // Store the flags.
                 metaInfo.rasterFormat = rasterFlags;
 
-                metaInfo.hasAlpha = platformTex->hasAlpha;
+                metaInfo.hasAlpha = ( platformTex->hasAlpha ? 1 : 0 );
+
+                metaInfo.notSwizzled = ( platformTex->isNotSwizzled ? 1 : 0 );
 
                 metaInfo.mipmapCount = (uint8)mipmapCount;
 

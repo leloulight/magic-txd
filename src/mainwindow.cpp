@@ -385,7 +385,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	    viewMenu->addAction(actionSetupTheme);
 
 	    actionQuit->setShortcut(QKeySequence::Quit);
-	    connect(actionQuit, SIGNAL(triggered()), this, SLOT(close()));
+	    connect(actionQuit, &QAction::triggered, this, &MainWindow::close);
 
 	    QHBoxLayout *hlayout = new QHBoxLayout;
 	    txdOptionsBackground->setLayout(hlayout);

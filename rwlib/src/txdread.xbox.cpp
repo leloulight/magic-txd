@@ -117,6 +117,12 @@ void xboxNativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
 
                 platformTex->hasAlpha = ( metaInfo.hasAlpha != 0 );
 
+                platformTex->isNotSwizzled = ( metaInfo.notSwizzled != 0 );
+
+#if _DEBUG
+                assert( platformTex->isNotSwizzled == false );
+#endif
+
                 uint32 depth = metaInfo.depth;
                 uint32 maybeMipmapCount = metaInfo.mipmapCount;
 

@@ -29,8 +29,6 @@ struct SystemEventHandlerWidget abstract
 
 class MainWindow : public QMainWindow
 {
-    Q_OBJECT
-
     friend class TexAddDialog;
     friend class RwVersionDialog;
     friend class TexNameWindow;

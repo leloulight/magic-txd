@@ -6,30 +6,6 @@
     <ClCompile Include="..\..\src\texadddialog.cpp" />
     <ClCompile Include="..\..\src\texformatextensions.cpp" />
     <ClCompile Include="..\..\src\MagicExport.cpp" />
-    <ClCompile Include="GeneratedFiles\Release 2013\moc_mainwindow.cpp">
-      <Filter>moc</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Debug 2013\moc_mainwindow.cpp">
-      <Filter>moc</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release 2015\moc_mainwindow.cpp">
-      <Filter>moc</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Debug 2015\moc_mainwindow.cpp">
-      <Filter>moc</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Debug 2013\moc_txdlog.cpp">
-      <Filter>moc</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release 2015\moc_txdlog.cpp">
-      <Filter>moc</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release 2013\moc_txdlog.cpp">
-      <Filter>moc</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Debug 2015\moc_txdlog.cpp">
-      <Filter>moc</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\renderpropwindow.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -75,25 +51,23 @@
     <ClInclude Include="..\..\include\platformselwindow.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\mainwindow.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\txdlog.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\txdlogwindow.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">
       <UniqueIdentifier>{b0ae3eea-bf12-422e-9ee6-c80d0190421c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="moc">
-      <UniqueIdentifier>{e8279e0e-c4b8-4bbe-b754-8de3bc709273}</UniqueIdentifier>
-    </Filter>
     <Filter Include="sdk">
       <UniqueIdentifier>{22069f19-de31-4428-800e-65881315cee3}</UniqueIdentifier>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <CustomBuild Include="../../include/mainwindow.h">
-      <Filter>include</Filter>
-    </CustomBuild>
-    <CustomBuild Include="../../include/txdlog.h">
-      <Filter>include</Filter>
-    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="qt5.natvis">

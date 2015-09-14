@@ -32,6 +32,7 @@ struct NativeTextureXBOX
         this->depth = 0;
         this->dxtCompression = 0;
         this->hasAlpha = false;
+        this->isNotSwizzled = false;
         this->colorOrder = COLOR_BGRA;
         this->rasterType = 4;   // by default it is a texture raster.
         this->autoMipmaps = false;
@@ -76,6 +77,7 @@ struct NativeTextureXBOX
 
         this->dxtCompression = right.dxtCompression;
         this->hasAlpha = right.hasAlpha;
+        this->isNotSwizzled = right.isNotSwizzled;
 
         this->colorOrder = right.colorOrder;
         this->rasterType = right.rasterType;
@@ -119,6 +121,7 @@ struct NativeTextureXBOX
     eColorOrdering colorOrder;
 
     bool hasAlpha;
+    bool isNotSwizzled;
 
     bool autoMipmaps;
 
@@ -336,7 +339,8 @@ struct textureMetaHeaderStructXbox
     char maskName[32];
 
     endian::little_endian <uint32> rasterFormat;
-    endian::little_endian <uint32> hasAlpha;
+    endian::little_endian <uint16> hasAlpha;
+    endian::little_endian <uint16> notSwizzled;
     endian::little_endian <uint16> width, height;
 
     uint8 depth;
