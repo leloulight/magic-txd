@@ -905,7 +905,7 @@ void Raster::resize(uint32 newWidth, uint32 newHeight, const char *downsampleMod
     try
     {
         // Alright. We shall allocate a new target buffer for the filtering operation.
-        // This buffer should have the same format as the original texels.
+        // This buffer should have the same format as the original texels, kinda.
         eRasterFormat rasterFormat = pixelData.rasterFormat;
         uint32 depth = pixelData.depth;
         eColorOrdering colorOrder = pixelData.colorOrder;
@@ -918,11 +918,30 @@ void Raster::resize(uint32 newWidth, uint32 newHeight, const char *downsampleMod
         uint32 paletteSize = pixelData.paletteSize;
         eCompressionType compressionType = pixelData.compressionType;
 
+        // If the raster data is not currently in raw raster mode, we have to use a temporary raster that is full color.
+        // Otherwise we have no valid configuration.
+        eRasterFormat tmpRasterFormat;
+        eColorOrdering tmpColorOrder;
+        uint32 tmpItemDepth;
+
+        if ( compressionType != RWCOMPRESS_NONE )
+        {
+            tmpRasterFormat = RASTER_8888;
+            tmpColorOrder = COLOR_BGRA;
+            tmpItemDepth = Bitmap::getRasterFormatDepth( tmpRasterFormat );
+        }
+        else
+        {
+            tmpRasterFormat = rasterFormat;
+            tmpColorOrder = colorOrder;
+            tmpItemDepth = depth;
+        }
+
         // Since we will have a raw raster transformation buffer, we need to fetch the sample depth.
-        uint32 sampleDepth = Bitmap::getRasterFormatDepth( rasterFormat );
+        uint32 sampleDepth = Bitmap::getRasterFormatDepth( tmpRasterFormat );
 
         mipmapLayerResizeColorPipeline dstColorPipe(
-            rasterFormat, sampleDepth, rowAlignment, colorOrder,
+            tmpRasterFormat, sampleDepth, rowAlignment, tmpColorOrder,
             PALETTE_NONE, NULL, 0
         );
 
@@ -987,7 +1006,7 @@ void Raster::resize(uint32 newWidth, uint32 newHeight, const char *downsampleMod
                 ConvertMipmapLayerNative(
                     engineInterface, origMipWidth, origMipHeight, origMipLayerWidth, origMipLayerHeight, origTexels, origDataSize,
                     rasterFormat, depth, rowAlignment, colorOrder, paletteType, paletteData, paletteSize, compressionType,
-                    rasterFormat, depth, rowAlignment, colorOrder, paletteType, paletteData, paletteSize, RWCOMPRESS_NONE,
+                    tmpRasterFormat, tmpItemDepth, rowAlignment, tmpColorOrder, paletteType, paletteData, paletteSize, RWCOMPRESS_NONE,
                     true,
                     rawOrigLayerWidth, rawOrigLayerHeight,
                     rawOrigTexels, rawOrigDataSize
@@ -1023,7 +1042,7 @@ void Raster::resize(uint32 newWidth, uint32 newHeight, const char *downsampleMod
                         {
                             // Prepare the virtual surface pipeline.
                             mipmapLayerResizeColorPipeline srcColorPipe(
-                                rasterFormat, depth, rowAlignment, colorOrder,
+                                tmpRasterFormat, tmpItemDepth, rowAlignment, tmpColorOrder,
                                 paletteType, paletteData, paletteSize
                             );
 
@@ -1045,7 +1064,7 @@ void Raster::resize(uint32 newWidth, uint32 newHeight, const char *downsampleMod
                         {
                             // Prepare the virtual surface pipeline.
                             mipmapLayerResizeColorPipeline srcColorPipe(
-                                rasterFormat, depth, rowAlignment, colorOrder,
+                                tmpRasterFormat, tmpItemDepth, rowAlignment, tmpColorOrder,
                                 paletteType, paletteData, paletteSize
                             );
 
@@ -1071,7 +1090,7 @@ void Raster::resize(uint32 newWidth, uint32 newHeight, const char *downsampleMod
                             transMipData, sampleDepth,
                             targetLayerWidth, targetLayerHeight,
                             rawOrigLayerWidth, rawOrigLayerHeight, rawOrigTexels,
-                            rasterFormat, colorOrder, depth, rowAlignment,
+                            tmpRasterFormat, tmpColorOrder, tmpItemDepth, rowAlignment,
                             paletteType, paletteData, paletteSize,
                             mipHoriSampling, mipVertSampling,
                             upscaleFilter, downsamplingFilter
@@ -1087,7 +1106,7 @@ void Raster::resize(uint32 newWidth, uint32 newHeight, const char *downsampleMod
                     bool hasChanged =
                         ConvertMipmapLayerNative(
                             engineInterface, targetLayerWidth, targetLayerHeight, targetLayerWidth, targetLayerHeight, transMipData, transMipSize,
-                            rasterFormat, sampleDepth, rowAlignment, colorOrder, PALETTE_NONE, NULL, 0, RWCOMPRESS_NONE,
+                            tmpRasterFormat, sampleDepth, rowAlignment, tmpColorOrder, PALETTE_NONE, NULL, 0, RWCOMPRESS_NONE,
                             rasterFormat, depth, rowAlignment, colorOrder, paletteType, paletteData, paletteSize, compressionType,
                             true,
                             encodedWidth, encodedHeight,

@@ -8,8 +8,8 @@ namespace rw
 inline uint8 linearInterpolateChannel( uint8 left, uint8 right, double mod )
 {
     return packcolor(
-        ( unpackcolor( right ) - unpackcolor( left ) ) * mod
-    ) + left;
+        ( unpackcolor( right ) - unpackcolor( left ) ) * mod + unpackcolor( left )
+    );
 }
 
 inline abstractColorItem linearInterpolateColorItem(
@@ -113,6 +113,32 @@ struct resizeFilterLinearPlugin : public rasterResizeFilterInterface
         capsOut.minify2D = false;
     }
 
+    AINLINE static void linearFilterBetweenPixels(
+        const abstractColorItem& left, const abstractColorItem& right,
+        uint32 intColorDist,
+        double interpStart, double interpMax,
+        uint32 vecX, uint32 vecY,
+        uint32 dstX, uint32 dstY,
+        resizeColorPipeline& dstBmp
+    )
+    {
+        double colorDist = (double)intColorDist;
+
+        // Fill the destination with interpolated colors.
+        for ( uint32 n = 0; n < intColorDist; n++ )
+        {
+            uint32 targetX = ( dstX + vecX * n );
+            uint32 targetY = ( dstY + vecY * n );
+
+            double interpMod = interpStart + ( (double)n / colorDist ) * interpMax;
+
+            // Calculate interpolated color.
+            abstractColorItem targetColor = linearInterpolateColorItem( left, right, interpMod );
+
+            dstBmp.putcolor( targetX, targetY, targetColor );
+        }
+    }
+
     void MagnifyFiltering(
         const resizeColorPipeline& srcBmp,
         uint32 magX, uint32 magY, uint32 magScaleX, uint32 magScaleY,
@@ -126,7 +152,7 @@ struct resizeFilterLinearPlugin : public rasterResizeFilterInterface
             throw RwException( "linear filtering does not support two dimensional upscaling" );
         }
 
-        // Get the first color to interpolate to.
+        // This is our middle component.
         abstractColorItem interpolateSource;
 
         bool gotSrcColor = srcBmp.fetchcolor( srcX, srcY, interpolateSource );
@@ -136,8 +162,11 @@ struct resizeFilterLinearPlugin : public rasterResizeFilterInterface
             throw RwException( "failed to get source color in linear filtering" );
         }
 
-        // Get the second color to interpolate to.
-        abstractColorItem interpolateTarget;
+        // The first half of the area we will is an interpolation from the pixel before to the middle pixel.
+        abstractColorItem interpolateLeft;
+
+        // Then the other half is the interpolation from the middle to the pixel after.
+        abstractColorItem interpolateRight;
 
         uint32 scaleXOffset = ( magScaleX - 1 );
         uint32 scaleYOffset = ( magScaleY - 1 );
@@ -145,30 +174,44 @@ struct resizeFilterLinearPlugin : public rasterResizeFilterInterface
         uint32 vecX = std::min( 1u, scaleXOffset );
         uint32 vecY = std::min( 1u, scaleYOffset );
 
-        bool gotTargetColor = srcBmp.fetchcolor( srcX + vecX, srcY + vecY, interpolateTarget );
+        bool gotLeftColor = srcBmp.fetchcolor( srcX - vecX, srcY - vecY, interpolateLeft );
 
-        if ( !gotTargetColor )
+        if ( !gotLeftColor )
         {
             // We will do a copy operation.
-            interpolateTarget = interpolateSource;
+            interpolateLeft = interpolateSource;
         }
 
-        uint32 intColorDist = ( scaleXOffset + scaleYOffset + 1 );
-        double colorDist = (double)intColorDist;
+        bool gotRightColor = srcBmp.fetchcolor( srcX + vecX, srcY + vecY, interpolateRight );
 
-        // Fill the destination with interpolated colors.
-        for ( uint32 n = 0; n < intColorDist; n++ )
+        if ( !gotRightColor )
         {
-            uint32 targetX = ( magX + vecX * n );
-            uint32 targetY = ( magY + vecY * n );
-
-            double interpMod = ( (double)n / colorDist );
-
-            // Calculate interpolated color.
-            abstractColorItem targetColor = linearInterpolateColorItem( interpolateSource, interpolateTarget, interpMod );
-
-            dstBmp.putcolor( targetX, targetY, targetColor );
+            interpolateRight = interpolateSource;
         }
+
+        uint32 interpCount = ( scaleXOffset + scaleYOffset + 1 );
+
+        uint32 leftInterpCount = ( interpCount / 2 );
+        uint32 rightInterpCount = ( interpCount - leftInterpCount );
+
+        // Do the filtering.
+        linearFilterBetweenPixels(
+            interpolateLeft, interpolateSource,
+            leftInterpCount,
+            0.5, 0.5,
+            vecX, vecY,
+            magX, magY,
+            dstBmp
+        );
+
+        linearFilterBetweenPixels(
+            interpolateSource, interpolateRight,
+            rightInterpCount,
+            0.0, 0.5,
+            vecX, vecY,
+            magX + vecX * leftInterpCount, magY + vecY * leftInterpCount,
+            dstBmp
+        );
     }
 
     void MinifyFiltering(
