@@ -297,7 +297,7 @@ public slots:
 
 public:
 	RwVersionDialog( MainWindow *mainWnd ) : QDialog( mainWnd ) {
-		setObjectName("txdOptionsBackground");
+		setObjectName("background_1");
 		setWindowTitle(tr("TXD Version Setup"));
         setWindowFlags( this->windowFlags() & ~Qt::WindowContextHelpButtonHint );
         setAttribute( Qt::WA_DeleteOnClose );

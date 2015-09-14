@@ -227,14 +227,24 @@ QLabel#logText
     color: #ffffff;
 }
 
-QWidget#txdNameBackground
+QWidget#background_0
 {
     background-color: #050018;
 }
 
-QWidget#txdOptionsBackground
+QWidget#background_1
 {
     background-color: #080025;
+}
+
+QWidget#background_2
+{
+    background-color: #0a002e;
+}
+
+QWidget#background_3
+{
+    background-color: #0f0046;
 }
 
 QWidget#hLineBackground
@@ -294,19 +304,7 @@ QPushButton#rwVersionButton:pressed
 
 QDialog
 {
-    background: #0f0520;
-}
-
-QTabBar::tab
-{
     background: #080025;
-    color: #FFFFFF;
-}
-
-QTabWidget::pane
-{
-    background: #080025;
-    border-top: 0px;
 }
 
 QComboBox {
@@ -351,6 +349,7 @@ QComboBox QAbstractItemView {
     border: 1px solid #d1db2f;
     border-right: 0px;
     border-left: 0px;
+    height: 30px;
 }
 
 QLineEdit {
@@ -367,8 +366,8 @@ QLineEdit {
 
 QCheckBox {
     spacing: 5px;
-	color: #ffffff;
-	font-family:"Segoe UI Light";
+    color: #ffffff;
+    font-family:"Segoe UI Light";
     font-size: 20px;
 }
 
@@ -419,10 +418,4 @@ QRadioButton::indicator:checked {
 
 QRadioButton:indicator:checked:hover {
     image: url(resources/dark/radio_checked_hover.png);
-}
-
-QGroupBox {
-	font-family:"Segoe UI Light";
-    font-size: 15px;
-    color: #ffffff;
 }

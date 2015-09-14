@@ -17,102 +17,6 @@ class MainWindow;
 
 class TexAddDialog : public QDialog, public SystemEventHandlerWidget
 {
-    struct pixelPreviewWidget : public QWidget
-    {
-        inline pixelPreviewWidget( TexAddDialog *owner, QWidget *parent = NULL ) : QWidget( parent )
-        {
-            this->setContentsMargins( 0, 0, 0, 0 );
-
-            this->owner = owner;
-
-            this->wantsRasterUpdate = false;
-            this->hasSizeProperties = false;
-
-            this->requiredHeight = -1;
-
-            this->hasWidthChanged = false;
-        }
-
-        void paintEvent( QPaintEvent *evt ) override;
-
-        QSize sizeHint( void ) const override
-        {
-            // Take margin into account.
-            QMargins marginDimm = this->parentWidget()->contentsMargins();
-
-            QMargins layMarginDimm = this->parentWidget()->layout()->contentsMargins();
-
-            int actualMarginHeight = ( marginDimm.bottom() + marginDimm.top() + layMarginDimm.bottom() + layMarginDimm.top() );
-
-            // Calculate the size we should have.
-            double aspectRatio = (double)recommendedWidth / recommendedHeight;
-
-            // Get the width we can scale down to safely.
-            double safeScaledWidth = aspectRatio * ( this->requiredHeight - actualMarginHeight );
-
-            int actualWidth = (int)floor( safeScaledWidth );
-
-            return QSize( actualWidth, -1 );
-        }
-
-        void resizeEvent( QResizeEvent *evt ) override
-        {
-            if ( owner->isSystemResize )
-            {
-                const QSize& oldSize = evt->oldSize();
-                const QSize& newSize = evt->size();
-
-                bool hasWidthChanged = ( oldSize.width() != newSize.width() );
-
-                if ( hasWidthChanged )
-                {
-                    this->hasWidthChanged = true;
-                }
-            }
-
-            QWidget::resizeEvent( evt );
-        }
-
-        void fixWidth( void )
-        {
-            // If the user has already changed the width of the GUI,
-            // we do not adjust it anymore.
-            if ( this->hasWidthChanged )
-                return;
-
-            // Fixing the width means we resize it to its recommended size.
-            // This will improve it's scale.
-            this->requiredHeight = owner->propertiesWidget->sizeHint().height();
-
-            this->updateGeometry();
-
-            owner->previewGroupWidget->updateGeometry();
-
-            QSize preferredNewSize = owner->layout()->sizeHint();
-
-            owner->resize( preferredNewSize );
-        }
-
-        void update( void )
-        {
-            QWidget::update();
-
-            this->wantsRasterUpdate = true;
-        }
-
-        TexAddDialog *owner;
-
-        int recommendedWidth;
-        int recommendedHeight;
-        int requiredHeight;
-
-        bool hasWidthChanged;
-
-        bool hasSizeProperties;
-
-        bool wantsRasterUpdate;
-    };
-
 public:
     enum eCreationType
     {
@@ -122,7 +26,7 @@ public:
 
     struct dialogCreateParams
     {
-        inline dialogCreateParams( void )
+        inline dialogCreateParams(void)
         {
             this->overwriteTexName = NULL;
         }
@@ -151,31 +55,34 @@ public:
         rw::Raster *raster;
     };
 
-    typedef std::function <void (const texAddOperation&)> operationCallback_t;
+    typedef std::function <void(const texAddOperation&)> operationCallback_t;
 
-    TexAddDialog( MainWindow *mainWnd, const dialogCreateParams& create_params, operationCallback_t func );
-    ~TexAddDialog( void );
+    TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create_params, operationCallback_t func);
+    ~TexAddDialog(void);
 
-    void loadPlatformOriginal( void );
-    void updatePreviewWidget( void );
+    void loadPlatformOriginal(void);
+    void updatePreviewWidget(void);
 
-    void createRasterForConfiguration( void );
+    void createRasterForConfiguration(void);
 
-    static QComboBox* createPlatformSelectComboBox( MainWindow *mainWnd );
+    static QComboBox* createPlatformSelectComboBox(MainWindow *mainWnd);
 
 private:
-    void releaseConvRaster( void );
-    
-    inline rw::Raster* GetDisplayRaster( void )
+    void UpdatePreview();
+    void ClearPreview();
+
+    void releaseConvRaster(void);
+
+    inline rw::Raster* GetDisplayRaster(void)
     {
-        if ( rw::Raster *convRaster = this->convRaster )
+        if (rw::Raster *convRaster = this->convRaster)
         {
             return convRaster;
         }
 
-        if ( this->hasPlatformOriginal )
+        if (this->hasPlatformOriginal)
         {
-            if ( rw::Raster *origRaster = this->platformOrigRaster )
+            if (rw::Raster *origRaster = this->platformOrigRaster)
             {
                 return origRaster;
             }
@@ -184,36 +91,40 @@ private:
         return NULL;
     }
 
-    void UpdateAccessability( void );
+    void UpdateAccessability(void);
 
-    QString GetCurrentPlatform( void );
+    QString GetCurrentPlatform(void);
 
-public slots:
-    void OnTextureAddRequest( bool checked );
-    void OnCloseRequest( bool checked );
+    public slots:
+    void OnTextureAddRequest(bool checked);
+    void OnCloseRequest(bool checked);
 
-    void OnPlatformSelect( const QString& newText );
+    void OnPlatformSelect(const QString& newText);
 
-    void OnPlatformFormatTypeToggle( bool checked );
+    void OnPlatformFormatTypeToggle(bool checked);
 
-    void OnTextureCompressionSeelct( const QString& newCompression );
-    void OnTexturePaletteTypeSelect( const QString& newPaletteType );
-    void OnTexturePixelFormatSelect( const QString& newPixelFormat );
+    void OnTextureCompressionSeelct(const QString& newCompression);
+    void OnTexturePaletteTypeSelect(const QString& newPaletteType);
+    void OnTexturePixelFormatSelect(const QString& newPixelFormat);
 
-    void beginSystemEvent( QEvent *evt )
+    void OnPreviewBackgroundStateChanged(int state);
+    void OnScalePreviewStateChanged(int state);
+    void OnFillPreviewStateChanged(int state);
+
+    void beginSystemEvent(QEvent *evt)
     {
-        if ( evt->type() == QEvent::Resize )
+        if (evt->type() == QEvent::Resize)
         {
-            if ( evt->spontaneous() )
+            if (evt->spontaneous())
             {
                 this->isSystemResize = true;
             }
         }
     }
 
-    void endSystemEvent( QEvent *evt )
+    void endSystemEvent(QEvent *evt)
     {
-        if ( isSystemResize )
+        if (isSystemResize)
         {
             this->isSystemResize = false;
         }
@@ -228,7 +139,6 @@ private:
     rw::Raster *convRaster;
     bool hasPlatformOriginal;
     QPixmap pixelsToAdd;
-    QWidget *propertiesWidget;
 
     bool wantsGoodPlatformSetting;
 
@@ -236,7 +146,6 @@ private:
     QLineEdit *textureMaskNameEdit;
     QWidget *platformSelectWidget;
 
-    QGroupBox *platformPropsGroup;
     QFormLayout *platformPropForm;
     QWidget *platformRawRasterProp;
     QComboBox *platformCompressionSelectProp;
@@ -259,13 +168,15 @@ private:
     QCheckBox *propGenerateMipmaps;
 
     // Preview widget stuff.
-    QWidget *previewGroupWidget;
+    QLabel *previewLabel;
+    QScrollArea *previewScrollArea;
+    QCheckBox *scaledPreviewCheckBox;
+    QCheckBox *fillPreviewCheckBox;
+    QLabel *previewInfoLabel;
 
     // The buttons.
     QPushButton *cancelButton;
     QPushButton *applyButton;
-
-    pixelPreviewWidget *previewWidget;
 
     operationCallback_t cb;
 

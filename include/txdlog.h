@@ -74,7 +74,7 @@ public:
 		logWidget->setWindowTitle("Log");
 		logWidget->setMinimumSize(450, 150);
 		logWidget->resize(500, 200);
-		logWidget->setObjectName("txdOptionsBackground");
+		logWidget->setObjectName("background_1");
 		/* --- Top panel --- */
 		QPushButton *buttonSave = new QPushButton("Save");
 
@@ -110,7 +110,7 @@ public:
 
 		QWidget *buttonsBackground = new QWidget();
 		buttonsBackground->setFixedHeight(60);
-		buttonsBackground->setObjectName("txdOptionsBackground");
+		buttonsBackground->setObjectName("background_1");
 		buttonsBackground->setLayout(buttonsLayout);
 		buttonsBackground->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 		QWidget *hLineBackground = new QWidget();

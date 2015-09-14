@@ -122,7 +122,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	    /* --- Top panel --- */
 	    QWidget *txdNameBackground = new QWidget();
 	    txdNameBackground->setFixedHeight(60);
-	    txdNameBackground->setObjectName("txdNameBackground");
+	    txdNameBackground->setObjectName("background_0");
 	    QLabel *txdName = new QLabel();
 	    txdName->setObjectName("label36px");
 	    txdName->setAlignment(Qt::AlignCenter);
@@ -144,7 +144,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	
 	    QWidget *txdOptionsBackground = new QWidget();
 	    txdOptionsBackground->setFixedHeight(54);
-	    txdOptionsBackground->setObjectName("txdOptionsBackground");
+	    txdOptionsBackground->setObjectName("background_1");
 
 	    /* --- Menu --- */
 	    QMenuBar *menu = new QMenuBar;
@@ -427,7 +427,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	    hLineBackground2->setObjectName("hLineBackground");
 	    QWidget *txdOptionsBackground2 = new QWidget;
 	    txdOptionsBackground2->setFixedHeight(59);
-	    txdOptionsBackground2->setObjectName("txdOptionsBackground");
+	    txdOptionsBackground2->setObjectName("background_1");
 	
 	    QVBoxLayout *bottomLayout = new QVBoxLayout;
 	    bottomLayout->addWidget(hLineBackground2);
