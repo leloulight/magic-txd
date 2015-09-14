@@ -40,7 +40,13 @@ QMenu::item
     padding: 2px 20px;
 }
 
-QMenu::item:selected
+QMenu::item:disabled
+{
+    background-color: #0c0029;
+    color: #858585;
+}
+
+QMenu::item:selected:!disabled
 {
     background-color: #150064;
 }

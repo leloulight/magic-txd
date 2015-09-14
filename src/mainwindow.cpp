@@ -151,27 +151,37 @@ MainWindow::MainWindow(QWidget *parent) :
 	    QMenu *fileMenu = menu->addMenu(tr("&File"));
         QAction *actionNew = new QAction("&New", this);
         fileMenu->addAction(actionNew);
+
+        this->actionNewTXD = actionNew;
         
         connect( actionNew, &QAction::triggered, this, &MainWindow::onCreateNewTXD );
 
 	    QAction *actionOpen = new QAction("&Open", this);
 	    fileMenu->addAction(actionOpen);
 
+        this->actionOpenTXD = actionOpen;
+
         connect( actionOpen, &QAction::triggered, this, &MainWindow::onOpenFile );
 
 	    QAction *actionSave = new QAction("&Save", this);
 	    fileMenu->addAction(actionSave);
+
+        this->actionSaveTXD = actionSave;
 
         connect( actionSave, &QAction::triggered, this, &MainWindow::onRequestSaveTXD );
 
 	    QAction *actionSaveAs = new QAction("&Save as...", this);
 	    fileMenu->addAction(actionSaveAs);
 
+        this->actionSaveTXDAs = actionSaveAs;
+
         connect( actionSaveAs, &QAction::triggered, this, &MainWindow::onRequestSaveAsTXD );
 
 	    QAction *closeCurrent = new QAction("&Close current", this);
 	    fileMenu->addAction(closeCurrent);
 	    fileMenu->addSeparator();
+
+        this->actionCloseTXD = closeCurrent;
 
         connect( closeCurrent, &QAction::triggered, this, &MainWindow::onCloseCurrent );
 
@@ -182,64 +192,95 @@ MainWindow::MainWindow(QWidget *parent) :
 	    QAction *actionAdd = new QAction("&Add", this);
 	    editMenu->addAction(actionAdd);
 
+        this->actionAddTexture = actionAdd;
+
         connect( actionAdd, &QAction::triggered, this, &MainWindow::onAddTexture );
 
 	    QAction *actionReplace = new QAction("&Replace", this);
 	    editMenu->addAction(actionReplace);
+
+        this->actionReplaceTexture = actionReplace;
 
         connect( actionReplace, &QAction::triggered, this, &MainWindow::onReplaceTexture );
 
 	    QAction *actionRemove = new QAction("&Remove", this);
 	    editMenu->addAction(actionRemove);
 
+        this->actionRemoveTexture = actionRemove;
+
         connect( actionRemove, &QAction::triggered, this, &MainWindow::onRemoveTexture );
 
 	    QAction *actionRename = new QAction("&Rename", this);
 	    editMenu->addAction(actionRename);
+
+        this->actionRenameTexture = actionRename;
 
         connect( actionRename, &QAction::triggered, this, &MainWindow::onRenameTexture );
 
 	    QAction *actionResize = new QAction("&Resize", this);
 	    editMenu->addAction(actionResize);
 
+        this->actionResizeTexture = actionResize;
+
         connect( actionResize, &QAction::triggered, this, &MainWindow::onResizeTexture );
 
         QAction *actionManipulate = new QAction("&Manipulate", this);
         editMenu->addAction(actionManipulate);
+
+        this->actionManipulateTexture = actionManipulate;
 
         connect( actionManipulate, &QAction::triggered, this, &MainWindow::onManipulateTexture );
 
 	    QAction *actionSetPixelFormat = new QAction("&Platform", this);
 	    editMenu->addAction(actionSetPixelFormat);
 
+        this->actionPlatformSelect = actionSetPixelFormat;
+
         connect( actionSetPixelFormat, &QAction::triggered, this, &MainWindow::onSelectPlatform );
 
 	    QAction *actionSetupMipLevels = new QAction("&Setup mip-levels", this);
 	    editMenu->addAction(actionSetupMipLevels);
+
+        this->actionSetupMipmaps = actionSetupMipLevels;
 
         connect( actionSetupMipLevels, &QAction::triggered, this, &MainWindow::onSetupMipmapLayers );
 
         QAction *actionClearMipLevels = new QAction("&Clear mip-levels", this);
         editMenu->addAction(actionClearMipLevels);
 
+        this->actionClearMipmaps = actionClearMipLevels;
+
         connect( actionClearMipLevels, &QAction::triggered, this, &MainWindow::onClearMipmapLayers );
 
 	    QAction *actionSetupRenderingProperties = new QAction("&Setup rendering properties", this);
 	    editMenu->addAction(actionSetupRenderingProperties);
+
+        this->actionRenderProps = actionSetupRenderingProperties;
 
         connect( actionSetupRenderingProperties, &QAction::triggered, this, &MainWindow::onSetupRenderingProps );
 
 	    editMenu->addSeparator();
 	    QAction *actionViewAllChanges = new QAction("&View all changes", this);
 	    editMenu->addAction(actionViewAllChanges);
+
+        this->actionViewAllChanges = actionViewAllChanges;
+
 	    QAction *actionCancelAllChanges = new QAction("&Cancel all changes", this);
 	    editMenu->addAction(actionCancelAllChanges);
+
+        this->actionCancelAllChanges = actionCancelAllChanges;
+
 	    editMenu->addSeparator();
 	    QAction *actionAllTextures = new QAction("&All textures", this);
 	    editMenu->addAction(actionAllTextures);
+
+        this->actionAllTextures = actionAllTextures;
+
 	    editMenu->addSeparator();
 	    QAction *actionSetupTxdVersion = new QAction("&Setup TXD version", this);
 	    editMenu->addAction(actionSetupTxdVersion);
+
+        this->actionSetupTXDVersion = actionSetupTxdVersion;
 
 		connect(actionSetupTxdVersion, &QAction::triggered, this, &MainWindow::onSetupTxdVersion);
 
@@ -309,9 +350,14 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	    QAction *actionExportTTXD = new QAction("&Text-based TXD", this);
 	    exportMenu->addAction(actionExportTTXD);
+
+        this->actionsExportImage.push_back( actionExportTTXD );
+
 	    exportMenu->addSeparator();
 	    QAction *actionExportAll = new QAction("&Export all", this);
 	    exportMenu->addAction(actionExportAll);
+
+        this->actionsExportImage.push_back( actionExportAll );
 
 	    QMenu *viewMenu = menu->addMenu(tr("&View"));
 	    QAction *actionBackground = new QAction("&Background", this);
@@ -409,6 +455,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
 		// Initialize our native formats.
 		this->initializeNativeFormats();
+
+        // Initialize the GUI.
+        this->UpdateAccessibility();
     }
     catch( ... )
     {
@@ -460,8 +509,37 @@ void MainWindow::addTextureFormatExportLinkToMenu( QMenu *theMenu, const char *d
 
     formatActionExport->setData( QString( defaultExt ) );
 
+    this->actionsExportImage.push_back( formatActionExport );
+
     // Connect it to the export signal handler.
     connect( formatActionExport, &QAction::triggered, this, &MainWindow::onExportTexture );
+}
+
+void MainWindow::UpdateAccessibility( void )
+{
+    // If we have no TXD available, we should not allow the user to pick TXD related options.
+    bool has_txd = ( this->currentTXD != NULL );
+
+    this->actionCloseTXD->setDisabled( !has_txd );
+    this->actionAddTexture->setDisabled( !has_txd );
+    this->actionReplaceTexture->setDisabled( !has_txd );
+    this->actionRemoveTexture->setDisabled( !has_txd );
+    this->actionRenameTexture->setDisabled( !has_txd );
+    this->actionResizeTexture->setDisabled( !has_txd );
+    this->actionManipulateTexture->setDisabled( !has_txd );
+    this->actionPlatformSelect->setDisabled( !has_txd );
+    this->actionSetupMipmaps->setDisabled( !has_txd );
+    this->actionClearMipmaps->setDisabled( !has_txd );
+    this->actionRenderProps->setDisabled( !has_txd );
+    this->actionViewAllChanges->setDisabled( !has_txd );
+    this->actionCancelAllChanges->setDisabled( !has_txd );
+    this->actionAllTextures->setDisabled( !has_txd );
+    this->actionSetupTXDVersion->setDisabled( !has_txd );
+
+    for ( QAction *exportAction : this->actionsExportImage )
+    {
+        exportAction->setDisabled( !has_txd );
+    }
 }
 
 void MainWindow::setCurrentTXD( rw::TexDictionary *txdObj )
@@ -490,6 +568,9 @@ void MainWindow::setCurrentTXD( rw::TexDictionary *txdObj )
 
         this->updateTextureList();
     }
+
+    // We should update how we let the user access the GUI.
+    this->UpdateAccessibility();
 }
 
 void MainWindow::updateTextureList( void )

@@ -46,6 +46,8 @@ private:
     void initializeNativeFormats( void );
     void shutdownNativeFormats( void );
 
+    void UpdateAccessibility( void );
+
 public:
     void setCurrentTXD( rw::TexDictionary *txdObj );
     void updateTextureList( void );
@@ -156,6 +158,33 @@ private:
 
     bool drawMipmapLayers;
 	bool showBackground;
+
+    // Accessibility management variables (menu items).
+    // FILE MENU.
+    QAction *actionNewTXD;
+    QAction *actionOpenTXD;
+    QAction *actionSaveTXD;
+    QAction *actionSaveTXDAs;
+    QAction *actionCloseTXD;
+
+    // EDIT MENU.
+    QAction *actionAddTexture;
+    QAction *actionReplaceTexture;
+    QAction *actionRemoveTexture;
+    QAction *actionRenameTexture;
+    QAction *actionResizeTexture;
+    QAction *actionManipulateTexture;
+    QAction *actionPlatformSelect;
+    QAction *actionSetupMipmaps;
+    QAction *actionClearMipmaps;
+    QAction *actionRenderProps;
+    QAction *actionViewAllChanges;
+    QAction *actionCancelAllChanges;
+    QAction *actionAllTextures;
+    QAction *actionSetupTXDVersion;
+
+    // EXPORT MENU.
+    std::list <QAction*> actionsExportImage;
 
 	TxdLog *txdLog; // log management class
     RwVersionDialog *verDlg; // txd version setup class
