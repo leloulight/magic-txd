@@ -52,6 +52,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NativeExecutive", "..\..\rwlib\vendor\NativeExecutive\vs2015\NativeExecutive.vcxproj", "{7E697733-5C68-49B4-82D4-A313210D49DF}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FileSystem", "..\..\vendor\FileSystem\build\vs2015\FileSystem.vcxproj", "{6E793DA8-5641-4BBB-BCB0-43BF10682E14}"
+	ProjectSection(ProjectDependencies) = postProject
+		{65D5E721-48DD-4DA9-9903-6E2FDD90725A} = {65D5E721-48DD-4DA9-9903-6E2FDD90725A}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
