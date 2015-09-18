@@ -37,7 +37,7 @@ class MainWindow : public QMainWindow
     friend class PlatformSelWindow;
 
 public:
-    MainWindow(QWidget *parent = 0);
+    MainWindow(QString appPath, QWidget *parent = 0);
     ~MainWindow();
 
 private:
@@ -216,6 +216,11 @@ private:
     typedef std::list <registered_image_format> imageFormats_t;
 
     imageFormats_t reg_img_formats;
+
+    QString m_appPath;
+
+    // Use this if you need to get a path relatively to app directory
+    QString makeAppPath(QString subPath);
 };
 
 #endif // MAINWINDOW_H

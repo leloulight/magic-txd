@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 #include <QApplication>
 #include "styles.h"
+//#include <QtWinExtras/QWinFunctions>
+#include "resource.h"
 
 #include <QImageWriter>
 
@@ -94,14 +96,22 @@ int main(int argc, char *argv[])
 	paths.append("platforms");
 	QCoreApplication::setLibraryPaths(paths);
     MagicTXDApplication a(argc, argv);
-    a.setStyleSheet(styles::get("D:\\MyFiles\\projects\\git\\magic-txd\\output\\resources\\dark.shell"));
-    MainWindow w;
+    QString currPath = QDir::currentPath();
+    QDir::setCurrent(a.applicationDirPath());
+    a.setStyleSheet(styles::get("resources\\dark.shell"));
+    MainWindow w(a.applicationDirPath());
+    w.setWindowIcon(QIcon("resources\\icons\\stars.png"));
+    // reset current working directory
+    QDir::setCurrent(currPath);
     w.show();
 
-    if (argc >= 2 && argv[1] && argv[1][0]) {
-        w.openTxdFile(argv[1]);
-    }
+    //char text[256];
+    //sprintf(text, "args: %d\n%s\n%s", argc, argv[0], argc > 1? argv[1] : "NO_ARG");
+    //MessageBoxA(0, text, 0, 0);
 
+    if (argc >= 2 && argv[1] && argv[1][0]) {
+        w.openTxdFile(QString(QString::fromLocal8Bit(argv[1])));
+    }
     return a.exec();
 }
 

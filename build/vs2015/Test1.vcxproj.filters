@@ -60,6 +60,9 @@
     <ClInclude Include="..\..\include\txdlogwindow.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\resource.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">
@@ -68,10 +71,23 @@
     <Filter Include="sdk">
       <UniqueIdentifier>{22069f19-de31-4428-800e-65881315cee3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="resources">
+      <UniqueIdentifier>{b27ee640-2aa4-4644-92f5-957237f3e0f9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="qt5.natvis">
       <Filter>include</Filter>
     </Natvis>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\icon\magictxd.ico">
+      <Filter>resources</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\src\magic-txd.rc">
+      <Filter>resources</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

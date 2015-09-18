@@ -641,6 +641,7 @@
     <ClInclude Include="..\..\include\platformselwindow.h" />
     <ClInclude Include="..\..\include\renderpropwindow.h" />
     <ClInclude Include="..\..\include\resizewindow.h" />
+    <ClInclude Include="..\..\include\resource.h" />
     <ClInclude Include="..\..\include\rwversiondialog.h" />
     <ClInclude Include="..\..\include\texnamewindow.h" />
     <ClInclude Include="..\..\include\txdadddialog.h" />
@@ -656,6 +657,12 @@
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="qt5.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\icon\magictxd.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\src\magic-txd.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

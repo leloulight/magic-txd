@@ -21,10 +21,11 @@
 
 #include "qtrwutils.hxx"
 
-MainWindow::MainWindow(QWidget *parent) :
+MainWindow::MainWindow(QString appPath, QWidget *parent) :
     QMainWindow(parent),
     rwWarnMan( this )
 {
+    m_appPath = appPath;
     // Initialize variables.
     this->currentTXD = NULL;
     this->txdNameLabel = NULL;
@@ -1469,4 +1470,8 @@ void MainWindow::onSetupTxdVersion(bool checked) {
 
         this->verDlg = dialog;
     }
+}
+
+QString MainWindow::makeAppPath(QString subPath) {
+    return m_appPath + subPath;
 }
