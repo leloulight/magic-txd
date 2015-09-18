@@ -47,6 +47,7 @@ private:
     void UpdateAccessibility( void );
 
 public:
+    void openTxdFile(QString fileName);
     void setCurrentTXD( rw::TexDictionary *txdObj );
     void updateTextureList( void );
 

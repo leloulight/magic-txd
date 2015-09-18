@@ -93,11 +93,14 @@ int main(int argc, char *argv[])
 	paths.append("imageformats");
 	paths.append("platforms");
 	QCoreApplication::setLibraryPaths(paths);
-
     MagicTXDApplication a(argc, argv);
-    a.setStyleSheet(styles::get("resources\\dark.shell"));
+    a.setStyleSheet(styles::get("D:\\MyFiles\\projects\\git\\magic-txd\\output\\resources\\dark.shell"));
     MainWindow w;
     w.show();
+
+    if (argc >= 2 && argv[1] && argv[1][0]) {
+        w.openTxdFile(argv[1]);
+    }
 
     return a.exec();
 }
