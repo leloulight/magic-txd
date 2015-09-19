@@ -98,7 +98,9 @@ void MainWindow::initializeNativeFormats( void )
     {
 		WIN32_FIND_DATA FindFileData;
 		memset(&FindFileData, 0, sizeof(WIN32_FIND_DATA));
-		HANDLE hFind = FindFirstFile(MAGF_FORMAT_DIR L"\\*.magf", &FindFileData);
+        wchar_t path[MAX_PATH];
+        wsprintf(path, L"%s\\%s\\*magf", this->m_appPath.toStdU16String().c_str(), MAGF_FORMAT_DIR);
+		HANDLE hFind = FindFirstFile(path, &FindFileData);
 		if (hFind != INVALID_HANDLE_VALUE)
 		{
 			do
@@ -106,8 +108,7 @@ void MainWindow::initializeNativeFormats( void )
 				if (!(FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
 				{
 					wchar_t filename[MAX_PATH];
-					wcscpy(filename, MAGF_FORMAT_DIR L"\\");
-					wcscat(filename, FindFileData.cFileName);
+                    wsprintf(filename, L"%s\\%s\\%s", this->m_appPath.toStdU16String().c_str(), MAGF_FORMAT_DIR, FindFileData.cFileName);
 					char message[512];
                     message[ sizeof(message)-1 ] = '\0';
 					char pluginName[MAX_PATH];

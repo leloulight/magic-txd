@@ -1168,7 +1168,7 @@ void TexAddDialog::OnPreviewBackgroundStateChanged(int state) {
         this->previewLabel->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
     }
     else {
-        this->previewLabel->setStyleSheet("background-image: url(\"resources/viewBackground.png\");");
+        this->previewLabel->setStyleSheet("background-image: url(\"" + mainWnd->m_appPathForStyleSheet + "/resources/viewBackground.png\");");
     }
 }
 

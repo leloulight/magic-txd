@@ -26,6 +26,8 @@ MainWindow::MainWindow(QString appPath, QWidget *parent) :
     rwWarnMan( this )
 {
     m_appPath = appPath;
+    m_appPathForStyleSheet = appPath;
+    m_appPathForStyleSheet.replace('\\', '/');
     // Initialize variables.
     this->currentTXD = NULL;
     this->txdNameLabel = NULL;
@@ -86,7 +88,7 @@ MainWindow::MainWindow(QString appPath, QWidget *parent) :
 	    resize(900, 680);
 
 		/* --- Log --- */
-		this->txdLog = new TxdLog(this);
+		this->txdLog = new TxdLog(this->m_appPath, this);
 
 	    /* --- List --- */
 	    QListWidget *listWidget = new QListWidget();
@@ -133,7 +135,7 @@ MainWindow::MainWindow(QString appPath, QWidget *parent) :
 	    QGridLayout *txdNameLayout = new QGridLayout();
 	    QLabel *starsBox = new QLabel;
 	    QMovie *stars = new QMovie;
-	    stars->setFileName("resources\\dark\\stars.gif");
+	    stars->setFileName(makeAppPath("resources\\dark\\stars.gif"));
 	    starsBox->setMovie(stars);
 	    stars->start();
 	    txdNameLayout->addWidget(starsBox, 0, 0);
@@ -880,7 +882,7 @@ void MainWindow::onToggleShowBackground(bool checked)
 {
 	this->showBackground = !(this->showBackground);
 	if (showBackground)
-		imageWidget->setStyleSheet("background-image: url(\"resources/viewBackground.png\");");
+		imageWidget->setStyleSheet("background-image: url(\"" + this->m_appPathForStyleSheet + "/resources/viewBackground.png\");");
 	else
 		imageWidget->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
 }
@@ -1473,5 +1475,5 @@ void MainWindow::onSetupTxdVersion(bool checked) {
 }
 
 QString MainWindow::makeAppPath(QString subPath) {
-    return m_appPath + subPath;
+    return m_appPath + "\\" + subPath;
 }

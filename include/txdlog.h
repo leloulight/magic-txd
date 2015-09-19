@@ -64,7 +64,7 @@ public:
 class TxdLog : public QObject
 {
 public:
-	TxdLog(QWidget *ParentWidget)
+	TxdLog(QString AppPath, QWidget *ParentWidget)
 	{
 		parent = ParentWidget;
 		positioned = false;
@@ -132,9 +132,9 @@ public:
 
 		// icons
         // NOTE: the Qt libpng implementation complains about a "known invalid sRGB profile" here.
-		picWarning.load("resources/warning.png");
-		picError.load("resources/error.png");
-		picInfo.load("resources/info.png");
+		picWarning.load(AppPath + "\\resources\\warning.png");
+		picError.load(AppPath + "\\resources\\error.png");
+		picInfo.load(AppPath + "\\resources\\info.png");
 	}
 
 	void show()

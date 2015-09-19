@@ -114,6 +114,7 @@ public slots:
     void onResizeTexture( bool checked );
     void onManipulateTexture( bool checked );
     void onExportTexture( bool checked );
+    void onTimerUpdate();
 
 protected:
     void addTextureFormatExportLinkToMenu( QMenu *theMenu, const char *defaultExt, const char *formatName );
@@ -217,7 +218,9 @@ private:
 
     imageFormats_t reg_img_formats;
 
+public:
     QString m_appPath;
+    QString m_appPathForStyleSheet;
 
     // Use this if you need to get a path relatively to app directory
     QString makeAppPath(QString subPath);
