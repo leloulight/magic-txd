@@ -31,6 +31,7 @@ struct SystemEventHandlerWidget abstract
 #include "texinfoitem.h"
 #include "txdlog.h"
 #include "txdadddialog.h"
+#include "rwfswrap.h"
 #include "guiserialization.h"
 
 #include "MagicExport.h"
@@ -69,6 +70,8 @@ public:
 
 	void clearViewImage( void );
     
+    rw::Interface* GetEngine( void )            { return this->rwEngine; }
+
     static const char* GetTXDPlatformString( rw::TexDictionary *txd );
 
     static void SetTXDPlatformString( rw::TexDictionary *txd, const char *platform );
@@ -235,6 +238,11 @@ public:
 
 public:
     CFileSystem *fileSystem;
+
+    // Serialization properties.
+    QString lastTXDOpenDir;     // maybe.
+    QString lastTXDSaveDir;
+    QString lastImageFileOpenDir;
 };
 
 typedef StaticPluginClassFactory <MainWindow> mainWindowFactory_t;

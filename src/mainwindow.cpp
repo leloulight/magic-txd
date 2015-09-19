@@ -11,6 +11,7 @@
 #include <qsplitter.h>
 #include <qmovie.h>
 #include <QFileDialog>
+#include <QDir>
 
 #include "textureViewport.h"
 #include "rwversiondialog.h"
@@ -39,6 +40,13 @@ MainWindow::MainWindow(QString appPath, QWidget *parent) :
     this->resizeDlg = NULL;
     this->platformDlg = NULL;
     this->rwVersionButton = NULL;
+
+    // Initialize configuration to default.
+    {
+        this->lastTXDOpenDir = QDir::current().absolutePath();
+        this->lastTXDSaveDir = this->lastTXDOpenDir;
+        this->lastImageFileOpenDir = this->makeAppPath( "" );
+    }
 
     this->drawMipmapLayers = false;
 	this->showBackground = false;
@@ -811,9 +819,15 @@ void MainWindow::openTxdFile(QString fileName) {
 
 void MainWindow::onOpenFile( bool checked )
 {
-    QString fileName = QFileDialog::getOpenFileName( this, tr( "Open TXD file..." ), QString(), tr( "RW Texture Archive (*.txd);;Any File (*.*)" ) );
+    QString fileName = QFileDialog::getOpenFileName( this, tr( "Open TXD file..." ), this->lastTXDOpenDir, tr( "RW Texture Archive (*.txd);;Any File (*.*)" ) );
 
-    this->openTxdFile(fileName);
+    if ( fileName.length() != 0 )
+    {
+        // Store the new dir
+        this->lastTXDOpenDir = QFileInfo( fileName ).absoluteDir().absolutePath();
+
+        this->openTxdFile(fileName);
+    }
 }
 
 void MainWindow::onCloseCurrent( bool checked )
@@ -1036,10 +1050,13 @@ void MainWindow::onRequestSaveAsTXD( bool checked )
 {
     if ( this->currentTXD != NULL )
     {
-        QString newSaveLocation = QFileDialog::getSaveFileName( this, "Save TXD as...", QString(), tr( "RW Texture Dictionary (*.txd)" ) );
+        QString newSaveLocation = QFileDialog::getSaveFileName( this, "Save TXD as...", this->lastTXDSaveDir, tr( "RW Texture Dictionary (*.txd)" ) );
 
         if ( newSaveLocation.length() != 0 )
         {
+            // Save location.
+            this->lastTXDSaveDir = QFileInfo( newSaveLocation ).absoluteDir().absolutePath();
+
             this->saveCurrentTXDAt( newSaveLocation );
         }
     }
@@ -1157,7 +1174,15 @@ QString MainWindow::requestValidImagePath( void )
 
     hasEntry = true;
 
-    return QFileDialog::getOpenFileName( this, "Import Texture...", QString(), imgExtensionSelect );
+    QString imagePath = QFileDialog::getOpenFileName( this, "Import Texture...", this->lastImageFileOpenDir, imgExtensionSelect );
+
+    // Remember the directory.
+    if ( imagePath.length() != 0 )
+    {
+        this->lastImageFileOpenDir = QFileInfo( imagePath ).absoluteDir().absolutePath();
+    }
+
+    return imagePath;
 }
 
 void MainWindow::onAddTexture( bool checked )
