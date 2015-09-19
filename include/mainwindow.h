@@ -45,7 +45,7 @@ class MainWindow : public QMainWindow
     friend class PlatformSelWindow;
 
 public:
-    MainWindow(QWidget *parent = 0);
+    MainWindow(QString appPath, QWidget *parent = 0);
     ~MainWindow();
 
 private:
@@ -55,6 +55,7 @@ private:
     void UpdateAccessibility( void );
 
 public:
+    void openTxdFile(QString fileName);
     void setCurrentTXD( rw::TexDictionary *txdObj );
     void updateTextureList( void );
 
@@ -121,6 +122,7 @@ public slots:
     void onResizeTexture( bool checked );
     void onManipulateTexture( bool checked );
     void onExportTexture( bool checked );
+    void onTimerUpdate();
 
 protected:
     void addTextureFormatExportLinkToMenu( QMenu *theMenu, const char *defaultExt, const char *formatName );
@@ -223,6 +225,13 @@ private:
     typedef std::list <registered_image_format> imageFormats_t;
 
     imageFormats_t reg_img_formats;
+
+public:
+    QString m_appPath;
+    QString m_appPathForStyleSheet;
+
+    // Use this if you need to get a path relatively to app directory
+    QString makeAppPath(QString subPath);
 
 public:
     CFileSystem *fileSystem;

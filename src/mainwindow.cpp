@@ -21,10 +21,13 @@
 
 #include "qtrwutils.hxx"
 
-MainWindow::MainWindow(QWidget *parent) :
+MainWindow::MainWindow(QString appPath, QWidget *parent) :
     QMainWindow(parent),
     rwWarnMan( this )
 {
+    m_appPath = appPath;
+    m_appPathForStyleSheet = appPath;
+    m_appPathForStyleSheet.replace('\\', '/');
     // Initialize variables.
     this->currentTXD = NULL;
     this->txdNameLabel = NULL;
@@ -82,6 +85,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
         this->rwEngine->SetApplicationInfo( metaInfo );
 
+		/* --- Log --- */
+		this->txdLog = new TxdLog(this->m_appPath, this);
         try
         {
 	        /* --- Window --- */
@@ -132,20 +137,18 @@ MainWindow::MainWindow(QWidget *parent) :
 	        txdName->setObjectName("label36px");
 	        txdName->setAlignment(Qt::AlignCenter);
 
-            this->txdNameLabel = txdName;
-
-	        QGridLayout *txdNameLayout = new QGridLayout();
-	        QLabel *starsBox = new QLabel;
-	        QMovie *stars = new QMovie;
-	        stars->setFileName("resources\\dark\\stars.gif");
-	        starsBox->setMovie(stars);
-	        stars->start();
-	        txdNameLayout->addWidget(starsBox, 0, 0);
-	        txdNameLayout->addWidget(txdName, 0, 0);
-	        txdNameLayout->setContentsMargins(0, 0, 0, 0);
-	        txdNameLayout->setMargin(0);
-	        txdNameLayout->setSpacing(0);
-	        txdNameBackground->setLayout(txdNameLayout);
+	    QGridLayout *txdNameLayout = new QGridLayout();
+	    QLabel *starsBox = new QLabel;
+	    QMovie *stars = new QMovie;
+	    stars->setFileName(makeAppPath("resources\\dark\\stars.gif"));
+	    starsBox->setMovie(stars);
+	    stars->start();
+	    txdNameLayout->addWidget(starsBox, 0, 0);
+	    txdNameLayout->addWidget(txdName, 0, 0);
+	    txdNameLayout->setContentsMargins(0, 0, 0, 0);
+	    txdNameLayout->setMargin(0);
+	    txdNameLayout->setSpacing(0);
+	    txdNameBackground->setLayout(txdNameLayout);
 	
 	        QWidget *txdOptionsBackground = new QWidget();
 	        txdOptionsBackground->setFixedHeight(54);
@@ -597,6 +600,9 @@ void MainWindow::updateTextureList( void )
     QListWidget *listWidget = this->textureListWidget;
 
     listWidget->clear();
+
+    // We have no more selected texture item.
+    this->currentSelectedTexture = NULL;
     
     if ( txdObj )
     {
@@ -608,18 +614,18 @@ void MainWindow::updateTextureList( void )
 
 	        QListWidgetItem *item = new QListWidgetItem;
 	        listWidget->addItem(item);
-	        listWidget->setItemWidget(item, new TexInfoWidget(item, texItem) );
+            TexInfoWidget *texInfoWidget = new TexInfoWidget(item, texItem);
+	        listWidget->setItemWidget(item, texInfoWidget);
 		    item->setSizeHint(QSize(listWidget->sizeHintForColumn(0), 54));
 		    // select first item in a list
 		    if (!selected)
 		    {
-			    item->setSelected(true);
+                listWidget->setItemSelected(item, true);
+                this->currentSelectedTexture = texInfoWidget;
+                this->updateTextureView();
 			    selected = true;
 		    }
 	    }
-
-        // We have no more selected texture item.
-        this->currentSelectedTexture = NULL;
     }
 }
 
@@ -741,69 +747,73 @@ void MainWindow::onCreateNewTXD( bool checked )
     this->clearCurrentFilePath();
 }
 
-void MainWindow::onOpenFile( bool checked )
-{
-	this->txdLog->beforeTxdLoading();
+void MainWindow::openTxdFile(QString fileName) {
+    this->txdLog->beforeTxdLoading();
 
-    QString fileName = QFileDialog::getOpenFileName( this, tr( "Open TXD file..." ), QString(), tr( "RW Texture Archive (*.txd);;Any File (*.*)" ) );
-
-    if ( fileName.length() != 0 )
+    if (fileName.length() != 0)
     {
         // We got a file name, try to load that TXD file into our editor.
         std::wstring unicodeFileName = fileName.toStdWString();
 
-        rw::streamConstructionFileParamW_t fileOpenParam( unicodeFileName.c_str() );
+        rw::streamConstructionFileParamW_t fileOpenParam(unicodeFileName.c_str());
 
-        rw::Stream *txdFileStream = this->rwEngine->CreateStream( rw::RWSTREAMTYPE_FILE_W, rw::RWSTREAMMODE_READONLY, &fileOpenParam );
+        rw::Stream *txdFileStream = this->rwEngine->CreateStream(rw::RWSTREAMTYPE_FILE_W, rw::RWSTREAMMODE_READONLY, &fileOpenParam);
 
         // If the opening succeeded, process things.
-        if ( txdFileStream )
+        if (txdFileStream)
         {
-            this->txdLog->addLogMessage( QString( "loading TXD: " ) + fileName );
+            this->txdLog->addLogMessage(QString("loading TXD: ") + fileName);
 
             // Parse the input file.
             rw::RwObject *parsedObject = NULL;
 
             try
             {
-                parsedObject = this->rwEngine->Deserialize( txdFileStream );
+                parsedObject = this->rwEngine->Deserialize(txdFileStream);
             }
-            catch( rw::RwException& except )
+            catch (rw::RwException& except)
             {
-				this->txdLog->showError(QString("failed to load the TXD archive: %1").arg(QString::fromStdString(except.message)));
+                this->txdLog->showError(QString("failed to load the TXD archive: %1").arg(QString::fromStdString(except.message)));
             }
 
-            if ( parsedObject )
+            if (parsedObject)
             {
                 // Try to cast it to a TXD. If it fails we did not get a TXD.
-                rw::TexDictionary *newTXD = rw::ToTexDictionary( this->rwEngine, parsedObject );
+                rw::TexDictionary *newTXD = rw::ToTexDictionary(this->rwEngine, parsedObject);
 
-                if ( newTXD )
+                if (newTXD)
                 {
                     // Okay, we got a new TXD.
                     // Set it as our current object in the editor.
-                    this->setCurrentTXD( newTXD );
+                    this->setCurrentTXD(newTXD);
 
-                    this->setCurrentFilePath( fileName );
+                    this->setCurrentFilePath(fileName);
                 }
                 else
                 {
-                    const char *objTypeName = this->rwEngine->GetObjectTypeName( parsedObject );
+                    const char *objTypeName = this->rwEngine->GetObjectTypeName(parsedObject);
 
-                    this->txdLog->addLogMessage( QString( "found %1 but expected a texture dictionary" ).arg( objTypeName ), LOGMSG_WARNING );
+                    this->txdLog->addLogMessage(QString("found %1 but expected a texture dictionary").arg(objTypeName), LOGMSG_WARNING);
 
                     // Get rid of the object that is not a TXD.
-                    this->rwEngine->DeleteRwObject( parsedObject );
+                    this->rwEngine->DeleteRwObject(parsedObject);
                 }
             }
             // if parsedObject is NULL, the RenderWare implementation should have error'ed us already.
 
             // Remember to close the stream again.
-            this->rwEngine->DeleteStream( txdFileStream );
+            this->rwEngine->DeleteStream(txdFileStream);
         }
     }
 
-	this->txdLog->afterTxdLoading();
+    this->txdLog->afterTxdLoading();
+}
+
+void MainWindow::onOpenFile( bool checked )
+{
+    QString fileName = QFileDialog::getOpenFileName( this, tr( "Open TXD file..." ), QString(), tr( "RW Texture Archive (*.txd);;Any File (*.*)" ) );
+
+    this->openTxdFile(fileName);
 }
 
 void MainWindow::onCloseCurrent( bool checked )
@@ -889,7 +899,7 @@ void MainWindow::onToggleShowBackground(bool checked)
 {
 	this->showBackground = !(this->showBackground);
 	if (showBackground)
-		imageWidget->setStyleSheet("background-image: url(\"resources/viewBackground.png\");");
+		imageWidget->setStyleSheet("background-image: url(\"" + this->m_appPathForStyleSheet + "/resources/viewBackground.png\");");
 	else
 		imageWidget->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
 }
@@ -1408,6 +1418,7 @@ void MainWindow::onExportTexture( bool checked )
 void MainWindow::clearViewImage()
 {
 	imageWidget->clear();
+    imageWidget->setFixedSize(1, 1);
 	imageWidget->hide();
 }
 
@@ -1478,4 +1489,8 @@ void MainWindow::onSetupTxdVersion(bool checked) {
 
         this->verDlg = dialog;
     }
+}
+
+QString MainWindow::makeAppPath(QString subPath) {
+    return m_appPath + "\\" + subPath;
 }
