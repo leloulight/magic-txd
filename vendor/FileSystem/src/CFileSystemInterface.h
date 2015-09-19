@@ -14,6 +14,8 @@
 
 #include "CFileSystem.common.h"
 
+#define _FILESYSTEM_WIDEPATH_SUPPORT
+
 /*===================================================
     CFile (stream class)
 
@@ -381,21 +383,7 @@ class CFileTranslator abstract
 {
 public:
     virtual                 ~CFileTranslator( void )
-    {
-    }
-
-    /*===================================================
-        CFileTranslator::WriteData
-
-        Arguments:
-            path - target path to put data at
-            buffer - source of the data
-            size - size of the data
-        Purpose:
-            Writes memory to a target pointed to by path. It
-            returns whether the write was successful.
-    ===================================================*/
-    virtual bool            WriteData( const char *path, const char *buffer, size_t size ) = 0;
+    {}
 
     /*===================================================
         CFileTranslator::CreateDir
@@ -409,6 +397,9 @@ public:
             is valid, the operation will mos-tlikely succeed.
     ===================================================*/
     virtual bool            CreateDir( const char *path ) = 0;
+#ifdef _FILESYSTEM_WIDEPATH_SUPPORT
+    virtual bool            CreateDir( const wchar_t *path ) = 0;
+#endif
 
     /*===================================================
         CFileTranslator::Open
@@ -423,6 +414,9 @@ public:
             or by an invalid path or invalid mode descriptor.
     ===================================================*/
     virtual CFile*          Open( const char *path, const char *mode ) = 0;
+#ifdef _FILESYSTEM_WIDEPATH_SUPPORT
+    virtual CFile*          Open( const wchar_t *path, const wchar_t *mode ) = 0;
+#endif
 
     /*===================================================
         CFileTranslator::Exists
@@ -433,6 +427,9 @@ public:
             Returns whether the resource at path exists.
     ===================================================*/
     virtual bool            Exists( const char *path ) const = 0;
+#ifdef _FILESYSTEM_WIDEPATH_SUPPORT
+    virtual bool            Exists( const wchar_t *path ) const = 0;
+#endif
 
     /*===================================================
         CFileTranslator::Delete
@@ -446,6 +443,9 @@ public:
             resource fails to be deleted, false is returned.
     ===================================================*/
     virtual bool            Delete( const char *path ) = 0;
+#ifdef _FILESYSTEM_WIDEPATH_SUPPORT
+    virtual bool            Delete( const wchar_t *path ) = 0;
+#endif
 
     /*===================================================
         CFileTranslator::Copy
@@ -459,6 +459,9 @@ public:
             was successful.
     ===================================================*/
     virtual bool            Copy( const char *src, const char *dst ) = 0;
+#ifdef _FILESYSTEM_WIDEPATH_SUPPORT
+    virtual bool            Copy( const wchar_t *src, const wchar_t *dst ) = 0;
+#endif
 
     /*===================================================
         CFileTranslator::Rename
@@ -471,6 +474,9 @@ public:
             Returns whether the operation was successful.
     ===================================================*/
     virtual bool            Rename( const char *src, const char *dst ) = 0;
+#ifdef _FILESYSTEM_WIDEPATH_SUPPORT
+    virtual bool            Rename( const wchar_t *src, const wchar_t *dst ) = 0;
+#endif
 
     /*===================================================
         CFileTranslator::Size
@@ -482,6 +488,9 @@ public:
             is zero if an error occurred.
     ===================================================*/
     virtual size_t          Size( const char *path ) const = 0;
+#ifdef _FILESYSTEM_WIDEPATH_SUPPORT
+    virtual size_t          Size( const wchar_t *path ) const = 0;
+#endif
 
     /*===================================================
         CFileTranslator::Stat
@@ -495,19 +504,9 @@ public:
             unchanged.
     ===================================================*/
     virtual bool            Stat( const char *path, struct stat *stats ) const = 0;
-
-    /*===================================================
-        CFileTranslator::ReadToBuffer
-
-        Arguments:
-            path - target location
-            output - buffer which shall receive the data
-        Purpose:
-            Attempts to read data from the resource located at path.
-            Returns whether the operation was successful. output is
-            only modified if it was successful.
-    ===================================================*/
-    virtual bool            ReadToBuffer( const char *path, std::vector <char>& output ) const = 0;
+#ifdef _FILESYSTEM_WIDEPATH_SUPPORT
+    virtual bool            Stat( const wchar_t *path, struct stat *stats ) const = 0;
+#endif
 
     /*==============================================================
         Path Translation functions
@@ -531,6 +530,9 @@ public:
             of this translator.
     ===================================================*/
     virtual bool            GetFullPathTreeFromRoot( const char *path, dirTree& tree, bool& file ) const = 0;
+#ifdef _FILESYSTEM_WIDEPATH_SUPPORT
+    virtual bool            GetFullPathTreeFromRoot( const wchar_t *path, dirTree& tree, bool& file ) const = 0;
+#endif
 
     /*===================================================
         CFileTranslator::GetFullPathTree
@@ -544,6 +546,9 @@ public:
             against the current directory of the translator.
     ===================================================*/
     virtual bool            GetFullPathTree( const char *path, dirTree& tree, bool& file ) const = 0;
+#ifdef _FILESYSTEM_WIDEPATH_SUPPORT
+    virtual bool            GetFullPathTree( const wchar_t *path, dirTree& tree, bool& file ) const = 0;
+#endif
 
     /*===================================================
         CFileTranslator::GetRelativePathTreeFromRoot
@@ -559,6 +564,9 @@ public:
             The resulting path is split into it's components at the tree list.
     ===================================================*/
     virtual bool            GetRelativePathTreeFromRoot( const char *path, dirTree& tree, bool& file ) const = 0;
+#ifdef _FILESYSTEM_WIDEPATH_SUPPORT
+    virtual bool            GetRelativePathTreeFromRoot( const wchar_t *path, dirTree& tree, bool& file ) const = 0;
+#endif
 
     /*===================================================
         CFileTranslator::GetRelativePathTree
@@ -572,6 +580,9 @@ public:
             resulting path on the translator's current directory.
     ===================================================*/
     virtual bool            GetRelativePathTree( const char *path, dirTree& tree, bool& file ) const = 0;
+#ifdef _FILESYSTEM_WIDEPATH_SUPPORT
+    virtual bool            GetRelativePathTree( const wchar_t *path, dirTree& tree, bool& file ) const = 0;
+#endif
 
     /*===================================================
         CFileTranslator::GetFullPathFromRoot
@@ -586,6 +597,9 @@ public:
             full (system) path based on the translator's root.
     ===================================================*/
     virtual bool            GetFullPathFromRoot( const char *path, bool allowFile, filePath& output ) const = 0;
+#ifdef _FILESYSTEM_WIDEPATH_SUPPORT
+    virtual bool            GetFullPathFromRoot( const wchar_t *path, bool allowFile, filePath& output ) const = 0;
+#endif
 
     /*===================================================
         CFileTranslator::GetFullPath
@@ -600,6 +614,9 @@ public:
             current directory.
     ===================================================*/
     virtual bool            GetFullPath( const char *path, bool allowFile, filePath& output ) const = 0;
+#ifdef _FILESYSTEM_WIDEPATH_SUPPORT
+    virtual bool            GetFullPath( const wchar_t *path, bool allowFile, filePath& output ) const = 0;
+#endif
 
     /*===================================================
         CFileTranslator::GetRelativePathFromRoot
@@ -613,6 +630,9 @@ public:
             into a path relative to the translator's root directory.
     ===================================================*/
     virtual bool            GetRelativePathFromRoot( const char *path, bool allowFile, filePath& output ) const = 0;
+#ifdef _FILESYSTEM_WIDEPATH_SUPPORT
+    virtual bool            GetRelativePathFromRoot( const wchar_t *path, bool allowFile, filePath& output ) const = 0;
+#endif
 
     /*===================================================
         CFileTranslator::GetRelativePath
@@ -626,6 +646,9 @@ public:
             into a path relative to the translator's current directory.
     ===================================================*/
     virtual bool            GetRelativePath( const char *path, bool allowFile, filePath& output ) const = 0;
+#ifdef _FILESYSTEM_WIDEPATH_SUPPORT
+    virtual bool            GetRelativePath( const wchar_t *path, bool allowFile, filePath& output ) const = 0;
+#endif
 
     /*===================================================
         CFileTranslator::ChangeDirectory
@@ -637,6 +660,9 @@ public:
             Returns whether the operation succeeded.
     ===================================================*/
     virtual bool            ChangeDirectory( const char *path ) = 0;
+#ifdef _FILESYSTEM_WIDEPATH_SUPPORT
+    virtual bool            ChangeDirectory( const wchar_t *path ) = 0;
+#endif
 
     /*===================================================
         CFileTranslator::GetDirectory
@@ -667,10 +693,23 @@ public:
                                 pathCallback_t dirCallback,
                                 pathCallback_t fileCallback,
                                 void *userdata ) const = 0;
+#ifdef _FILESYSTEM_WIDEPATH_SUPPORT
+    virtual void            ScanDirectory( const wchar_t *directory, const wchar_t *wildcard, bool recurse,
+                                pathCallback_t dirCallback,
+                                pathCallback_t fileCallback,
+                                void *userdata ) const = 0;
+#endif
 
     // These functions are easy helpers for ScanDirectory.
     virtual void            GetDirectories( const char *path, const char *wildcard, bool recurse, std::vector <filePath>& output ) const = 0;
+#ifdef _FILESYSTEM_WIDEPATH_SUPPORT
+    virtual void            GetDirectories( const wchar_t *path, const wchar_t *wildcard, bool recurse, std::vector <filePath>& output ) const = 0;
+#endif
+
     virtual void            GetFiles( const char *path, const char *wildcard, bool recurse, std::vector <filePath>& output ) const = 0;
+#ifdef _FILESYSTEM_WIDEPATH_SUPPORT
+    virtual void            GetFiles( const wchar_t *path, const wchar_t *wildcard, bool recurse, std::vector <filePath>& output ) const = 0;
+#endif
 };
 
 #include "CFileSystem.common.stl.h"
@@ -696,18 +735,33 @@ class CFileSystemInterface
 {
 public:
     virtual CFileTranslator*    CreateTranslator    ( const char *path ) = 0;
+#ifdef _FILESYSTEM_WIDEPATH_SUPPORT
+    virtual CFileTranslator*    CreateTranslator    ( const wchar_t *path ) = 0;
+#endif
     virtual CArchiveTranslator* OpenArchive         ( CFile& file ) = 0;
 
     virtual CArchiveTranslator* OpenZIPArchive      ( CFile& file ) = 0;
     virtual CArchiveTranslator* CreateZIPArchive    ( CFile& file ) = 0;
 
     // Standard IMG archive functions that should be used.
-    virtual CIMGArchiveTranslatorHandle* OpenIMGArchive     ( CFileTranslator *srcRoot, const char *srcPath ) = 0;
-    virtual CIMGArchiveTranslatorHandle* CreateIMGArchive   ( CFileTranslator *srcRoot, const char *srcPath, eIMGArchiveVersion version ) = 0;
+    virtual CIMGArchiveTranslatorHandle* OpenIMGArchive         ( CFileTranslator *srcRoot, const char *srcPath ) = 0;
+#ifdef _FILESYSTEM_WIDEPATH_SUPPORT
+    virtual CIMGArchiveTranslatorHandle* OpenIMGArchive         ( CFileTranslator *srcRoot, const wchar_t *srcPath ) = 0;
+#endif
+    virtual CIMGArchiveTranslatorHandle* CreateIMGArchive       ( CFileTranslator *srcRoot, const char *srcPath, eIMGArchiveVersion version ) = 0;
+#ifdef _FILESYSTEM_WIDEPATH_SUPPORT
+    virtual CIMGArchiveTranslatorHandle* CreateIMGArchive       ( CFileTranslator *srcRoot, const wchar_t *srcPath, eIMGArchiveVersion version ) = 0;
+#endif
 
     // Special functions for IMG archives that should support compression.
-    virtual CIMGArchiveTranslatorHandle*    OpenCompressedIMGArchive    ( CFileTranslator *srcRoot, const char *srcPath ) = 0;
-    virtual CIMGArchiveTranslatorHandle*    CreateCompressedIMGArchive  ( CFileTranslator *srcRoot, const char *srcPath, eIMGArchiveVersion version ) = 0;
+    virtual CIMGArchiveTranslatorHandle*    OpenCompressedIMGArchive        ( CFileTranslator *srcRoot, const char *srcPath ) = 0;
+#ifdef _FILESYSTEM_WIDEPATH_SUPPORT
+    virtual CIMGArchiveTranslatorHandle*    OpenCompressedIMGArchive        ( CFileTranslator *srcRoot, const wchar_t *srcPath ) = 0;
+#endif
+    virtual CIMGArchiveTranslatorHandle*    CreateCompressedIMGArchive      ( CFileTranslator *srcRoot, const char *srcPath, eIMGArchiveVersion version ) = 0;
+#ifdef _FILESYSTEM_WIDEPATH_SUPPORT
+    virtual CIMGArchiveTranslatorHandle*    CreateCompressedIMGArchive      ( CFileTranslator *srcRoot, const wchar_t *srcPath, eIMGArchiveVersion version ) = 0;
+#endif
 
     // Insecure, use with caution!
     virtual bool                IsDirectory         ( const char *path ) = 0;
@@ -913,14 +967,15 @@ namespace FileSystem
     }
 
     // Useful utility to get the file name out of a path.
-    inline std::string  GetFileNameItem( const char *name, bool includeExtension = false, std::string *outDirectory = NULL, std::string *outExtention = NULL )
+    template <typename charType>
+    inline filePath GetFileNameItem( const charType *name, bool includeExtension = false, filePath *outDirectory = NULL, filePath *outExtention = NULL )
     {
-        const char *fileStartFrom = NULL;
-        const char *origName = name;
+        const charType *fileStartFrom = NULL;
+        const charType *origName = name;
 
         while ( true )
         {
-            char ichr = *name;
+            charType ichr = *name;
 
             if ( ichr == '\0' )
             {
@@ -938,14 +993,14 @@ namespace FileSystem
             name++;
         }
 
-        const char *extStart = NULL;
-        const char *strEnd = NULL;
+        const charType *extStart = NULL;
+        const charType *strEnd = NULL;
 
         name = fileStartFrom;
 
         while ( true )
         {
-            char ichr = *name;
+            charType ichr = *name;
 
             if ( !includeExtension && ichr == '.' )
             {
@@ -961,7 +1016,7 @@ namespace FileSystem
             name++;
         }
 
-        const char *fileEnd = NULL;
+        const charType *fileEnd = NULL;
 
         if ( !includeExtension && extStart != NULL )
         {
@@ -975,7 +1030,7 @@ namespace FileSystem
         // Grab the extension if required.
         if ( outExtention && extStart != NULL )
         {
-            *outExtention = std::string( extStart, strEnd );
+            *outExtention = filePath( extStart, strEnd - extStart );
         }
 
         if ( outDirectory )
@@ -983,7 +1038,7 @@ namespace FileSystem
             // Only create directory path if it is applicable.
             if ( origName != fileStartFrom )
             {
-                *outDirectory = std::string( origName, fileStartFrom );
+                *outDirectory = filePath( origName, fileStartFrom - origName );
             }
             else
             {
@@ -991,7 +1046,7 @@ namespace FileSystem
             }
         }
 
-        return std::string( fileStartFrom, fileEnd );
+        return filePath( fileStartFrom, fileEnd - fileStartFrom );
     }
 
     // Returns whether a path is a directory.

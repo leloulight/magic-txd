@@ -120,7 +120,7 @@ bool CZIPArchiveTranslator::fileDeflate::IsWriteable( void ) const
     ZIP translation utility
 =======================================*/
 
-CZIPArchiveTranslator::CZIPArchiveTranslator( zipExtension& theExtension, CFile& fileStream ) : CSystemPathTranslator( false ), m_zipExtension( theExtension ), m_file( fileStream )
+CZIPArchiveTranslator::CZIPArchiveTranslator( zipExtension& theExtension, CFile& fileStream ) : CSystemPathTranslator( false ), m_zipExtension( theExtension ), m_file( fileStream ), m_virtualFS( true )
 {
     // TODO: Get real .zip structure offset
     m_structOffset = 0;
@@ -211,12 +211,6 @@ CFileTranslator* CZIPArchiveTranslator::GetRealtimeRoot( void )
         }
     }
     return m_realtimeRoot;
-}
-
-bool CZIPArchiveTranslator::WriteData( const char *path, const char *buffer, size_t size )
-{
-    // TODO
-    return false;
 }
 
 bool CZIPArchiveTranslator::CreateDir( const char *path )
@@ -478,34 +472,9 @@ bool CZIPArchiveTranslator::Stat( const char *path, struct stat *stats ) const
     return m_virtualFS.Stat( path, stats );
 }
 
-bool CZIPArchiveTranslator::ReadToBuffer( const char *path, std::vector <char>& output ) const
+bool CZIPArchiveTranslator::OnConfirmDirectoryChange( const dirTree& tree )
 {
-    // TODO.
-    return false;
-}
-
-bool CZIPArchiveTranslator::ChangeDirectory( const char *path )
-{
-    dirTree tree;
-    bool isFile;
-
-    if ( !GetRelativePathTreeFromRoot( path, tree, isFile ) )
-        return false;
-
-    if ( isFile )
-        tree.pop_back();
-
-    bool contextChangeSuccess = m_virtualFS.ChangeDirectory( tree );
-
-    if ( !contextChangeSuccess )
-        return false;
-
-    // Update the inherited values from the path translator base class.
-    m_curDirTree = tree;
-
-    m_currentDir.clear();
-    _File_OutputPathTree( tree, false, m_currentDir );
-    return true;
+    return m_virtualFS.ChangeDirectory( tree );
 }
 
 static void _scanFindCallback( const filePath& path, std::vector <filePath> *output )

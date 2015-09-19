@@ -209,7 +209,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level1</WarningLevel>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/FileSystem/src/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
@@ -218,8 +218,8 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>glu32.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;imm32.lib;winmm.lib;Qt5PlatformSupport.lib;qwindows.lib;qtmain.lib;Ws2_32.lib;qtpcre.lib;qtfreetype.lib;Qt5Core.lib;Qt5Widgets.lib;Qt5Gui.lib;qtharfbuzzng.lib;rwtools_$(PlatformToolset).lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\vendor\Qt5.5\lib\vs2015\x86\plugins\platforms;..\..\vendor\Qt5.5\lib\vs2015\x86\;..\..\rwlib\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glu32.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;imm32.lib;winmm.lib;Qt5PlatformSupport.lib;qwindows.lib;qtmain.lib;Ws2_32.lib;qtpcre.lib;qtfreetype.lib;Qt5Core.lib;Qt5Widgets.lib;Qt5Gui.lib;qtharfbuzzng.lib;rwtools_$(PlatformToolset).lib;libfs_$(PlatformToolset).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\vendor\FileSystem\lib;..\..\vendor\Qt5.5\lib\vs2015\x86\plugins\platforms;..\..\vendor\Qt5.5\lib\vs2015\x86\;..\..\rwlib\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>"/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' publicKeyToken='6595b64144ccf1df' language='*' processorArchitecture='*'" %(AdditionalOptions)</AdditionalOptions>
       <DataExecutionPrevention>true</DataExecutionPrevention>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -267,7 +267,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level1</WarningLevel>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/FileSystem/src/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
@@ -276,8 +276,8 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>glu32.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;imm32.lib;winmm.lib;Qt5PlatformSupport.lib;qwindows.lib;qtmain.lib;Ws2_32.lib;qtpcre.lib;qtfreetype.lib;Qt5Core.lib;Qt5Widgets.lib;Qt5Gui.lib;qtharfbuzzng.lib;rwtools_$(PlatformToolset)_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\vendor\Qt5.5\lib\vs2015\x64\plugins\platforms;..\..\vendor\Qt5.5\lib\vs2015\x64\;..\..\rwlib\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glu32.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;imm32.lib;winmm.lib;Qt5PlatformSupport.lib;qwindows.lib;qtmain.lib;Ws2_32.lib;qtpcre.lib;qtfreetype.lib;Qt5Core.lib;Qt5Widgets.lib;Qt5Gui.lib;qtharfbuzzng.lib;rwtools_$(PlatformToolset)_x64.lib;libfs_$(PlatformToolset)_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\vendor\FileSystem\lib;..\..\vendor\Qt5.5\lib\vs2015\x64\plugins\platforms;..\..\vendor\Qt5.5\lib\vs2015\x64\;..\..\rwlib\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>"/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' publicKeyToken='6595b64144ccf1df' language='*' processorArchitecture='*'" %(AdditionalOptions)</AdditionalOptions>
       <DataExecutionPrevention>true</DataExecutionPrevention>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -325,7 +325,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level1</WarningLevel>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/FileSystem/src/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
@@ -334,8 +334,8 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>glu32.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;imm32.lib;winmm.lib;Qt5PlatformSupport.lib;qwindows.lib;qtmain.lib;Ws2_32.lib;qtpcre.lib;qtfreetype.lib;Qt5Core.lib;Qt5Widgets.lib;Qt5Gui.lib;qtharfbuzzng.lib;rwtools_$(PlatformToolset).lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\vendor\Qt5.5\lib\vs2013\x86\plugins\platforms;..\..\vendor\Qt5.5\lib\vs2013\x86\;..\..\rwlib\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glu32.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;imm32.lib;winmm.lib;Qt5PlatformSupport.lib;qwindows.lib;qtmain.lib;Ws2_32.lib;qtpcre.lib;qtfreetype.lib;Qt5Core.lib;Qt5Widgets.lib;Qt5Gui.lib;qtharfbuzzng.lib;rwtools_$(PlatformToolset).lib;libfs_$(PlatformToolset).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\vendor\FileSystem\lib;..\..\vendor\Qt5.5\lib\vs2013\x86\plugins\platforms;..\..\vendor\Qt5.5\lib\vs2013\x86\;..\..\rwlib\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>"/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' publicKeyToken='6595b64144ccf1df' language='*' processorArchitecture='*'" %(AdditionalOptions)</AdditionalOptions>
       <DataExecutionPrevention>true</DataExecutionPrevention>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -383,7 +383,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level1</WarningLevel>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/FileSystem/src/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
@@ -392,8 +392,8 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>glu32.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;imm32.lib;winmm.lib;Qt5PlatformSupport.lib;qwindows.lib;qtmain.lib;Ws2_32.lib;qtpcre.lib;qtfreetype.lib;Qt5Core.lib;Qt5Widgets.lib;Qt5Gui.lib;qtharfbuzzng.lib;rwtools_$(PlatformToolset)_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\vendor\Qt5.5\lib\vs2013\x64\plugins\platforms;..\..\vendor\Qt5.5\lib\vs2013\x64\;..\..\rwlib\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glu32.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;imm32.lib;winmm.lib;Qt5PlatformSupport.lib;qwindows.lib;qtmain.lib;Ws2_32.lib;qtpcre.lib;qtfreetype.lib;Qt5Core.lib;Qt5Widgets.lib;Qt5Gui.lib;qtharfbuzzng.lib;rwtools_$(PlatformToolset)_x64.lib;libfs_$(PlatformToolset)_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\vendor\FileSystem\lib;..\..\vendor\Qt5.5\lib\vs2013\x64\plugins\platforms;..\..\vendor\Qt5.5\lib\vs2013\x64\;..\..\rwlib\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>"/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' publicKeyToken='6595b64144ccf1df' language='*' processorArchitecture='*'" %(AdditionalOptions)</AdditionalOptions>
       <DataExecutionPrevention>true</DataExecutionPrevention>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -441,12 +441,12 @@
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level1</WarningLevel>
       <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/FileSystem/src/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>glu32.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;imm32.lib;winmm.lib;Qt5PlatformSupportd.lib;qwindowsd.lib;qtmaind.lib;Ws2_32.lib;qtpcred.lib;qtfreetyped.lib;Qt5Cored.lib;Qt5Widgetsd.lib;Qt5Guid.lib;qtharfbuzzngd.lib;rwtools_d_$(PlatformToolset).lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\vendor\Qt5.5\lib\vs2015\x86\plugins\platforms;..\..\vendor\Qt5.5\lib\vs2015\x86\;..\..\rwlib\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glu32.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;imm32.lib;winmm.lib;Qt5PlatformSupportd.lib;qwindowsd.lib;qtmaind.lib;Ws2_32.lib;qtpcred.lib;qtfreetyped.lib;Qt5Cored.lib;Qt5Widgetsd.lib;Qt5Guid.lib;qtharfbuzzngd.lib;rwtools_d_$(PlatformToolset).lib;libfs_d_$(PlatformToolset).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\vendor\FileSystem\lib;..\..\vendor\Qt5.5\lib\vs2015\x86\plugins\platforms;..\..\vendor\Qt5.5\lib\vs2015\x86\;..\..\rwlib\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>"/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' publicKeyToken='6595b64144ccf1df' language='*' processorArchitecture='*'" %(AdditionalOptions)</AdditionalOptions>
       <DataExecutionPrevention>true</DataExecutionPrevention>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -492,12 +492,12 @@
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level1</WarningLevel>
       <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/FileSystem/src/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>glu32.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;imm32.lib;winmm.lib;Qt5PlatformSupportd.lib;qwindowsd.lib;qtmaind.lib;Ws2_32.lib;qtpcred.lib;qtfreetyped.lib;Qt5Cored.lib;Qt5Widgetsd.lib;Qt5Guid.lib;qtharfbuzzngd.lib;rwtools_d_$(PlatformToolset)_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\vendor\Qt5.5\lib\vs2015\x64\plugins\platforms;..\..\vendor\Qt5.5\lib\vs2015\x64\;..\..\rwlib\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glu32.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;imm32.lib;winmm.lib;Qt5PlatformSupportd.lib;qwindowsd.lib;qtmaind.lib;Ws2_32.lib;qtpcred.lib;qtfreetyped.lib;Qt5Cored.lib;Qt5Widgetsd.lib;Qt5Guid.lib;qtharfbuzzngd.lib;rwtools_d_$(PlatformToolset)_x64.lib;libfs_d_$(PlatformToolset)_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\vendor\FileSystem\lib;..\..\vendor\Qt5.5\lib\vs2015\x64\plugins\platforms;..\..\vendor\Qt5.5\lib\vs2015\x64\;..\..\rwlib\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>"/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' publicKeyToken='6595b64144ccf1df' language='*' processorArchitecture='*'" %(AdditionalOptions)</AdditionalOptions>
       <DataExecutionPrevention>true</DataExecutionPrevention>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -543,12 +543,12 @@
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level1</WarningLevel>
       <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/FileSystem/src/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>glu32.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;imm32.lib;winmm.lib;Qt5PlatformSupportd.lib;qwindowsd.lib;qtmaind.lib;Ws2_32.lib;qtpcred.lib;qtfreetyped.lib;Qt5Cored.lib;Qt5Widgetsd.lib;Qt5Guid.lib;qtharfbuzzngd.lib;rwtools_d_$(PlatformToolset).lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\vendor\Qt5.5\lib\vs2013\x86\plugins\platforms;..\..\vendor\Qt5.5\lib\vs2013\x86\;..\..\rwlib\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glu32.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;imm32.lib;winmm.lib;Qt5PlatformSupportd.lib;qwindowsd.lib;qtmaind.lib;Ws2_32.lib;qtpcred.lib;qtfreetyped.lib;Qt5Cored.lib;Qt5Widgetsd.lib;Qt5Guid.lib;qtharfbuzzngd.lib;rwtools_d_$(PlatformToolset).lib;libfs_d_$(PlatformToolset).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\vendor\FileSystem\lib;..\..\vendor\Qt5.5\lib\vs2013\x86\plugins\platforms;..\..\vendor\Qt5.5\lib\vs2013\x86\;..\..\rwlib\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>"/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' publicKeyToken='6595b64144ccf1df' language='*' processorArchitecture='*'" %(AdditionalOptions)</AdditionalOptions>
       <DataExecutionPrevention>true</DataExecutionPrevention>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -594,12 +594,12 @@
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level1</WarningLevel>
       <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/FileSystem/src/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>glu32.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;imm32.lib;winmm.lib;Qt5PlatformSupportd.lib;qwindowsd.lib;qtmaind.lib;Ws2_32.lib;qtpcred.lib;qtfreetyped.lib;Qt5Cored.lib;Qt5Widgetsd.lib;Qt5Guid.lib;qtharfbuzzngd.lib;rwtools_d_$(PlatformToolset)_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\vendor\Qt5.5\lib\vs2013\x64\plugins\platforms;..\..\vendor\Qt5.5\lib\vs2013\x64\;..\..\rwlib\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glu32.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;imm32.lib;winmm.lib;Qt5PlatformSupportd.lib;qwindowsd.lib;qtmaind.lib;Ws2_32.lib;qtpcred.lib;qtfreetyped.lib;Qt5Cored.lib;Qt5Widgetsd.lib;Qt5Guid.lib;qtharfbuzzngd.lib;rwtools_d_$(PlatformToolset)_x64.lib;libfs_d_$(PlatformToolset)_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\vendor\FileSystem\lib;..\..\vendor\Qt5.5\lib\vs2013\x64\plugins\platforms;..\..\vendor\Qt5.5\lib\vs2013\x64\;..\..\rwlib\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>"/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' publicKeyToken='6595b64144ccf1df' language='*' processorArchitecture='*'" %(AdditionalOptions)</AdditionalOptions>
       <DataExecutionPrevention>true</DataExecutionPrevention>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -628,6 +628,7 @@
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\src\guiserialization.cpp" />
     <ClCompile Include="..\..\src\MagicExport.cpp" />
     <ClCompile Include="..\..\src\renderpropwindow.cpp" />
     <ClCompile Include="..\..\src\texadddialog.cpp" />
@@ -637,6 +638,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\defs.h" />
+    <ClInclude Include="..\..\include\guiserialization.h" />
     <ClInclude Include="..\..\include\MagicExport.h" />
     <ClInclude Include="..\..\include\platformselwindow.h" />
     <ClInclude Include="..\..\include\renderpropwindow.h" />

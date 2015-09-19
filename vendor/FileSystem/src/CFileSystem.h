@@ -30,15 +30,15 @@ protected:
 
 public:
     // Global functions for initialization of the FileSystem library.
+    // There can be only one CFileSystem object alive at a time.
     static CFileSystem*     Create                  ( void );
     static void             Destroy                 ( CFileSystem *lib );
-
-    void                    InitZIP                 ( void );
-    void                    DestroyZIP              ( void );
 
     bool                    CanLockDirectories      ( void );
 
     CFileTranslator*        CreateTranslator        ( const char *path );
+    CFileTranslator*        CreateTranslator        ( const wchar_t *path );
+
     CArchiveTranslator*     OpenArchive             ( CFile& file );
 
     CArchiveTranslator*     OpenZIPArchive          ( CFile& file );
@@ -47,9 +47,15 @@ public:
     CIMGArchiveTranslatorHandle*    OpenIMGArchive      ( CFileTranslator *srcRoot, const char *srcPath );
     CIMGArchiveTranslatorHandle*    CreateIMGArchive    ( CFileTranslator *srcRoot, const char *srcPath, eIMGArchiveVersion version );
 
+    CIMGArchiveTranslatorHandle*    OpenIMGArchive      ( CFileTranslator *srcRoot, const wchar_t *srcPath );
+    CIMGArchiveTranslatorHandle*    CreateIMGArchive    ( CFileTranslator *srcRoot, const wchar_t *srcPath, eIMGArchiveVersion version );
+    
     // Special functions for IMG archives that should support compression.
     CIMGArchiveTranslatorHandle*    OpenCompressedIMGArchive    ( CFileTranslator *srcRoot, const char *srcPath );
     CIMGArchiveTranslatorHandle*    CreateCompressedIMGArchive  ( CFileTranslator *srcRoot, const char *srcPath, eIMGArchiveVersion version );
+
+    CIMGArchiveTranslatorHandle*    OpenCompressedIMGArchive    ( CFileTranslator *srcRoot, const wchar_t *srcPath );
+    CIMGArchiveTranslatorHandle*    CreateCompressedIMGArchive  ( CFileTranslator *srcRoot, const wchar_t *arcPath, eIMGArchiveVersion version );
 
     // Function to cast a CFileTranslator into a CArchiveTranslator.
     // If not possible, it returns NULL.

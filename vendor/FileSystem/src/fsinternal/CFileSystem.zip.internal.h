@@ -53,7 +53,7 @@ struct zipExtension
 #pragma warning(push)
 #pragma warning(disable:4250)
 
-class CZIPArchiveTranslator : public CSystemPathTranslator, public CArchiveTranslator
+class CZIPArchiveTranslator : public CSystemPathTranslator, public CFileTranslatorWideWrap, public CArchiveTranslator
 {
     friend struct zipExtension;
     friend class CArchiveFile;
@@ -61,28 +61,28 @@ public:
                     CZIPArchiveTranslator( zipExtension& theExtension, CFile& file );
                     ~CZIPArchiveTranslator( void );
 
-    bool            WriteData( const char *path, const char *buffer, size_t size );
-    bool            CreateDir( const char *path );
-    CFile*          Open( const char *path, const char *mode );
-    bool            Exists( const char *path ) const;
-    bool            Delete( const char *path );
-    bool            Copy( const char *src, const char *dst );
-    bool            Rename( const char *src, const char *dst );
-    size_t          Size( const char *path ) const;
-    bool            Stat( const char *path, struct stat *stats ) const;
-    bool            ReadToBuffer( const char *path, std::vector <char>& output ) const;
+    bool            CreateDir( const char *path ) override;
+    CFile*          Open( const char *path, const char *mode ) override;
+    bool            Exists( const char *path ) const override;
+    bool            Delete( const char *path ) override;
+    bool            Copy( const char *src, const char *dst ) override;
+    bool            Rename( const char *src, const char *dst ) override;
+    size_t          Size( const char *path ) const override;
+    bool            Stat( const char *path, struct stat *stats ) const override;
 
-    bool            ChangeDirectory( const char *path );
+protected:
+    bool            OnConfirmDirectoryChange( const dirTree& tree ) override;
 
+public:
     void            ScanDirectory( const char *directory, const char *wildcard, bool recurse,
                         pathCallback_t dirCallback,
                         pathCallback_t fileCallback,
-                        void *userdata ) const;
+                        void *userdata ) const override;
 
-    void            GetDirectories( const char *path, const char *wildcard, bool recurse, std::vector <filePath>& output ) const;
-    void            GetFiles( const char *path, const char *wildcard, bool recurse, std::vector <filePath>& output ) const;
+    void            GetDirectories( const char *path, const char *wildcard, bool recurse, std::vector <filePath>& output ) const override;
+    void            GetFiles( const char *path, const char *wildcard, bool recurse, std::vector <filePath>& output ) const override;
 
-    void            Save();
+    void            Save( void ) override;
 
     // Members.
     zipExtension&   m_zipExtension;

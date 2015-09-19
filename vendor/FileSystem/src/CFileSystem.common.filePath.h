@@ -13,6 +13,8 @@
 #define _FILESYSTEM_COMMON_PATHRESOLUTION_
 
 #include <string>
+#include <locale>
+#include <cwchar>
 #include <assert.h>
 
 #ifdef _WIN32
@@ -115,6 +117,7 @@ class filePath
 
     typedef MemoryDataStream <rawAllocation> StringDataStream;
 
+protected:
     struct stringProvider abstract
     {
         virtual         ~stringProvider( void )         {}
@@ -131,25 +134,24 @@ class filePath
 
         virtual void            InsertANSI( size_t offset, const char *src, size_t srcLen ) = 0;
         virtual void            InsertUnicode( size_t offset, const wchar_t *src, size_t srcLen ) = 0;
+        virtual void            Insert( size_t offset, const stringProvider *right, size_t srcLen ) = 0;
 
         virtual void            AppendANSI( const char *right, size_t rightLen ) = 0;
         virtual void            AppendUnicode( const wchar_t *right, size_t rightLen ) = 0;
         virtual void            Append( const stringProvider *right ) = 0;
 
-        virtual bool            CompareToANSI( const std::string& right ) const = 0;
-        virtual bool            CompareToUnicode( const std::wstring& right ) const = 0;
-        virtual bool            CompareTo( const stringProvider *right ) const = 0;
+        virtual bool            CompareToANSI( const std::string& right, bool caseSensitive ) const = 0;
+        virtual bool            CompareToUnicode( const std::wstring& right, bool caseSensitive ) const = 0;
+        virtual bool            CompareTo( const stringProvider *right, bool caseSensitive ) const = 0;
 
         virtual char            GetCharacterANSI( size_t pos ) const = 0;
         virtual wchar_t         GetCharacterUnicode( size_t pos ) const = 0;
 
-        virtual bool            CompareCharacterAtANSI( char refChar, size_t pos ) const = 0;
-        virtual bool            CompareCharacterAtUnicode( wchar_t refChar, size_t pos ) const = 0;
+        virtual bool            CompareCharacterAtANSI( char refChar, size_t pos, bool caseSensitive ) const = 0;
+        virtual bool            CompareCharacterAtUnicode( wchar_t refChar, size_t pos, bool caseSensitive ) const = 0;
 
         virtual std::string     ToANSI( void ) const = 0;
         virtual std::wstring    ToUnicode( void ) const = 0;
-
-        virtual bool            IsCaseSensitive( void ) const = 0;
 
         virtual const char*     GetConstANSIString( void ) const = 0;
         virtual const wchar_t*  GetConstUnicodeString( void ) const = 0;
@@ -178,75 +180,97 @@ class filePath
         return r;
     }
 
-    struct ansiStringProvider : public stringProvider
+    // The main function of comparing characters.
+    template <typename charType>
+    static inline bool IsCharacterEqual( charType left, charType right, bool caseSensitive )
     {
-        char *stringData;
+        bool isEqual = false;
+
+        if ( caseSensitive )
+        {
+            isEqual = ( left == right );
+        }
+        else
+        {
+            std::locale current_loc;
+
+            isEqual = ( std::toupper( left, current_loc ) == ( std::toupper( right, current_loc ) ) );
+        }
+
+        return isEqual;
+    }
+
+    template <typename charType>
+    inline static const charType* GetEmptyStringLiteral( void )
+    {
+        return NULL;
+    }
+
+    template <>
+    inline static const char* GetEmptyStringLiteral <char> ( void )
+    {
+        return "";
+    }
+
+    template <>
+    inline static const wchar_t* GetEmptyStringLiteral <wchar_t> ( void )
+    {
+        return L"";
+    }
+
+    template <typename charType>
+    struct customCharString
+    {
+        charType *stringData;
         size_t dataSize;
         size_t stringLength;
-        bool isCaseSensitive;
 
-        inline ansiStringProvider( void )
+        inline customCharString( void )
         {
             this->stringData = NULL;
             this->dataSize = 0;
             this->stringLength = 0;
-            this->isCaseSensitive = false;
         }
 
-        inline ~ansiStringProvider( void )
+        inline customCharString( const customCharString& right )
         {
-            if ( this->stringData )
-            {
-                free( this->stringData );
-            }
-        }
-
-#pragma warning(push)
-#pragma warning(disable: 4996)
-
-        stringProvider* Clone( void ) const
-        {
-            ansiStringProvider *newProvider = new ansiStringProvider();
-
-            char *newStringData = NULL;
-            size_t newStringLength = this->stringLength;
+            charType *newStringData = NULL;
+            size_t newStringLength = right.stringLength;
             size_t newDataSize = 0;
 
             if ( newStringLength != 0 )
             {
-                newDataSize = newStringLength + 1;
-                newStringData = (char*)malloc( newDataSize );
+                newDataSize = ( newStringLength + 1 ) * sizeof( charType );
+                newStringData = (charType*)malloc( newDataSize );
 
-                std::copy( this->stringData, this->stringData + newStringLength + 1, newStringData );
+                std::copy( right.stringData, right.stringData + newStringLength + 1, newStringData );
             }
 
-            newProvider->stringData = newStringData;
-            newProvider->dataSize = newDataSize;
-            newProvider->stringLength = newStringLength;
-            newProvider->isCaseSensitive = this->isCaseSensitive;
-
-            return newProvider;
+            this->stringData = newStringData;
+            this->dataSize = newDataSize;
+            this->stringLength = newStringLength;
         }
 
-#pragma warning(pop)
-
-        stringProvider* InheritConstruct( void ) const
+        inline ~customCharString( void )
         {
-            return new ansiStringProvider();
+            if ( charType *strData = this->stringData )
+            {
+                free( strData );
+            }
         }
 
-        void Clear( void )
+        inline void clear( void )
         {
             this->stringLength = 0;
         }
 
-        void SetSize( size_t strSize )
+        inline void resize( size_t strSize )
         {
             size_t oldStrSize = this->stringLength;
 
             if ( oldStrSize != strSize )
             {
-                Reserve( strSize + 1 );
+                reserve( strSize + 1 );
 
                 for ( size_t n = oldStrSize; n < strSize; n++ )
                 {
@@ -260,26 +284,30 @@ class filePath
             }
         }
 
-        void Reserve( size_t memSize )
+        inline void reserve( size_t strLen )
         {
             size_t dataSize = this->dataSize;
 
-            if ( dataSize < memSize )
+            size_t newDataSize = strLen * sizeof( charType );
+
+            if ( dataSize < newDataSize )
             {
-                this->stringData = (char*)realloc( this->stringData, memSize );
-                this->dataSize = memSize;
+                this->stringData = (charType*)realloc( this->stringData, newDataSize );
+                this->dataSize = newDataSize;
             }
         }
 
-        size_t GetLength( void ) const
+        inline size_t length( void ) const
         {
             return this->stringLength;
         }
 
-#pragma warning(push)
-#pragma warning(disable: 4996)
+        inline bool empty( void ) const
+        {
+            return ( this->stringLength == 0 );
+        }
 
-        void InsertANSI( size_t offset, const char *src, size_t srcLen )
+        inline void insert( size_t offset, const charType *src, size_t srcLen )
         {
             // Do a slice intersect of the work region with the insertion region.
             typedef sliceOfData <size_t> stringSlice;
@@ -340,16 +368,16 @@ class filePath
             }
 
             // If we have conflicted memory, save it somewhere.
-            char *conflictedMem = NULL;
+            charType *conflictedMem = NULL;
             size_t conflictedCount = 0;
 
             if ( hasDataConflict )
             {
                 conflictedCount = ( conflictEnd - conflictStart );
-                conflictedMem = new char[ conflictedCount ];
+                conflictedMem = new charType[ conflictedCount ];
 
-                const char *conflictStartPtr = ( this->stringData + conflictStart );
-                const char *conflictEndPtr = ( this->stringData + conflictEnd );
+                const charType *conflictStartPtr = ( this->stringData + conflictStart );
+                const charType *conflictEndPtr = ( this->stringData + conflictEnd );
 
                 std::copy( conflictStartPtr, conflictEndPtr, conflictedMem );
             }
@@ -368,7 +396,7 @@ class filePath
 
             size_t newStringLength = ( lastWritePos + this->stringLength );
 
-            Reserve( newStringLength + 1 );
+            reserve( newStringLength + 1 );
 
             // If there was any space between the insertion data and the working space, zero it.
             bool hasInvalidRegion = false;
@@ -392,10 +420,10 @@ class filePath
 
             if ( hasInvalidRegion )
             {
-                char *startPtr = ( this->stringData + invalidRegionStart );
-                char *endPtr = ( this->stringData + invalidRegionEnd );
+                charType *startPtr = ( this->stringData + invalidRegionStart );
+                charType *endPtr = ( this->stringData + invalidRegionEnd );
 
-                for ( char *iter = startPtr; iter < endPtr; iter++ )
+                for ( charType *iter = startPtr; iter < endPtr; iter++ )
                 {
                     *( iter++ ) = '\0';
                 }
@@ -408,8 +436,8 @@ class filePath
             {
                 // Move the data to their correct positions now.
                 // Start with incrementing the positions of the valid data.
-                const char *sourceStartPtr = ( this->stringData + lastWritePos );
-                const char *sourceEndPtr = sourceStartPtr + dataShiftUpwardCount;
+                const charType *sourceStartPtr = ( this->stringData + lastWritePos );
+                const charType *sourceEndPtr = sourceStartPtr + dataShiftUpwardCount;
 
                 std::copy_backward( sourceStartPtr, sourceEndPtr, ( this->stringData + lastWritePos + conflictedCount ) + dataShiftUpwardCount );
             }
@@ -430,20 +458,7 @@ class filePath
             this->stringLength = newStringLength;
         }
 
-#pragma warning(pop)
-
-        void InsertUnicode( size_t offset, const wchar_t *src, size_t srcLen )
-        {
-            std::wstring wstrtmp( src, srcLen );
-            std::string ansiOut = ws2s( wstrtmp );
-
-            InsertANSI( offset, ansiOut.c_str(), ansiOut.length() );
-        }
-
-#pragma warning(push)
-#pragma warning(disable: 4996)
-
-        void AppendANSI( const char *right, size_t rightLen )
+        inline void append( const charType *right, size_t rightLen )
         {
             size_t ourLength = this->stringLength;
             size_t rightLength = rightLen;
@@ -451,12 +466,12 @@ class filePath
             if ( rightLength != 0 )
             {
                 // If the underlying data can still host our string, we should reuse our data.
-                size_t newDataSize = ourLength + rightLength + 1;
+                size_t newLen = ourLength + rightLength + 1;
 
-                Reserve( newDataSize );
+                reserve( newLen );
 
                 // Just append the right string data.
-                char *ourData = this->stringData;
+                charType *ourData = this->stringData;
 
                 std::copy( right, right + rightLength, ourData + ourLength );
 
@@ -467,13 +482,113 @@ class filePath
             }
         }
 
-#pragma warning(pop)
+        inline bool equal( const charType *str, size_t strLen, bool caseSensitive ) const
+        {
+            size_t rightSize = strLen;
+            size_t ourSize = this->stringLength;
 
+            if ( rightSize != ourSize )
+                return false;
+
+            const charType *rightStr = str;
+            const charType *ourStr = this->stringData;
+
+            for ( size_t n = 0; n < ourSize; n++ )
+            {
+                charType leftChar = *( ourStr + n );
+                charType rightChar = *( rightStr + n );
+
+                bool isEqual = IsCharacterEqual( leftChar, rightChar, caseSensitive );
+
+                if ( !isEqual )
+                    return false;
+            }
+
+            return true;
+        }
+
+        inline bool compare_at( charType refChar, size_t strPos, bool& equal, bool caseSensitive ) const
+        {
+            bool couldCompare = false;
+
+            if ( strPos < this->stringLength )
+            {
+                charType ourChar = *( this->stringData + strPos );
+
+                equal = IsCharacterEqual( refChar, ourChar, caseSensitive );
+
+                couldCompare = true;
+            }
+            
+            return couldCompare;
+        }
+
+        inline const charType* c_str( void ) const
+        {
+            return ( this->stringData ) ? ( this->stringData ) : GetEmptyStringLiteral <charType> ();
+        }
+
+        inline bool at( size_t n, charType& charOut ) const
+        {
+            bool gotChar = false;
+
+            if ( n < this->stringLength )
+            {
+                charOut = *( this->stringData + n );
+
+                gotChar = true;
+            }
+
+            return gotChar;
+        }
+    };
+
+    struct ansiStringProvider : public stringProvider
+    {
+        customCharString <char> strData;
+
+        stringProvider* Clone( void ) const
+        {
+            return new ansiStringProvider( *this );
+        }
+
+        stringProvider* InheritConstruct( void ) const
+        {
+            return new ansiStringProvider();
+        }
+
+        void Clear( void )                      { strData.clear(); }
+        void SetSize( size_t strSize )          { strData.resize( strSize ); }
+        void Reserve( size_t strSize )          { strData.reserve( strSize ); }
+        size_t GetLength( void ) const          { return strData.length(); }
+
+        void InsertANSI( size_t offset, const char *src, size_t srcLen )        { strData.insert( offset, src, srcLen ); }
+        void InsertUnicode( size_t offset, const wchar_t *src, size_t srcLen )
+        {
+            std::string ansiOut = ws2s( std::wstring( src, srcLen ) );
+
+            InsertANSI( offset, ansiOut.c_str(), ansiOut.length() );
+        }
+
+        void Insert( size_t offset, const stringProvider *right, size_t srcLen )
+        {
+            if ( const char *str = right->GetConstANSIString() )
+            {
+                InsertANSI( offset, str, srcLen );
+            }
+            else
+            {
+                std::string rightANSI = right->ToANSI();
+
+                InsertANSI( offset, rightANSI.c_str(), srcLen );
+            }
+        }
+
+        void AppendANSI( const char *right, size_t rightLen )       { strData.append( right, rightLen ); }
         void AppendUnicode( const wchar_t *right, size_t rightLen )
         {
             // Convert the string to ANSI before using it.
-            std::wstring unicode_tmp = std::wstring( right, rightLen );
-            std::string ansiOut = ws2s( unicode_tmp );
+            std::string ansiOut = ws2s( std::wstring( right, rightLen ) );
 
             AppendANSI( ansiOut.c_str(), ansiOut.length() );
         }
@@ -485,80 +600,41 @@ class filePath
             AppendANSI( ansiOut.c_str(), ansiOut.size() );
         }
 
-        static inline bool IsCharacterEqual( char left, char right, bool caseSensitive )
+        inline bool CompareToANSIConst( const char *ansiStr, size_t strLen, bool caseSensitive ) const
         {
-            bool isEqual = false;
-
-            if ( caseSensitive )
-            {
-                isEqual = ( left == right );
-            }
-            else
-            {
-                isEqual = ( toupper( left ) == ( toupper( right ) ) );
-            }
-
-            return isEqual;
+            return strData.equal( ansiStr, strLen, caseSensitive );
         }
 
-        inline bool CompareToANSIConst( const char *ansiStr, size_t strLen ) const
+        bool CompareToANSI( const std::string& right, bool caseSensitive ) const
         {
-            size_t rightSize = strLen;
-            size_t ourSize = this->stringLength;
-
-            if ( rightSize != ourSize )
-                return false;
-
-            const char *rightStr = ansiStr;
-            const char *ourStr = this->stringData;
-
-            bool isCaseSensitive = this->isCaseSensitive;
-
-            for ( size_t n = 0; n < ourSize; n++ )
-            {
-                char leftChar = *( ourStr + n );
-                char rightChar = *( rightStr + n );
-
-                bool isEqual = IsCharacterEqual( leftChar, rightChar, isCaseSensitive );
-
-                if ( !isEqual )
-                    return false;
-            }
-
-            return true;
+            return CompareToANSIConst( right.c_str(), right.size(), caseSensitive );
         }
 
-        bool CompareToANSI( const std::string& right ) const
+        inline bool CompareToUnicodeConst( const wchar_t *wideStr, size_t wideLen, bool caseSensitive ) const
         {
-            return CompareToANSIConst( right.c_str(), right.size() );
+            std::string ansiStr = ws2s( std::wstring( wideStr, wideLen ) );
+
+            return CompareToANSIConst( ansiStr.c_str(), ansiStr.size(), caseSensitive );
         }
 
-        inline bool CompareToUnicodeConst( const wchar_t *wideStr, size_t wideLen ) const
+        bool CompareToUnicode( const std::wstring& right, bool caseSensitive ) const
         {
-            std::wstring wstr( wideStr, wideLen );
-            std::string ansiStr = ws2s( wstr );
-
-            return CompareToANSIConst( ansiStr.c_str(), ansiStr.size() );
+            return CompareToUnicodeConst( right.c_str(), right.size(), caseSensitive );
         }
 
-        bool CompareToUnicode( const std::wstring& right ) const
-        {
-            return CompareToUnicodeConst( right.c_str(), right.size() );
-        }
-
-        bool CompareTo( const stringProvider *right ) const
+        bool CompareTo( const stringProvider *right, bool caseSensitive ) const
         {
             bool isEqual = false;
             
             if ( const char *ansiStr = right->GetConstANSIString() )
             {
-                isEqual = CompareToANSIConst( ansiStr, right->GetLength() );
+                isEqual = CompareToANSIConst( ansiStr, right->GetLength(), caseSensitive );
             }
             else if ( const wchar_t *wideStr = right->GetConstUnicodeString() )
             {
-                isEqual = CompareToUnicodeConst( wideStr, right->GetLength() );
+                isEqual = CompareToUnicodeConst( wideStr, right->GetLength(), caseSensitive );
             }
-            else if ( this->stringData == NULL )
+            else if ( this->strData.empty() )
             {
                 isEqual = true;
             }
@@ -568,12 +644,205 @@ class filePath
 
         char GetCharacterANSI( size_t strPos ) const
         {
-            unsigned char theChar = 0xCC;
+            char theChar = (char)0xCC;
 
-            if ( strPos < this->stringLength )
+            strData.at( strPos, theChar );
+
+            return (char)theChar;
+        }
+
+    private:
+        bool unicode_fetch( size_t strPos, wchar_t& charOut ) const
+        {
+            char ansiChar;
+
+            bool gotChar = strData.at( strPos, ansiChar );
+
+            if ( gotChar )
             {
-                theChar = *( this->stringData + strPos );
+                int unicResult = MultiByteToWideChar( CP_ACP, MB_COMPOSITE, &ansiChar, 1, &charOut, 1 );
+
+                if ( unicResult != 0 )
+                {
+                    return true;
+                }
             }
+
+            return false;
+        }
+
+    public:
+        wchar_t GetCharacterUnicode( size_t strPos ) const
+        {
+            wchar_t outputChar = 0xCC;
+
+            unicode_fetch( strPos, outputChar );
+
+            return outputChar;
+        }
+
+        bool CompareCharacterAtANSI( char refChar, size_t strPos, bool caseSensitive ) const
+        {
+            bool equals;
+
+            return strData.compare_at( refChar, strPos, equals, caseSensitive ) && equals;
+        }
+
+        bool CompareCharacterAtUnicode( wchar_t refChar, size_t strPos, bool caseSensitive ) const
+        {
+            wchar_t ourChar;
+
+            return unicode_fetch( strPos, ourChar ) && IsCharacterEqual( ourChar, refChar, caseSensitive );
+        }
+
+        std::string ToANSI( void ) const
+        {
+            return std::string( this->strData.c_str(), this->strData.length() );
+        }
+
+        std::wstring ToUnicode( void ) const
+        {
+            return s2ws( ToANSI() );
+        }
+
+        // Dangerous function!
+        const char* GetConstANSIString( void ) const
+        {
+            return strData.c_str();
+        }
+
+        const wchar_t* GetConstUnicodeString( void ) const
+        {
+            return NULL;
+        }
+    };
+
+    struct wideStringProvider : public stringProvider
+    {
+        customCharString <wchar_t> strData;
+
+        stringProvider* Clone( void ) const
+        {
+            return new wideStringProvider( *this );
+        }
+
+        stringProvider* InheritConstruct( void ) const
+        {
+            return new wideStringProvider();
+        }
+
+        void Clear( void )                      { strData.clear(); }
+        void SetSize( size_t strSize )          { strData.resize( strSize ); }
+        void Reserve( size_t strSize )          { strData.reserve( strSize ); }
+        size_t GetLength( void ) const          { return strData.length(); }
+
+        void InsertUnicode( size_t offset, const wchar_t *src, size_t srcLen )     { strData.insert( offset, src, srcLen ); }
+        void InsertANSI( size_t offset, const char *src, size_t srcLen )
+        {
+            std::wstring wideOut = s2ws( std::string( src, srcLen ) );
+
+            InsertUnicode( offset, wideOut.c_str(), wideOut.length() );
+        }
+
+        void Insert( size_t offset, const stringProvider *right, size_t srcLen )
+        {
+            if ( const wchar_t *str = right->GetConstUnicodeString() )
+            {
+                InsertUnicode( offset, str, srcLen );
+            }
+            else
+            {
+                std::wstring uniStr = right->ToUnicode();
+
+                InsertUnicode( offset, uniStr.c_str(), srcLen );
+            }
+        }
+
+        void AppendUnicode( const wchar_t *right, size_t rightLen ) { strData.append( right, rightLen ); }
+        void AppendANSI( const char *right, size_t rightLen )
+        {
+            std::wstring wideOut = s2ws( std::string( right, rightLen ) );
+
+            AppendUnicode( wideOut.c_str(), wideOut.length() );
+        }
+
+        void Append( const stringProvider *right )
+        {
+            std::wstring wideOut = right->ToUnicode();
+
+            AppendUnicode( wideOut.c_str(), wideOut.size() );
+        }
+
+        inline bool CompareToANSIConst( const char *ansiStr, size_t strLen, bool caseSensitive ) const
+        {
+            std::wstring wideStr = s2ws( std::string( ansiStr, strLen ) );
+
+            return strData.equal( wideStr.c_str(), wideStr.length(), caseSensitive );
+        }
+
+        bool CompareToANSI( const std::string& right, bool caseSensitive ) const
+        {
+            return CompareToANSIConst( right.c_str(), right.size(), caseSensitive );
+        }
+
+        inline bool CompareToUnicodeConst( const wchar_t *wideStr, size_t wideLen, bool caseSensitive ) const
+        {
+            return strData.equal( wideStr, wideLen, caseSensitive );
+        }
+
+        bool CompareToUnicode( const std::wstring& right, bool caseSensitive ) const
+        {
+            return CompareToUnicodeConst( right.c_str(), right.size(), caseSensitive );
+        }
+
+        bool CompareTo( const stringProvider *right, bool caseSensitive ) const
+        {
+            bool isEqual = false;
+            
+            if ( const char *ansiStr = right->GetConstANSIString() )
+            {
+                isEqual = CompareToANSIConst( ansiStr, right->GetLength(), caseSensitive );
+            }
+            else if ( const wchar_t *wideStr = right->GetConstUnicodeString() )
+            {
+                isEqual = CompareToUnicodeConst( wideStr, right->GetLength(), caseSensitive );
+            }
+            else if ( this->strData.empty() )
+            {
+                isEqual = true;
+            }
+
+            return isEqual;
+        }
+
+    private:
+        bool ansi_fetch( size_t strPos, char& charOut ) const
+        {
+            wchar_t wideChar;
+
+            bool gotChar = strData.at( strPos, wideChar );
+
+            if ( gotChar )
+            {
+                char default_char = '_';
+
+                int unicResult = WideCharToMultiByte( CP_ACP, MB_COMPOSITE, &wideChar, 1, &charOut, 1, &default_char, NULL );
+
+                if ( unicResult != 0 )
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+    public:
+        char GetCharacterANSI( size_t strPos ) const
+        {
+            char theChar = (char)0xCC;
+
+            ansi_fetch( strPos, theChar );
 
             return (char)theChar;
         }
@@ -582,77 +851,101 @@ class filePath
         {
             wchar_t outputChar = 0xCC;
 
-            if ( strPos < this->stringLength )
-            {
-                char ansiChar = *( this->stringData + strPos );
-
-                MultiByteToWideChar( CP_ACP, MB_COMPOSITE, &ansiChar, 1, &outputChar, 1 );
-            }
+            strData.at( strPos, outputChar );
 
             return outputChar;
         }
 
-        bool CompareCharacterAtANSI( char refChar, size_t strPos ) const
+        bool CompareCharacterAtANSI( char refChar, size_t strPos, bool caseSensitive ) const
         {
-            bool isEqual = false;
+            char ourChar;
 
-            if ( strPos < this->stringLength )
-            {
-                char ourChar = *( this->stringData + strPos );
-
-                isEqual = IsCharacterEqual( refChar, ourChar, this->isCaseSensitive );
-            }
-
-            return isEqual;
+            return ansi_fetch( strPos, ourChar ) && IsCharacterEqual( ourChar, refChar, caseSensitive );
         }
 
-        bool CompareCharacterAtUnicode( wchar_t refChar, size_t strPos ) const
+        bool CompareCharacterAtUnicode( wchar_t refChar, size_t strPos, bool caseSensitive ) const
         {
-            bool isEqual = false;
+            bool equals;
 
-            if ( strPos < this->stringLength )
-            {
-                char ansiChar = *( this->stringData + strPos );
-                wchar_t outputChar;
-
-                int result = MultiByteToWideChar( CP_ACP, MB_COMPOSITE, &ansiChar, 1, &outputChar, 1 );
-
-                if ( result != 0 )
-                {
-                    isEqual = ( outputChar == refChar );
-                }
-            }
-
-            return isEqual;
+            return strData.compare_at( refChar, strPos, equals, caseSensitive ) && equals;
         }
 
         std::string ToANSI( void ) const
         {
-            return std::string( this->stringData, this->stringLength );
+            return ws2s( ToUnicode() );
         }
 
         std::wstring ToUnicode( void ) const
         {
-            return s2ws( ToANSI() );
-        }
-
-        bool IsCaseSensitive( void ) const
-        {
-            return this->isCaseSensitive;
+            return std::wstring( this->strData.c_str(), this->strData.length() );
         }
 
         // Dangerous function!
         const char* GetConstANSIString( void ) const
         {
-            return ( this->stringData ) ? ( this->stringData ) : "";
+            return NULL;
         }
 
         const wchar_t* GetConstUnicodeString( void ) const
         {
-            return NULL;
+            return strData.c_str();
         }
     };
-    
+
+    template <typename charType>
+    inline static stringProvider* CreateStringProvider( void )
+    {
+        return NULL;
+    }
+
+    template <>
+    inline static stringProvider* CreateStringProvider <char> ( void )
+    {
+        return new ansiStringProvider();
+    }
+
+    template <>
+    inline static stringProvider* CreateStringProvider <wchar_t> ( void )
+    {
+        return NULL;
+    }
+
+    template <typename charType>
+    inline static void AppendStringProvider( stringProvider *prov, const charType *str, size_t len )
+    {
+        static_assert( false, "invalid character type for string provider append" );
+    }
+
+    template <>
+    inline static void AppendStringProvider( stringProvider *prov, const char *str, size_t len )
+    {
+        prov->AppendANSI( str, len );
+    }
+
+    template <>
+    inline static void AppendStringProvider( stringProvider *prov, const wchar_t *str, size_t len )
+    {
+        prov->AppendUnicode( str, len );
+    }
+
+    template <typename charType>
+    inline static const charType* GetConstCharStringProvider( stringProvider *prov )
+    {
+        return NULL;
+    }
+
+    template <>
+    inline static const char* GetConstCharStringProvider <char> ( stringProvider *prov )
+    {
+        return prov->GetConstANSIString();
+    }
+
+    template <>
+    inline static const wchar_t* GetConstCharStringProvider <wchar_t> ( stringProvider *prov )
+    {
+        return prov->GetConstUnicodeString();
+    }
+
 public:
     inline filePath( void )
     {
@@ -666,11 +959,37 @@ public:
         this->strData->AppendANSI( right, len );
     }
 
+    inline filePath( const wchar_t *right, size_t len )
+    {
+        this->strData = new wideStringProvider();
+
+        this->strData->AppendUnicode( right, len );
+    }
+
     explicit inline filePath( const char *right )
     {
         this->strData = new ansiStringProvider();
 
         this->strData->AppendANSI( right, strlen( right ) );
+    }
+
+    explicit inline filePath( const wchar_t *right )
+    {
+        this->strData = new wideStringProvider();
+       
+        this->strData->AppendUnicode( right, std::char_traits <wchar_t>::length( right ) );
+    }
+
+    template <typename charType>
+    AINLINE static filePath Make( const charType *str, size_t len )
+    {
+        filePath path;
+
+        path.strData = CreateStringProvider <charType> ();
+
+        AppendStringProvider <charType> ( path.strData, str, len );
+
+        return path;
     }
 
     inline filePath( const filePath& right )
@@ -683,11 +1002,35 @@ public:
         }
     }
 
+    inline filePath( filePath&& right )
+    {
+        this->strData = right.strData;
+
+        right.strData = NULL;
+    }
+
     inline ~filePath( void )
     {
         if ( stringProvider *provider = this->strData )
         {
             delete provider;
+        }
+    }
+
+    inline void upgrade_unicode( void )
+    {
+        if ( stringProvider *provider = this->strData )
+        {
+            if ( const char *ansiConst = provider->GetConstANSIString() )
+            {
+                std::wstring wideStr = s2ws( std::string( ansiConst, provider->GetLength() ) );
+
+                delete provider;
+
+                this->strData = new wideStringProvider();
+
+                this->strData->AppendUnicode( wideStr.c_str(), wideStr.length() );
+            }
         }
     }
 
@@ -753,13 +1096,35 @@ public:
         return this->strData->GetCharacterANSI( strPos );
     }
 
-    inline bool compareCharAt( char refChar, size_t strPos ) const
+    inline wchar_t at_w( size_t strPos ) const
+    {
+        if ( strPos >= size() || !this->strData )
+        {
+            throw std::out_of_range( "strPos too big!" );
+        }
+
+        return this->strData->GetCharacterUnicode( strPos );
+    }
+
+    inline bool compareCharAt( char refChar, size_t strPos, bool caseSensitive = true ) const
     {
         bool isEqual = false;
 
         if ( stringProvider *provider = this->strData )
         {
-            isEqual = provider->CompareCharacterAtANSI( refChar, strPos );
+            isEqual = provider->CompareCharacterAtANSI( refChar, strPos, caseSensitive );
+        }
+
+        return isEqual;
+    }
+
+    inline bool compareCharAt( wchar_t refChar, size_t strPos, bool caseSensitive = true ) const
+    {
+        bool isEqual = false;
+
+        if ( stringProvider *provider = this->strData )
+        {
+            isEqual = provider->CompareCharacterAtUnicode( refChar, strPos, caseSensitive );
         }
 
         return isEqual;
@@ -775,6 +1140,43 @@ public:
         this->strData->InsertANSI( offset, src, srcCount );
     }
 
+    inline void insert( size_t offset, const wchar_t *src, size_t srcCount )
+    {
+        this->upgrade_unicode();
+
+        if ( !this->strData )
+        {
+            this->strData = new wideStringProvider();
+        }
+
+        this->strData->InsertUnicode( offset, src, srcCount );
+    }
+
+    inline void insert( size_t offset, const filePath& src, size_t srcLen )
+    {
+        if ( src.is_underlying_char <wchar_t> () )
+        {
+            this->upgrade_unicode();
+
+            if ( !this->strData )
+            {
+                this->strData = new wideStringProvider();
+            }
+        }
+        else
+        {
+            if ( !this->strData )
+            {
+                this->strData = new ansiStringProvider();
+            }
+        }
+
+        if ( const stringProvider *rightProv = src.strData )
+        {
+            this->strData->Insert( offset, rightProv, srcLen );
+        }
+    }
+
     inline filePath& operator = ( const filePath& right )
     {
         if ( this->strData )
@@ -788,6 +1190,22 @@ public:
         {
             this->strData = right.strData->Clone();
         }
+
+        return *this;
+    }
+
+    inline filePath& operator = ( filePath&& right )
+    {
+        if ( this->strData )
+        {
+            delete this->strData;
+
+            this->strData = NULL;
+        }
+
+        this->strData = right.strData;
+
+        right.strData = NULL;
 
         return *this;
     }
@@ -814,7 +1232,7 @@ public:
 
         if ( this->strData && right.strData )
         {
-            isEqual = this->strData->CompareTo( right.strData );
+            isEqual = this->strData->CompareTo( right.strData, true );
         }
 
         return isEqual;
@@ -883,6 +1301,20 @@ public:
         return *this;
     }
 
+    inline filePath& operator += ( const std::wstring& right )
+    {
+        this->upgrade_unicode();
+
+        if ( this->strData == NULL )
+        {
+            this->strData = new ansiStringProvider();
+        }
+
+        this->strData->AppendUnicode( right.c_str(), right.length() );
+
+        return *this;
+    }
+
     inline filePath& operator += ( const char *right )
     {
         if ( this->strData == NULL )
@@ -895,6 +1327,20 @@ public:
         return *this;
     }
 
+    inline filePath& operator += ( const wchar_t *right )
+    {
+        this->upgrade_unicode();
+
+        if ( !this->strData )
+        {
+            this->strData = new wideStringProvider();
+        }
+
+        this->strData->AppendUnicode( right, wcslen( right ) );
+
+        return *this;
+    }
+
     inline filePath& operator += ( const char right )
     {
         if ( this->strData == NULL )
@@ -903,6 +1349,20 @@ public:
         }
 
         this->strData->AppendANSI( &right, 1 );
+
+        return *this;
+    }
+
+    inline filePath& operator += ( const wchar_t right )
+    {
+        this->upgrade_unicode();
+
+        if ( this->strData == NULL )
+        {
+            this->strData = new wideStringProvider();
+        }
+
+        this->strData->AppendUnicode( &right, 1 );
 
         return *this;
     }
@@ -973,254 +1433,86 @@ public:
         return unicodeOut;
     }
 
-#if 0
-    // Useful functions.
-    filePath GetFilename( void ) const
+    // Functions to determine the underlying string type.
+    template <typename charType>
+    inline bool is_underlying_char( void ) const
     {
-        size_t pos = rfind( '/' );
-
-        if ( pos == 0xFFFFFFFF )
-        {
-            if ( ( pos = rfind( '\\' ) ) == 0xFFFFFFFF )
-            {
-                return filePath( *this );
-            }
-        }
-
-        return substr( pos + 1, size() );
+        return false;
     }
 
-    filePath GetPath( void ) const
+    template <>
+    inline bool is_underlying_char <char> ( void ) const
     {
-        size_t pos = rfind( '/' );
-
-        if ( pos == 0xFFFFFFFF )
-        {
-            if ( ( pos = rfind( '\\' ) ) == 0xFFFFFFFF )
-            {
-                return filePath();
-            }
-        }
-
-        return substr( 0, pos );
+        return ( this->strData->GetConstANSIString() != NULL );
     }
 
-    const char* GetExtension( void ) const
+    template <>
+    inline bool is_underlying_char <wchar_t> ( void ) const
     {
-        size_t pos = rfind( '.' );
-        size_t posSlash;
-
-        if ( pos == 0xFFFFFFFF )
-            return NULL;
-
-        posSlash = rfind( '/' );
-
-        if ( posSlash == 0xFFFFFFFF )
-        {
-            if ( ( posSlash = rfind( '\\' ) ) == 0xFFFFFFFF )
-            {
-                return c_str() + pos;
-            }
-        }
-
-        if ( posSlash > pos )
-            return NULL;
-
-        return c_str() + pos;
+        return ( this->strData->GetConstUnicodeString() != NULL );
     }
 
-    bool IsDirectory( void ) const
+    inline stringProvider* string_prov( void ) const
     {
-        if ( empty() )
-            return false;
-
-        return *rbegin() == '/' || *rbegin() == '\\';
-    }
-#endif
-};
-
-#if 0
-
-#ifdef _WIN32
-#define _File_PathCharComp( c1, c2 ) ( tolower( c1 ) == tolower( c2 ) )
-
-struct char_traits_i : public std::char_traits <char>
-{
-    static bool __CLRCALL_OR_CDECL eq( const char left, const char right )
-    {
-        return toupper(left) == toupper(right);
+        return this->strData;
     }
 
-    static bool __CLRCALL_OR_CDECL ne( const char left, const char right )
+    static inline bool is_system_case_sensitive( void )
     {
-        return toupper(left) != toupper(right);
-    }
-
-    static bool __CLRCALL_OR_CDECL lt( const char left, const char right )
-    {
-        return toupper(left) < toupper(right);
-    }
-
-    static int __CLRCALL_OR_CDECL compare( const char *s1, const char *s2, size_t n )
-    {
-        while ( n-- )
-        {
-            if ( toupper(*s1) < toupper(*s2) )
-                return -1;
-
-            if ( toupper(*s1) > toupper(*s2) )
-                return 1;
-
-            ++s1; ++s2;
-        }
-
-        return 0;
-    }
-
-    static const char* __CLRCALL_OR_CDECL find( const char *s, size_t cnt, char a )
-    {
-        while ( cnt-- && toupper(*s++) != toupper(a) );
-
-        return s;
-    }
-};
-
-class filePath : public std::basic_string <char, char_traits_i>
-{
-    typedef std::basic_string <char, char_traits_i> _baseString;
-
-public:
-    filePath( const std::string& right )
-        : _baseString( right.c_str(), right.size() )
-    { }
-
-    bool operator ==( const filePath& right ) const
-    {
-        if ( right.size() != size() )
-            return false;
-
-        return compare( 0, size(), right.c_str() ) == 0;
-    }
-
-    bool operator ==( const char *right ) const
-    {
-        return compare( right ) == 0;
-    }
-
-    bool operator ==( const std::string& right ) const
-    {
-        if ( right.size() != size() )
-            return false;
-
-        return compare( 0, size(), right.c_str() ) == 0;
-    }
-
-    filePath& operator +=( char right )
-    {
-        push_back( right );
-        return *this;
-    }
-
-    filePath& operator +=( const char *right )
-    {
-        append( right );
-        return *this;
-    }
-
-    filePath& operator +=( const filePath& right )
-    {
-        append( right.c_str(), right.size() );
-        return *this;
-    }
-
-    filePath& operator +=( const std::string& right )
-    {
-        append( right.c_str(), right.size() );
-        return *this;
-    }
-
-    filePath operator +( const std::string& right ) const
-    {
-        return filePath( *this ).append( right.c_str(), right.size() );
-    }
-
-    filePath operator +( const char right ) const
-    {
-        filePath outPath( *this );
-        outPath.push_back( right );
-        return outPath;
-    }
-
-    operator std::string () const
-    {
-        return std::string( c_str(), size() );
-    }
+#if defined(_WIN32)
+        return false;
+#elif defined(__linux__)
+        return true;
 #else
-#define _File_PathCharComp( c1, c2 ) ( c1 == c2 )
-
-class filePath : public std::string
-{
-    typedef std::string _baseString;
-public:
+#error Unknown platform
 #endif
-    filePath()
-        : _baseString()
-    { }
-
-    AINLINE ~filePath()
-    { }
-
-    filePath( const filePath& right )
-        : _baseString( right.c_str(), right.size() )
-    { }
-
-    filePath( const _baseString& right )
-        : _baseString( right )
-    { }
-
-    explicit filePath( const SString& right )
-        : _baseString( right.c_str(), right.size() )
-    { }
-
-    filePath( const char *right, size_t len )
-        : _baseString( right, len )
-    { }
-
-    filePath( const char *right )
-        : _baseString( right )
-    { }
-
-    char operator []( int idx ) const
-    {
-        return _baseString::operator []( idx );
-    }
-
-    operator const char* () const
-    {
-        return c_str();
-    }
-
-    const char* operator* () const
-    {
-        return c_str();
-    }
-
-    operator SString () const
-    {
-        return SString( c_str(), size() );
-    }
-
-    filePath operator +( const _baseString& right ) const
-    {
-        return _baseString( *this ) + right;
-    }
-
-    filePath operator +( const char *right ) const
-    {
-        return _baseString( *this ) + right;
     }
 };
 
-#endif //0
+// Temporary special string.
+template <typename charType>
+struct filePathLink : public filePath
+{
+    inline filePathLink( const filePath& origObj ) : filePath()
+    {
+        bool canMove = ( origObj.is_underlying_char <charType> () == true );
+
+        if ( canMove )
+        {
+            this->strData = origObj.string_prov();
+
+            this->hasMoved = true;
+        }
+        else
+        {
+            this->strData = CreateStringProvider <charType> ();
+
+            assert( this->strData != NULL );
+
+            if ( stringProvider *origProv = origObj.string_prov() )
+            {
+                this->strData->Append( origProv );
+            }
+
+            this->hasMoved = false;
+        }
+    }
+
+    inline ~filePathLink( void )
+    {
+        if ( this->hasMoved )
+        {
+            this->strData = NULL;
+        }
+    }
+
+    // This function is sure to succeed.
+    inline const charType* to_char( void ) const
+    {
+        return GetConstCharStringProvider <charType> ( this->strData );
+    }
+
+    bool hasMoved;
+};
 
 #endif //_FILESYSTEM_COMMON_PATHRESOLUTION_

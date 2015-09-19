@@ -58,6 +58,10 @@ public:
 
     static void RegisterIMGDriver( void );
     static void UnregisterIMGDriver( void );
+
+    // Generic things.
+    template <typename charType>
+    CFileTranslator* GenCreateTranslator( const charType *path );
 };
 
 typedef StaticPluginClassFactory <CFileSystemNative> fileSystemFactory_t;
@@ -69,6 +73,7 @@ extern fileSystemFactory_t _fileSysFactory;
 #include "CFileSystem.stream.buffered.h"
 #include "CFileSystem.translator.pathutil.h"
 #include "CFileSystem.translator.system.h"
+#include "CFileSystem.translator.widewrap.h"
 #include "CFileSystem.internal.repo.h"
 
 /*===================================================

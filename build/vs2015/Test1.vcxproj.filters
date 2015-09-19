@@ -7,6 +7,7 @@
     <ClCompile Include="..\..\src\texformatextensions.cpp" />
     <ClCompile Include="..\..\src\MagicExport.cpp" />
     <ClCompile Include="..\..\src\renderpropwindow.cpp" />
+    <ClCompile Include="..\..\src\guiserialization.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="../../include/styles.h">
@@ -58,6 +59,9 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\txdlogwindow.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\guiserialization.h">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>

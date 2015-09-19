@@ -15,7 +15,8 @@
 // Utility function to create a directory tree vector out of a relative path string.
 // Ex.: 'my/path/to/desktop/' -> 'my', 'path', 'to', 'desktop'; file == false
 //      'my/path/to/file' -> 'my', 'path', 'to', 'file'; file == true
-static inline bool _File_ParseRelativePath( const char *path, dirTree& tree, bool& file )
+template <typename charType>
+static inline bool _File_ParseRelativePath( const charType *path, dirTree& tree, bool& file )
 {
     filePath entry;
     entry.reserve( MAX_PATH );
@@ -106,7 +107,8 @@ static void AINLINE _File_OutputPathTree( const dirTree& tree, bool file, filePa
 }
 
 // Get relative path tree nodes
-static inline bool _File_ParseRelativeTree( const char *path, const dirTree& root, dirTree& output, bool& file )
+template <typename charType>
+static inline bool _File_ParseRelativeTree( const charType *path, const dirTree& root, dirTree& output, bool& file )
 {
     dirTree tree;
 
@@ -175,7 +177,8 @@ static inline bool _File_ParseDeriviateTreeRoot( const dirTree& pathFind, const 
     return true;
 }
 
-static inline bool _File_ParseDeriviateTree( const char *path, const dirTree& curTree, dirTree& output, bool& file )
+template <typename charType>
+static inline bool _File_ParseDeriviateTree( const charType *path, const dirTree& curTree, dirTree& output, bool& file )
 {
     dirTree tree = curTree;
 
@@ -186,7 +189,8 @@ static inline bool _File_ParseDeriviateTree( const char *path, const dirTree& cu
 }
 
 // Do the same as above, but derive from current directory
-static inline bool _File_ParseRelativeTreeDeriviate( const char *path, const dirTree& root, const dirTree& curTree, dirTree& output, bool& file )
+template <typename charType>
+static inline bool _File_ParseRelativeTreeDeriviate( const charType *path, const dirTree& root, const dirTree& curTree, dirTree& output, bool& file )
 {
     dirTree tree;
     size_t sizeDiff;
@@ -224,7 +228,8 @@ static inline bool _File_ParseRelativeTreeDeriviate( const char *path, const dir
     return true;
 }
 
-inline bool _File_ParseMode( const CFileTranslator& root, const char *path, const char *mode, unsigned int& access, unsigned int& m )
+template <typename charType>
+inline bool _File_ParseMode( const CFileTranslator& root, const charType *path, const charType *mode, unsigned int& access, unsigned int& m )
 {
     switch( *mode )
     {
@@ -253,7 +258,14 @@ inline bool _File_ParseMode( const CFileTranslator& root, const char *path, cons
 }
 
 // The string must at least have one character length and be zero terminated.
-inline bool _File_IgnoreDirectoryScanEntry( const char *name )
+template <typename charType>
+inline bool _File_IgnoreDirectoryScanEntry( const charType *name )
+{
+    return ( ( *name == '.' && ( *(name+1) == '\0' || ( *(name+1) == '.' && *(name+2) == '\0' ) ) ) );
+}
+
+template <>
+inline bool _File_IgnoreDirectoryScanEntry <char> ( const char *name )
 {
     return *(unsigned short*)name == 0x002E || (*(unsigned short*)name == 0x2E2E && *(unsigned char*)(name + 2) == 0x00);
 }
@@ -265,299 +277,304 @@ inline bool _File_IgnoreDirectoryScanEntry( const char *name )
     to effectively pattern-match many entries.
 =================================================*/
 
-struct filePatternCommand_t
+template <typename charType>
+struct PathPatternEnv
 {
-    enum eCommand
+    struct filePatternCommand_t
     {
-        FCMD_STRCMP,
-        FCMD_WILDCARD,
-        FCMD_REQONE
+        enum eCommand
+        {
+            FCMD_STRCMP,
+            FCMD_WILDCARD,
+            FCMD_REQONE
+        };
+
+        eCommand cmd;
     };
 
-    eCommand cmd;
-};
-
-struct filePatternCommandCompare_t : public filePatternCommand_t
-{
-    size_t len;
-    char string[1];
-
-    filePatternCommandCompare_t( void )
+private:
+    struct filePatternCommandCompare_t : public filePatternCommand_t
     {
-        cmd = filePatternCommand_t::FCMD_STRCMP;
-    }
+        size_t len;
+        charType string[1];
 
-    void* operator new( size_t size, size_t strlen )
-    {
-        return new char[(size - 1) + strlen];
-    }
-
-    void operator delete( void *ptr, size_t strlen )
-    {
-        delete (char*)ptr;
-    }
-
-    void operator delete( void *ptr )
-    {
-        delete (char*)ptr;
-    }
-};
-
-struct filePatternCommandWildcard_t : public filePatternCommand_t
-{
-    size_t len;
-    char string[1];
-
-    filePatternCommandWildcard_t( void )
-    {
-        cmd = filePatternCommand_t::FCMD_WILDCARD;
-    }
-
-    void* operator new( size_t size, size_t strlen )
-    {
-        return new char[(size - 1) + strlen];
-    }
-
-    void operator delete( void *ptr, size_t strlen )
-    {
-        delete (char*)ptr;
-    }
-
-    void operator delete( void *ptr )
-    {
-        delete (char*)ptr;
-    }
-};
-
-struct filePattern_t
-{
-    typedef std::vector <filePatternCommand_t*> cmdList_t;
-    cmdList_t commands;
-};
-
-inline filePatternCommand_t* _File_CreatePatternCommand( filePatternCommand_t::eCommand cmd, const std::vector <char>& tokenBuf )
-{
-    filePatternCommand_t *outCmd = NULL;
-    size_t tokenLen = tokenBuf.size();
-
-    switch( cmd )
-    {
-    case filePatternCommand_t::FCMD_STRCMP:
-        if ( tokenLen != 0 )
+        filePatternCommandCompare_t( void )
         {
-            filePatternCommandCompare_t *cmpCmd = new (tokenLen) filePatternCommandCompare_t;
-            memcpy( cmpCmd->string, &tokenBuf[0], tokenLen );
-            cmpCmd->len = tokenLen;
-
-            outCmd = cmpCmd;
-        }
-        break;
-    case filePatternCommand_t::FCMD_WILDCARD:
-        {
-            filePatternCommandWildcard_t *wildCmd = new (tokenLen) filePatternCommandWildcard_t;
-
-            if ( tokenLen != 0 )
-            {
-                memcpy( wildCmd->string, &tokenBuf[0], tokenLen );
-            }
-            wildCmd->len = tokenLen;
-
-            outCmd = wildCmd;
-        }
-        break;
-    case filePatternCommand_t::FCMD_REQONE:
-        outCmd = new filePatternCommand_t;
-        outCmd->cmd = filePatternCommand_t::FCMD_REQONE;
-        break;
-    }
-
-    return outCmd;
-}
-
-inline void _File_AddCommandToPattern( filePattern_t *pattern, filePatternCommand_t::eCommand pendCmd, std::vector <char>& tokenBuf )
-{
-    if ( filePatternCommand_t *cmd = _File_CreatePatternCommand( pendCmd, tokenBuf ) )
-    {
-        pattern->commands.push_back( cmd );
-    }
-
-    tokenBuf.clear();
-}
-
-inline filePattern_t* _File_CreatePattern( const char *buf )
-{
-    std::vector <char> tokenBuf;
-    filePatternCommand_t::eCommand pendCmd = filePatternCommand_t::FCMD_STRCMP; // by default, it is string comparison.
-    filePattern_t *pattern = new filePattern_t;
-
-    while ( char c = *buf )
-    {
-        buf++;
-
-        if ( c == '*' )
-        {
-            _File_AddCommandToPattern( pattern, pendCmd, tokenBuf );
-
-            pendCmd = filePatternCommand_t::FCMD_WILDCARD;
-        }
-        else if ( c == '?' )
-        {
-            _File_AddCommandToPattern( pattern, pendCmd, tokenBuf );
-
-            // Directly add our command
-            _File_AddCommandToPattern( pattern, filePatternCommand_t::FCMD_REQONE, tokenBuf ),
-
-            // default back to string compare.
-            pendCmd = filePatternCommand_t::FCMD_STRCMP;
-        }
-        else
-            tokenBuf.push_back( c );
-    }
-
-    _File_AddCommandToPattern( pattern, pendCmd, tokenBuf );
-
-    return pattern;
-}
-
-inline bool _File_CompareStrings_Count( const char *primary, const char *secondary, size_t count, bool case_insensitive )
-{
-    for ( size_t n = 0; n < count; n++ )
-    {
-        char prim = primary[n];
-        char sec = secondary[n];
-
-        bool equal = false;
-
-        if ( case_insensitive )
-        {
-            equal = ( tolower( prim ) == tolower( sec ) );
-        }
-        else
-        {
-            equal = ( prim == sec );
+            cmd = filePatternCommand_t::FCMD_STRCMP;
         }
 
-        if ( !equal )
-            return false;
-    }
-
-    return true;
-}
-
-// TODO: make sure path resolution does not depend on this.
-inline bool _File_DoesNeedCaseInsensitivity( void )
-{
-#ifdef FILESYSTEM_FORCE_CASE_INSENSITIVE_GLOB
-    return true;
-#endif //FILESYSTEM_FORCE_CASE_INSENSITIVE_GLOB
-
-#ifdef _WIN32
-    return true;
-#endif //_WIN32
-
-    return false;
-}
-
-inline const char* _File_strnstr( const char *input, size_t input_len, const char *cookie, size_t cookie_len, size_t& off_find )
-{
-    if ( input_len < cookie_len )
-        return NULL;
-
-    if ( cookie_len == 0 )
-    {
-        off_find = 0;
-        return input;
-    }
-
-    bool need_case_insensitive = _File_DoesNeedCaseInsensitivity();
-
-    size_t scanEnd = input_len - cookie_len;
-
-    for ( size_t n = 0; n <= scanEnd; n++ )
-    {
-        if ( _File_CompareStrings_Count( input + n, cookie, cookie_len, need_case_insensitive ) )
+        void* operator new( size_t size, size_t strlen )
         {
-            off_find = n;
-            return input + n;
+            return new char[(size - 1) + strlen * sizeof(charType)];
         }
+
+        void operator delete( void *ptr, size_t strlen )
+        {
+            delete (char*)ptr;
+        }
+
+        void operator delete( void *ptr )
+        {
+            delete (char*)ptr;
+        }
+    };
+
+    struct filePatternCommandWildcard_t : public filePatternCommand_t
+    {
+        size_t len;
+        charType string[1];
+
+        filePatternCommandWildcard_t( void )
+        {
+            cmd = filePatternCommand_t::FCMD_WILDCARD;
+        }
+
+        void* operator new( size_t size, size_t strlen )
+        {
+            return new char[(size - 1) + strlen * sizeof(charType)];
+        }
+
+        void operator delete( void *ptr, size_t strlen )
+        {
+            delete (char*)ptr;
+        }
+
+        void operator delete( void *ptr )
+        {
+            delete (char*)ptr;
+        }
+    };
+
+public:
+    inline PathPatternEnv( bool caseSensitive )
+    {
+        this->caseSensitive = caseSensitive;
     }
 
-    return NULL;
-}
-
-inline bool _File_MatchPattern( const char *input, filePattern_t *pattern )
-{
-    size_t input_len = strlen( input );
-
-    bool need_case_insensitive = _File_DoesNeedCaseInsensitivity();
-
-    for ( filePattern_t::cmdList_t::const_iterator iter = pattern->commands.begin(); iter != pattern->commands.end(); ++iter )
+    struct filePattern_t
     {
-        filePatternCommand_t *genCmd = *iter;
+        typedef std::vector <filePatternCommand_t*> cmdList_t;
+        cmdList_t commands;
+    };
 
-        switch( genCmd->cmd )
+    inline filePatternCommand_t* CreatePatternCommand( typename filePatternCommand_t::eCommand cmd, const std::vector <charType>& tokenBuf )
+    {
+        filePatternCommand_t *outCmd = NULL;
+        size_t tokenLen = tokenBuf.size();
+
+        switch( cmd )
         {
         case filePatternCommand_t::FCMD_STRCMP:
+            if ( tokenLen != 0 )
             {
-                filePatternCommandCompare_t *cmpCmd = (filePatternCommandCompare_t*)genCmd;
-                size_t len = cmpCmd->len;
+                filePatternCommandCompare_t *cmpCmd = new (tokenLen) filePatternCommandCompare_t;
+                std::copy( tokenBuf.begin(), tokenBuf.end(), cmpCmd->string );
+                cmpCmd->len = tokenLen;
 
-                if ( len > input_len )
-                    return false;
-
-                if ( _File_CompareStrings_Count( input, cmpCmd->string, len, need_case_insensitive ) == false )
-                    return false;
-
-                input_len -= len;
-                input += len;
+                outCmd = cmpCmd;
             }
             break;
         case filePatternCommand_t::FCMD_WILDCARD:
             {
-                filePatternCommandWildcard_t *wildCmd = (filePatternCommandWildcard_t*) genCmd;
-                const char *nextPos;
-                size_t len = wildCmd->len;
-                size_t off_find;
+                filePatternCommandWildcard_t *wildCmd = new (tokenLen) filePatternCommandWildcard_t;
 
-                if ( !( nextPos = _File_strnstr( input, input_len, wildCmd->string, len, off_find ) ) )
-                    return false;
+                if ( tokenLen != 0 )
+                {
+                    std::copy( tokenBuf.begin(), tokenBuf.end(), wildCmd->string );
+                }
+                wildCmd->len = tokenLen;
 
-                input_len -= ( off_find + len );
-                input = nextPos + len;
+                outCmd = wildCmd;
             }
             break;
         case filePatternCommand_t::FCMD_REQONE:
-            if ( input_len == 0 )
-                return false;
-
-            input_len--;
-            input++;
+            outCmd = new filePatternCommand_t;
+            outCmd->cmd = filePatternCommand_t::FCMD_REQONE;
             break;
         }
+
+        return outCmd;
     }
 
-    return true;
-}
-
-inline void _File_DestroyPattern( filePattern_t *pattern )
-{
-    for ( filePattern_t::cmdList_t::iterator iter = pattern->commands.begin(); iter != pattern->commands.end(); ++iter )
+    inline void AddCommandToPattern( filePattern_t *pattern, typename filePatternCommand_t::eCommand pendCmd, std::vector <charType>& tokenBuf )
     {
-        delete *iter;
+        if ( filePatternCommand_t *cmd = CreatePatternCommand( pendCmd, tokenBuf ) )
+        {
+            pattern->commands.push_back( cmd );
+        }
+
+        tokenBuf.clear();
     }
 
-    delete pattern;
-}
+    inline filePattern_t* CreatePattern( const charType *buf )
+    {
+        std::vector <charType> tokenBuf;
+        filePatternCommand_t::eCommand pendCmd = filePatternCommand_t::FCMD_STRCMP; // by default, it is string comparison.
+        filePattern_t *pattern = new filePattern_t;
+
+        while ( charType c = *buf )
+        {
+            buf++;
+
+            if ( c == '*' )
+            {
+                AddCommandToPattern( pattern, pendCmd, tokenBuf );
+
+                pendCmd = filePatternCommand_t::FCMD_WILDCARD;
+            }
+            else if ( c == '?' )
+            {
+                AddCommandToPattern( pattern, pendCmd, tokenBuf );
+
+                // Directly add our command
+                AddCommandToPattern( pattern, filePatternCommand_t::FCMD_REQONE, tokenBuf ),
+
+                // default back to string compare.
+                pendCmd = filePatternCommand_t::FCMD_STRCMP;
+            }
+            else
+                tokenBuf.push_back( c );
+        }
+
+        AddCommandToPattern( pattern, pendCmd, tokenBuf );
+
+        return pattern;
+    }
+
+private:
+    inline static bool CompareStrings_Count( const charType *primary, const charType *secondary, size_t count, bool case_insensitive )
+    {
+        for ( size_t n = 0; n < count; n++ )
+        {
+            charType prim = primary[n];
+            charType sec = secondary[n];
+
+            bool equal = false;
+
+            if ( case_insensitive )
+            {
+                equal = ( tolower( prim ) == tolower( sec ) );
+            }
+            else
+            {
+                equal = ( prim == sec );
+            }
+
+            if ( !equal )
+                return false;
+        }
+
+        return true;
+    }
+
+    inline static const charType* strnstr( const charType *input, size_t input_len, const charType *cookie, size_t cookie_len, size_t& off_find, bool need_case_insensitive )
+    {
+        if ( input_len < cookie_len )
+            return NULL;
+
+        if ( cookie_len == 0 )
+        {
+            off_find = 0;
+            return input;
+        }
+
+        size_t scanEnd = input_len - cookie_len;
+
+        for ( size_t n = 0; n <= scanEnd; n++ )
+        {
+            if ( CompareStrings_Count( input + n, cookie, cookie_len, need_case_insensitive ) )
+            {
+                off_find = n;
+                return input + n;
+            }
+        }
+
+        return NULL;
+    }
+
+public:
+    inline bool MatchPattern( const charType *input, filePattern_t *pattern ) const
+    {
+        size_t input_len = std::char_traits <charType>::length( input );
+
+        bool need_case_insensitive = this->caseSensitive;
+
+        for ( filePattern_t::cmdList_t::const_iterator iter = pattern->commands.begin(); iter != pattern->commands.end(); ++iter )
+        {
+            filePatternCommand_t *genCmd = *iter;
+
+            switch( genCmd->cmd )
+            {
+            case filePatternCommand_t::FCMD_STRCMP:
+                {
+                    filePatternCommandCompare_t *cmpCmd = (filePatternCommandCompare_t*)genCmd;
+                    size_t len = cmpCmd->len;
+
+                    if ( len > input_len )
+                        return false;
+
+                    if ( CompareStrings_Count( input, cmpCmd->string, len, need_case_insensitive ) == false )
+                        return false;
+
+                    input_len -= len;
+                    input += len;
+                }
+                break;
+            case filePatternCommand_t::FCMD_WILDCARD:
+                {
+                    filePatternCommandWildcard_t *wildCmd = (filePatternCommandWildcard_t*) genCmd;
+                    const charType *nextPos;
+                    size_t len = wildCmd->len;
+                    size_t off_find;
+
+                    if ( !( nextPos = strnstr( input, input_len, wildCmd->string, len, off_find, need_case_insensitive ) ) )
+                        return false;
+
+                    input_len -= ( off_find + len );
+                    input = nextPos + len;
+                }
+                break;
+            case filePatternCommand_t::FCMD_REQONE:
+                if ( input_len == 0 )
+                    return false;
+
+                input_len--;
+                input++;
+                break;
+            }
+        }
+
+        return true;
+    }
+
+    inline void DestroyPattern( filePattern_t *pattern )
+    {
+        for ( filePattern_t::cmdList_t::iterator iter = pattern->commands.begin(); iter != pattern->commands.end(); ++iter )
+        {
+            delete *iter;
+        }
+
+        delete pattern;
+    }
+
+    bool caseSensitive;
+};
+
+typedef PathPatternEnv <char> ANSIPathPatternEnv;
+typedef PathPatternEnv <wchar_t> WidePathPatternEnv;
 
 // Function called when any implementation finds a directory.
-inline void _File_OnDirectoryFound( filePattern_t *pattern, const char *entryName, const filePath& absPath, pathCallback_t dirCallback, void *userdata )
+template <typename charType>
+inline void _File_OnDirectoryFound( const PathPatternEnv <charType>& patternEnv, typename PathPatternEnv <charType>::filePattern_t *pattern, const charType *entryName, const filePath& absPath, pathCallback_t dirCallback, void *userdata )
 {
     bool allowDir = true;
 
     if ( !fileSystem->m_includeAllDirsInScan )
     {
-        if ( _File_MatchPattern( entryName, pattern ) == false )
+        if ( patternEnv.MatchPattern( entryName, pattern ) == false )
+        {
             allowDir = false;
+        }
     }
 
     if ( allowDir )

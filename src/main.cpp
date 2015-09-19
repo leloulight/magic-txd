@@ -86,8 +86,17 @@ struct MagicTXDApplication : public QApplication
     }
 };
 
+// Main window factory.
+mainWindowFactory_t mainWindowFactory;
+
+// Main window plugin entry points.
+extern void InitializeGUISerialization( void );
+
 int main(int argc, char *argv[])
 {
+    // Initialize all main window plugins.
+    InitializeGUISerialization();
+
 	QStringList paths = QCoreApplication::libraryPaths();
 	paths.append(".");
 	paths.append("imageformats");

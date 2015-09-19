@@ -13,7 +13,7 @@
 #define _GLOBAL_MEMORY_UTILITIES_
 
 #include <list>
-#include <rwlist.hpp>
+#include "rwlist.hpp"
 #include <core/CFileSystem.common.h>
 
 template <typename numberType>
@@ -1484,13 +1484,13 @@ struct StaticPluginClassFactory
 
     // Helper functions used to create common plugin templates.
     template <typename structType>
-    inline pluginOffset_t RegisterStructPlugin( unsigned int pluginId )
+    inline pluginOffset_t RegisterStructPlugin( unsigned int pluginId = ANONYMOUS_PLUGIN_ID )
     {
         return functoidHelper_t( *this ).RegisterStructPlugin <structType> ( pluginId );
     }
 
     template <typename structType>
-    inline pluginOffset_t RegisterDependantStructPlugin( unsigned int pluginId, size_t structSize = sizeof( structType ) )
+    inline pluginOffset_t RegisterDependantStructPlugin( unsigned int pluginId = ANONYMOUS_PLUGIN_ID, size_t structSize = sizeof( structType ) )
     {
         return functoidHelper_t( *this ).RegisterDependantStructPlugin <structType> ( pluginId, structSize );
     }

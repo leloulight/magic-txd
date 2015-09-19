@@ -32,7 +32,16 @@ void CSystemPathTranslator::GetDirectory( filePath& output ) const
     output = m_currentDir;
 }
 
-bool CSystemPathTranslator::ChangeDirectory( const char *path )
+void CSystemPathTranslator::SetCurrentDirectoryTree( dirTree&& tree )
+{
+    m_curDirTree = tree;
+
+    m_currentDir.clear();
+    _File_OutputPathTree( m_curDirTree, false, m_currentDir );
+}
+
+template <typename charType>
+bool CSystemPathTranslator::GenChangeDirectory( const charType *path )
 {
     dirTree tree;
     bool file;
@@ -43,14 +52,21 @@ bool CSystemPathTranslator::ChangeDirectory( const char *path )
     if ( file )
         tree.pop_back();
 
-    m_curDirTree = tree;
+    bool hasConfirmed = OnConfirmDirectoryChange( tree );
 
-    m_currentDir.clear();
-    _File_OutputPathTree( tree, false, m_currentDir );
-    return true;
+    if ( hasConfirmed )
+    {
+        SetCurrentDirectoryTree( std::move( tree ) );
+    }
+
+    return hasConfirmed;
 }
 
-bool CSystemPathTranslator::GetFullPathTreeFromRoot( const char *path, dirTree& tree, bool& file ) const
+bool CSystemPathTranslator::ChangeDirectory( const char *path )         { return GenChangeDirectory( path ); }
+bool CSystemPathTranslator::ChangeDirectory( const wchar_t *path )      { return GenChangeDirectory( path ); }
+
+template <typename charType>
+bool CSystemPathTranslator::GenGetFullPathTreeFromRoot( const charType *path, dirTree& tree, bool& file ) const
 {
     dirTree output;
     tree = m_rootTree;
@@ -62,7 +78,11 @@ bool CSystemPathTranslator::GetFullPathTreeFromRoot( const char *path, dirTree& 
     return true;
 }
 
-bool CSystemPathTranslator::GetFullPathTree( const char *path, dirTree& tree, bool& file ) const
+bool CSystemPathTranslator::GetFullPathTreeFromRoot( const char *path, dirTree& tree, bool& file ) const    { return GenGetFullPathTreeFromRoot( path, tree, file ); }
+bool CSystemPathTranslator::GetFullPathTreeFromRoot( const wchar_t *path, dirTree& tree, bool& file ) const { return GenGetFullPathTreeFromRoot( path, tree, file ); }
+
+template <typename charType>
+bool CSystemPathTranslator::GenGetFullPathTree( const charType *path, dirTree& tree, bool& file ) const
 {
     dirTree output;
     tree = m_rootTree;
@@ -84,7 +104,11 @@ bool CSystemPathTranslator::GetFullPathTree( const char *path, dirTree& tree, bo
     return true;
 }
 
-bool CSystemPathTranslator::GetRelativePathTreeFromRoot( const char *path, dirTree& tree, bool& file ) const
+bool CSystemPathTranslator::GetFullPathTree( const char *path, dirTree& tree, bool& file ) const    { return GenGetFullPathTree( path, tree, file ); }
+bool CSystemPathTranslator::GetFullPathTree( const wchar_t *path, dirTree& tree, bool& file ) const { return GenGetFullPathTree( path, tree, file ); }
+
+template <typename charType>
+bool CSystemPathTranslator::GenGetRelativePathTreeFromRoot( const charType *path, dirTree& tree, bool& file ) const
 {
     if ( IsTranslatorRootDescriptor( *path ) )
         return _File_ParseRelativePath( path + 1, tree, file );
@@ -93,7 +117,11 @@ bool CSystemPathTranslator::GetRelativePathTreeFromRoot( const char *path, dirTr
     return _File_ParseRelativePath( path, tree, file );
 }
 
-bool CSystemPathTranslator::GetRelativePathTree( const char *path, dirTree& tree, bool& file ) const
+bool CSystemPathTranslator::GetRelativePathTreeFromRoot( const char *path, dirTree& tree, bool& file ) const    { return GenGetRelativePathTreeFromRoot( path, tree, file ); }
+bool CSystemPathTranslator::GetRelativePathTreeFromRoot( const wchar_t *path, dirTree& tree, bool& file ) const { return GenGetRelativePathTreeFromRoot( path, tree, file ); }
+
+template <typename charType>
+bool CSystemPathTranslator::GenGetRelativePathTree( const charType *path, dirTree& tree, bool& file ) const
 {
     if ( IsTranslatorRootDescriptor( *path ) )
     {
@@ -108,13 +136,21 @@ bool CSystemPathTranslator::GetRelativePathTree( const char *path, dirTree& tree
     return _File_ParseDeriviateTree( path, m_curDirTree, tree, file );
 }
 
-bool CSystemPathTranslator::GetFullPathFromRoot( const char *path, bool allowFile, filePath& output ) const
+bool CSystemPathTranslator::GetRelativePathTree( const char *path, dirTree& tree, bool& file ) const    { return GenGetRelativePathTree( path, tree, file ); }
+bool CSystemPathTranslator::GetRelativePathTree( const wchar_t *path, dirTree& tree, bool& file ) const { return GenGetRelativePathTree( path, tree, file ); }
+
+template <typename charType>
+bool CSystemPathTranslator::GenGetFullPathFromRoot( const charType *path, bool allowFile, filePath& output ) const
 {
     output = m_root;
     return GetRelativePathFromRoot( path, allowFile, output );
 }
 
-bool CSystemPathTranslator::GetFullPath( const char *path, bool allowFile, filePath& output ) const
+bool CSystemPathTranslator::GetFullPathFromRoot( const char *path, bool allowFile, filePath& output ) const     { return GenGetFullPathFromRoot( path, allowFile, output ); }
+bool CSystemPathTranslator::GetFullPathFromRoot( const wchar_t *path, bool allowFile, filePath& output ) const  { return GenGetFullPathFromRoot( path, allowFile, output ); }
+
+template <typename charType>
+bool CSystemPathTranslator::GenGetFullPath( const charType *path, bool allowFile, filePath& output ) const
 {
     dirTree tree;
     bool file;
@@ -133,7 +169,11 @@ bool CSystemPathTranslator::GetFullPath( const char *path, bool allowFile, fileP
     return true;
 }
 
-bool CSystemPathTranslator::GetRelativePathFromRoot( const char *path, bool allowFile, filePath& output ) const
+bool CSystemPathTranslator::GetFullPath( const char *path, bool allowFile, filePath& output ) const     { return GenGetFullPath( path, allowFile, output ); }
+bool CSystemPathTranslator::GetFullPath( const wchar_t *path, bool allowFile, filePath& output ) const  { return GenGetFullPath( path, allowFile, output ); }
+
+template <typename charType>
+bool CSystemPathTranslator::GenGetRelativePathFromRoot( const charType *path, bool allowFile, filePath& output ) const
 {
     dirTree tree;
     bool file;
@@ -152,7 +192,11 @@ bool CSystemPathTranslator::GetRelativePathFromRoot( const char *path, bool allo
     return true;
 }
 
-bool CSystemPathTranslator::GetRelativePath( const char *path, bool allowFile, filePath& output ) const
+bool CSystemPathTranslator::GetRelativePathFromRoot( const char *path, bool allowFile, filePath& output ) const     { return GenGetRelativePathFromRoot( path, allowFile, output ); }
+bool CSystemPathTranslator::GetRelativePathFromRoot( const wchar_t *path, bool allowFile, filePath& output ) const  { return GenGetRelativePathFromRoot( path, allowFile, output ); }
+
+template <typename charType>
+bool CSystemPathTranslator::GenGetRelativePath( const charType *path, bool allowFile, filePath& output ) const
 {
     dirTree tree;
     bool file;
@@ -170,3 +214,6 @@ bool CSystemPathTranslator::GetRelativePath( const char *path, bool allowFile, f
     _File_OutputPathTree( tree, file, output );
     return true;
 }
+
+bool CSystemPathTranslator::GetRelativePath( const char *path, bool allowFile, filePath& output ) const     { return GenGetRelativePath( path, allowFile, output ); }
+bool CSystemPathTranslator::GetRelativePath( const wchar_t *path, bool allowFile, filePath& output ) const  { return GenGetRelativePath( path, allowFile, output ); }

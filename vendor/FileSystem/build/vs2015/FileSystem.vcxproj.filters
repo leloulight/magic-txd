@@ -84,6 +84,12 @@
     <ClInclude Include="..\..\src\fsinternal\CFileSystem.img.public.h">
       <Filter>imgExtension\Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\fsinternal\CFileSystem.internal.nativeimpl.hxx">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\fsinternal\CFileSystem.translator.widewrap.h">
+      <Filter>Include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\CFileSystem.cpp" />
@@ -108,5 +114,6 @@
     <ClCompile Include="..\..\src\fsinternal\CFileSystem.img.translator.cpp">
       <Filter>imgExtension</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\fsinternal\CFileSystem.translator.widewrap.cpp" />
   </ItemGroup>
 </Project>

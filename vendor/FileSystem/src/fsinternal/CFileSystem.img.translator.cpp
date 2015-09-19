@@ -326,7 +326,7 @@ struct resourceFileHeader_ver2
 
 
 CIMGArchiveTranslator::CIMGArchiveTranslator( imgExtension& imgExt, CFile *contentFile, CFile *registryFile, eIMGArchiveVersion theVersion )
-    : CSystemPathTranslator( false ), m_imgExtension( imgExt ), m_contentFile( contentFile ), m_registryFile( registryFile )
+    : CSystemPathTranslator( false ), m_imgExtension( imgExt ), m_contentFile( contentFile ), m_registryFile( registryFile ), m_virtualFS( true )
 {
     // Set up the virtual file system by giving the
     // translator pointer to it.
@@ -444,12 +444,6 @@ CFileTranslator* CIMGArchiveTranslator::GetCompressRoot( void )
         }
     }
     return compressRoot;
-}
-
-bool CIMGArchiveTranslator::WriteData( const char *path, const char *buffer, size_t size )
-{
-    // TODO
-    return false;
 }
 
 bool CIMGArchiveTranslator::CreateDir( const char *path )
@@ -822,34 +816,9 @@ bool CIMGArchiveTranslator::Stat( const char *path, struct stat *stats ) const
     return m_virtualFS.Stat( path, stats );
 }
 
-bool CIMGArchiveTranslator::ReadToBuffer( const char *path, std::vector <char>& output ) const
-{   
-    // TODO, not that important.
-    return false;
-}
-
-bool CIMGArchiveTranslator::ChangeDirectory( const char *path )
+bool CIMGArchiveTranslator::OnConfirmDirectoryChange( const dirTree& tree )
 {
-    dirTree tree;
-    bool isFile;
-
-    if ( !GetRelativePathTreeFromRoot( path, tree, isFile ) )
-        return false;
-
-    if ( isFile )
-        tree.pop_back();
-
-    bool contextChangeSuccess = m_virtualFS.ChangeDirectory( tree );
-
-    if ( !contextChangeSuccess )
-        return false;
-
-    // Update the inherited values from the path translator base class.
-    m_curDirTree = tree;
-
-    m_currentDir.clear();
-    _File_OutputPathTree( tree, false, m_currentDir );
-    return true;
+    return m_virtualFS.ChangeDirectory( tree );
 }
 
 static void _scanFindCallback( const filePath& path, std::vector <filePath> *output )

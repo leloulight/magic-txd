@@ -42,427 +42,439 @@ MainWindow::MainWindow(QWidget *parent) :
 
     this->hasOpenedTXDFileInfo = false;
 
-    // Initialize the RenderWare engine.
-    rw::LibraryVersion engineVersion;
-
-    // This engine version is the default version we create resources in.
-    // Resources can change their version at any time, so we do not have to change this.
-    engineVersion.rwLibMajor = 3;
-    engineVersion.rwLibMinor = 6;
-    engineVersion.rwRevMajor = 0;
-    engineVersion.rwRevMinor = 3;
-
-    this->rwEngine = rw::CreateEngine( engineVersion );
-
-    if ( this->rwEngine == NULL )
-    {
-        throw std::exception( "failed to initialize the RenderWare engine" );
-    }
-
-    // Set some typical engine properties.
-    this->rwEngine->SetIgnoreSerializationBlockRegions( true );
-    this->rwEngine->SetIgnoreSecureWarnings( false );
-
-    this->rwEngine->SetWarningLevel( 3 );
-    this->rwEngine->SetWarningManager( &this->rwWarnMan );
-
-    this->rwEngine->SetDXTRuntime( rw::DXTRUNTIME_SQUISH );
-    this->rwEngine->SetPaletteRuntime( rw::PALRUNTIME_PNGQUANT );
-
-    // Give RenderWare some info about us!
-    rw::softwareMetaInfo metaInfo;
-    metaInfo.applicationName = "Magic.TXD";
-    metaInfo.applicationVersion = MTXD_VERSION_STRING;
-    metaInfo.description = "by DK22Pac and The_GTA (https://github.com/quiret/magic-txd)";
-
-    this->rwEngine->SetApplicationInfo( metaInfo );
+    // Initialize the filesystem.
+    this->fileSystem = CFileSystem::Create();
 
     try
     {
-	    /* --- Window --- */
-        updateWindowTitle();
-        setMinimumSize(460, 300);
-	    resize(900, 680);
-
-		/* --- Log --- */
-		this->txdLog = new TxdLog(this);
-
-	    /* --- List --- */
-	    QListWidget *listWidget = new QListWidget();
-	    listWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
-		listWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-        listWidget->setMaximumWidth(350);
-	    //listWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
-
-        connect( listWidget, &QListWidget::currentItemChanged, this, &MainWindow::onTextureItemChanged );
-
-        // We will store all our texture names in this.
-        this->textureListWidget = listWidget;
-
-	    /* --- Viewport --- */
-		imageView = new QScrollArea;
-		imageView->setFrameShape(QFrame::NoFrame);
-		imageView->setObjectName("textureViewBackground");
-		imageWidget = new QLabel;
-		//imageWidget->setObjectName("transparentBackground"); // "chessBackground" > grid background
-		imageWidget->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
-		imageView->setWidget(imageWidget);
-		imageView->setAlignment(Qt::AlignCenter);
-
-	    /* --- Splitter --- */
-	    QSplitter *splitter = new QSplitter;
-	    splitter->addWidget(listWidget);
-		splitter->addWidget(imageView);
-	    QList<int> sizes;
-	    sizes.push_back(200);
-	    sizes.push_back(splitter->size().width() - 200);
-	    splitter->setSizes(sizes);
-	    splitter->setChildrenCollapsible(false);
-
-	    /* --- Top panel --- */
-	    QWidget *txdNameBackground = new QWidget();
-	    txdNameBackground->setFixedHeight(60);
-	    txdNameBackground->setObjectName("background_0");
-	    QLabel *txdName = new QLabel();
-	    txdName->setObjectName("label36px");
-	    txdName->setAlignment(Qt::AlignCenter);
-
-        this->txdNameLabel = txdName;
-
-	    QGridLayout *txdNameLayout = new QGridLayout();
-	    QLabel *starsBox = new QLabel;
-	    QMovie *stars = new QMovie;
-	    stars->setFileName("resources\\dark\\stars.gif");
-	    starsBox->setMovie(stars);
-	    stars->start();
-	    txdNameLayout->addWidget(starsBox, 0, 0);
-	    txdNameLayout->addWidget(txdName, 0, 0);
-	    txdNameLayout->setContentsMargins(0, 0, 0, 0);
-	    txdNameLayout->setMargin(0);
-	    txdNameLayout->setSpacing(0);
-	    txdNameBackground->setLayout(txdNameLayout);
-	
-	    QWidget *txdOptionsBackground = new QWidget();
-	    txdOptionsBackground->setFixedHeight(54);
-	    txdOptionsBackground->setObjectName("background_1");
-
-	    /* --- Menu --- */
-	    QMenuBar *menu = new QMenuBar;
-	    QMenu *fileMenu = menu->addMenu(tr("&File"));
-        QAction *actionNew = new QAction("&New", this);
-        fileMenu->addAction(actionNew);
-
-        this->actionNewTXD = actionNew;
-        
-        connect( actionNew, &QAction::triggered, this, &MainWindow::onCreateNewTXD );
-
-	    QAction *actionOpen = new QAction("&Open", this);
-	    fileMenu->addAction(actionOpen);
-
-        this->actionOpenTXD = actionOpen;
-
-        connect( actionOpen, &QAction::triggered, this, &MainWindow::onOpenFile );
-
-	    QAction *actionSave = new QAction("&Save", this);
-	    fileMenu->addAction(actionSave);
-
-        this->actionSaveTXD = actionSave;
-
-        connect( actionSave, &QAction::triggered, this, &MainWindow::onRequestSaveTXD );
-
-	    QAction *actionSaveAs = new QAction("&Save as...", this);
-	    fileMenu->addAction(actionSaveAs);
-
-        this->actionSaveTXDAs = actionSaveAs;
-
-        connect( actionSaveAs, &QAction::triggered, this, &MainWindow::onRequestSaveAsTXD );
-
-	    QAction *closeCurrent = new QAction("&Close current", this);
-	    fileMenu->addAction(closeCurrent);
-	    fileMenu->addSeparator();
-
-        this->actionCloseTXD = closeCurrent;
-
-        connect( closeCurrent, &QAction::triggered, this, &MainWindow::onCloseCurrent );
-
-	    QAction *actionQuit = new QAction("&Quit", this);
-	    fileMenu->addAction(actionQuit);
-
-	    QMenu *editMenu = menu->addMenu(tr("&Edit"));
-	    QAction *actionAdd = new QAction("&Add", this);
-	    editMenu->addAction(actionAdd);
-
-        this->actionAddTexture = actionAdd;
-
-        connect( actionAdd, &QAction::triggered, this, &MainWindow::onAddTexture );
-
-	    QAction *actionReplace = new QAction("&Replace", this);
-	    editMenu->addAction(actionReplace);
-
-        this->actionReplaceTexture = actionReplace;
-
-        connect( actionReplace, &QAction::triggered, this, &MainWindow::onReplaceTexture );
-
-	    QAction *actionRemove = new QAction("&Remove", this);
-	    editMenu->addAction(actionRemove);
-
-        this->actionRemoveTexture = actionRemove;
-
-        connect( actionRemove, &QAction::triggered, this, &MainWindow::onRemoveTexture );
-
-	    QAction *actionRename = new QAction("&Rename", this);
-	    editMenu->addAction(actionRename);
-
-        this->actionRenameTexture = actionRename;
-
-        connect( actionRename, &QAction::triggered, this, &MainWindow::onRenameTexture );
-
-	    QAction *actionResize = new QAction("&Resize", this);
-	    editMenu->addAction(actionResize);
-
-        this->actionResizeTexture = actionResize;
-
-        connect( actionResize, &QAction::triggered, this, &MainWindow::onResizeTexture );
-
-        QAction *actionManipulate = new QAction("&Manipulate", this);
-        editMenu->addAction(actionManipulate);
-
-        this->actionManipulateTexture = actionManipulate;
-
-        connect( actionManipulate, &QAction::triggered, this, &MainWindow::onManipulateTexture );
-
-	    QAction *actionSetPixelFormat = new QAction("&Platform", this);
-	    editMenu->addAction(actionSetPixelFormat);
-
-        this->actionPlatformSelect = actionSetPixelFormat;
-
-        connect( actionSetPixelFormat, &QAction::triggered, this, &MainWindow::onSelectPlatform );
-
-	    QAction *actionSetupMipLevels = new QAction("&Setup mip-levels", this);
-	    editMenu->addAction(actionSetupMipLevels);
-
-        this->actionSetupMipmaps = actionSetupMipLevels;
-
-        connect( actionSetupMipLevels, &QAction::triggered, this, &MainWindow::onSetupMipmapLayers );
-
-        QAction *actionClearMipLevels = new QAction("&Clear mip-levels", this);
-        editMenu->addAction(actionClearMipLevels);
-
-        this->actionClearMipmaps = actionClearMipLevels;
-
-        connect( actionClearMipLevels, &QAction::triggered, this, &MainWindow::onClearMipmapLayers );
-
-	    QAction *actionSetupRenderingProperties = new QAction("&Setup rendering properties", this);
-	    editMenu->addAction(actionSetupRenderingProperties);
-
-        this->actionRenderProps = actionSetupRenderingProperties;
-
-        connect( actionSetupRenderingProperties, &QAction::triggered, this, &MainWindow::onSetupRenderingProps );
-
-	    editMenu->addSeparator();
-	    QAction *actionViewAllChanges = new QAction("&View all changes", this);
-	    editMenu->addAction(actionViewAllChanges);
-
-        this->actionViewAllChanges = actionViewAllChanges;
-
-	    QAction *actionCancelAllChanges = new QAction("&Cancel all changes", this);
-	    editMenu->addAction(actionCancelAllChanges);
-
-        this->actionCancelAllChanges = actionCancelAllChanges;
-
-	    editMenu->addSeparator();
-	    QAction *actionAllTextures = new QAction("&All textures", this);
-	    editMenu->addAction(actionAllTextures);
-
-        this->actionAllTextures = actionAllTextures;
-
-	    editMenu->addSeparator();
-	    QAction *actionSetupTxdVersion = new QAction("&Setup TXD version", this);
-	    editMenu->addAction(actionSetupTxdVersion);
-
-        this->actionSetupTXDVersion = actionSetupTxdVersion;
-
-		connect(actionSetupTxdVersion, &QAction::triggered, this, &MainWindow::onSetupTxdVersion);
-
-	    QMenu *exportMenu = menu->addMenu(tr("&Export"));
-
-        this->addTextureFormatExportLinkToMenu( exportMenu, "PNG", "Portable Network Graphics" );
-        this->addTextureFormatExportLinkToMenu( exportMenu, "DDS", "Direct Draw Surface" );
-        this->addTextureFormatExportLinkToMenu( exportMenu, "BMP", "Raw Bitmap" );
-
-        // Add remaining formats that rwlib supports.
+        // Initialize the RenderWare engine.
+        rw::LibraryVersion engineVersion;
+
+        // This engine version is the default version we create resources in.
+        // Resources can change their version at any time, so we do not have to change this.
+        engineVersion.rwLibMajor = 3;
+        engineVersion.rwLibMinor = 6;
+        engineVersion.rwRevMajor = 0;
+        engineVersion.rwRevMinor = 3;
+
+        this->rwEngine = rw::CreateEngine( engineVersion );
+
+        if ( this->rwEngine == NULL )
         {
-            rw::registered_image_formats_t regFormats;
+            throw std::exception( "failed to initialize the RenderWare engine" );
+        }
+
+        // Set some typical engine properties.
+        this->rwEngine->SetIgnoreSerializationBlockRegions( true );
+        this->rwEngine->SetIgnoreSecureWarnings( false );
+
+        this->rwEngine->SetWarningLevel( 3 );
+        this->rwEngine->SetWarningManager( &this->rwWarnMan );
+
+        this->rwEngine->SetDXTRuntime( rw::DXTRUNTIME_SQUISH );
+        this->rwEngine->SetPaletteRuntime( rw::PALRUNTIME_PNGQUANT );
+
+        // Give RenderWare some info about us!
+        rw::softwareMetaInfo metaInfo;
+        metaInfo.applicationName = "Magic.TXD";
+        metaInfo.applicationVersion = MTXD_VERSION_STRING;
+        metaInfo.description = "by DK22Pac and The_GTA (https://github.com/quiret/magic-txd)";
+
+        this->rwEngine->SetApplicationInfo( metaInfo );
+
+        try
+        {
+	        /* --- Window --- */
+            updateWindowTitle();
+            setMinimumSize(460, 300);
+	        resize(900, 680);
+
+		    /* --- Log --- */
+		    this->txdLog = new TxdLog(this);
+
+	        /* --- List --- */
+	        QListWidget *listWidget = new QListWidget();
+	        listWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+		    listWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+            listWidget->setMaximumWidth(350);
+	        //listWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
+
+            connect( listWidget, &QListWidget::currentItemChanged, this, &MainWindow::onTextureItemChanged );
+
+            // We will store all our texture names in this.
+            this->textureListWidget = listWidget;
+
+	        /* --- Viewport --- */
+		    imageView = new QScrollArea;
+		    imageView->setFrameShape(QFrame::NoFrame);
+		    imageView->setObjectName("textureViewBackground");
+		    imageWidget = new QLabel;
+		    //imageWidget->setObjectName("transparentBackground"); // "chessBackground" > grid background
+		    imageWidget->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
+		    imageView->setWidget(imageWidget);
+		    imageView->setAlignment(Qt::AlignCenter);
+
+	        /* --- Splitter --- */
+	        QSplitter *splitter = new QSplitter;
+	        splitter->addWidget(listWidget);
+		    splitter->addWidget(imageView);
+	        QList<int> sizes;
+	        sizes.push_back(200);
+	        sizes.push_back(splitter->size().width() - 200);
+	        splitter->setSizes(sizes);
+	        splitter->setChildrenCollapsible(false);
+
+	        /* --- Top panel --- */
+	        QWidget *txdNameBackground = new QWidget();
+	        txdNameBackground->setFixedHeight(60);
+	        txdNameBackground->setObjectName("background_0");
+	        QLabel *txdName = new QLabel();
+	        txdName->setObjectName("label36px");
+	        txdName->setAlignment(Qt::AlignCenter);
+
+            this->txdNameLabel = txdName;
+
+	        QGridLayout *txdNameLayout = new QGridLayout();
+	        QLabel *starsBox = new QLabel;
+	        QMovie *stars = new QMovie;
+	        stars->setFileName("resources\\dark\\stars.gif");
+	        starsBox->setMovie(stars);
+	        stars->start();
+	        txdNameLayout->addWidget(starsBox, 0, 0);
+	        txdNameLayout->addWidget(txdName, 0, 0);
+	        txdNameLayout->setContentsMargins(0, 0, 0, 0);
+	        txdNameLayout->setMargin(0);
+	        txdNameLayout->setSpacing(0);
+	        txdNameBackground->setLayout(txdNameLayout);
+	
+	        QWidget *txdOptionsBackground = new QWidget();
+	        txdOptionsBackground->setFixedHeight(54);
+	        txdOptionsBackground->setObjectName("background_1");
+
+	        /* --- Menu --- */
+	        QMenuBar *menu = new QMenuBar;
+	        QMenu *fileMenu = menu->addMenu(tr("&File"));
+            QAction *actionNew = new QAction("&New", this);
+            fileMenu->addAction(actionNew);
+
+            this->actionNewTXD = actionNew;
+        
+            connect( actionNew, &QAction::triggered, this, &MainWindow::onCreateNewTXD );
+
+	        QAction *actionOpen = new QAction("&Open", this);
+	        fileMenu->addAction(actionOpen);
+
+            this->actionOpenTXD = actionOpen;
+
+            connect( actionOpen, &QAction::triggered, this, &MainWindow::onOpenFile );
+
+	        QAction *actionSave = new QAction("&Save", this);
+	        fileMenu->addAction(actionSave);
+
+            this->actionSaveTXD = actionSave;
+
+            connect( actionSave, &QAction::triggered, this, &MainWindow::onRequestSaveTXD );
+
+	        QAction *actionSaveAs = new QAction("&Save as...", this);
+	        fileMenu->addAction(actionSaveAs);
+
+            this->actionSaveTXDAs = actionSaveAs;
+
+            connect( actionSaveAs, &QAction::triggered, this, &MainWindow::onRequestSaveAsTXD );
+
+	        QAction *closeCurrent = new QAction("&Close current", this);
+	        fileMenu->addAction(closeCurrent);
+	        fileMenu->addSeparator();
+
+            this->actionCloseTXD = closeCurrent;
+
+            connect( closeCurrent, &QAction::triggered, this, &MainWindow::onCloseCurrent );
+
+	        QAction *actionQuit = new QAction("&Quit", this);
+	        fileMenu->addAction(actionQuit);
+
+	        QMenu *editMenu = menu->addMenu(tr("&Edit"));
+	        QAction *actionAdd = new QAction("&Add", this);
+	        editMenu->addAction(actionAdd);
+
+            this->actionAddTexture = actionAdd;
+
+            connect( actionAdd, &QAction::triggered, this, &MainWindow::onAddTexture );
+
+	        QAction *actionReplace = new QAction("&Replace", this);
+	        editMenu->addAction(actionReplace);
+
+            this->actionReplaceTexture = actionReplace;
+
+            connect( actionReplace, &QAction::triggered, this, &MainWindow::onReplaceTexture );
+
+	        QAction *actionRemove = new QAction("&Remove", this);
+	        editMenu->addAction(actionRemove);
+
+            this->actionRemoveTexture = actionRemove;
+
+            connect( actionRemove, &QAction::triggered, this, &MainWindow::onRemoveTexture );
+
+	        QAction *actionRename = new QAction("&Rename", this);
+	        editMenu->addAction(actionRename);
+
+            this->actionRenameTexture = actionRename;
+
+            connect( actionRename, &QAction::triggered, this, &MainWindow::onRenameTexture );
+
+	        QAction *actionResize = new QAction("&Resize", this);
+	        editMenu->addAction(actionResize);
+
+            this->actionResizeTexture = actionResize;
+
+            connect( actionResize, &QAction::triggered, this, &MainWindow::onResizeTexture );
+
+            QAction *actionManipulate = new QAction("&Manipulate", this);
+            editMenu->addAction(actionManipulate);
+
+            this->actionManipulateTexture = actionManipulate;
+
+            connect( actionManipulate, &QAction::triggered, this, &MainWindow::onManipulateTexture );
+
+	        QAction *actionSetPixelFormat = new QAction("&Platform", this);
+	        editMenu->addAction(actionSetPixelFormat);
+
+            this->actionPlatformSelect = actionSetPixelFormat;
+
+            connect( actionSetPixelFormat, &QAction::triggered, this, &MainWindow::onSelectPlatform );
+
+	        QAction *actionSetupMipLevels = new QAction("&Setup mip-levels", this);
+	        editMenu->addAction(actionSetupMipLevels);
+
+            this->actionSetupMipmaps = actionSetupMipLevels;
+
+            connect( actionSetupMipLevels, &QAction::triggered, this, &MainWindow::onSetupMipmapLayers );
+
+            QAction *actionClearMipLevels = new QAction("&Clear mip-levels", this);
+            editMenu->addAction(actionClearMipLevels);
+
+            this->actionClearMipmaps = actionClearMipLevels;
+
+            connect( actionClearMipLevels, &QAction::triggered, this, &MainWindow::onClearMipmapLayers );
+
+	        QAction *actionSetupRenderingProperties = new QAction("&Setup rendering properties", this);
+	        editMenu->addAction(actionSetupRenderingProperties);
+
+            this->actionRenderProps = actionSetupRenderingProperties;
+
+            connect( actionSetupRenderingProperties, &QAction::triggered, this, &MainWindow::onSetupRenderingProps );
+
+	        editMenu->addSeparator();
+	        QAction *actionViewAllChanges = new QAction("&View all changes", this);
+	        editMenu->addAction(actionViewAllChanges);
+
+            this->actionViewAllChanges = actionViewAllChanges;
+
+	        QAction *actionCancelAllChanges = new QAction("&Cancel all changes", this);
+	        editMenu->addAction(actionCancelAllChanges);
+
+            this->actionCancelAllChanges = actionCancelAllChanges;
+
+	        editMenu->addSeparator();
+	        QAction *actionAllTextures = new QAction("&All textures", this);
+	        editMenu->addAction(actionAllTextures);
+
+            this->actionAllTextures = actionAllTextures;
+
+	        editMenu->addSeparator();
+	        QAction *actionSetupTxdVersion = new QAction("&Setup TXD version", this);
+	        editMenu->addAction(actionSetupTxdVersion);
+
+            this->actionSetupTXDVersion = actionSetupTxdVersion;
+
+		    connect(actionSetupTxdVersion, &QAction::triggered, this, &MainWindow::onSetupTxdVersion);
+
+	        QMenu *exportMenu = menu->addMenu(tr("&Export"));
+
+            this->addTextureFormatExportLinkToMenu( exportMenu, "PNG", "Portable Network Graphics" );
+            this->addTextureFormatExportLinkToMenu( exportMenu, "DDS", "Direct Draw Surface" );
+            this->addTextureFormatExportLinkToMenu( exportMenu, "BMP", "Raw Bitmap" );
+
+            // Add remaining formats that rwlib supports.
+            {
+                rw::registered_image_formats_t regFormats;
             
-            rw::GetRegisteredImageFormats( this->rwEngine, regFormats );
+                rw::GetRegisteredImageFormats( this->rwEngine, regFormats );
 
-            for ( rw::registered_image_formats_t::const_iterator iter = regFormats.cbegin(); iter != regFormats.cend(); iter++ )
-            {
-                const rw::registered_image_format& theFormat = *iter;
-
-                if ( stricmp( theFormat.defaultExt, "PNG" ) != 0 &&
-                     stricmp( theFormat.defaultExt, "DDS" ) != 0 &&
-                     stricmp( theFormat.defaultExt, "BMP" ) != 0 )
+                for ( rw::registered_image_formats_t::const_iterator iter = regFormats.cbegin(); iter != regFormats.cend(); iter++ )
                 {
-                    this->addTextureFormatExportLinkToMenu( exportMenu, theFormat.defaultExt, theFormat.formatName );
-                }
+                    const rw::registered_image_format& theFormat = *iter;
 
-                // We want to cache the available formats.
-                registered_image_format imgformat;
+                    if ( stricmp( theFormat.defaultExt, "PNG" ) != 0 &&
+                         stricmp( theFormat.defaultExt, "DDS" ) != 0 &&
+                         stricmp( theFormat.defaultExt, "BMP" ) != 0 )
+                    {
+                        this->addTextureFormatExportLinkToMenu( exportMenu, theFormat.defaultExt, theFormat.formatName );
+                    }
 
-                imgformat.formatName = theFormat.formatName;
-                imgformat.defaultExt = theFormat.defaultExt;
-                imgformat.isNativeFormat = false;
-
-                this->reg_img_formats.push_back( std::move( imgformat ) );
-            }
-
-            // Also add image formats from native texture types.
-            rw::platformTypeNameList_t platformTypes = rw::GetAvailableNativeTextureTypes( this->rwEngine );
-
-            for ( rw::platformTypeNameList_t::const_iterator iter = platformTypes.begin(); iter != platformTypes.end(); iter++ )
-            {
-                const std::string& nativeName = *iter;
-
-                // Check the driver for a native name.
-                const char *nativeExt = rw::GetNativeTextureImageFormatExtension( this->rwEngine, nativeName.c_str() );
-
-                if ( nativeExt )
-                {
+                    // We want to cache the available formats.
                     registered_image_format imgformat;
 
-                    if ( strcmp( nativeExt, "DDS" ) == 0 )
-                    {
-                        imgformat.formatName = "DirectDraw Surface";
-                    }
-                    else
-                    {
-                        imgformat.formatName = nativeExt;   // could improve this.
-                    }
-                    imgformat.defaultExt = nativeExt;
-                    imgformat.isNativeFormat = true;
-                    imgformat.nativeType = nativeName;
+                    imgformat.formatName = theFormat.formatName;
+                    imgformat.defaultExt = theFormat.defaultExt;
+                    imgformat.isNativeFormat = false;
 
                     this->reg_img_formats.push_back( std::move( imgformat ) );
                 }
+
+                // Also add image formats from native texture types.
+                rw::platformTypeNameList_t platformTypes = rw::GetAvailableNativeTextureTypes( this->rwEngine );
+
+                for ( rw::platformTypeNameList_t::const_iterator iter = platformTypes.begin(); iter != platformTypes.end(); iter++ )
+                {
+                    const std::string& nativeName = *iter;
+
+                    // Check the driver for a native name.
+                    const char *nativeExt = rw::GetNativeTextureImageFormatExtension( this->rwEngine, nativeName.c_str() );
+
+                    if ( nativeExt )
+                    {
+                        registered_image_format imgformat;
+
+                        if ( strcmp( nativeExt, "DDS" ) == 0 )
+                        {
+                            imgformat.formatName = "DirectDraw Surface";
+                        }
+                        else
+                        {
+                            imgformat.formatName = nativeExt;   // could improve this.
+                        }
+                        imgformat.defaultExt = nativeExt;
+                        imgformat.isNativeFormat = true;
+                        imgformat.nativeType = nativeName;
+
+                        this->reg_img_formats.push_back( std::move( imgformat ) );
+                    }
+                }
             }
-        }
 
-	    QAction *actionExportTTXD = new QAction("&Text-based TXD", this);
-	    exportMenu->addAction(actionExportTTXD);
+	        QAction *actionExportTTXD = new QAction("&Text-based TXD", this);
+	        exportMenu->addAction(actionExportTTXD);
 
-        this->actionsExportImage.push_back( actionExportTTXD );
+            this->actionsExportImage.push_back( actionExportTTXD );
 
-	    exportMenu->addSeparator();
-	    QAction *actionExportAll = new QAction("&Export all", this);
-	    exportMenu->addAction(actionExportAll);
+	        exportMenu->addSeparator();
+	        QAction *actionExportAll = new QAction("&Export all", this);
+	        exportMenu->addAction(actionExportAll);
 
-        this->actionsExportImage.push_back( actionExportAll );
+            this->actionsExportImage.push_back( actionExportAll );
 
-	    QMenu *viewMenu = menu->addMenu(tr("&View"));
-	    QAction *actionBackground = new QAction("&Background", this);
-		actionBackground->setCheckable(true);
-	    viewMenu->addAction(actionBackground);
+	        QMenu *viewMenu = menu->addMenu(tr("&View"));
+	        QAction *actionBackground = new QAction("&Background", this);
+		    actionBackground->setCheckable(true);
+	        viewMenu->addAction(actionBackground);
 
-		connect(actionBackground, &QAction::triggered, this, &MainWindow::onToggleShowBackground);
+		    connect(actionBackground, &QAction::triggered, this, &MainWindow::onToggleShowBackground);
 
-	    QAction *action3dView = new QAction("&3D View", this);
-		action3dView->setCheckable(true);
-	    viewMenu->addAction(action3dView);
-	    QAction *actionShowMipLevels = new QAction("&Display mip-levels", this);
-		actionShowMipLevels->setCheckable(true);
-	    viewMenu->addAction(actionShowMipLevels);
+	        QAction *action3dView = new QAction("&3D View", this);
+		    action3dView->setCheckable(true);
+	        viewMenu->addAction(action3dView);
+	        QAction *actionShowMipLevels = new QAction("&Display mip-levels", this);
+		    actionShowMipLevels->setCheckable(true);
+	        viewMenu->addAction(actionShowMipLevels);
 
-        connect( actionShowMipLevels, &QAction::triggered, this, &MainWindow::onToggleShowMipmapLayers );
+            connect( actionShowMipLevels, &QAction::triggered, this, &MainWindow::onToggleShowMipmapLayers );
         
-        QAction *actionShowLog = new QAction("&Show Log", this);
-        viewMenu->addAction(actionShowLog);
+            QAction *actionShowLog = new QAction("&Show Log", this);
+            viewMenu->addAction(actionShowLog);
 
-        connect( actionShowLog, &QAction::triggered, this, &MainWindow::onToggleShowLog );
+            connect( actionShowLog, &QAction::triggered, this, &MainWindow::onToggleShowLog );
 
-	    viewMenu->addSeparator();
-	    QAction *actionSetupTheme = new QAction("&Setup theme", this);
-	    viewMenu->addAction(actionSetupTheme);
+	        viewMenu->addSeparator();
+	        QAction *actionSetupTheme = new QAction("&Setup theme", this);
+	        viewMenu->addAction(actionSetupTheme);
 
-	    actionQuit->setShortcut(QKeySequence::Quit);
-	    connect(actionQuit, &QAction::triggered, this, &MainWindow::close);
+	        actionQuit->setShortcut(QKeySequence::Quit);
+	        connect(actionQuit, &QAction::triggered, this, &MainWindow::close);
 
-	    QHBoxLayout *hlayout = new QHBoxLayout;
-	    txdOptionsBackground->setLayout(hlayout);
-	    hlayout->setMenuBar(menu);
+	        QHBoxLayout *hlayout = new QHBoxLayout;
+	        txdOptionsBackground->setLayout(hlayout);
+	        hlayout->setMenuBar(menu);
 
-        // Layout for rw version, with right-side alignment
-        QHBoxLayout *rwVerLayout = new QHBoxLayout;
-        rwVersionButton = new QPushButton;
-        rwVersionButton->setObjectName("rwVersionButton");
-        rwVersionButton->hide();
-        rwVerLayout->addWidget(rwVersionButton);
-        rwVerLayout->setAlignment(Qt::AlignRight);
+            // Layout for rw version, with right-side alignment
+            QHBoxLayout *rwVerLayout = new QHBoxLayout;
+            rwVersionButton = new QPushButton;
+            rwVersionButton->setObjectName("rwVersionButton");
+            rwVersionButton->hide();
+            rwVerLayout->addWidget(rwVersionButton);
+            rwVerLayout->setAlignment(Qt::AlignRight);
 
-        connect( rwVersionButton, &QPushButton::clicked, this, &MainWindow::onSetupTxdVersion );
+            connect( rwVersionButton, &QPushButton::clicked, this, &MainWindow::onSetupTxdVersion );
 
-        // Layout to mix menu and rw version label/button
-        QGridLayout *menuVerLayout = new QGridLayout();
-        menuVerLayout->addWidget(txdOptionsBackground, 0, 0);
-        menuVerLayout->addLayout(rwVerLayout, 0, 0, Qt::AlignRight);
-        menuVerLayout->setContentsMargins(0, 0, 0, 0);
-        menuVerLayout->setMargin(0);
-        menuVerLayout->setSpacing(0);
+            // Layout to mix menu and rw version label/button
+            QGridLayout *menuVerLayout = new QGridLayout();
+            menuVerLayout->addWidget(txdOptionsBackground, 0, 0);
+            menuVerLayout->addLayout(rwVerLayout, 0, 0, Qt::AlignRight);
+            menuVerLayout->setContentsMargins(0, 0, 0, 0);
+            menuVerLayout->setMargin(0);
+            menuVerLayout->setSpacing(0);
 
-	    QWidget *hLineBackground = new QWidget();
-	    hLineBackground->setFixedHeight(1);
-	    hLineBackground->setObjectName("hLineBackground");
+	        QWidget *hLineBackground = new QWidget();
+	        hLineBackground->setFixedHeight(1);
+	        hLineBackground->setObjectName("hLineBackground");
 
-	    QVBoxLayout *topLayout = new QVBoxLayout;
-	    topLayout->addWidget(txdNameBackground);
-        topLayout->addLayout(menuVerLayout);
-	    topLayout->addWidget(hLineBackground);
-	    topLayout->setContentsMargins(0, 0, 0, 0);
-	    topLayout->setMargin(0);
-	    topLayout->setSpacing(0);
+	        QVBoxLayout *topLayout = new QVBoxLayout;
+	        topLayout->addWidget(txdNameBackground);
+            topLayout->addLayout(menuVerLayout);
+	        topLayout->addWidget(hLineBackground);
+	        topLayout->setContentsMargins(0, 0, 0, 0);
+	        topLayout->setMargin(0);
+	        topLayout->setSpacing(0);
 
-	    /* --- Bottom panel --- */
-	    QWidget *hLineBackground2 = new QWidget;
-	    hLineBackground2->setFixedHeight(1);
-	    hLineBackground2->setObjectName("hLineBackground");
-	    QWidget *txdOptionsBackground2 = new QWidget;
-	    txdOptionsBackground2->setFixedHeight(59);
-	    txdOptionsBackground2->setObjectName("background_1");
+	        /* --- Bottom panel --- */
+	        QWidget *hLineBackground2 = new QWidget;
+	        hLineBackground2->setFixedHeight(1);
+	        hLineBackground2->setObjectName("hLineBackground");
+	        QWidget *txdOptionsBackground2 = new QWidget;
+	        txdOptionsBackground2->setFixedHeight(59);
+	        txdOptionsBackground2->setObjectName("background_1");
 	
-	    QVBoxLayout *bottomLayout = new QVBoxLayout;
-	    bottomLayout->addWidget(hLineBackground2);
-	    bottomLayout->addWidget(txdOptionsBackground2);
-	    bottomLayout->setContentsMargins(0, 0, 0, 0);
-	    bottomLayout->setMargin(0);
-	    bottomLayout->setSpacing(0);
+	        QVBoxLayout *bottomLayout = new QVBoxLayout;
+	        bottomLayout->addWidget(hLineBackground2);
+	        bottomLayout->addWidget(txdOptionsBackground2);
+	        bottomLayout->setContentsMargins(0, 0, 0, 0);
+	        bottomLayout->setMargin(0);
+	        bottomLayout->setSpacing(0);
 
-	    /* --- Main layout --- */
-	    QVBoxLayout *mainLayout = new QVBoxLayout;
-	    mainLayout->addLayout(topLayout);
-	    mainLayout->addWidget(splitter);
-	    mainLayout->addLayout(bottomLayout);
+	        /* --- Main layout --- */
+	        QVBoxLayout *mainLayout = new QVBoxLayout;
+	        mainLayout->addLayout(topLayout);
+	        mainLayout->addWidget(splitter);
+	        mainLayout->addLayout(bottomLayout);
 
-	    mainLayout->setContentsMargins(0, 0, 0, 0);
-	    mainLayout->setMargin(0);
-	    mainLayout->setSpacing(0);
+	        mainLayout->setContentsMargins(0, 0, 0, 0);
+	        mainLayout->setMargin(0);
+	        mainLayout->setSpacing(0);
 
-	    QWidget *window = new QWidget();
-	    window->setLayout(mainLayout);
+	        QWidget *window = new QWidget();
+	        window->setLayout(mainLayout);
 
-	    setCentralWidget(window);
+	        setCentralWidget(window);
 
-		imageWidget->hide();
+		    imageWidget->hide();
 
-		// Initialize our native formats.
-		this->initializeNativeFormats();
+		    // Initialize our native formats.
+		    this->initializeNativeFormats();
 
-        // Initialize the GUI.
-        this->UpdateAccessibility();
+            // Initialize the GUI.
+            this->UpdateAccessibility();
+        }
+        catch( ... )
+        {
+            // Delete our engine again.
+            rw::DeleteEngine( this->rwEngine );
+
+            throw;
+        }
     }
     catch( ... )
     {
-        // Delete our engine again.
-        rw::DeleteEngine( this->rwEngine );
+        CFileSystem::Destroy( this->fileSystem );
 
         throw;
     }
@@ -485,6 +497,11 @@ MainWindow::~MainWindow()
     rw::DeleteEngine( this->rwEngine );
 
     this->rwEngine = NULL;
+
+    // Terminate the filesystem.
+    CFileSystem::Destroy( this->fileSystem );
+    
+    this->fileSystem = NULL;
 
 	delete txdLog;
 }

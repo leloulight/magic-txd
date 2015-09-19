@@ -11,6 +11,13 @@
 
 #include <renderware.h>
 
+#include <sdk/MemoryUtils.h>
+
+#include <CFileSystemInterface.h>
+#include <CFileSystem.h>
+
+#define NUMELMS(x)      ( sizeof(x) / sizeof(*x) )
+
 #include "defs.h"
 
 struct SystemEventHandlerWidget abstract
@@ -24,6 +31,7 @@ struct SystemEventHandlerWidget abstract
 #include "texinfoitem.h"
 #include "txdlog.h"
 #include "txdadddialog.h"
+#include "guiserialization.h"
 
 #include "MagicExport.h"
 
@@ -215,6 +223,13 @@ private:
     typedef std::list <registered_image_format> imageFormats_t;
 
     imageFormats_t reg_img_formats;
+
+public:
+    CFileSystem *fileSystem;
 };
+
+typedef StaticPluginClassFactory <MainWindow> mainWindowFactory_t;
+
+extern mainWindowFactory_t mainWindowFactory;
 
 #endif // MAINWINDOW_H

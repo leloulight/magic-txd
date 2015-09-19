@@ -18,6 +18,9 @@
 // Include internal header.
 #include "fsinternal/CFileSystem.internal.h"
 
+// Include native platform utilities.
+#include "fsinternal/CFileSystem.internal.nativeimpl.hxx"
+
 // This variable is exported across the whole FileSystem library.
 // It should be used by CRawFile classes that are created.
 std::list <CFile*> *openFiles;
@@ -89,6 +92,20 @@ inline bool _CheckLibraryIntegrity( void )
     return isValid;
 }
 
+AINLINE void InitializeLibrary( void )
+{
+    // Register addons.
+    CFileSystemNative::RegisterZIPDriver();
+    CFileSystemNative::RegisterIMGDriver();
+}
+
+AINLINE void ShutdownLibrary( void )
+{
+    // Unregister all addons.
+    CFileSystemNative::UnregisterIMGDriver();
+    CFileSystemNative::UnregisterZIPDriver();
+}
+
 // Creators of the CFileSystem instance.
 // Those are the entry points to this static library.
 CFileSystem* CFileSystem::Create( void )
@@ -106,9 +123,7 @@ CFileSystem* CFileSystem::Create( void )
         return NULL;
     }
 
-    // Register addons.
-    CFileSystemNative::RegisterZIPDriver();
-    CFileSystemNative::RegisterIMGDriver();
+    InitializeLibrary();
 
     // Create our CFileSystem instance!
     CFileSystemNative *instance = _fileSysFactory.Construct( _memAlloc );
@@ -137,6 +152,11 @@ CFileSystem* CFileSystem::Create( void )
         _hasBeenInitialized = true;
     }
 
+    if ( !_hasBeenInitialized )
+    {
+        ShutdownLibrary();
+    }
+
     return instance;
 }
 
@@ -157,10 +177,8 @@ void CFileSystem::Destroy( CFileSystem *lib )
         }
 
         _fileSysFactory.Destroy( _memAlloc, nativeLib );
-
-        // Unregister all addons.
-        CFileSystemNative::UnregisterIMGDriver();
-        CFileSystemNative::UnregisterZIPDriver();
+        
+        ShutdownLibrary();
 
         delete openFiles;
 
@@ -253,7 +271,8 @@ bool CFileSystem::CanLockDirectories( void )
 #endif //OS DEPENDENT CODE
 }
 
-CFileTranslator* CFileSystem::CreateTranslator( const char *path )
+template <typename charType>
+CFileTranslator* CFileSystemNative::GenCreateTranslator( const charType *path )
 {
     // Without access to directory locking, this function can not execute.
     if ( !CanLockDirectories() )
@@ -312,7 +331,7 @@ CFileTranslator* CFileSystem::CreateTranslator( const char *path )
     _File_OutputPathTree( tree, false, root );
 
 #ifdef _WIN32
-    HANDLE dir = CreateFile( root.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL );
+    HANDLE dir = _FileWin32_OpenDirectoryHandle( root );
 
     if ( dir == INVALID_HANDLE_VALUE )
         return NULL;
@@ -340,6 +359,9 @@ CFileTranslator* CFileSystem::CreateTranslator( const char *path )
 
     return pTranslator;
 }
+
+CFileTranslator* CFileSystem::CreateTranslator( const char *path )      { return ((CFileSystemNative*)this)->GenCreateTranslator( path ); }
+CFileTranslator* CFileSystem::CreateTranslator( const wchar_t *path )   { return ((CFileSystemNative*)this)->GenCreateTranslator( path ); }
 
 CFileTranslator* CFileSystem::GenerateTempRepository( void )
 {

@@ -149,6 +149,9 @@ struct imgExtension
     CIMGArchiveTranslatorHandle*    NewArchive  ( CFileTranslator *srcRoot, const char *srcPath, eIMGArchiveVersion version );
     CIMGArchiveTranslatorHandle*    OpenArchive ( CFileTranslator *srcRoot, const char *srcPath );
 
+    CIMGArchiveTranslatorHandle*    NewArchive  ( CFileTranslator *srcRoot, const wchar_t *srcPath, eIMGArchiveVersion version );
+    CIMGArchiveTranslatorHandle*    OpenArchive ( CFileTranslator *srcRoot, const wchar_t *srcPath );
+
     // Private extension methods.
     CFileTranslator*            GetTempRoot     ( void );
 
@@ -170,7 +173,7 @@ struct imgExtension
 #pragma warning(push)
 #pragma warning(disable:4250)
 
-class CIMGArchiveTranslator : public CSystemPathTranslator, public CIMGArchiveTranslatorHandle
+class CIMGArchiveTranslator : public CSystemPathTranslator, public CFileTranslatorWideWrap, public CIMGArchiveTranslatorHandle
 {
     friend class CFileSystem;
     friend struct imgExtension;
@@ -178,33 +181,33 @@ public:
                     CIMGArchiveTranslator( imgExtension& imgExt, CFile *contentFile, CFile *registryFile, eIMGArchiveVersion theVersion );
                     ~CIMGArchiveTranslator( void );
 
-    bool            WriteData( const char *path, const char *buffer, size_t size );
-    bool            CreateDir( const char *path );
-    CFile*          Open( const char *path, const char *mode );
-    bool            Exists( const char *path ) const;
-    bool            Delete( const char *path );
-    bool            Copy( const char *src, const char *dst );
-    bool            Rename( const char *src, const char *dst );
-    size_t          Size( const char *path ) const;
-    bool            Stat( const char *path, struct stat *stats ) const;
-    bool            ReadToBuffer( const char *path, std::vector <char>& output ) const;
+    bool            CreateDir( const char *path ) override;
+    CFile*          Open( const char *path, const char *mode ) override;
+    bool            Exists( const char *path ) const override;
+    bool            Delete( const char *path ) override;
+    bool            Copy( const char *src, const char *dst ) override;
+    bool            Rename( const char *src, const char *dst ) override;
+    size_t          Size( const char *path ) const override;
+    bool            Stat( const char *path, struct stat *stats ) const override;
 
-    bool            ChangeDirectory( const char *path );
+protected:
+    bool            OnConfirmDirectoryChange( const dirTree& tree ) override;
 
+public:
     void            ScanDirectory( const char *directory, const char *wildcard, bool recurse,
                         pathCallback_t dirCallback,
                         pathCallback_t fileCallback,
-                        void *userdata ) const;
+                        void *userdata ) const override;
 
-    void            GetDirectories( const char *path, const char *wildcard, bool recurse, std::vector <filePath>& output ) const;
-    void            GetFiles( const char *path, const char *wildcard, bool recurse, std::vector <filePath>& output ) const;
+    void            GetDirectories( const char *path, const char *wildcard, bool recurse, std::vector <filePath>& output ) const override;
+    void            GetFiles( const char *path, const char *wildcard, bool recurse, std::vector <filePath>& output ) const override;
 
-    void            Save();
+    void            Save ( void ) override;
 
-    void            SetCompressionHandler( CIMGArchiveCompressionHandler *handler );
+    void            SetCompressionHandler( CIMGArchiveCompressionHandler *handler ) override;
 
-    eIMGArchiveVersion  GetVersion( void ) const            { return m_version; }
-
+    eIMGArchiveVersion  GetVersion( void ) const override  { return m_version; }
+    
     // Members.
     imgExtension&   m_imgExtension;
     CFile*          m_contentFile;
@@ -514,6 +517,7 @@ protected:
     void            WriteFileHeaders( CFile *targetStream, directory& baseDir );
     void            WriteFiles( CFile *targetStream, directory& baseDir );
 
+public:
     bool            ReadArchive();
 };
 

@@ -48,7 +48,7 @@ namespace VirtualFileSystem
 template <typename translatorType, typename directoryMetaData, typename fileMetaData>
 struct CVirtualFileSystem
 {
-    CVirtualFileSystem( void ) : m_rootDir( filePath(), filePath() )
+    CVirtualFileSystem( bool caseSensitive ) : m_rootDir( filePath(), filePath() )
     {
         // We zero it our for debugging.
         this->hostTranslator = NULL;
@@ -58,6 +58,8 @@ struct CVirtualFileSystem
         m_rootDir.parent = NULL;
         
         m_rootDir.hostVFS = this;
+
+        this->pathCaseSensitive = caseSensitive;
     }
 
     ~CVirtualFileSystem( void )
@@ -68,6 +70,9 @@ struct CVirtualFileSystem
     // Host translator of this VFS.
     // Needs to be set by the translator that uses this VFS.
     translatorType *hostTranslator;
+
+    // Decides whether string comparison is done case-sensitively.
+    bool pathCaseSensitive;
 
     // Forward declarations.
     struct file;
@@ -983,11 +988,14 @@ struct CVirtualFileSystem
         return true;
     }
 
+private:
+    template <typename charType>
     static void inline _ScanDirectory(
         const CVirtualFileSystem *trans,
+        const PathPatternEnv <charType>& patternEnv,
         const dirTree& tree,
         directory *dir,
-        filePattern_t *pattern, bool recurse,
+        typename PathPatternEnv <charType>::filePattern_t *pattern, bool recurse,
         pathCallback_t dirCallback, pathCallback_t fileCallback, void *userdata )
     {
         // First scan for files.
@@ -997,9 +1005,11 @@ struct CVirtualFileSystem
             {
                 file *item = *iter;
 
-                if ( _File_MatchPattern( item->name.c_str(), pattern ) )
+                filePathLink <charType> nameLink( item->name );
+
+                if ( patternEnv.MatchPattern( nameLink.to_char(), pattern ) )
                 {
-                    filePath abs_path( "/" );
+                    filePath abs_path = filePath::Make <charType> ( "/", 1 );
                     _File_OutputPathTree( tree, false, abs_path );
 
                     abs_path += item->name;
@@ -1018,13 +1028,15 @@ struct CVirtualFileSystem
 
                 if ( dirCallback )
                 {
-                    filePath abs_path( "/" );
+                    filePath abs_path = filePath::Make <charType> ( "/", 1 );
                     _File_OutputPathTree( tree, false, abs_path );
 
-                    abs_path += item->name;
+                    filePathLink <charType> nameLink( item->name );
+
+                    abs_path += nameLink;
                     abs_path += "/";
 
-                    _File_OnDirectoryFound( pattern, item->name, abs_path, dirCallback, userdata );
+                    _File_OnDirectoryFound <charType> ( patternEnv, pattern, nameLink.to_char(), abs_path, dirCallback, userdata );
                 }
 
                 if ( recurse )
@@ -1032,12 +1044,13 @@ struct CVirtualFileSystem
                     dirTree newTree = tree;
                     newTree.push_back( item->name );
 
-                    _ScanDirectory( trans, newTree, item, pattern, recurse, dirCallback, fileCallback, userdata );
+                    _ScanDirectory( trans, patternEnv, newTree, item, pattern, recurse, dirCallback, fileCallback, userdata );
                 }
             }
         }
     }
 
+public:
     void ScanDirectory(
         const char *dirPath,
         const char *wildcard,
@@ -1058,21 +1071,23 @@ struct CVirtualFileSystem
         if ( !dir )
             return;
 
+        ANSIPathPatternEnv patternEnv( this->pathCaseSensitive );
+
         // Create a cached file pattern.
-        filePattern_t *pattern = _File_CreatePattern( wildcard );
+        ANSIPathPatternEnv::filePattern_t *pattern = patternEnv.CreatePattern( wildcard );
 
         try
         {
-            _ScanDirectory( this, tree, dir, pattern, recurse, dirCallback, fileCallback, userdata );
+            _ScanDirectory <char> ( this, patternEnv, tree, dir, pattern, recurse, dirCallback, fileCallback, userdata );
         }
         catch( ... )
         {
             // Any exception may be thrown; we have to clean up.
-            _File_DestroyPattern( pattern );
+            patternEnv.DestroyPattern( pattern );
             throw;
         }
 
-        _File_DestroyPattern( pattern );
+        patternEnv.DestroyPattern( pattern );
     }
 };
 
