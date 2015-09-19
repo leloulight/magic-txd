@@ -91,8 +91,36 @@ struct MagicTXDApplication : public QApplication
 // Main window factory.
 mainWindowFactory_t mainWindowFactory;
 
+struct mainWindowConstructor
+{
+    QString appPath;
+
+    inline mainWindowConstructor( QString&& appPath ) : appPath( appPath )
+    {}
+
+    inline MainWindow* Construct( void *mem ) const
+    {
+        return new (mem) MainWindow( appPath );
+    }
+};
+
+struct defaultMemAlloc
+{
+    static void* Allocate( size_t memSize )
+    {
+        return malloc( memSize );
+    }
+
+    static void Free( void *mem, size_t memSize )
+    {
+        free( mem );
+    }
+};
+
 // Main window plugin entry points.
 extern void InitializeGUISerialization( void );
+
+static defaultMemAlloc _factMemAlloc;
 
 int main(int argc, char *argv[])
 {
@@ -106,9 +134,12 @@ int main(int argc, char *argv[])
 	QCoreApplication::setLibraryPaths(paths);
     MagicTXDApplication a(argc, argv);
     a.setStyleSheet(styles::get(a.applicationDirPath(), "resources\\dark.shell"));
-    MainWindow w(a.applicationDirPath());
-    w.setWindowIcon(QIcon(w.makeAppPath("resources\\icons\\stars.png")));
-    w.show();
+
+    mainWindowConstructor wnd_constr( a.applicationDirPath() );
+
+    MainWindow *w = mainWindowFactory.ConstructTemplate( _factMemAlloc, wnd_constr );
+    w->setWindowIcon(QIcon(w->makeAppPath("resources\\icons\\stars.png")));
+    w->show();
     QApplication::processEvents();
 
     //char text[256];
@@ -118,11 +149,15 @@ int main(int argc, char *argv[])
     if (argc >= 2 && argv[1] && argv[1][0]) {
         QString txdFileToBeOpened = QString::fromLocal8Bit(argv[1]);
         if (!txdFileToBeOpened.isEmpty()) {
-            w.openTxdFile(txdFileToBeOpened);
+            w->openTxdFile(txdFileToBeOpened);
         }
     }
 
-    return a.exec();
+    int iRet = a.exec();
+
+    mainWindowFactory.Destroy( _factMemAlloc, w );
+
+    return iRet;
 }
 
 // Stubs.

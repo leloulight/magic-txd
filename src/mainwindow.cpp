@@ -85,8 +85,6 @@ MainWindow::MainWindow(QString appPath, QWidget *parent) :
 
         this->rwEngine->SetApplicationInfo( metaInfo );
 
-		/* --- Log --- */
-		this->txdLog = new TxdLog(this->m_appPath, this);
         try
         {
 	        /* --- Window --- */
@@ -94,8 +92,8 @@ MainWindow::MainWindow(QString appPath, QWidget *parent) :
             setMinimumSize(460, 300);
 	        resize(900, 680);
 
-		    /* --- Log --- */
-		    this->txdLog = new TxdLog(this);
+	        /* --- Log --- */
+	        this->txdLog = new TxdLog(this->m_appPath, this);
 
 	        /* --- List --- */
 	        QListWidget *listWidget = new QListWidget();
@@ -137,18 +135,20 @@ MainWindow::MainWindow(QString appPath, QWidget *parent) :
 	        txdName->setObjectName("label36px");
 	        txdName->setAlignment(Qt::AlignCenter);
 
-	    QGridLayout *txdNameLayout = new QGridLayout();
-	    QLabel *starsBox = new QLabel;
-	    QMovie *stars = new QMovie;
-	    stars->setFileName(makeAppPath("resources\\dark\\stars.gif"));
-	    starsBox->setMovie(stars);
-	    stars->start();
-	    txdNameLayout->addWidget(starsBox, 0, 0);
-	    txdNameLayout->addWidget(txdName, 0, 0);
-	    txdNameLayout->setContentsMargins(0, 0, 0, 0);
-	    txdNameLayout->setMargin(0);
-	    txdNameLayout->setSpacing(0);
-	    txdNameBackground->setLayout(txdNameLayout);
+            this->txdNameLabel = txdName;
+
+            QGridLayout *txdNameLayout = new QGridLayout();
+            QLabel *starsBox = new QLabel;
+            QMovie *stars = new QMovie;
+            stars->setFileName(makeAppPath("resources\\dark\\stars.gif"));
+            starsBox->setMovie(stars);
+            stars->start();
+            txdNameLayout->addWidget(starsBox, 0, 0);
+            txdNameLayout->addWidget(txdName, 0, 0);
+            txdNameLayout->setContentsMargins(0, 0, 0, 0);
+            txdNameLayout->setMargin(0);
+            txdNameLayout->setSpacing(0);
+            txdNameBackground->setLayout(txdNameLayout);
 	
 	        QWidget *txdOptionsBackground = new QWidget();
 	        txdOptionsBackground->setFixedHeight(54);
