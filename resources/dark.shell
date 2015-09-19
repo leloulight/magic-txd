@@ -405,7 +405,7 @@ QRadioButton::indicator {
 }
 
 QRadioButton::indicator:unchecked {
-$   image: url(resources/resources/dark/radio.png);
+$   image: url(resources/dark/radio.png);
 }
 
 QRadioButton::indicator:unchecked:hover {
