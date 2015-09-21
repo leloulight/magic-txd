@@ -57,7 +57,7 @@ static inline bool _File_ParseRelativePath( const charType *path, dirTree& tree,
                 break;
             case ':':
                 return false;
-    #ifdef _WIN32
+#ifdef _WIN32
             case '<':
             case '>':
             case '"':
@@ -65,7 +65,7 @@ static inline bool _File_ParseRelativePath( const charType *path, dirTree& tree,
             case '?':
             case '*':
                 return false;
-    #endif
+#endif
             default:
                 entry += curChar;
                 break;

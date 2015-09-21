@@ -9,6 +9,8 @@ void RwWriteUnicodeString( rw::BlockProvider& prov, const std::wstring& in )
     rw::BlockProvider stringBlock( &prov, false );
 
     stringBlock.EnterContext();
+    
+    // NOTE: this function is not cross-platform, because wchar_t is platform dependant.
 
     try
     {
@@ -116,7 +118,7 @@ struct mainWindowSerialization
     {
         // First create a translator that resides in the application path.
         HMODULE appHandle = GetModuleHandle( NULL );
-        
+
         wchar_t pathBuffer[ 1024 ];
 
         DWORD pathLen = GetModuleFileNameW( appHandle, pathBuffer, NUMELMS( pathBuffer ) );
