@@ -176,6 +176,17 @@ protected:
         return wideConv.from_bytes( s );
     }
 
+#if (_MSC_VER == 1900)
+    // FIX FOR VS 2015.
+    template <>
+    static std::u32string s2ws(const std::string& s)
+    {
+        std::wstring_convert <std::codecvt <unsigned int, char, std::mbstate_t>, unsigned int> wideConv;
+
+        return reinterpret_cast <std::u32string&&> ( wideConv.from_bytes( s ) );
+    }
+#endif // VS2015
+
     template <typename wideType>
     static std::string ws2s(const std::basic_string <wideType>& s)
     {
@@ -183,6 +194,16 @@ protected:
 
         return wideConv.to_bytes( s );
     }
+
+#if (_MSC_VER == 1900)
+    template <>
+    static std::string ws2s(const std::u32string& s)
+    {
+        std::wstring_convert <std::codecvt <unsigned int, char, std::mbstate_t>, unsigned int> wideConv;
+
+        return wideConv.to_bytes( *(const std::basic_string <unsigned int>*)&s );
+    }
+#endif // VS2015
 
     template <typename charType>
     inline static const charType* GetEmptyStringLiteral( void )
