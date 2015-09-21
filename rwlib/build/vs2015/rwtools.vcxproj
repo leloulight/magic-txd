@@ -170,7 +170,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2015|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/amdtc/Header/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;../../vendor/directx/12/Include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/amdtc/Header/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;../../vendor/directx/12/Include/;../../../vendor/FileSystem/src/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -194,7 +194,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2013|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/amdtc/Header/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;../../vendor/directx/12/Include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/amdtc/Header/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;../../vendor/directx/12/Include/;../../../vendor/FileSystem/src/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -218,7 +218,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2015|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/amdtc/Header/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;../../vendor/directx/12/Include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/amdtc/Header/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;../../vendor/directx/12/Include/;../../../vendor/FileSystem/src/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -241,7 +241,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2013|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/amdtc/Header/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;../../vendor/directx/12/Include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/amdtc/Header/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;../../vendor/directx/12/Include/;../../../vendor/FileSystem/src/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -268,7 +268,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/amdtc/Header/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;../../vendor/directx/12/Include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/amdtc/Header/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;../../vendor/directx/12/Include/;../../../vendor/FileSystem/src/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -296,7 +296,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/amdtc/Header/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;../../vendor/directx/12/Include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/amdtc/Header/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;../../vendor/directx/12/Include/;../../../vendor/FileSystem/src/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -324,7 +324,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/amdtc/Header/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;../../vendor/directx/12/Include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/amdtc/Header/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;../../vendor/directx/12/Include/;../../../vendor/FileSystem/src/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -352,7 +352,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/amdtc/Header/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;../../vendor/directx/12/Include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/eirrepo/sdk/;../../vendor/eirrepo/;../../vendor/libimagequant/;../../vendor/squish-1.11/;../../vendor/xdk/;../../vendor/pvrtexlib/Include/;../../vendor/atitc/;../../vendor/amdtc/Header/;../../vendor/lpng/;../../vendor/libjpeg/src/;../../vendor/libtiff/libtiff/;../../vendor/NativeExecutive/;../../vendor/directx/12/Include/;../../../vendor/FileSystem/src/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeader>Use</PrecompiledHeader>

@@ -9,6 +9,9 @@
     <ClCompile Include="..\..\src\renderpropwindow.cpp" />
     <ClCompile Include="..\..\src\guiserialization.cpp" />
     <ClCompile Include="..\..\src\rwfswrap.cpp" />
+    <ClCompile Include="..\..\src\tools\txdgen.cpp">
+      <Filter>txdgen</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="../../include/styles.h">
@@ -71,6 +74,12 @@
     <ClInclude Include="..\..\include\rwfswrap.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\tools\txdgen.h">
+      <Filter>txdgen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\tools\dirtools.h">
+      <Filter>txdgen</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">
@@ -81,6 +90,9 @@
     </Filter>
     <Filter Include="resources">
       <UniqueIdentifier>{b27ee640-2aa4-4644-92f5-957237f3e0f9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="txdgen">
+      <UniqueIdentifier>{e1ccb885-3ab4-49fd-970f-7d53a71344ea}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
