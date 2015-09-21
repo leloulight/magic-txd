@@ -20,6 +20,8 @@
 #include "resizewindow.h"
 #include "platformselwindow.h"
 
+#include "tools/txdgen.h"
+
 #include "qtrwutils.hxx"
 
 MainWindow::MainWindow(QString appPath, QWidget *parent) :

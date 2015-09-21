@@ -19,7 +19,7 @@
 #include <math.h>
 
 // Include some special vendor libraries.
-#include <core/CFileSystem.common.h>
+#include <CFileSystem.common.h>
 #include <sdk/rwlist.hpp>
 #include <sdk/Endian.h>
 
@@ -68,9 +68,12 @@ typedef unsigned long long uint64;      // 8 bytes
 typedef float float32;                  // 4 bytes
 
 // These do not have to be exclusively defined, so be careful.
-#define PLATFORM_OGL    2
-#define PLATFORM_PS2    4
-#define PLATFORM_XBOX   5
+enum : uint32
+{
+    PLATFORM_OGL = 2,
+    PLATFORM_PS2 = 4,
+    PLATFORM_XBOX = 5
+};
 
 // An exclusively defined list of chunk ids.
 enum CHUNK_TYPE
@@ -298,6 +301,11 @@ struct RwObject abstract
     inline ~RwObject( void )
     {
         return;
+    }
+
+    inline Interface* GetEngine( void ) const
+    {
+        return this->engineInterface;
     }
 
     inline void SetEngineVersion( const LibraryVersion& version )

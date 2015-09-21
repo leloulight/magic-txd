@@ -1416,16 +1416,57 @@ public:
         return *this;
     }
 
-    inline bool operator == ( const filePath& right ) const
+    inline bool equals( const char *right, bool caseSensitive = true ) const
+    {
+        bool isEqual = false;
+
+        if ( this->strData )
+        {
+            isEqual = this->strData->CompareToANSI( right, caseSensitive );
+        }
+
+        return isEqual;
+    }
+
+    inline bool equals( const wchar_t *right, bool caseSensitive = true ) const
+    {
+        bool isEqual = false;
+
+        if ( this->strData )
+        {
+            isEqual = this->strData->CompareToUnicode( right, caseSensitive );
+        }
+
+        return isEqual;
+    }
+
+    inline bool equals( const char32_t *right, bool caseSensitive = true ) const
+    {
+        bool isEqual = false;
+
+        if ( this->strData )
+        {
+            isEqual = this->strData->CompareToUniChars( right, caseSensitive );
+        }
+
+        return isEqual;
+    }
+
+    inline bool equals( const filePath& right, bool caseSensitive = true ) const
     {
         bool isEqual = false;
 
         if ( this->strData && right.strData )
         {
-            isEqual = this->strData->CompareTo( right.strData, true );
+            isEqual = this->strData->CompareTo( right.strData, caseSensitive );
         }
 
         return isEqual;
+    }
+
+    inline bool operator == ( const filePath& right ) const
+    {
+        return equals( right, true );
     }
 
     inline bool operator != ( const filePath& right ) const

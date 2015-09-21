@@ -119,11 +119,11 @@ struct rwFileSystemStreamWrapEnv
     }
 };
 
-rw::Stream* RwStreamCreateTranslated( MainWindow *mainwnd, CFile *eirStream )
+rw::Stream* RwStreamCreateTranslated( rw::Interface *rwEngine, CFile *eirStream )
 {
     rw::streamConstructionCustomParam_t customParam( "eirfs_file", eirStream );
 
-    rw::Stream *result = mainwnd->GetEngine()->CreateStream( rw::RWSTREAMTYPE_CUSTOM, rw::RWSTREAMMODE_READWRITE, &customParam );
+    rw::Stream *result = rwEngine->CreateStream( rw::RWSTREAMTYPE_CUSTOM, rw::RWSTREAMMODE_READWRITE, &customParam );
 
     return result;
 }

@@ -1,3 +1,6 @@
+#ifndef _ENDIAN_COMPAT_HEADER_
+#define _ENDIAN_COMPAT_HEADER_
+
 // Endianness compatibility definitions.
 namespace endian
 {
@@ -139,3 +142,5 @@ namespace endian
         char data[ sizeof(numberType) ];
     };
 };
+
+#endif //_ENDIAN_COMPAT_HEADER_

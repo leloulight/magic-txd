@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{a03f805a-7eb8-4e9a-b155-4076c8d9d96a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sdkinclude">
+      <UniqueIdentifier>{5adcac59-8dab-4881-ae71-67f86e3bed5b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\config.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\csv.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ide.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ini.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\ipl.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\StdInc.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\syntax.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\gtaconfig\include.h">
+      <Filter>sdkinclude</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\config.cpp" />
+    <ClCompile Include="..\..\src\csv.cpp" />
+    <ClCompile Include="..\..\src\ide.cpp" />
+    <ClCompile Include="..\..\src\ini.cpp" />
+    <ClCompile Include="..\..\src\ipl.cpp" />
+    <ClCompile Include="..\..\src\main.cpp" />
+    <ClCompile Include="..\..\src\syntax.cpp" />
+  </ItemGroup>
+</Project>

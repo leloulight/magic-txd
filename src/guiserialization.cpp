@@ -139,7 +139,7 @@ struct mainWindowSerialization
             {
                 try
                 {
-                    rw::Stream *rwStream = RwStreamCreateTranslated( mainwnd, configFile );
+                    rw::Stream *rwStream = RwStreamCreateTranslated( rwEngine, configFile );
 
                     if ( rwStream )
                     {
@@ -205,7 +205,7 @@ struct mainWindowSerialization
             {
                 try
                 {
-                    rw::Stream *rwStream = RwStreamCreateTranslated( mainwnd, configFile );
+                    rw::Stream *rwStream = RwStreamCreateTranslated( rwEngine, configFile );
 
                     if ( rwStream )
                     {
