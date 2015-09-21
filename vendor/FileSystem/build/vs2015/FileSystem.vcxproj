@@ -305,6 +305,7 @@
     <ClInclude Include="..\..\src\CFileSystem.common.filePath.h" />
     <ClInclude Include="..\..\src\CFileSystem.common.h" />
     <ClInclude Include="..\..\src\CFileSystem.common.stl.h" />
+    <ClInclude Include="..\..\src\CFileSystem.common.unichar.h" />
     <ClInclude Include="..\..\src\CFileSystem.h" />
     <ClInclude Include="..\..\src\CFileSystem.img.h" />
     <ClInclude Include="..\..\src\CFileSystem.Utils.hxx" />

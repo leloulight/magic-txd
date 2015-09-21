@@ -18,66 +18,75 @@
 template <typename charType>
 static inline bool _File_ParseRelativePath( const charType *path, dirTree& tree, bool& file )
 {
-    filePath entry;
-    entry.reserve( MAX_PATH );
-
-    while (*path)
+    try
     {
-        switch (*path)
+        filePath entry;
+        entry.reserve( MAX_PATH );
+
+        typedef character_env <charType> char_env;
+
+        for ( char_env::const_iterator iter( path ); !iter.IsEnd(); iter.Increment() )
         {
-        case '\\':
-        case '/':
-            if ( entry.empty() )
-                break;
+            char_env::ucp_t curChar = iter.Resolve();
 
-            if ( entry == "." )
+            switch( curChar )
             {
-                // We ignore this current path indicator
+            case '\\':
+            case '/':
+                if ( entry.empty() )
+                    break;
+
+                if ( entry == "." )
+                {
+                    // We ignore this current path indicator
+                    entry.clear();
+                    break;
+                }
+                else if ( entry == ".." )
+                {
+                    if ( tree.empty() )
+                        return false;
+
+                    tree.pop_back();
+                    entry.clear();
+                    break;
+                }
+
+                tree.push_back( entry );
                 entry.clear();
                 break;
-            }
-            else if ( entry == ".." )
-            {
-                if ( tree.empty() )
-                    return false;
-
-                tree.pop_back();
-                entry.clear();
+            case ':':
+                return false;
+    #ifdef _WIN32
+            case '<':
+            case '>':
+            case '"':
+            case '|':
+            case '?':
+            case '*':
+                return false;
+    #endif
+            default:
+                entry += curChar;
                 break;
             }
-
-            tree.push_back( entry );
-            entry.clear();
-            break;
-        case ':':
-            return false;
-#ifdef _WIN32
-        case '<':
-        case '>':
-        case '"':
-        case '|':
-        case '?':
-        case '*':
-            return false;
-#endif
-        default:
-            entry += *path;
-            break;
         }
 
-        path++;
-    }
+        if ( !entry.empty() )
+        {
+            tree.push_back( entry );
 
-    if ( !entry.empty() )
+            file = true;
+        }
+        else
+            file = false;
+
+        return true;
+    }
+    catch( codepoint_exception& )
     {
-        tree.push_back( entry );
-
-        file = true;
+        return false;
     }
-    else
-        file = false;
-
-    return true;
 }
 
 // Output a path tree into a filePath output.
@@ -94,7 +103,7 @@ static void AINLINE _File_OutputPathTree( const dirTree& tree, bool file, filePa
         actualDirEntries--;
     }
 
-    for ( unsigned int n = 0; n < actualDirEntries; n++ )
+    for ( size_t n = 0; n < actualDirEntries; n++ )
     {
         output += tree[n];
         output += '/';
@@ -444,27 +453,7 @@ public:
 private:
     inline static bool CompareStrings_Count( const charType *primary, const charType *secondary, size_t count, bool case_insensitive )
     {
-        for ( size_t n = 0; n < count; n++ )
-        {
-            charType prim = primary[n];
-            charType sec = secondary[n];
-
-            bool equal = false;
-
-            if ( case_insensitive )
-            {
-                equal = ( tolower( prim ) == tolower( sec ) );
-            }
-            else
-            {
-                equal = ( prim == sec );
-            }
-
-            if ( !equal )
-                return false;
-        }
-
-        return true;
+        return UniversalCompareStrings( primary, count, secondary, count, !case_insensitive );
     }
 
     inline static const charType* strnstr( const charType *input, size_t input_len, const charType *cookie, size_t cookie_len, size_t& off_find, bool need_case_insensitive )
@@ -480,13 +469,21 @@ private:
 
         size_t scanEnd = input_len - cookie_len;
 
-        for ( size_t n = 0; n <= scanEnd; n++ )
+        size_t n = 0;
+
+        character_env <charType>::const_iterator iter( input );
+
+        while ( n < scanEnd )
         {
             if ( CompareStrings_Count( input + n, cookie, cookie_len, need_case_insensitive ) )
             {
                 off_find = n;
                 return input + n;
             }
+
+            n += iter.GetIterateCount();
+
+            iter.Increment();
         }
 
         return NULL;

@@ -17,6 +17,8 @@
 #include <cwchar>
 #include <assert.h>
 
+#include "CFileSystem.common.unichar.h"
+
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -131,24 +133,30 @@ protected:
         virtual void            Reserve( size_t memSize ) = 0;
 
         virtual size_t          GetLength( void ) const = 0;
+        virtual size_t          GetDecodedLength( void ) const = 0;
 
         virtual void            InsertANSI( size_t offset, const char *src, size_t srcLen ) = 0;
         virtual void            InsertUnicode( size_t offset, const wchar_t *src, size_t srcLen ) = 0;
+        virtual void            InsertUniChars( size_t offset, const char32_t *src, size_t srcLen ) = 0;
         virtual void            Insert( size_t offset, const stringProvider *right, size_t srcLen ) = 0;
 
         virtual void            AppendANSI( const char *right, size_t rightLen ) = 0;
         virtual void            AppendUnicode( const wchar_t *right, size_t rightLen ) = 0;
+        virtual void            AppendUniChars( const char32_t *right, size_t rightLen ) = 0;
         virtual void            Append( const stringProvider *right ) = 0;
 
         virtual bool            CompareToANSI( const std::string& right, bool caseSensitive ) const = 0;
         virtual bool            CompareToUnicode( const std::wstring& right, bool caseSensitive ) const = 0;
+        virtual bool            CompareToUniChars( const std::u32string& right, bool caseSensitive ) const = 0;
         virtual bool            CompareTo( const stringProvider *right, bool caseSensitive ) const = 0;
 
         virtual char            GetCharacterANSI( size_t pos ) const = 0;
         virtual wchar_t         GetCharacterUnicode( size_t pos ) const = 0;
+        virtual char32_t        GetCharacter( size_t pos ) const = 0;
 
         virtual bool            CompareCharacterAtANSI( char refChar, size_t pos, bool caseSensitive ) const = 0;
         virtual bool            CompareCharacterAtUnicode( wchar_t refChar, size_t pos, bool caseSensitive ) const = 0;
+        virtual bool            CompareCharacterAt( char32_t refChat, size_t pos, bool caseSensitive ) const = 0;
 
         virtual std::string     ToANSI( void ) const = 0;
         virtual std::wstring    ToUnicode( void ) const = 0;
@@ -160,50 +168,26 @@ protected:
     stringProvider *strData;
 
     // Thanks to http://codereview.stackexchange.com/questions/419/converting-between-stdwstring-and-stdstring !
-    static std::wstring s2ws(const std::string& s)
+    template <typename wideType>
+    static std::basic_string <wideType> s2ws(const std::string& s)
     {
-        int len;
-        int slength = (int)s.length();
-        len = MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, 0, 0); 
-        std::wstring r(len, L'\0');
-        MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, &r[0], len);
-        return r;
+        std::wstring_convert <std::codecvt <wideType, char, std::mbstate_t>, wideType> wideConv;
+
+        return wideConv.from_bytes( s );
     }
 
-    static std::string ws2s(const std::wstring& s)
+    template <typename wideType>
+    static std::string ws2s(const std::basic_string <wideType>& s)
     {
-        int len;
-        int slength = (int)s.length();
-        len = WideCharToMultiByte(CP_ACP, 0, s.c_str(), slength, 0, 0, 0, 0); 
-        std::string r(len, '\0');
-        WideCharToMultiByte(CP_ACP, 0, s.c_str(), slength, &r[0], len, 0, 0); 
-        return r;
-    }
+        std::wstring_convert <std::codecvt <wideType, char, std::mbstate_t>, wideType> wideConv;
 
-    // The main function of comparing characters.
-    template <typename charType>
-    static inline bool IsCharacterEqual( charType left, charType right, bool caseSensitive )
-    {
-        bool isEqual = false;
-
-        if ( caseSensitive )
-        {
-            isEqual = ( left == right );
-        }
-        else
-        {
-            std::locale current_loc;
-
-            isEqual = ( std::toupper( left, current_loc ) == ( std::toupper( right, current_loc ) ) );
-        }
-
-        return isEqual;
+        return wideConv.to_bytes( s );
     }
 
     template <typename charType>
     inline static const charType* GetEmptyStringLiteral( void )
     {
-        return NULL;
+        static_assert( false, "unknown character type" );;
     }
 
     template <>
@@ -292,8 +276,17 @@ protected:
 
             if ( dataSize < newDataSize )
             {
-                this->stringData = (charType*)realloc( this->stringData, newDataSize );
+                charType *oldstrData = this->stringData;
+
+                bool hadData = ( oldstrData != NULL );
+
+                this->stringData = (charType*)realloc( oldstrData, newDataSize );
                 this->dataSize = newDataSize;
+
+                if ( hadData == false )
+                {
+                    this->stringData[0] = 0;
+                }
             }
         }
 
@@ -557,15 +550,22 @@ protected:
             return new ansiStringProvider();
         }
 
-        void Clear( void )                      { strData.clear(); }
-        void SetSize( size_t strSize )          { strData.resize( strSize ); }
-        void Reserve( size_t strSize )          { strData.reserve( strSize ); }
-        size_t GetLength( void ) const          { return strData.length(); }
+        void Clear( void ) override                     { strData.clear(); }
+        void SetSize( size_t strSize ) override         { strData.resize( strSize ); }
+        void Reserve( size_t strSize ) override         { strData.reserve( strSize ); }
+        size_t GetLength( void ) const override         { return strData.length(); }
+        size_t GetDecodedLength( void ) const override  { return strData.length(); }
 
         void InsertANSI( size_t offset, const char *src, size_t srcLen )        { strData.insert( offset, src, srcLen ); }
         void InsertUnicode( size_t offset, const wchar_t *src, size_t srcLen )
         {
             std::string ansiOut = ws2s( std::wstring( src, srcLen ) );
+
+            InsertANSI( offset, ansiOut.c_str(), ansiOut.length() );
+        }
+        void InsertUniChars( size_t offset, const char32_t *src, size_t srcLen )
+        {
+            std::string ansiOut = ws2s( std::u32string( src, srcLen ) );
 
             InsertANSI( offset, ansiOut.c_str(), ansiOut.length() );
         }
@@ -589,6 +589,12 @@ protected:
         {
             // Convert the string to ANSI before using it.
             std::string ansiOut = ws2s( std::wstring( right, rightLen ) );
+
+            AppendANSI( ansiOut.c_str(), ansiOut.length() );
+        }
+        void AppendUniChars( const char32_t *right, size_t rightLen ) override
+        {
+            std::string ansiOut = ws2s( std::u32string( right, rightLen ) );
 
             AppendANSI( ansiOut.c_str(), ansiOut.length() );
         }
@@ -619,7 +625,16 @@ protected:
 
         bool CompareToUnicode( const std::wstring& right, bool caseSensitive ) const
         {
-            return CompareToUnicodeConst( right.c_str(), right.size(), caseSensitive );
+            std::string ansiStr = ws2s( right );
+
+            return CompareToANSIConst( ansiStr.c_str(), ansiStr.size(), caseSensitive );
+        }
+
+        bool CompareToUniChars( const std::u32string& right, bool caseSensitive ) const override
+        {
+            std::string ansiStr = ws2s( right );
+
+            return CompareToANSIConst( ansiStr.c_str(), ansiStr.size(), caseSensitive );
         }
 
         bool CompareTo( const stringProvider *right, bool caseSensitive ) const
@@ -681,6 +696,15 @@ protected:
             return outputChar;
         }
 
+        char32_t GetCharacter( size_t strPos ) const override
+        {
+            wchar_t outputChar = 0xCC;
+
+            unicode_fetch( strPos, outputChar );
+
+            return outputChar;
+        }
+
         bool CompareCharacterAtANSI( char refChar, size_t strPos, bool caseSensitive ) const
         {
             bool equals;
@@ -695,6 +719,13 @@ protected:
             return unicode_fetch( strPos, ourChar ) && IsCharacterEqual( ourChar, refChar, caseSensitive );
         }
 
+        bool CompareCharacterAt( char32_t refChar, size_t strPos, bool caseSensitive ) const override
+        {
+            wchar_t ourChar;
+
+            return unicode_fetch( strPos, ourChar ) && IsCharacterEqual( (char32_t)ourChar, refChar, caseSensitive );
+        }
+
         std::string ToANSI( void ) const
         {
             return std::string( this->strData.c_str(), this->strData.length() );
@@ -702,7 +733,7 @@ protected:
 
         std::wstring ToUnicode( void ) const
         {
-            return s2ws( ToANSI() );
+            return s2ws <wchar_t> ( ToANSI() );
         }
 
         // Dangerous function!
@@ -719,6 +750,8 @@ protected:
 
     struct wideStringProvider : public stringProvider
     {
+        typedef character_env <wchar_t> char_env;
+
         customCharString <wchar_t> strData;
 
         stringProvider* Clone( void ) const
@@ -731,17 +764,72 @@ protected:
             return new wideStringProvider();
         }
 
-        void Clear( void )                      { strData.clear(); }
-        void SetSize( size_t strSize )          { strData.resize( strSize ); }
-        void Reserve( size_t strSize )          { strData.reserve( strSize ); }
-        size_t GetLength( void ) const          { return strData.length(); }
+        void Clear( void ) override                     { strData.clear(); }
+        void SetSize( size_t strSize ) override         { strData.resize( strSize ); }
+        void Reserve( size_t strSize ) override         { strData.reserve( strSize ); }
+        size_t GetLength( void ) const override         { return strData.length(); }
+        size_t GetDecodedLength( void ) const override
+        {
+            size_t len = 0;
 
-        void InsertUnicode( size_t offset, const wchar_t *src, size_t srcLen )     { strData.insert( offset, src, srcLen ); }
+            for ( char_env::const_iterator iter( strData.c_str() ); !iter.IsEnd(); iter.Increment() )
+            {
+                len++;
+            }
+
+            return len;
+        }
+
+        inline static size_t get_encoding_strpos( const wchar_t *data, size_t charPos )
+        {
+            char_env::const_iterator iter( data );
+
+            size_t cur_i = 0;
+
+            for ( ; !iter.IsEnd(), cur_i < charPos; iter.Increment(), cur_i++ );
+
+            return ( iter.GetPointer() - data );
+        }
+
+        void InsertUnicode( size_t offset, const wchar_t *src, size_t srcLen )
+        {
+            // Get a valid string point to insert our wide-string code points into.
+
+            strData.insert( get_encoding_strpos( strData.c_str(), offset ), src, srcLen );
+        }
         void InsertANSI( size_t offset, const char *src, size_t srcLen )
         {
-            std::wstring wideOut = s2ws( std::string( src, srcLen ) );
+            std::wstring wideOut = s2ws <wchar_t> ( std::string( src, srcLen ) );
 
             InsertUnicode( offset, wideOut.c_str(), wideOut.length() );
+        }
+
+    private:
+        inline std::wstring encode_to_wide( const char32_t *src, size_t srcLen )
+        {
+            size_t n = 0;
+            std::wstring wideString;
+
+            for ( char_env::encoding_iterator iter( src, srcLen ); !iter.IsEnd(); iter.Increment() )
+            {
+                char_env::enc_result data;
+                iter.Resolve( data );
+
+                for ( size_t n = 0; n < data.numData; n++ )
+                {
+                    wideString += data.data[ n ];
+                }
+            }
+
+            return wideString;
+        }
+
+    public:
+        void InsertUniChars( size_t offset, const char32_t *src, size_t srcLen ) override
+        {
+            std::wstring wideString = encode_to_wide( src, srcLen );
+
+            InsertUnicode( offset, wideString.c_str(), wideString.length() );
         }
 
         void Insert( size_t offset, const stringProvider *right, size_t srcLen )
@@ -761,7 +849,13 @@ protected:
         void AppendUnicode( const wchar_t *right, size_t rightLen ) { strData.append( right, rightLen ); }
         void AppendANSI( const char *right, size_t rightLen )
         {
-            std::wstring wideOut = s2ws( std::string( right, rightLen ) );
+            std::wstring wideOut = s2ws <wchar_t> ( std::string( right, rightLen ) );
+
+            AppendUnicode( wideOut.c_str(), wideOut.length() );
+        }
+        void AppendUniChars( const char32_t *right, size_t rightLen ) override
+        {
+            std::wstring wideOut = encode_to_wide( right, rightLen );
 
             AppendUnicode( wideOut.c_str(), wideOut.length() );
         }
@@ -773,11 +867,16 @@ protected:
             AppendUnicode( wideOut.c_str(), wideOut.size() );
         }
 
+        inline bool CompareToUnicodeConst( const wchar_t *wideStr, size_t wideLen, bool caseSensitive ) const
+        {
+            return UniversalCompareStrings( this->strData.c_str(), this->strData.length(), wideStr, wideLen, caseSensitive );
+        }
+
         inline bool CompareToANSIConst( const char *ansiStr, size_t strLen, bool caseSensitive ) const
         {
-            std::wstring wideStr = s2ws( std::string( ansiStr, strLen ) );
+            std::wstring wideStr = s2ws <wchar_t> ( std::string( ansiStr, strLen ) );
 
-            return strData.equal( wideStr.c_str(), wideStr.length(), caseSensitive );
+            return CompareToUnicodeConst( wideStr.c_str(), wideStr.length(), caseSensitive );
         }
 
         bool CompareToANSI( const std::string& right, bool caseSensitive ) const
@@ -785,14 +884,14 @@ protected:
             return CompareToANSIConst( right.c_str(), right.size(), caseSensitive );
         }
 
-        inline bool CompareToUnicodeConst( const wchar_t *wideStr, size_t wideLen, bool caseSensitive ) const
-        {
-            return strData.equal( wideStr, wideLen, caseSensitive );
-        }
-
         bool CompareToUnicode( const std::wstring& right, bool caseSensitive ) const
         {
             return CompareToUnicodeConst( right.c_str(), right.size(), caseSensitive );
+        }
+
+        bool CompareToUniChars( const std::u32string& right, bool caseSensitive ) const override
+        {
+            return UniversalCompareStrings( this->strData.c_str(), this->strData.length(), right.c_str(), right.length(), caseSensitive );
         }
 
         bool CompareTo( const stringProvider *right, bool caseSensitive ) const
@@ -855,6 +954,22 @@ protected:
 
             return outputChar;
         }
+         
+        char32_t GetCharacter( size_t strPos ) const override
+        {
+            char_env::ucp_t resVal = 0xCC;
+            
+            const wchar_t *ourStr = this->strData.c_str();
+
+            size_t realPos = get_encoding_strpos( ourStr, strPos );
+
+            if ( realPos < this->strData.length() )
+            {
+                resVal = char_env::const_iterator( ourStr + realPos ).Resolve();
+            }
+
+            return resVal;
+        }
 
         bool CompareCharacterAtANSI( char refChar, size_t strPos, bool caseSensitive ) const
         {
@@ -868,6 +983,24 @@ protected:
             bool equals;
 
             return strData.compare_at( refChar, strPos, equals, caseSensitive ) && equals;
+        }
+
+        bool CompareCharacterAt( char32_t refChar, size_t strPos, bool caseSensitive ) const override
+        {
+            const wchar_t *ourStr = this->strData.c_str();
+
+            size_t realPos = get_encoding_strpos( ourStr, strPos );
+
+            bool isEqual = false;
+
+            if ( realPos < this->strData.length() )
+            {
+                char_env::ucp_t ourVal = char_env::const_iterator( ourStr + realPos ).Resolve();
+
+                isEqual = IsCharacterEqual( ourVal, refChar, caseSensitive );
+            }
+
+            return isEqual;
         }
 
         std::string ToANSI( void ) const
@@ -1023,7 +1156,7 @@ public:
         {
             if ( const char *ansiConst = provider->GetConstANSIString() )
             {
-                std::wstring wideStr = s2ws( std::string( ansiConst, provider->GetLength() ) );
+                std::wstring wideStr = s2ws <wchar_t> ( std::string( ansiConst, provider->GetLength() ) );
 
                 delete provider;
 
@@ -1044,6 +1177,18 @@ public:
         }
 
         return outSize;
+    }
+
+    inline size_t charlen( void ) const
+    {
+        size_t outLen = 0;
+
+        if ( stringProvider *provider = this->strData )
+        {
+            outLen = provider->GetDecodedLength();
+        }
+
+        return outLen;
     }
 
     inline void reserve( size_t memSize )
@@ -1130,6 +1275,18 @@ public:
         return isEqual;
     }
 
+    inline bool compareCharAt( char32_t refChar, size_t strPos, bool caseSensitive = true ) const
+    {
+        bool isEqual = false;
+
+        if ( stringProvider *provider = this->strData )
+        {
+            isEqual = provider->CompareCharacterAt( refChar, strPos, caseSensitive );
+        }
+
+        return isEqual;
+    }
+
     inline void insert( size_t offset, const char *src, size_t srcCount )
     {
         if ( !this->strData )
@@ -1150,6 +1307,18 @@ public:
         }
 
         this->strData->InsertUnicode( offset, src, srcCount );
+    }
+
+    inline void insert( size_t offset, const char32_t *src, size_t srcLen )
+    {
+        this->upgrade_unicode();
+
+        if ( !this->strData )
+        {
+            this->strData = new wideStringProvider();
+        }
+
+        this->strData->InsertUniChars( offset, src, srcLen );
     }
 
     inline void insert( size_t offset, const filePath& src, size_t srcLen )
@@ -1274,6 +1443,34 @@ public:
         return newPath;
     }
 
+    inline filePath operator + ( const wchar_t *right ) const
+    {
+        filePath newPath( *this );
+
+        if ( newPath.strData == NULL )
+        {
+            newPath.strData = new wideStringProvider();
+        }
+
+        newPath.strData->AppendUnicode( right, std::char_traits <wchar_t>::length( right ) );
+
+        return newPath;
+    }
+
+    inline filePath operator + ( const char32_t *right ) const
+    {
+        filePath newPath( *this );
+
+        if ( newPath.strData == NULL )
+        {
+            newPath.strData = new wideStringProvider();
+        }
+
+        newPath.strData->AppendUniChars( right, std::char_traits <char32_t>::length( right ) );
+
+        return newPath;
+    }
+
     inline filePath& operator += ( const filePath& right )
     {
         if ( right.strData != NULL )
@@ -1307,10 +1504,24 @@ public:
 
         if ( this->strData == NULL )
         {
-            this->strData = new ansiStringProvider();
+            this->strData = new wideStringProvider();
         }
 
         this->strData->AppendUnicode( right.c_str(), right.length() );
+
+        return *this;
+    }
+
+    inline filePath& operator += ( const std::u32string& right )
+    {
+        this->upgrade_unicode();
+
+        if ( this->strData == NULL )
+        {
+            this->strData = new wideStringProvider();
+        }
+
+        this->strData->AppendUniChars( right.c_str(), right.length() );
 
         return *this;
     }
@@ -1336,7 +1547,21 @@ public:
             this->strData = new wideStringProvider();
         }
 
-        this->strData->AppendUnicode( right, wcslen( right ) );
+        this->strData->AppendUnicode( right, std::char_traits <wchar_t>::length( right ) );
+
+        return *this;
+    }
+
+    inline filePath& operator += ( const char32_t *right )
+    {
+        this->upgrade_unicode();
+
+        if ( !this->strData )
+        {
+            this->strData = new wideStringProvider();
+        }
+
+        this->strData->AppendUniChars( right, std::char_traits <char32_t>::length( right ) );
 
         return *this;
     }
@@ -1363,6 +1588,20 @@ public:
         }
 
         this->strData->AppendUnicode( &right, 1 );
+
+        return *this;
+    }
+
+    inline filePath& operator += ( const char32_t right )
+    {
+        this->upgrade_unicode();
+
+        if ( this->strData == NULL )
+        {
+            this->strData = new wideStringProvider();
+        }
+
+        this->strData->AppendUniChars( &right, 1 );
 
         return *this;
     }

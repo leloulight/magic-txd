@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 
 #include <d3d9.h>
+#include <cwchar>
+#include <locale>
 
 #include "texformathelper.hxx"
 
@@ -98,22 +100,18 @@ void MainWindow::initializeNativeFormats( void )
     {
 		WIN32_FIND_DATA FindFileData;
 		memset(&FindFileData, 0, sizeof(WIN32_FIND_DATA));
-        wchar_t path[MAX_PATH];
-        wsprintf(path, L"%s\\%s\\*magf", this->m_appPath.toStdU16String().c_str(), MAGF_FORMAT_DIR);
-		HANDLE hFind = FindFirstFile(path, &FindFileData);
+        std::wstring magfpath = this->m_appPath.toStdWString();
+        std::wstring path = magfpath + L'\\' + MAGF_FORMAT_DIR + L'\\' + L"*.magf";
+		HANDLE hFind = FindFirstFileW(path.c_str(), &FindFileData);
 		if (hFind != INVALID_HANDLE_VALUE)
 		{
 			do
 			{
 				if (!(FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
 				{
-					wchar_t filename[MAX_PATH];
-                    wsprintf(filename, L"%s\\%s\\%s", this->m_appPath.toStdU16String().c_str(), MAGF_FORMAT_DIR, FindFileData.cFileName);
-					char message[512];
-                    message[ sizeof(message)-1 ] = '\0';
-					char pluginName[MAX_PATH];
-					wcstombs(pluginName, FindFileData.cFileName, MAX_PATH);
-					HMODULE hDLL = LoadLibrary(filename);
+                    std::wstring wPluginName = FindFileData.cFileName;
+                    std::wstring filename = magfpath + L'\\' + MAGF_FORMAT_DIR + L'\\' + FindFileData.cFileName;
+					HMODULE hDLL = LoadLibraryW(filename.c_str());
 					if (hDLL != NULL)
 					{
                         bool success = false;
@@ -142,8 +140,11 @@ void MainWindow::initializeNativeFormats( void )
                                     this->magf_formats.push_back( reg_entry );
 
                                     success = true;
+                                    
+                                    QString message =
+                                        QString( "Loaded plugin " ) + QString::fromStdWString( wPluginName ) +
+                                        QString( " (" ) + handler->GetFormatName() + QString( ")" );
 
-							        _snprintf(message, sizeof(message)-1, "Loaded plugin %s (%s)", pluginName, handler->GetFormatName());
 							        this->txdLog->addLogMessage(message, LOGMSG_INFO);
                                 }
                                 else
@@ -153,13 +154,17 @@ void MainWindow::initializeNativeFormats( void )
                             }
                             else
                             {
-							    _snprintf(message, sizeof(message)-1, "Texture format plugin (%s) is incorrect version", pluginName);
+                                QString message =
+                                    QString( "Texture format plugin (" ) + QString::fromStdWString( wPluginName ) + QString( ") is incorrect version" );
+
 							    this->txdLog->showError(message);
                             }
 						}
 						else
 						{
-							_snprintf(message, sizeof(message)-1, "Texture format plugin (%s) is corrupted", pluginName);
+                            QString message =
+                                QString( "Texture format plugin (" ) + QString::fromStdWString( wPluginName ) + QString( ") is corrupted" );
+
 							this->txdLog->showError(message);
 						}
 
@@ -170,7 +175,9 @@ void MainWindow::initializeNativeFormats( void )
 					}
 					else
 					{
-						_snprintf(message, sizeof(message)-1, "Failed to load texture format plugin (%s)", pluginName);
+                        QString message =
+                            QString( "Failed to load texture format plugin (" ) + QString::fromStdWString( wPluginName ) + QString( ")" );
+
 						this->txdLog->showError(message);
 					}
 				}

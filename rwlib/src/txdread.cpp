@@ -2715,7 +2715,7 @@ void texFormatInfo::set(const TextureBase& inTex)
 
 void texFormatInfo::writeToBlock(BlockProvider& outputProvider) const
 {
-    texFormatInfo_serialized <rw::endian::little_endian <uint32>> serStruct;
+    texFormatInfo_serialized <endian::little_endian <uint32>> serStruct;
     serStruct.info = *(uint32*)this;
 
     outputProvider.writeStruct( serStruct );
@@ -2723,7 +2723,7 @@ void texFormatInfo::writeToBlock(BlockProvider& outputProvider) const
 
 void texFormatInfo::readFromBlock(BlockProvider& inputProvider)
 {
-    texFormatInfo_serialized <rw::endian::little_endian <uint32>> serStruct;
+    texFormatInfo_serialized <endian::little_endian <uint32>> serStruct;
     
     inputProvider.readStruct( serStruct );
 

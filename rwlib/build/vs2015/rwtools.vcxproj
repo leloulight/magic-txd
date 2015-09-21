@@ -429,6 +429,7 @@
     <ClInclude Include="..\..\src\txdread.unc.hxx" />
     <ClInclude Include="..\..\src\txdread.xbox.hxx" />
     <ClInclude Include="..\..\vendor\eirrepo\sdk\DynamicTypeSystem.h" />
+    <ClInclude Include="..\..\vendor\eirrepo\sdk\Endian.h" />
     <ClInclude Include="..\..\vendor\eirrepo\sdk\MemoryUtils.h" />
     <ClInclude Include="..\..\vendor\eirrepo\sdk\rwlist.hpp" />
   </ItemGroup>

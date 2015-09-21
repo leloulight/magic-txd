@@ -21,6 +21,7 @@
 // Include some special vendor libraries.
 #include <core/CFileSystem.common.h>
 #include <sdk/rwlist.hpp>
+#include <sdk/Endian.h>
 
 namespace rw
 {

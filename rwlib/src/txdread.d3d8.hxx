@@ -346,7 +346,7 @@ struct textureMetaHeaderStructGeneric
 {
     endian::little_endian <uint32> platformDescriptor;
 
-    rw::texFormatInfo_serialized <rw::endian::little_endian <uint32>> texFormat;
+    rw::texFormatInfo_serialized <endian::little_endian <uint32>> texFormat;
     
     char name[32];
     char maskName[32];
