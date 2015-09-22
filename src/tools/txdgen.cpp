@@ -65,8 +65,10 @@ bool TxdGenModule::ProcessTXDArchive(
 
         if ( txd )
         {
+            rw::LibraryVersion reqVer = rw::KnownVersions::getGameVersion( gameVersion );
+
             // Update the version of this texture dictionary.
-            txd->SetEngineVersion( rwEngine->GetVersion() );
+            txd->SetEngineVersion( reqVer );
 
             try
             {
@@ -80,7 +82,7 @@ bool TxdGenModule::ProcessTXDArchive(
                         rw::TextureBase *theTexture = iter.Resolve();
 
                         // Update the version of this texture.
-                        theTexture->SetEngineVersion( rwEngine->GetVersion() );
+                        theTexture->SetEngineVersion( reqVer );
 
                         // We need to modify the raster.
                         rw::Raster *texRaster = theTexture->GetRaster();
@@ -122,7 +124,7 @@ bool TxdGenModule::ProcessTXDArchive(
                                 // We want to debug mipmap generation, so output debug textures only using mipmaps.
                                 //if ( _meetsDebugCriteria( tex ) )
                                 {
-                                    const filePath& srcPath = srcStream->GetPath();
+                                    std::wstring srcPath = srcStream->GetPath().convert_unicode();
 
                                     filePath relSrcPath;
 
@@ -158,33 +160,51 @@ bool TxdGenModule::ProcessTXDArchive(
 
                                                 if ( newRaster )
                                                 {
-                                                    newRaster->newNativeData( "Direct3D9" );
-
-                                                    // Put the debug content into it.
+                                                    try
                                                     {
-                                                        rw::Bitmap debugTexContent;
+                                                        newRaster->newNativeData( "Direct3D9" );
 
-                                                        debugTexContent.setBgColor( 1, 1, 1 );
-
-                                                        bool gotDebugContent = rw::DebugDrawMipmaps( rwEngine, texRaster, debugTexContent );
-
-                                                        if ( gotDebugContent )
+                                                        // Put the debug content into it.
                                                         {
-                                                            newRaster->setImageData( debugTexContent );
+                                                            rw::Bitmap debugTexContent;
+
+                                                            debugTexContent.setBgColor( 1, 1, 1 );
+
+                                                            bool gotDebugContent = rw::DebugDrawMipmaps( rwEngine, texRaster, debugTexContent );
+
+                                                            if ( gotDebugContent )
+                                                            {
+                                                                newRaster->setImageData( debugTexContent );
+                                                            }
+                                                        }
+
+                                                        if ( newRaster->getMipmapCount() > 0 )
+                                                        {
+                                                            // Write the debug texture to it.
+                                                            rw::Stream *outputStream = RwStreamCreateTranslated( rwEngine, debugOutputStream );
+
+                                                            if ( outputStream )
+                                                            {
+                                                                try
+                                                                {
+                                                                    newRaster->writeImage( outputStream, "TGA" );
+                                                                }
+                                                                catch( ... )
+                                                                {
+                                                                    rwEngine->DeleteStream( outputStream );
+
+                                                                    throw;
+                                                                }
+
+                                                                rwEngine->DeleteStream( outputStream );
+                                                            }
                                                         }
                                                     }
-
-                                                    if ( newRaster->getMipmapCount() > 0 )
+                                                    catch( ... )
                                                     {
-                                                        // Write the debug texture to it.
-                                                        rw::Stream *outputStream = RwStreamCreateTranslated( rwEngine, debugOutputStream );
+                                                        rw::DeleteRaster( newRaster );
 
-                                                        if ( outputStream )
-                                                        {
-                                                            newRaster->writeImage( outputStream, "TGA" );
-
-                                                            rwEngine->DeleteStream( outputStream );
-                                                        }
+                                                        throw;
                                                     }
 
                                                     rw::DeleteRaster( newRaster );
@@ -770,9 +790,10 @@ bool TxdGenModule::ApplicationMain( const run_config& cfg )
         rwEngine->SetWarningManager( &_warningMan );
 
         // Set some configuration.
-        rwEngine->SetVersion( rw::KnownVersions::getGameVersion( cfg.c_gameVersion ) );
         rwEngine->SetPaletteRuntime( cfg.c_palRuntimeType );
         rwEngine->SetDXTRuntime( cfg.c_dxtRuntimeType );
+
+        rwEngine->SetDXTPackedDecompression( cfg.c_dxtPackedDecompression );
 
         rwEngine->SetFixIncompatibleRasters( cfg.c_fixIncompatibleRasters );
 
@@ -794,7 +815,7 @@ bool TxdGenModule::ApplicationMain( const run_config& cfg )
             L"* gameRoot: " + cfg.c_gameRoot + L"\n"
         );
 
-        rw::LibraryVersion targetVersion = rwEngine->GetVersion();
+        rw::LibraryVersion targetVersion = rw::KnownVersions::getGameVersion( cfg.c_gameVersion );
 
         const char *strTargetVersion = "unknown";
 
