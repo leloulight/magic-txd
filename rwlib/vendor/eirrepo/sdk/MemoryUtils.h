@@ -1602,13 +1602,24 @@ public:
 
             if ( dstObject )
             {
-                bool cloneSuccess = structRegistry.AssignPluginBlock( dstObject, srcObject );
+                bool pluginConstructionSuccessful = structRegistry.ConstructPluginBlock( dstObject );
 
-                if ( cloneSuccess )
+                if ( pluginConstructionSuccessful )
                 {
-                    clonedObject = dstObject;
+                    bool cloneSuccess = structRegistry.AssignPluginBlock( dstObject, srcObject );
+
+                    if ( cloneSuccess )
+                    {
+                        clonedObject = dstObject;
+                    }
+
+                    if ( clonedObject == NULL )
+                    {
+                        structRegistry.DestroyPluginBlock( dstObject );
+                    }
                 }
-                else
+                
+                if ( clonedObject == NULL )
                 {
                     // Since cloning plugin data has not succeeded, we have to destroy the constructed base object again.
                     // Make sure that we do not throw exceptions.
@@ -1617,6 +1628,11 @@ public:
                     dstObject = NULL;
                 }
             }
+        }
+
+        if ( clonedObject )
+        {
+            this->aliveClasses++;
         }
 
         return clonedObject;

@@ -20,6 +20,12 @@ struct rasterConsistencyEnv
         {
             ClosePlacedReadWriteLock( ras->engineInterface, (rwlock*)this );
         }
+
+        inline void operator = ( const dynamic_rwlock& right )
+        {
+            // Nothing to do here.
+            return;
+        }
     };
 
     inline void Initialize( EngineInterface *intf )

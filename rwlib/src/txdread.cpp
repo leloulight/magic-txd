@@ -1827,7 +1827,12 @@ Raster::Raster( const Raster& right )
 Raster::~Raster( void )
 {
     // Delete the platform data, if available.
-    this->clearNativeData();
+    if ( PlatformTexture *platformTex = this->platformData )
+    {
+        DeleteNativeTexture( this->engineInterface, platformTex );
+
+        this->platformData = NULL;
+    }
 
     assert( this->refCount == 0 );
 }
