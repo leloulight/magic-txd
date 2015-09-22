@@ -497,7 +497,7 @@ int CBufferedFile::Seek( long iOffset, int iType )
         break;
     }
 
-    m_iSeek = std::max( (size_t)0, std::min( m_iSeek + iOffset, m_sSize ) );
+    m_iSeek = std::max( (size_t)0, std::min( (size_t)( m_iSeek + iOffset ), m_sSize ) );
     return 0;
 }
 
