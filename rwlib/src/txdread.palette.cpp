@@ -12,6 +12,8 @@
 
 #include "txdread.natcompat.hxx"
 
+#include "txdread.rasterplg.hxx"
+
 #ifdef RWLIB_INCLUDE_LIBIMAGEQUANT
 // Include the libimagequant library headers.
 #include <libimagequant.h>
@@ -553,6 +555,8 @@ void PalettizePixelData( Interface *engineInterface, pixelDataTraversal& pixelDa
 
 void Raster::convertToPalette( ePaletteType paletteType, eRasterFormat newRasterFormat )
 {
+    scoped_rwlock_writer <rwlock> rasterConsistency( GetRasterLock( this ) );
+
     // NULL operation.
     if ( paletteType == PALETTE_NONE )
         return;
@@ -702,6 +706,8 @@ void Raster::convertToPalette( ePaletteType paletteType, eRasterFormat newRaster
 
 ePaletteType Raster::getPaletteType( void ) const
 {
+    scoped_rwlock_reader <rwlock> rasterConsistency( GetRasterLock( this ) );
+
     PlatformTexture *platformTex = this->platformData;
 
     if ( !platformTex )

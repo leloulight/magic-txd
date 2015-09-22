@@ -630,6 +630,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\src\guiserialization.cpp" />
     <ClCompile Include="..\..\src\MagicExport.cpp" />
+    <ClCompile Include="..\..\src\massconvert.cpp" />
     <ClCompile Include="..\..\src\renderpropwindow.cpp" />
     <ClCompile Include="..\..\src\rwfswrap.cpp" />
     <ClCompile Include="..\..\src\texadddialog.cpp" />
@@ -642,6 +643,7 @@
     <ClInclude Include="..\..\include\defs.h" />
     <ClInclude Include="..\..\include\guiserialization.h" />
     <ClInclude Include="..\..\include\MagicExport.h" />
+    <ClInclude Include="..\..\include\massconvert.h" />
     <ClInclude Include="..\..\include\platformselwindow.h" />
     <ClInclude Include="..\..\include\renderpropwindow.h" />
     <ClInclude Include="..\..\include\resizewindow.h" />
@@ -654,6 +656,7 @@
     <ClInclude Include="..\..\include\txdlogwindow.h" />
     <ClInclude Include="..\..\magic_api\magfapi.h" />
     <ClInclude Include="..\..\magic_api\MagicFormats.h" />
+    <ClInclude Include="..\..\src\qtinteroputils.hxx" />
     <ClInclude Include="..\..\src\qtrwutils.hxx" />
     <ClInclude Include="..\..\src\texformathelper.hxx" />
     <ClInclude Include="..\..\include\mainwindow.h" />

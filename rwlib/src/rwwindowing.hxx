@@ -192,6 +192,9 @@ struct windowingSystemWin32
             Interface *engineInterface = this->engineInterface;
 
             // We must wait until our thread has finished.
+            TerminateThread( engineInterface, this->windowMessageThread );
+
+            // Close our handle.
             CloseThread( engineInterface, this->windowMessageThread );
 
             // Remove us from the list of actively managed windows.

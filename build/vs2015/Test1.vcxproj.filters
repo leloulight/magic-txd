@@ -12,6 +12,7 @@
     <ClCompile Include="..\..\src\tools\txdgen.cpp">
       <Filter>txdgen</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\massconvert.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="../../include/styles.h">
@@ -79,6 +80,12 @@
     </ClInclude>
     <ClInclude Include="..\..\src\tools\dirtools.h">
       <Filter>txdgen</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\massconvert.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\qtinteroputils.hxx">
+      <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

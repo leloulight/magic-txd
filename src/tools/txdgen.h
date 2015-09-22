@@ -18,8 +18,8 @@ public:
     
     inline TxdGenModule( rw::Interface *rwEngine )
     {
-        this->shouldTerminate = false;
         this->rwEngine = rwEngine;
+        this->_warningMan.module = this;
     }
 
     struct run_config
@@ -27,8 +27,8 @@ public:
         // By default, we create San Andreas files.
         rw::KnownVersions::eGameVersion c_gameVersion = rw::KnownVersions::SA;
 
-        std::string c_outputRoot = "txdgen_out/";
-        std::string c_gameRoot = "txdgen/";
+        std::wstring c_outputRoot = L"txdgen_out/";
+        std::wstring c_gameRoot = L"txdgen/";
 
         eTargetPlatform c_targetPlatform = PLATFORM_PC;
 
@@ -44,9 +44,9 @@ public:
 
         bool compressTextures = false;
 
-        rw::ePaletteRuntimeType c_palRuntimeType = rw::PALRUNTIME_NATIVE;
+        rw::ePaletteRuntimeType c_palRuntimeType = rw::PALRUNTIME_PNGQUANT;
 
-        rw::eDXTCompressionMethod c_dxtRuntimeType = rw::DXTRUNTIME_NATIVE;
+        rw::eDXTCompressionMethod c_dxtRuntimeType = rw::DXTRUNTIME_SQUISH;
 
         bool c_reconstructIMGArchives = true;
 
@@ -55,7 +55,7 @@ public:
 
         bool c_imgArchivesCompressed = false;
 
-        bool c_ignoreSerializationRegions = false;
+        bool c_ignoreSerializationRegions = true;
 
         float c_compressionQuality = 0.5f;
 
@@ -81,18 +81,17 @@ public:
         std::string& errMsg
     ) const;
 
-    void Interrupt( void )
+    rw::Interface* GetEngine( void ) const
     {
-        this->shouldTerminate = true;
+        return this->rwEngine;
     }
 
-    bool AskForTermination( void ) const
-    {
-        return this->shouldTerminate;
-    }
+    virtual void OnMessage( const std::string& msg ) = 0;
+    virtual void OnMessage( const std::wstring& msg ) = 0;
 
     struct RwWarningBuffer : public rw::WarningManagerInterface
     {
+        TxdGenModule *module;
         std::string buffer;
 
         void Purge( void )
@@ -100,10 +99,11 @@ public:
             // Output the content to the stream.
             if ( !buffer.empty() )
             {
-                std::cout <<
-                    "- Warnings:\n";
+                module->OnMessage( "- Warnings:\n" );
 
-                std::cout << buffer << std::endl;
+                buffer += "\n";
+
+                module->OnMessage( buffer );
 
                 buffer.clear();
             }
@@ -147,7 +147,7 @@ private:
         {
             thePlatform = PLATFORM_PVR;
         }
-        else if ( texRaster->hasNativeDataOfType( "ATI_Compress" ) )
+        else if ( texRaster->hasNativeDataOfType( "AMDCompress" ) )
         {
             thePlatform = PLATFORM_ATC;
         }
@@ -269,7 +269,7 @@ private:
         }
         else if ( targetPlatform == PLATFORM_ATC )
         {
-            hasConversionSucceeded = rw::ConvertRasterTo( texRaster, "ATI_Compress" );
+            hasConversionSucceeded = rw::ConvertRasterTo( texRaster, "AMDCompress" );
         }
         else if ( targetPlatform == PLATFORM_UNC_MOBILE )
         {
@@ -286,7 +286,6 @@ private:
         }
     }
 
-    bool shouldTerminate;
     rw::Interface *rwEngine;
 };
 

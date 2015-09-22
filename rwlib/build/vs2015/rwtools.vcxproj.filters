@@ -186,6 +186,9 @@
     <ClInclude Include="..\..\vendor\eirrepo\sdk\Endian.h">
       <Filter>shared_api</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\txdread.rasterplg.hxx">
+      <Filter>Include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\dffread.cpp" />

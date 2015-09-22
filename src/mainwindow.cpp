@@ -19,6 +19,7 @@
 #include "renderpropwindow.h"
 #include "resizewindow.h"
 #include "platformselwindow.h"
+#include "massconvert.h"
 
 #include "tools/txdgen.h"
 
@@ -301,6 +302,13 @@ MainWindow::MainWindow(QString appPath, QWidget *parent) :
             this->actionSetupTXDVersion = actionSetupTxdVersion;
 
 		    connect(actionSetupTxdVersion, &QAction::triggered, this, &MainWindow::onSetupTxdVersion);
+
+            QMenu *toolsMenu = menu->addMenu(tr("&Tools"));
+
+            QAction *actionMassConvert = new QAction("&Mass convert", this);
+            toolsMenu->addAction(actionMassConvert);
+
+            connect( actionMassConvert, &QAction::triggered, this, &MainWindow::onRequestMassConvert );
 
 	        QMenu *exportMenu = menu->addMenu(tr("&Export"));
 
@@ -1516,6 +1524,13 @@ void MainWindow::onSetupTxdVersion(bool checked) {
 
         this->verDlg = dialog;
     }
+}
+
+void MainWindow::onRequestMassConvert(bool checked)
+{
+    MassConvertWindow *massconv = new MassConvertWindow( this );
+
+    massconv->setVisible( true );
 }
 
 QString MainWindow::makeAppPath(QString subPath) {

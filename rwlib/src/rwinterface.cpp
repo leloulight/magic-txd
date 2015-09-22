@@ -9,6 +9,46 @@
 namespace rw
 {
 
+struct raster_constructor
+{
+    EngineInterface *intf;
+    void *constr_params;
+
+    inline Raster* Construct( void *mem ) const
+    {
+        return new (mem) Raster( this->intf, this->constr_params );
+    }
+};
+
+void EngineInterface::rasterTypeInterface::Construct( void *mem, EngineInterface *intf, void *constr_params ) const
+{
+    raster_constructor constr;
+    constr.intf = intf;
+    constr.constr_params = constr_params;
+
+    intf->rasterPluginFactory.ConstructPlacementEx( mem, constr );
+}
+
+void EngineInterface::rasterTypeInterface::CopyConstruct( void *mem, const void *srcMem ) const
+{
+    engineInterface->rasterPluginFactory.ClonePlacement( mem, (const rw::Raster*)srcMem );
+}
+
+void EngineInterface::rasterTypeInterface::Destruct( void *mem ) const
+{
+    engineInterface->rasterPluginFactory.DestroyPlacement( (rw::Raster*)mem );
+}
+
+size_t EngineInterface::rasterTypeInterface::GetTypeSize( EngineInterface *intf, void *constr_params ) const
+{
+    return intf->rasterPluginFactory.GetClassSize();
+}
+
+size_t EngineInterface::rasterTypeInterface::GetTypeSizeByObject( EngineInterface *intf, const void *mem ) const
+{
+    return intf->rasterPluginFactory.GetClassSize();
+}
+
 // Factory for interfaces.
 RwMemoryAllocator _engineMemAlloc;
 
@@ -25,10 +65,13 @@ EngineInterface::EngineInterface( void )
 
     this->typeSystem.InitializeLockProvider();
 
+    // Set up some type interfaces.
+    this->_rasterTypeInterface.engineInterface = this;
+
     // Register the main RenderWare types.
     {
         this->streamTypeInfo = this->typeSystem.RegisterAbstractType <Stream> ( "stream" );
-        this->rasterTypeInfo = this->typeSystem.RegisterStructType <Raster> ( "raster" );
+        this->rasterTypeInfo = this->typeSystem.RegisterType( "raster", &this->_rasterTypeInterface );
         this->rwobjTypeInfo = this->typeSystem.RegisterAbstractType <RwObject> ( "rwobj" );
         this->textureTypeInfo = this->typeSystem.RegisterStructType <TextureBase> ( "texture", this->rwobjTypeInfo );
     }
@@ -460,6 +503,15 @@ void Interface::SetWarningManager( WarningManagerInterface *warningMan )
     engineInterface->warningManager = warningMan;
 }
 
+WarningManagerInterface* Interface::GetWarningManager( void ) const
+{
+    EngineInterface *engineInterface = (EngineInterface*)this;
+
+    scoped_rwlock_reader <rwlock> lock( GetReadWriteLock( engineInterface ) );
+
+    return engineInterface->warningManager;
+}
+
 void Interface::SetWarningLevel( int level )
 {
     EngineInterface *engineInterface = (EngineInterface*)this;
@@ -692,6 +744,7 @@ bool Interface::GetIgnoreSerializationBlockRegions( void ) const
 
 // Static library object that takes care of initializing the module dependencies properly.
 extern void registerThreadingEnvironment( void );
+extern void registerRasterConsistency( void );
 extern void registerEventSystem( void );
 extern void registerTXDPlugins( void );
 extern void registerObjectExtensionsPlugins( void );
@@ -737,6 +790,7 @@ Interface* CreateEngine( LibraryVersion theVersion )
 
             // Now do the main modules.
             registerThreadingEnvironment();
+            registerRasterConsistency();
             registerEventSystem();
             registerStreamGlobalPlugins();
             registerSerializationPlugins();

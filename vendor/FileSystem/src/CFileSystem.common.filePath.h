@@ -946,7 +946,7 @@ protected:
             {
                 char default_char = '_';
 
-                int unicResult = WideCharToMultiByte( CP_ACP, MB_COMPOSITE, &wideChar, 1, &charOut, 1, &default_char, NULL );
+                int unicResult = WideCharToMultiByte( CP_ACP, 0, &wideChar, 1, &charOut, 1, &default_char, NULL );
 
                 if ( unicResult != 0 )
                 {

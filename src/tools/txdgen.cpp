@@ -9,11 +9,6 @@
 #include "dirtools.h"
 
 
-struct termination_request
-{
-};
-
-
 bool TxdGenModule::ProcessTXDArchive(
     CFileTranslator *srcRoot, CFile *srcStream, CFile *targetStream, eTargetPlatform targetPlatform,
     bool clearMipmaps,
@@ -358,10 +353,7 @@ struct _discFileSentry
     )
     {
         // If we are asked to terminate, just do it.
-        if ( module->AskForTermination() )
-        {
-            throw termination_request();
-        }
+        rw::CheckThreadHazards( module->GetEngine() );
 
         // Decide whether we need a copy.
         bool requiresCopy = false;
@@ -378,7 +370,9 @@ struct _discFileSentry
 
         if ( requiresCopy )
         {
-            targetStream = buildRoot->Open( relPathFromRoot.c_str(), "wb" );
+            std::wstring widePath = relPathFromRoot.convert_unicode();
+
+            targetStream = buildRoot->Open( widePath.c_str(), L"wb" );
         }
 
         if ( targetStream && sourceStream )
@@ -388,7 +382,7 @@ struct _discFileSentry
             {
                 if ( extention.equals( "TXD", false ) == true )
                 {
-                    printf( "*** %s ...", relPathFromRoot.c_str() );
+                    module->OnMessage( "*** " + relPathFromRoot.convert_ansi() + " ..." );
 
                     std::string errorMessage;
 
@@ -409,13 +403,11 @@ struct _discFileSentry
 
                         anyWork = true;
 
-                        printf( "OK\n" );
+                        module->OnMessage( "OK\n" );
                     }
                     else
                     {
-                        printf( "error: " );
-
-                        std::cout << std::endl << errorMessage << std::endl;
+                        module->OnMessage( "error:\n" + errorMessage + "\n" );
                     }
 
                     // Output any warnings.
@@ -449,7 +441,7 @@ struct _discFileSentry
 
     inline void OnArchiveFail( const filePath& fileName, const filePath& extention )
     {
-        printf( "failed to create new IMG archive for processing; defaulting to file-copy ...\n" );
+        module->OnMessage( "failed to create new IMG archive for processing; defaulting to file-copy ...\n" );
     }
 };
 
@@ -494,13 +486,13 @@ TxdGenModule::run_config TxdGenModule::ParseConfig( CFileTranslator *root, const
                 // Output root.
                 if ( const char *newOutputRoot = mainEntry->Get( "outputRoot" ) )
                 {
-                    cfg.c_outputRoot = newOutputRoot;
+                    cfg.c_outputRoot = (std::wstring_convert <std::codecvt <wchar_t, char, std::mbstate_t>, wchar_t> ()).from_bytes( newOutputRoot );
                 }
 
                 // Game root.
                 if ( const char *newGameRoot = mainEntry->Get( "gameRoot" ) )
                 {
-                    cfg.c_gameRoot = newGameRoot;
+                    cfg.c_gameRoot = (std::wstring_convert <std::codecvt <wchar_t, char, std::mbstate_t>, wchar_t> ()).from_bytes( newGameRoot );
                 }
 
                 // Target Platform.
@@ -765,9 +757,10 @@ TxdGenModule::run_config TxdGenModule::ParseConfig( CFileTranslator *root, const
 
 bool TxdGenModule::ApplicationMain( const run_config& cfg )
 {
-    std::cout <<
+    this->OnMessage(
         "RenderWare TXD generator tool. Compiled on " __DATE__ "\n" \
-        "Use this tool at your own risk!\n\n";
+        "Use this tool at your own risk!\n\n"
+    );
 
     bool successful = true;
 
@@ -785,16 +778,21 @@ bool TxdGenModule::ApplicationMain( const run_config& cfg )
 
         rwEngine->SetIgnoreSerializationBlockRegions( cfg.c_ignoreSerializationRegions );
 
+        rwEngine->SetWarningLevel( cfg.c_warningLevel );
+
+        rwEngine->SetIgnoreSecureWarnings( cfg.c_ignoreSecureWarnings );
+
         // Output some debug info.
-        std::cout
-            <<
+        this->OnMessage(
             "=========================\n" \
             "Configuration:\n" \
-            "=========================\n";
+            "=========================\n"
+        );
 
-        std::cout
-            << "* outputRoot: " << cfg.c_outputRoot << std::endl
-            << "* gameRoot: " << cfg.c_gameRoot << std::endl;
+        this->OnMessage(
+            L"* outputRoot: " + cfg.c_outputRoot + L"\n" \
+            L"* gameRoot: " + cfg.c_gameRoot + L"\n"
+        );
 
         rw::LibraryVersion targetVersion = rwEngine->GetVersion();
 
@@ -820,8 +818,9 @@ bool TxdGenModule::ApplicationMain( const run_config& cfg )
             strTargetVersion = "GTA 3";
         }
 
-        std::cout
-            << "* targetVersion: " << strTargetVersion << " [rwver: " << targetVersion.toString() << "]" << std::endl;
+        this->OnMessage(
+            std::string( "* targetVersion: " ) + strTargetVersion + " [rwver: " + targetVersion.toString() + "]\n"
+        );
 
         const char *strTargetPlatform = "unknown";
 
@@ -854,14 +853,17 @@ bool TxdGenModule::ApplicationMain( const run_config& cfg )
             strTargetPlatform = "uncompressed [mobile]";
         }
 
-        std::cout
-            << "* targetPlatform: " << strTargetPlatform << std::endl;
+        this->OnMessage(
+            std::string( "* targetPlatform: " ) + strTargetPlatform + "\n"
+        );
 
-        std::cout
-            << "* clearMipmaps: " << ( cfg.c_clearMipmaps ? "true" : "false" ) << std::endl;
+        this->OnMessage(
+            std::string( "* clearMipmaps: " ) + ( cfg.c_clearMipmaps ? "true" : "false" ) + "\n"
+        );
 
-        std::cout
-            << "* generateMipmaps: " << ( cfg.c_generateMipmaps ? "true" : "false" ) << std::endl;
+        this->OnMessage(
+            std::string( "* generateMipmaps: " ) + ( cfg.c_generateMipmaps ? "true" : "false" ) + "\n"
+        );
 
         const char *mipGenModeString = "unknown";
 
@@ -886,20 +888,25 @@ bool TxdGenModule::ApplicationMain( const run_config& cfg )
             mipGenModeString = "selectclose";
         }
 
-        std::cout
-            << "* mipGenMode: " << mipGenModeString << std::endl;
+        this->OnMessage(
+            std::string( "* mipGenMode: " ) + mipGenModeString + "\n"
+        );
 
-        std::cout
-            << "* mipGenMaxLevel: " << cfg.c_mipGenMaxLevel << std::endl;
+        this->OnMessage(
+            std::string( "* mipGenMaxLevel: " ) + std::to_string( cfg.c_mipGenMaxLevel ) + "\n"
+        );
 
-        std::cout
-            << "* improveFiltering: " << ( cfg.c_improveFiltering ? "true" : "false" ) << std::endl;
+        this->OnMessage(
+            std::string( "* improveFiltering: " ) + ( cfg.c_improveFiltering ? "true" : "false" ) + "\n"
+        );
 
-        std::cout
-            << "* compressTextures: " << ( cfg.compressTextures ? "true" : "false" ) << std::endl;
+        this->OnMessage(
+            std::string( "* compressTextures: " ) + ( cfg.compressTextures ? "true" : "false" ) + "\n"
+        );
 
-        std::cout
-            << "* compressionQuality: " << ( cfg.c_compressionQuality ) << std::endl;
+        this->OnMessage(
+            std::string( "* compressionQuality: " ) + std::to_string( cfg.c_compressionQuality ) + "\n"
+        );
 
         const char *strPalRuntimeType = "unknown";
 
@@ -912,8 +919,9 @@ bool TxdGenModule::ApplicationMain( const run_config& cfg )
             strPalRuntimeType = "pngquant";
         }
 
-        std::cout
-            << "* palRuntimeType: " << strPalRuntimeType << std::endl;
+        this->OnMessage(
+            std::string( "* palRuntimeType: " ) + strPalRuntimeType + "\n"
+        );
 
         const char *strDXTRuntimeType = "unknown";
 
@@ -926,32 +934,40 @@ bool TxdGenModule::ApplicationMain( const run_config& cfg )
             strDXTRuntimeType = "squish";
         }
 
-        std::cout
-            << "* dxtRuntimeType: " << strDXTRuntimeType << std::endl;
+        this->OnMessage(
+            std::string( "* dxtRuntimeType: " ) + strDXTRuntimeType + "\n"
+        );
 
-        std::cout
-            << "* warningLevel: " << cfg.c_warningLevel << std::endl;
+        this->OnMessage(
+            std::string( "* warningLevel: " ) + std::to_string( cfg.c_warningLevel ) + "\n"
+        );
 
-        std::cout
-            << "* ignoreSecureWarnings: " << ( cfg.c_ignoreSecureWarnings ? "true" : "false" ) << std::endl;
+        this->OnMessage(
+            std::string( "* ignoreSecureWarnings: " ) + ( cfg.c_ignoreSecureWarnings ? "true" : "false" ) + "\n"
+        );
 
-        std::cout
-            << "* reconstructIMGArchives: " << ( cfg.c_reconstructIMGArchives ? "true" : "false" ) << std::endl;
+        this->OnMessage(
+            std::string( "* reconstructIMGArchives: " ) + ( cfg.c_reconstructIMGArchives ? "true" : "false" ) + "\n"
+        );
 
-        std::cout
-            << "* fixIncompatibleRasters: " << ( cfg.c_fixIncompatibleRasters ? "true" : "false" ) << std::endl;
+        this->OnMessage(
+            std::string( "* fixIncompatibleRasters: " ) + ( cfg.c_fixIncompatibleRasters ? "true" : "false" ) + "\n"
+        );
 
-        std::cout
-            << "* dxtPackedDecompression: " << ( cfg.c_dxtPackedDecompression ? "true" : "false" ) << std::endl;
+        this->OnMessage(
+            std::string( "* dxtPackedDecompression: " ) + ( cfg.c_dxtPackedDecompression ? "true" : "false" ) + "\n"
+        );
 
-        std::cout
-            << "* imgArchivesCompressed: " << ( cfg.c_imgArchivesCompressed ? "true" : "false" ) << std::endl;
+        this->OnMessage(
+            std::string( "* imgArchivesCompressed: " ) + ( cfg.c_imgArchivesCompressed ? "true" : "false" ) + "\n"
+        );
 
-        std::cout
-            << "* ignoreSerializationRegions: " << ( cfg.c_ignoreSerializationRegions ? "true" : "false" ) << std::endl;
+        this->OnMessage(
+            std::string( "* ignoreSerializationRegions: " ) + ( cfg.c_ignoreSerializationRegions ? "true" : "false" ) + "\n"
+        );
 
         // Finish with a newline.
-        std::cout << std::endl;
+        this->OnMessage( "\n" );
 
         // Do the conversion!
         {
@@ -968,7 +984,7 @@ bool TxdGenModule::ApplicationMain( const run_config& cfg )
 
             if ( cfg.c_outputDebug )
             {
-                hasDebugRoot = obtainAbsolutePath( "debug_output/", absDebugOutputTranslator, true, true );
+                hasDebugRoot = obtainAbsolutePath( L"debug_output/", absDebugOutputTranslator, true, true );
             }
 
             if ( hasGameRoot && hasOutputRoot )
@@ -977,7 +993,7 @@ bool TxdGenModule::ApplicationMain( const run_config& cfg )
                 {
                     // File roots are prepared.
                     // We can start processing files.
-                    gtaFileProcessor <_discFileSentry> fileProc;
+                    gtaFileProcessor <_discFileSentry> fileProc( this );
 
                     fileProc.setArchiveReconstruction( cfg.c_reconstructIMGArchives );
 
@@ -1002,11 +1018,12 @@ bool TxdGenModule::ApplicationMain( const run_config& cfg )
                     // Output any warnings.
                     _warningMan.Purge();
                 }
-                catch( termination_request& )
+                catch( ... )
                 {
                     // OK.
-                    std::cout
-                        << "terminated module" << std::endl;
+                    this->OnMessage(
+                        "terminated module\n"
+                    );
 
                     successful = false;
                 }
@@ -1015,14 +1032,12 @@ bool TxdGenModule::ApplicationMain( const run_config& cfg )
             {
                 if ( !hasGameRoot )
                 {
-                    std::cout
-                        << "could not get a filesystem handle to the game root" << std::endl;
+                    this->OnMessage( "could not get a filesystem handle to the game root\n" );
                 }
 
                 if ( !hasOutputRoot )
                 {
-                    std::cout
-                        << "could not get a filesystem handle to the output root" << std::endl;
+                    this->OnMessage( "could not get a filesystem handle to the output root\n" );
                 }
             }
 
@@ -1042,13 +1057,10 @@ bool TxdGenModule::ApplicationMain( const run_config& cfg )
                 delete absOutputRootTranslator;
             }
         }
-
-        // Shutdown environments.
-        std::cout << "\ncleaning up...\n";
     }
     else
     {
-        std::cout << "error: incompatible RenderWare environment.\n";
+        this->OnMessage( "error: incompatible RenderWare environment.\n" );
     }
 
     return successful;

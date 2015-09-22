@@ -518,6 +518,8 @@ public:
     void                PixelFree               ( void *pixels );
 
     void                SetWarningManager       ( WarningManagerInterface *warningMan );
+    WarningManagerInterface*    GetWarningManager( void ) const;
+
     void                SetWarningLevel         ( int level );
     int                 GetWarningLevel         ( void ) const;
 

@@ -4,6 +4,8 @@
 
 #include "txdread.natcompat.hxx"
 
+#include "txdread.rasterplg.hxx"
+
 namespace rw
 {
 
@@ -213,6 +215,8 @@ static AINLINE void CompressNativeTexture(
 
 void Raster::compress( float quality )
 {
+    scoped_rwlock_writer <rwlock> rasterConsistency( GetRasterLock( this ) );
+
     // A pretty complicated algorithm that can be used to optimally compress rasters.
     // Currently this only supports DXT.
 
@@ -310,6 +314,8 @@ void Raster::compress( float quality )
 
 void Raster::compressCustom(eCompressionType targetCompressionType)
 {
+    scoped_rwlock_writer <rwlock> rasterConsistency( GetRasterLock( this ) );
+
     PlatformTexture *platformTex = this->platformData;
 
     if ( !platformTex )
@@ -335,6 +341,8 @@ void Raster::compressCustom(eCompressionType targetCompressionType)
 
 bool Raster::isCompressed( void ) const
 {
+    scoped_rwlock_reader <rwlock> rasterConsistency( GetRasterLock( this ) );
+
     PlatformTexture *platformTex = this->platformData;
 
     if ( !platformTex )
@@ -356,6 +364,8 @@ bool Raster::isCompressed( void ) const
 
 eCompressionType Raster::getCompressionFormat( void ) const
 {
+    scoped_rwlock_reader <rwlock> rasterConsistency( GetRasterLock( this ) );
+
     PlatformTexture *platformTex = this->platformData;
 
     if ( !platformTex )

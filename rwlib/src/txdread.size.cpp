@@ -2,6 +2,8 @@
 
 #include "txdread.size.hxx"
 
+#include "txdread.rasterplg.hxx"
+
 namespace rw
 {
 
@@ -786,6 +788,8 @@ AINLINE void performMagnifyFiltering2D(
 
 void Raster::resize(uint32 newWidth, uint32 newHeight, const char *downsampleMode, const char *upscaleMode)
 {
+    scoped_rwlock_writer <rwlock> rasterConsistency( GetRasterLock( this ) );
+
     PlatformTexture *platformTex = this->platformData;
 
     if ( !platformTex )
@@ -1193,6 +1197,8 @@ void Raster::resize(uint32 newWidth, uint32 newHeight, const char *downsampleMod
 
 void Raster::getSize(uint32& width, uint32& height) const
 {
+    scoped_rwlock_reader <rwlock> rasterConsistency( GetRasterLock( this ) );
+
     PlatformTexture *platformTex = this->platformData;
 
     if ( !platformTex )

@@ -305,8 +305,10 @@ bool CSystemFileTranslator::GenExists( const charType *path ) const
     // The C API cannot cope with trailing slashes
     size_t outSize = output.size();
 
-    if ( outSize && output[--outSize] == '/' )
+    if ( outSize && output.compareCharAt( '/', --outSize ) )
+    {
         output.resize( outSize );
+    }
     
     struct stat tmp;
 
@@ -740,20 +742,9 @@ bool CSystemFileTranslator::GenGetFullPath( const charType *path, bool allowFile
 bool CSystemFileTranslator::GetFullPath( const char *path, bool allowFile, filePath& output ) const     { return GenGetFullPath( path, allowFile, output ); }
 bool CSystemFileTranslator::GetFullPath( const wchar_t *path, bool allowFile, filePath& output ) const  { return GenGetFullPath( path, allowFile, output ); }
 
-template <typename charType>
-bool CSystemFileTranslator::GenChangeDirectory( const charType *path )
+bool CSystemFileTranslator::OnConfirmDirectoryChange( const dirTree& tree )
 {
-    dirTree tree;
-    filePath absPath;
-    bool file;
-
-    if ( !GetRelativePathTreeFromRoot( path, tree, file ) )
-        return false;
-
-    if ( file )
-        tree.pop_back();
-
-    absPath = m_root;
+    filePath absPath = m_root;
     _File_OutputPathTree( tree, false, absPath );
 
 #ifdef _WIN32
@@ -781,15 +772,8 @@ bool CSystemFileTranslator::GenChangeDirectory( const charType *path )
         return false;
 #endif //OS DEPENDANT CODE
 
-    m_currentDir.clear();
-    _File_OutputPathTree( tree, false, m_currentDir );
-
-    m_curDirTree = tree;
     return true;
 }
-
-bool CSystemFileTranslator::ChangeDirectory( const char *path )     { return GenChangeDirectory( path ); }
-bool CSystemFileTranslator::ChangeDirectory( const wchar_t *path )  { return GenChangeDirectory( path ); }
 
 template <typename charType>
 inline const charType* GetAnyWildcardSelector( void )

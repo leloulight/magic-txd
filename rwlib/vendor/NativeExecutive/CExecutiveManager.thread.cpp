@@ -183,9 +183,11 @@ struct nativeThreadPluginInterface : public ExecutiveManager::threadPluginContai
         }
         catch( ... )
         {
-            // We are terminated.
-            info->status = THREAD_TERMINATED;
+            // We have to safely quit.
         }
+
+        // We are terminated.
+        info->status = THREAD_TERMINATED;
 
         return ERROR_SUCCESS;
     }
@@ -250,7 +252,6 @@ struct nativeThreadPluginInterface : public ExecutiveManager::threadPluginContai
                 }
 
                 // If we return here, the thread must be terminated.
-                assert( threadInfo->status == THREAD_TERMINATED );
             }
             else
             {
@@ -274,6 +275,16 @@ extern "C" DWORD WINAPI nativeThreadPluginInterface_ThreadProcCPP( LPVOID param 
 {
     // This is an assembler compatible entry point.
     return nativeThreadPluginInterface::_ThreadProcCPP( param );
+}
+
+extern "C" void WINAPI nativeThreadPluginInterface_OnNativeThreadEnd( nativeThreadPlugin *nativeInfo )
+{
+    // The assembler finished using us, so do clean up work.
+    CExecThread *theThread = nativeInfo->self;
+
+    CExecutiveManager *manager = theThread->manager;
+
+    manager->CloseThread( theThread );
 }
 
 bool nativeThreadPluginInterface::OnPluginConstruct( CExecThread *thread, ExecutiveManager::threadPluginContainer_t::pluginOffset_t pluginOffset, ExecutiveManager::threadPluginContainer_t::pluginDescriptor id )
@@ -434,11 +445,16 @@ CExecThread::CExecThread( CExecutiveManager *manager, bool isRemoteThread, void 
     this->stackSize = stackSize;
     this->entryPoint = entryPoint;
 
+    // We start with two references, one for the runtime and one for the thread itself.
+    this->refCount = 2;
+
     LIST_INSERT( manager->threads.root, managerNode );
 }
 
 CExecThread::~CExecThread( void )
 {
+    assert( this->refCount == 0 );
+
     LIST_REMOVE( managerNode );
 }
 
@@ -710,6 +726,8 @@ CExecThread* CExecutiveManager::GetCurrentThread( void )
     CExecThread *currentThread = NULL;
 
 #ifdef _WIN32
+    // Only allow retrieval if the envirnment is not terminating.
+    if ( this->isTerminating == false )
     {
         // Get our native interface (if available).
         privateNativeThreadEnvironment *nativeEnv = privateNativeThreadEnvironmentRegister.GetPluginStruct( (CExecutiveManagerNative*)this );
@@ -735,6 +753,11 @@ CExecThread* CExecutiveManager::GetCurrentThread( void )
                         break;
                     }
                 LIST_FOREACH_END
+            }
+
+            if ( currentThread && currentThread->GetStatus() == THREAD_TERMINATED )
+            {
+                return NULL;
             }
 
             // If we have not found a thread handle representing this native thread, we should create one.
@@ -807,17 +830,38 @@ CExecThread* CExecutiveManager::GetCurrentThread( void )
     return currentThread;
 }
 
+CExecThread* CExecutiveManager::AcquireThread( CExecThread *thread )
+{
+    // Add a reference and return a new handle to the thread.
+
+    // TODO: make sure that we do not overflow the refCount.
+
+    long prevRefCount = thread->refCount++;
+
+    assert( prevRefCount != 0 );
+
+    // We have a new handle.
+    return thread;
+}
+
 void CExecutiveManager::CloseThread( CExecThread *thread )
 {
-    // Only allow this from the current thread if we are a remote thread.
-    if ( GetCurrentThread() == thread )
-    {
-        if ( !thread->isRemoteThread )
-            return;
-    }
+    // Decrease the reference count.
+    unsigned long prevRefCount = thread->refCount--;
 
-    // Kill the thread.
+    if ( prevRefCount == 1 )
     {
+        // Only allow this from the current thread if we are a remote thread.
+        if ( GetCurrentThread() == thread )
+        {
+            if ( !thread->isRemoteThread )
+            {
+                assert( 0 );
+                return;
+            }
+        }
+        
+        // Kill the thread.
 #ifdef _WIN32
         nativeLock lock( threadPluginsLock );
 #endif

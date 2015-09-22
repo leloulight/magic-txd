@@ -9,11 +9,15 @@
 
 #include "txdread.nativetex.hxx"
 
+#include "txdread.rasterplg.hxx"
+
 namespace rw
 {
 
 uint32 Raster::getMipmapCount( void ) const
 {
+    scoped_rwlock_reader <rwlock> rasterConsistency( GetRasterLock( this ) );
+
     uint32 mipmapCount = 0;
 
     if ( PlatformTexture *platformTex = this->platformData )
@@ -31,6 +35,8 @@ uint32 Raster::getMipmapCount( void ) const
 
 void Raster::clearMipmaps( void )
 {
+    scoped_rwlock_writer <rwlock> rasterConsistency( GetRasterLock( this ) );
+
     Interface *engineInterface = this->engineInterface;
 
     PlatformTexture *platformTex = this->platformData;
@@ -187,6 +193,11 @@ inline void ensurePutIntoArray( dataType dataToPut, containerType& container, ui
 
 void Raster::generateMipmaps( uint32 maxMipmapCount, eMipmapGenerationMode mipGenMode )
 {
+    // Grab the bitmap of this texture, so we can generate mipmaps.
+    Bitmap textureBitmap = this->getBitmap();
+
+    scoped_rwlock_writer <rwlock> rasterConsistency( GetRasterLock( this ) );
+
     PlatformTexture *platformTex = this->platformData;
 
     if ( !platformTex )
@@ -212,9 +223,6 @@ void Raster::generateMipmaps( uint32 maxMipmapCount, eMipmapGenerationMode mipGe
 
     if ( oldMipmapCount == 0 )
         return;
-
-    // Grab the bitmap of this texture, so we can generate mipmaps.
-    Bitmap textureBitmap = this->getBitmap();
 
     // Do the generation.
     // We process the image in 2x2 blocks for the level index 1, 4x4 for level index 2, ...

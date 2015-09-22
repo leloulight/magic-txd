@@ -114,6 +114,8 @@ public slots:
     void onSetupRenderingProps( bool checked );
 	void onSetupTxdVersion(bool checked);
 
+    void onRequestMassConvert(bool checked);
+
 private:
     QString requestValidImagePath( void );
 

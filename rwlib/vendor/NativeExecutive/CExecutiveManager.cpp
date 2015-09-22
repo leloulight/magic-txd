@@ -93,11 +93,11 @@ CExecutiveManager* CExecutiveManager::Create( void )
 
 void CExecutiveManager::Delete( CExecutiveManager *manager )
 {
-    // Mark this module so that is spawns no more new objects.
-    manager->isTerminating = true;
-
     // Shutdown sub modules.
     manager->ShutdownTasks();
+
+    // Mark this module so that is spawns no more new objects.
+    manager->isTerminating = true;
 
     // Kill all remaining handles.
     // This is required to properly shut ourselves down.

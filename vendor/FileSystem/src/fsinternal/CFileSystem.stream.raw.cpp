@@ -13,10 +13,6 @@
 // Include internal header.
 #include "CFileSystem.internal.h"
 
-// List of all active files.
-// Exported from the main FileSystem class.
-extern std::list <CFile*> *openFiles;
-
 enum eNumberConversion
 {
     NUMBER_LITTLE_ENDIAN,
@@ -124,8 +120,6 @@ AINLINE void ConvertToWideNumber(
 
 CRawFile::CRawFile( const filePath& absFilePath )
 {
-    openFiles->push_back( this );
-
     m_path = absFilePath;
 }
 
@@ -136,8 +130,6 @@ CRawFile::~CRawFile( void )
 #elif defined(__linux__)
     fclose( m_file );
 #endif //OS DEPENDANT CODE
-
-    openFiles->remove( this );
 }
 
 inline void _64bit_security_check( size_t sElement, size_t iNumElements )

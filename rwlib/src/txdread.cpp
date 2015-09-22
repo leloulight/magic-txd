@@ -25,6 +25,8 @@
 
 #include "txdread.natcompat.hxx"
 
+#include "txdread.rasterplg.hxx"
+
 namespace rw
 {
 
@@ -1804,6 +1806,8 @@ void DeleteRaster( Raster *theRaster )
 
 Raster::Raster( const Raster& right )
 {
+    scoped_rwlock_reader <rwlock> rasterConsistency( GetRasterLock( &right ) );
+
     // Copy raster specifics.
     this->engineInterface = right.engineInterface;
 
@@ -1828,8 +1832,18 @@ Raster::~Raster( void )
     assert( this->refCount == 0 );
 }
 
+// Most important raster plugin, the threading consistency.
+rasterConsistencyRegister_t rasterConsistencyRegister;
+
+void registerRasterConsistency( void )
+{
+    rasterConsistencyRegister.RegisterPlugin( engineFactory );
+}
+
 void Raster::SetEngineVersion( LibraryVersion version )
 {
+    scoped_rwlock_writer <rwlock> rasterConsistency( GetRasterLock( this ) );
+
     PlatformTexture *platformTex = this->platformData;
 
     if ( !platformTex )
@@ -1851,6 +1865,8 @@ void Raster::SetEngineVersion( LibraryVersion version )
 
 LibraryVersion Raster::GetEngineVersion( void ) const
 {
+    scoped_rwlock_reader <rwlock> rasterConsistency( GetRasterLock( this ) );
+
     PlatformTexture *platformTex = this->platformData;
 
     if ( !platformTex )
@@ -1872,6 +1888,8 @@ LibraryVersion Raster::GetEngineVersion( void ) const
 
 void Raster::getSizeRules( rasterSizeRules& rulesOut ) const
 {
+    scoped_rwlock_reader <rwlock> rasterConsistency( GetRasterLock( this ) );
+
     // We need to fetch that from the native texture.
     PlatformTexture *platformTex = this->platformData;
 
@@ -1929,6 +1947,8 @@ void rasterSizeRules::adjustDimensions( uint32 width, uint32 height, uint32& new
 
 void Raster::getFormatString( char *buf, size_t bufSize, size_t& lengthOut ) const
 {
+    scoped_rwlock_reader <rwlock> rasterConsistency( GetRasterLock( this ) );
+
     // Ask the native platform texture to deliver us a format string.
     PlatformTexture *platformTex = this->platformData;
 
@@ -1951,6 +1971,8 @@ void Raster::getFormatString( char *buf, size_t bufSize, size_t& lengthOut ) con
 
 void Raster::convertToFormat(eRasterFormat newFormat)
 {
+    scoped_rwlock_writer <rwlock> rasterConsistency( GetRasterLock( this ) );
+
     PlatformTexture *platformTex = this->platformData;
 
     if ( !platformTex )
@@ -2038,6 +2060,8 @@ void Raster::convertToFormat(eRasterFormat newFormat)
 
 eRasterFormat Raster::getRasterFormat( void ) const
 {
+    scoped_rwlock_reader <rwlock> rasterConsistency( GetRasterLock( this ) );
+
     PlatformTexture *platformTex = this->platformData;
 
     if ( !platformTex )
@@ -2059,6 +2083,8 @@ eRasterFormat Raster::getRasterFormat( void ) const
 
 Bitmap Raster::getBitmap(void) const
 {
+    scoped_rwlock_reader <rwlock> rasterConsistency( GetRasterLock( this ) );
+
     Interface *engineInterface = this->engineInterface;
 
     Bitmap resultBitmap;
@@ -2122,6 +2148,8 @@ Bitmap Raster::getBitmap(void) const
 
 void Raster::setImageData(const Bitmap& srcImage)
 {
+    scoped_rwlock_writer <rwlock> rasterConsistency( GetRasterLock( this ) );
+
     PlatformTexture *platformTex = this->platformData;
 
     if ( platformTex == NULL )
@@ -2300,6 +2328,8 @@ void TextureBase::fixFiltering(void)
 
 void Raster::newNativeData( const char *typeName )
 {
+    scoped_rwlock_writer <rwlock> rasterConsistency( GetRasterLock( this ) );
+
     if ( this->platformData != NULL )
         return;
 
@@ -2319,6 +2349,8 @@ void Raster::newNativeData( const char *typeName )
 
 void Raster::clearNativeData( void )
 {
+    scoped_rwlock_writer <rwlock> rasterConsistency( GetRasterLock( this ) );
+
     PlatformTexture *platformTex = this->platformData;
 
     if ( platformTex == NULL )
@@ -2334,6 +2366,8 @@ void Raster::clearNativeData( void )
 
 bool Raster::hasNativeDataOfType( const char *typeName ) const
 {
+    scoped_rwlock_reader <rwlock> rasterConsistency( GetRasterLock( this ) );
+
     PlatformTexture *platformTex = this->platformData;
 
     if ( !platformTex )
@@ -2350,6 +2384,8 @@ bool Raster::hasNativeDataOfType( const char *typeName ) const
 
 const char* Raster::getNativeDataTypeName( void ) const
 {
+    scoped_rwlock_reader <rwlock> rasterConsistency( GetRasterLock( this ) );
+
     PlatformTexture *platformTex = this->platformData;
 
     if ( !platformTex )
@@ -2366,6 +2402,8 @@ const char* Raster::getNativeDataTypeName( void ) const
 
 void* Raster::getNativeInterface( void )
 {
+    scoped_rwlock_reader <rwlock> rasterConsistency( GetRasterLock( this ) );
+
     PlatformTexture *platformTex = this->platformData;
 
     if ( !platformTex )
@@ -2383,6 +2421,8 @@ void* Raster::getNativeInterface( void )
 
 void* Raster::getDriverNativeInterface( void )
 {
+    scoped_rwlock_reader <rwlock> rasterConsistency( GetRasterLock( this ) );
+
     PlatformTexture *platformTex = this->platformData;
 
     if ( !platformTex )
@@ -2400,6 +2440,8 @@ void* Raster::getDriverNativeInterface( void )
 
 void Raster::writeImage(Stream *outputStream, const char *method)
 {
+    scoped_rwlock_reader <rwlock> rasterConsistency( GetRasterLock( this ) );
+
     Interface *engineInterface = this->engineInterface;
 
     PlatformTexture *platformTex = this->platformData;
@@ -2478,6 +2520,8 @@ void Raster::writeImage(Stream *outputStream, const char *method)
 
 void Raster::readImage( rw::Stream *inputStream )
 {
+    scoped_rwlock_writer <rwlock> rasterConsistency( GetRasterLock( this ) );
+
     Interface *engineInterface = this->engineInterface;
 
     PlatformTexture *platformTex = this->platformData;

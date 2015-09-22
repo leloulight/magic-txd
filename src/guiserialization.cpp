@@ -1,5 +1,7 @@
 #include "mainwindow.h"
 
+#include "massconvert.h"
+
 #define MAGICTXD_UNICODE_STRING_ID      0xBABE0001
 #define MAGICTXD_CONFIG_BLOCK           0xBABE0002
 
@@ -81,6 +83,38 @@ struct mainWindowSerialization
     CFileTranslator *appRoot;       // directory the application module is in.
     CFileTranslator *toolRoot;      // the current directory we launched in
 
+    struct txdgen_cfg_struct
+    {
+        endian::little_endian <rw::KnownVersions::eGameVersion> c_gameVersion;
+        endian::little_endian <TxdGenModule::eTargetPlatform> c_targetPlatform;
+        
+        bool c_clearMipmaps;
+        bool c_generateMipmaps;
+        
+        endian::little_endian <rw::eMipmapGenerationMode> c_mipGenMode;
+        endian::little_endian <rw::uint32> c_mipGenMaxLevel;
+
+        bool c_improveFiltering;
+        bool compressTextures;
+
+        endian::little_endian <rw::ePaletteRuntimeType> c_palRuntimeType;
+        endian::little_endian <rw::eDXTCompressionMethod> c_dxtRuntimeType;
+
+        bool c_reconstructIMGArchives;
+        bool c_fixIncompatibleRasters;
+        bool c_dxtPackedDecompression;
+        bool c_imgArchivesCompressed;
+        bool c_ignoreSerializationRegions;
+        
+        endian::little_endian <rw::float32> c_compressionQuality;
+
+        bool c_outputDebug;
+
+        endian::little_endian <rw::int32> c_warningLevel;
+
+        bool c_ignoreSecureWarnings;
+    };
+
     inline void loadSerialization( rw::BlockProvider& mainBlock, MainWindow *mainwnd )
     {
         // last directory we were in to save TXD file.
@@ -106,12 +140,102 @@ struct mainWindowSerialization
                 mainwnd->lastImageFileOpenDir = QString::fromStdWString( lastImageFileOpenDir );
             }
         }
+
+        // TxdGen configuration block.
+        if ( massconvEnv *massconv = massconvEnvRegister.GetPluginStruct( mainwnd ) )
+        {
+            rw::BlockProvider massconvBlock( &mainBlock );
+
+            massconvBlock.EnterContext();
+
+            try
+            {
+                RwReadUnicodeString( massconvBlock, massconv->txdgenConfig.c_gameRoot );
+                RwReadUnicodeString( massconvBlock, massconv->txdgenConfig.c_outputRoot );
+
+                txdgen_cfg_struct cfgStruct;
+                massconvBlock.readStruct( cfgStruct );
+
+                massconv->txdgenConfig.c_gameVersion = cfgStruct.c_gameVersion;
+                massconv->txdgenConfig.c_targetPlatform = cfgStruct.c_targetPlatform;
+                massconv->txdgenConfig.c_clearMipmaps = cfgStruct.c_clearMipmaps;
+                massconv->txdgenConfig.c_generateMipmaps = cfgStruct.c_generateMipmaps;
+                massconv->txdgenConfig.c_mipGenMode = cfgStruct.c_mipGenMode;
+                massconv->txdgenConfig.c_mipGenMaxLevel = cfgStruct.c_mipGenMaxLevel;
+                massconv->txdgenConfig.c_improveFiltering = cfgStruct.c_improveFiltering;
+                massconv->txdgenConfig.compressTextures = cfgStruct.compressTextures;
+                massconv->txdgenConfig.c_palRuntimeType = cfgStruct.c_palRuntimeType;
+                massconv->txdgenConfig.c_dxtRuntimeType = cfgStruct.c_dxtRuntimeType;
+                massconv->txdgenConfig.c_reconstructIMGArchives = cfgStruct.c_reconstructIMGArchives;
+                massconv->txdgenConfig.c_fixIncompatibleRasters = cfgStruct.c_fixIncompatibleRasters;
+                massconv->txdgenConfig.c_dxtPackedDecompression = cfgStruct.c_dxtPackedDecompression;
+                massconv->txdgenConfig.c_imgArchivesCompressed = cfgStruct.c_imgArchivesCompressed;
+                massconv->txdgenConfig.c_ignoreSerializationRegions = cfgStruct.c_ignoreSerializationRegions;
+                massconv->txdgenConfig.c_compressionQuality = cfgStruct.c_compressionQuality;
+                massconv->txdgenConfig.c_outputDebug = cfgStruct.c_outputDebug;
+                massconv->txdgenConfig.c_warningLevel = cfgStruct.c_warningLevel;
+                massconv->txdgenConfig.c_ignoreSecureWarnings = cfgStruct.c_ignoreSecureWarnings;
+            }
+            catch( ... )
+            {
+                massconvBlock.LeaveContext();
+
+                throw;
+            }
+
+            massconvBlock.LeaveContext();
+        }
     }
 
     inline void saveSerialization( rw::BlockProvider& mainBlock, const MainWindow *mainwnd )
     {
         RwWriteUnicodeString( mainBlock, mainwnd->lastTXDSaveDir.toStdWString() );
         RwWriteUnicodeString( mainBlock, mainwnd->lastImageFileOpenDir.toStdWString() );
+
+        // TxdGen config block.
+        if ( const massconvEnv *massconv = massconvEnvRegister.GetConstPluginStruct( mainwnd ) )
+        {
+            rw::BlockProvider massconvBlock( &mainBlock );
+
+            massconvBlock.EnterContext();
+
+            try
+            {
+                RwWriteUnicodeString( massconvBlock, massconv->txdgenConfig.c_gameRoot );
+                RwWriteUnicodeString( massconvBlock, massconv->txdgenConfig.c_outputRoot );
+
+                txdgen_cfg_struct cfgStruct;
+                cfgStruct.c_gameVersion = massconv->txdgenConfig.c_gameVersion;
+                cfgStruct.c_targetPlatform = massconv->txdgenConfig.c_targetPlatform;
+                cfgStruct.c_clearMipmaps = massconv->txdgenConfig.c_clearMipmaps;
+                cfgStruct.c_generateMipmaps = massconv->txdgenConfig.c_generateMipmaps;
+                cfgStruct.c_mipGenMode = massconv->txdgenConfig.c_mipGenMode;
+                cfgStruct.c_mipGenMaxLevel = massconv->txdgenConfig.c_mipGenMaxLevel;
+                cfgStruct.c_improveFiltering = massconv->txdgenConfig.c_improveFiltering;
+                cfgStruct.compressTextures = massconv->txdgenConfig.compressTextures;
+                cfgStruct.c_palRuntimeType = massconv->txdgenConfig.c_palRuntimeType;
+                cfgStruct.c_dxtRuntimeType = massconv->txdgenConfig.c_dxtRuntimeType;
+                cfgStruct.c_reconstructIMGArchives = massconv->txdgenConfig.c_reconstructIMGArchives;
+                cfgStruct.c_fixIncompatibleRasters = massconv->txdgenConfig.c_fixIncompatibleRasters;
+                cfgStruct.c_dxtPackedDecompression = massconv->txdgenConfig.c_dxtPackedDecompression;
+                cfgStruct.c_imgArchivesCompressed = massconv->txdgenConfig.c_imgArchivesCompressed;
+                cfgStruct.c_ignoreSerializationRegions = massconv->txdgenConfig.c_ignoreSerializationRegions;
+                cfgStruct.c_compressionQuality = massconv->txdgenConfig.c_compressionQuality;
+                cfgStruct.c_outputDebug = massconv->txdgenConfig.c_outputDebug;
+                cfgStruct.c_warningLevel = massconv->txdgenConfig.c_warningLevel;
+                cfgStruct.c_ignoreSecureWarnings = massconv->txdgenConfig.c_ignoreSecureWarnings;
+
+                massconvBlock.writeStruct( cfgStruct );
+            }
+            catch( ... )
+            {
+                massconvBlock.LeaveContext();
+
+                throw;
+            }
+
+            massconvBlock.LeaveContext();
+        }
     }
 
     inline void Initialize( MainWindow *mainwnd )

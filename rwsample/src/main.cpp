@@ -20,6 +20,11 @@ namespace rw
         obj->engineInterface->DeleteRwObject( obj );
     }
 
+    static void tentryp( rw::thread_t, rw::Interface *, void* )
+    {
+        return;
+    }
+
     int32 rwmain( Interface *engineInterface )
     {
         // Give information about the running application to the runtime.
@@ -35,6 +40,14 @@ namespace rw
 
         if ( !rwWindow )
             return -1;
+
+        {
+            rw::thread_t testThread = rw::MakeThread( engineInterface, tentryp, NULL );
+
+            rw::ResumeThread( engineInterface, testThread );
+
+            rw::CloseThread( engineInterface, testThread );
+        }
 
         // We hold an extra reference.
         AcquireObject( rwWindow );
@@ -75,6 +88,7 @@ namespace rw
                 guiContext->SetRenderState( DrawingLayer2D::RWSTATE_ALPHAFUNC, RWCMP_ALWAYS );
                 guiContext->SetRenderState( DrawingLayer2D::RWSTATE_ALPHAREF, 0 );
 
+#if 0
                 // Execute draws.
                 guiContext->Begin();
 
@@ -83,6 +97,7 @@ namespace rw
                 guiContext->DrawLine( 10, 10, 290, 150 );
 
                 guiContext->End();
+#endif
             }
 
             // Give cycles to the window manager.

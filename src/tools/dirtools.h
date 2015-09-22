@@ -1,10 +1,13 @@
 template <typename sentryType>
 struct gtaFileProcessor
 {
-    inline gtaFileProcessor( void )
+    TxdGenModule *module;
+
+    inline gtaFileProcessor( TxdGenModule *module )
     {
         this->reconstruct_archives = true;
         this->use_compressed_img_archives = true;
+        this->module = module;
     }
 
     inline ~gtaFileProcessor( void )
@@ -15,6 +18,7 @@ struct gtaFileProcessor
     inline void process( sentryType *theSentry, CFileTranslator *discHandle, CFileTranslator *buildRoot )
     {
         _discFileTraverse traverse;
+        traverse.module = this->module;
         traverse.discHandle = discHandle;
         traverse.buildRoot = buildRoot;
         traverse.isInArchive = false;
@@ -46,6 +50,8 @@ private:
             this->anyWork = false;
         }
 
+        TxdGenModule *module;
+
         CFileTranslator *discHandle;
         CFileTranslator *buildRoot;
         bool isInArchive;
@@ -62,13 +68,17 @@ private:
     {
         _discFileTraverse *info = (_discFileTraverse*)userdata;
 
+        TxdGenModule *module = info->module;
+
         bool anyWork = false;
 
         // Preprocess the file.
         // Create a destination file inside of the build root using the relative path from the source trans root.
         filePath relPathFromRoot;
+
+        std::wstring wDiscFilePathAbs = discFilePathAbs.convert_unicode();
         
-        bool hasTargetRelativePath = info->discHandle->GetRelativePathFromRoot( discFilePathAbs.c_str(), true, relPathFromRoot );
+        bool hasTargetRelativePath = info->discHandle->GetRelativePathFromRoot( wDiscFilePathAbs.c_str(), true, relPathFromRoot );
 
         if ( hasTargetRelativePath )
         {
@@ -76,24 +86,26 @@ private:
 
             filePath extention;
 
-            filePath fileName = FileSystem::GetFileNameItem( discFilePathAbs.c_str(), false, NULL, &extention );
+            filePath fileName = FileSystem::GetFileNameItem( wDiscFilePathAbs.c_str(), false, NULL, &extention );
 
             if ( extention.size() != 0 )
             {
-                if ( ( extention == "IMG" ) == 0 )
+                if ( extention.equals( "IMG", false ) )
                 {
-                    printf( "processing %s ...\n", relPathFromRoot.c_str() );
+                    std::wstring wRelPathFromRoot = relPathFromRoot.convert_unicode();
+
+                    module->OnMessage( L"processing " + wRelPathFromRoot + L" ...\n" );
 
                     // Open the IMG archive.
                     CIMGArchiveTranslatorHandle *srcIMGRoot = NULL;
 
                     if ( info->use_compressed_img_archives )
                     {
-                        srcIMGRoot = fileSystem->OpenCompressedIMGArchive( info->discHandle, relPathFromRoot.c_str() );
+                        srcIMGRoot = fileSystem->OpenCompressedIMGArchive( info->discHandle, wRelPathFromRoot.c_str() );
                     }
                     else
                     {
-                        srcIMGRoot = fileSystem->OpenIMGArchive( info->discHandle, relPathFromRoot.c_str() );
+                        srcIMGRoot = fileSystem->OpenIMGArchive( info->discHandle, wRelPathFromRoot.c_str() );
                     }
 
                     if ( srcIMGRoot )
@@ -115,11 +127,11 @@ private:
 
                                 if ( info->use_compressed_img_archives )
                                 {
-                                    newIMGRoot = fileSystem->CreateCompressedIMGArchive( info->buildRoot, relPathFromRoot.c_str(), imgVersion );
+                                    newIMGRoot = fileSystem->CreateCompressedIMGArchive( info->buildRoot, wRelPathFromRoot.c_str(), imgVersion );
                                 }
                                 else
                                 {
-                                    newIMGRoot = fileSystem->CreateIMGArchive( info->buildRoot, relPathFromRoot.c_str(), imgVersion );
+                                    newIMGRoot = fileSystem->CreateIMGArchive( info->buildRoot, wRelPathFromRoot.c_str(), imgVersion );
                                 }
 
                                 if ( newIMGRoot )
@@ -133,7 +145,7 @@ private:
                                 // Create a new directory in place of the archive.
                                 filePath srcPathToNewDir;
 
-                                info->discHandle->GetRelativePathFromRoot( discFilePathAbs.c_str(), false, srcPathToNewDir );
+                                info->discHandle->GetRelativePathFromRoot( wDiscFilePathAbs.c_str(), false, srcPathToNewDir );
 
                                 filePath pathToNewDir;
 
@@ -161,6 +173,7 @@ private:
                                 {
                                     // Run into shit.
                                     _discFileTraverse traverse;
+                                    traverse.module = info->module;
                                     traverse.discHandle = srcIMGRoot;
                                     traverse.buildRoot = outputRoot;
                                     traverse.isInArchive = ( outputRoot_archive != NULL ) || info->isInArchive;
@@ -172,24 +185,24 @@ private:
 
                                     if ( outputRoot_archive != NULL )
                                     {
-                                        printf( "writing " );
+                                        module->OnMessage( "writing " );
 
                                         if ( !traverse.anyWork )
                                         {
-                                            printf( "(no change)" );
+                                            module->OnMessage( "(no change)" );
                                         }
 
-                                        printf( "... " );
+                                        module->OnMessage( "... " );
 
                                         outputRoot_archive->Save();
 
-                                        printf( "done.\n\n" );
+                                        module->OnMessage( "done.\n\n" );
 
                                         anyWork = true;
                                     }
                                     else
                                     {
-                                        printf( "finished.\n\n" );
+                                        module->OnMessage( "finished.\n\n" );
 
                                         anyWork = true;
                                     }
@@ -223,7 +236,7 @@ private:
                     }
                     else
                     {
-                        printf( "not an IMG archive.\n" );
+                        module->OnMessage( "not an IMG archive.\n" );
                     }
                 }
             }
@@ -234,7 +247,7 @@ private:
                 // Copy all files into the build root.
                 CFile *sourceStream = NULL;
                 {
-                    sourceStream = info->discHandle->Open( discFilePathAbs.c_str(), "rb" );
+                    sourceStream = info->discHandle->Open( wDiscFilePathAbs.c_str(), L"rb" );
                 }
                 
                 if ( sourceStream )
@@ -268,7 +281,7 @@ private:
     }
 };
 
-inline bool obtainAbsolutePath( const char *path, CFileTranslator*& transOut, bool createDir, bool hasToBeDirectory = true )
+inline bool obtainAbsolutePath( const wchar_t *path, CFileTranslator*& transOut, bool createDir, bool hasToBeDirectory = true )
 {
     bool hasTranslator = false;
     
@@ -288,7 +301,7 @@ inline bool obtainAbsolutePath( const char *path, CFileTranslator*& transOut, bo
         }
     }
 
-    if ( fileRoot->GetFullPath( inputPath.c_str(), true, thePath ) )
+    if ( fileRoot->GetFullPath( inputPath.w_str(), true, thePath ) )
     {
         translator = fileRoot;
 
@@ -297,12 +310,12 @@ inline bool obtainAbsolutePath( const char *path, CFileTranslator*& transOut, bo
 
     if ( !hasTranslator )
     {
-        const char *inputPathPtr = inputPath.c_str();
+        const wchar_t *inputPathPtr = inputPath.w_str();
 
         if ( *inputPathPtr != 0 && *(inputPathPtr+1) == ':' && ( *(inputPathPtr+2) == '/' || *(inputPathPtr+2) == '\\' ) )
         {
-            char diskRootDesc[4];
-            memcpy( diskRootDesc, inputPathPtr, 3 );
+            wchar_t diskRootDesc[4];
+            memcpy( diskRootDesc, inputPathPtr, 3 * sizeof( wchar_t ) );
 
             diskRootDesc[3] = '\0';
 
@@ -336,7 +349,7 @@ inline bool obtainAbsolutePath( const char *path, CFileTranslator*& transOut, bo
 
         if ( createDir )
         {
-            bool createPath = translator->CreateDir( thePath.c_str() );
+            bool createPath = translator->CreateDir( thePath.w_str() );
 
             if ( createPath )
             {
@@ -345,7 +358,7 @@ inline bool obtainAbsolutePath( const char *path, CFileTranslator*& transOut, bo
         }
         else
         {
-            bool existsPath = translator->Exists( thePath.c_str() );
+            bool existsPath = translator->Exists( thePath.w_str() );
 
             if ( existsPath )
             {
@@ -355,7 +368,7 @@ inline bool obtainAbsolutePath( const char *path, CFileTranslator*& transOut, bo
 
         if ( canCreateTranslator )
         {
-            CFileTranslator *actualRoot = fileSystem->CreateTranslator( thePath.c_str() );
+            CFileTranslator *actualRoot = fileSystem->CreateTranslator( thePath.w_str() );
 
             if ( actualRoot )
             {

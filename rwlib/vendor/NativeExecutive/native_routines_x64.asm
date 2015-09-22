@@ -309,6 +309,7 @@ nativeThreadPlugin STRUCT
 nativeThreadPlugin ENDS
 
 EXTERN nativeThreadPluginInterface_ThreadProcCPP:PROC
+EXTERN nativeThreadPluginInterface_OnNativeThreadEnd:PROC
 
 _thread64_procNative PROC
     ; Store the NT DISPATCHER stack.
@@ -332,20 +333,28 @@ _thread64_procNative PROC
 	; For some fucking reason the MSVC compiler assumes that there is stack space above its frame to save registers at.
 	; Since we have pretty much a ot of stack space available, we can sacrifice some.
 	; Why, Microsoft?
-	sub rsp,40h
+    sub rsp,40h
     call nativeThreadPluginInterface_ThreadProcCPP
-	add rsp,40h
+    add rsp,40h
+
+    ; Set the first argument for the next function call.
+    mov rcx,rbx
 
     ; Check for a termination fiber.
-    mov rdx,[rbx].nativeThreadPlugin.terminationReturn
+    mov rbx,[rbx].nativeThreadPlugin.terminationReturn
+
+    ; Give control of the native thread back to the manager.
+    sub rsp,40h
+    call nativeThreadPluginInterface_OnNativeThreadEnd
+    add rsp,40h
 
     ;ASSUME ebx:nothing
 
-    test rdx,rdx
+    test rbx,rbx
     jz NoTerminationReturn
 
     ; Since we have a termination return fiber, leave to it.
-    mov rax,rdx
+    mov rax,rbx
     jmp _fiber64_leave
 
 NoTerminationReturn:

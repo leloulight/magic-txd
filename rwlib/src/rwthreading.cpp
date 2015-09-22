@@ -292,11 +292,16 @@ void CloseThread( Interface *engineInterface, thread_t threadHandle )
 
     CExecThread *theThread = (CExecThread*)threadHandle;
 
-    // Wait until the thread has terminated.
-    // Terminating a thread is not stable.
-    threadEnv->nativeMan->JoinThread( theThread );
-
     threadEnv->nativeMan->CloseThread( theThread );
+}
+
+thread_t AcquireThread( Interface *engineInterface, thread_t threadHandle )
+{
+    threadingEnvironment *threadEnv = GetThreadingEnv( engineInterface );
+
+    CExecThread *theThread = (CExecThread*)threadHandle;
+
+    return (thread_t)threadEnv->nativeMan->AcquireThread( theThread );
 }
 
 bool ResumeThread( Interface *engineInterface, thread_t threadHandle )
@@ -320,6 +325,22 @@ void JoinThread( Interface *engineInterface, thread_t threadHandle )
     CExecThread *theThread = (CExecThread*)threadHandle;
 
     threadEnv->nativeMan->JoinThread( theThread );
+}
+
+void TerminateThread( Interface *engineInterface, thread_t threadHandle )
+{
+    threadingEnvironment *threadEnv = GetThreadingEnv( engineInterface );
+
+    CExecThread *theThread = (CExecThread*)threadHandle;
+
+    threadEnv->nativeMan->TerminateThread( theThread );
+}
+
+void CheckThreadHazards( Interface *engineInterface )
+{
+    threadingEnvironment *threadEnv = GetThreadingEnv( engineInterface );
+
+    threadEnv->nativeMan->CheckHazardCondition();
 }
 
 // Module initialization.

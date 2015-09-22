@@ -1,36 +1,7 @@
 #include "mainwindow.h"
 #include "renderpropwindow.h"
 
-template <typename modeType>
-struct naturalModeList : public std::list <modeType>
-{
-    inline naturalModeList( std::initializer_list <modeType> list ) : list( list )
-    {}
-
-    typedef decltype( modeType::mode ) mode_t;
-
-    inline bool getNaturalFromMode( mode_t mode, QString& naturalOut ) const
-    {
-        const_iterator iter = std::find( this->begin(), this->end(), mode );
-
-        if ( iter == this->end() )
-            return false;
-
-        naturalOut = iter->natural;
-        return true;
-    }
-
-    inline bool getModeFromNatural( const QString& natural, mode_t& modeOut ) const
-    {
-        const_iterator iter = std::find( this->begin(), this->end(), natural );
-
-        if ( iter == this->end() )
-            return false;
-
-        modeOut = iter->mode;
-        return true;
-    }
-};
+#include "qtinteroputils.hxx"
 
 struct addrToNatural
 {

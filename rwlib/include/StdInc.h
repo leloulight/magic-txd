@@ -98,6 +98,24 @@ struct EngineInterface : public Interface
     RwTypeSystem::typeInfoBase *rwobjTypeInfo;
     RwTypeSystem::typeInfoBase *textureTypeInfo;
 
+    // Factories to register plugins to the main types displayed above.
+    typedef StaticPluginClassFactory <Raster> rasterPluginFactory_t;
+
+    rasterPluginFactory_t rasterPluginFactory;
+
+    struct rasterTypeInterface : public RwTypeSystem::typeInterface
+    {
+        void Construct( void *mem, EngineInterface *intf, void *constr_params ) const override;
+        void CopyConstruct( void *mem, const void *srcMem ) const override;
+        void Destruct( void *mem ) const override;
+
+        size_t GetTypeSize( EngineInterface *intf, void *constr_params ) const override;
+        size_t GetTypeSizeByObject( EngineInterface *intf, const void *mem ) const override;
+
+        EngineInterface *engineInterface;
+    };
+    rasterTypeInterface _rasterTypeInterface;
+
 private:
     FileInterface *customFileInterface;
 

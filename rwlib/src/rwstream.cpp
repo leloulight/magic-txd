@@ -312,10 +312,17 @@ struct streamSystemPlugin
             this->fileStreamTypeInfo = engine->typeSystem.RegisterStructType <FileStream> ( "file_stream", engine->streamTypeInfo );
             this->memoryStreamTypeInfo = engine->typeSystem.RegisterStructType <MemoryStream> ( "memory_stream", engine->streamTypeInfo );
         }
+
+        this->streamEnvLock = rw::CreateReadWriteLock( engine );
     }
 
     inline void Shutdown( EngineInterface *engine )
     {
+        if ( rwlock *lock = this->streamEnvLock )
+        {
+            rw::CloseReadWriteLock( engine, lock );
+        }
+
         // Delete all custom types first.
         for ( typeInfoList_t::const_iterator iter = custom_types.begin(); iter != custom_types.end(); iter++ )
         {
@@ -344,6 +351,9 @@ struct streamSystemPlugin
     typedef std::vector <RwTypeSystem::typeInfoBase*> typeInfoList_t;
 
     typeInfoList_t custom_types;
+
+    // Thread-safety lock.
+    rw::rwlock *streamEnvLock;
 };
 
 static PluginDependantStructRegister <streamSystemPlugin, RwInterfaceFactory_t> streamSystemPluginRegister;
@@ -429,6 +439,8 @@ bool Interface::RegisterStream( const char *typeName, size_t memBufSize, customS
 
         if ( tInterface )
         {
+            scoped_rwlock_writer <rwlock> addNewStreamType( streamSysEnv->streamEnvLock );
+
             try
             {
                 // Set up this type interface.
@@ -474,6 +486,8 @@ Stream* Interface::CreateStream( eBuiltinStreamType streamType, eStreamMode stre
 
     if ( streamSysEnv )
     {
+        scoped_rwlock_reader <rwlock> streamSysConsistency( streamSysEnv->streamEnvLock );
+
         if ( streamType == RWSTREAMTYPE_FILE || streamType == RWSTREAMTYPE_FILE_W )
         {
             FileInterface::filePtr_t fileHandle = NULL;

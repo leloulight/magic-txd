@@ -236,6 +236,7 @@ nativeThreadPlugin STRUCT
 nativeThreadPlugin ENDS
 
 EXTERN _nativeThreadPluginInterface_ThreadProcCPP@4:PROC
+EXTERN _nativeThreadPluginInterface_OnNativeThreadEnd@4:PROC
 
 ; STDCALL
 __thread86_procNative@4 PROC
@@ -247,16 +248,22 @@ __thread86_procNative@4 PROC
     push ebx
     call _nativeThreadPluginInterface_ThreadProcCPP@4
 
+    ; Push it in preparation for the function call.
+    push ebx
+
     ; Check for a termination fiber.
-    mov edx,[ebx].terminationReturn
+    mov ebx,[ebx].terminationReturn
+
+    ; Finished using thread, so notify the manager.
+    call _nativeThreadPluginInterface_OnNativeThreadEnd@4
 
     ASSUME ebx:nothing
 
-    test edx,edx
+    test ebx,ebx
     jz NoTerminationReturn
 
     ; Since we have a termination return fiber, leave to it.
-    mov eax,edx
+    mov eax,ebx
     jmp __fiber86_leave
 
 NoTerminationReturn:

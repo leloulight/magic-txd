@@ -532,6 +532,9 @@ inline bool UniversalCompareStrings( const srcCharType *srcStr, size_t srcLen, c
         typename src_char_env::ucp_t srcChar = srcIter.Resolve();
         typename dst_char_env::ucp_t dstChar = dstIter.Resolve();
 
+        srcIter.Increment();
+        dstIter.Increment();
+
         bool isCharSame = IsCharacterEqual( srcChar, dstChar, caseSensitive );
 
         if ( !isCharSame )

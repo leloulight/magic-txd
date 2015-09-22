@@ -89,6 +89,7 @@ public:
     void            TerminateThread     ( CExecThread *thread );    // DANGEROUS function!
     void            JoinThread          ( CExecThread *thread );    // safe function :)
     CExecThread*    GetCurrentThread    ( void );
+    CExecThread*    AcquireThread       ( CExecThread *thread );
     void            CloseThread         ( CExecThread *thread );
 
     void            CheckHazardCondition( void );

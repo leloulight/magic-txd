@@ -425,6 +425,7 @@
     <ClInclude Include="..\..\src\txdread.ps2.hxx" />
     <ClInclude Include="..\..\src\txdread.ps2gsman.hxx" />
     <ClInclude Include="..\..\src\txdread.pvr.hxx" />
+    <ClInclude Include="..\..\src\txdread.rasterplg.hxx" />
     <ClInclude Include="..\..\src\txdread.size.hxx" />
     <ClInclude Include="..\..\src\txdread.unc.hxx" />
     <ClInclude Include="..\..\src\txdread.xbox.hxx" />

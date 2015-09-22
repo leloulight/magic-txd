@@ -13,6 +13,8 @@
 #ifndef _EXECUTIVE_MANAGER_THREADS_
 #define _EXECUTIVE_MANAGER_THREADS_
 
+#include <atomic>
+
 BEGIN_NATIVE_EXECUTIVE
 
 #define THREAD_PLUGIN_NATIVE        0x00000000      // plugin id for OS implementation
@@ -57,6 +59,10 @@ public:
     size_t stackSize;
 
     bool isRemoteThread;
+
+    // CExecThread is a user-mode handle to an OS thread, which is a shared resource.
+    // In this situation, where usage of the handle is unpredictable, reference counting is required.
+    std::atomic <unsigned long> refCount;
 
     CExecutiveManager *manager;
 

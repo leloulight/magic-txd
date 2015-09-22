@@ -21,10 +21,6 @@
 // Include native platform utilities.
 #include "fsinternal/CFileSystem.internal.nativeimpl.hxx"
 
-// This variable is exported across the whole FileSystem library.
-// It should be used by CRawFile classes that are created.
-std::list <CFile*> *openFiles;
-
 CFileSystem *fileSystem = NULL;
 CFileTranslator *fileRoot = NULL;
 
@@ -132,21 +128,19 @@ CFileSystem* CFileSystem::Create( void )
     {
         // Get the application current directory and store it in "fileRoot" global.
         {
-            char cwd[1024];
-            getcwd( cwd, 1023 );
+            wchar_t cwd[1024];
+            _wgetcwd( cwd, 1023 );
 
             // Make sure it is a correct directory
             filePath cwd_ex( cwd );
-            cwd_ex += '\\';
+            cwd_ex += L'\\';
 
             // Every application should be able to access itself
-            fileRoot = instance->CreateTranslator( cwd_ex );
+            fileRoot = instance->CreateTranslator( cwd_ex.w_str() );
         }
 
         // Set the global fileSystem variable.
         fileSystem = instance;
-
-        openFiles = new std::list<CFile*>;
 
         // We have initialized ourselves.
         _hasBeenInitialized = true;
@@ -179,8 +173,6 @@ void CFileSystem::Destroy( CFileSystem *lib )
         _fileSysFactory.Destroy( _memAlloc, nativeLib );
         
         ShutdownLibrary();
-
-        delete openFiles;
 
         // Zero the main FileSystem access point.
         fileSystem = NULL;
@@ -372,13 +364,15 @@ CFileTranslator* CFileSystem::GenerateTempRepository( void )
     if ( !this->sysTmp )
     {
 #ifdef _WIN32
-        char buf[1024];
+        wchar_t buf[2048];
 
-        GetTempPath( sizeof( buf ), buf );
+        GetTempPathW( NUMELMS( buf ) - 1, buf );
+
+        buf[ NUMELMS( buf ) - 1 ] = 0;
 
         // Transform the path into something we can recognize.
         tmpDir.insert( 0, buf, 2 );
-        tmpDir += '/';
+        tmpDir += L'/';
 
         dirTree tree;
         bool isFile;
@@ -403,7 +397,7 @@ CFileTranslator* CFileSystem::GenerateTempRepository( void )
             exit( 7098 );
 #endif //OS DEPENDANT CODE
 
-        this->sysTmp = fileSystem->CreateTranslator( tmpDir.c_str() );
+        this->sysTmp = fileSystem->CreateTranslator( tmpDir.w_str() );
 
         // We failed to get the handle to the temporary storage, hence we cannot deposit temporary files!
         if ( !this->sysTmp )
@@ -435,10 +429,22 @@ CFileTranslator* CFileSystem::GenerateTempRepository( void )
     if ( creationSuccessful )
     {
         // Create the .zip temporary root
-        CFileTranslator *result = fileSystem->CreateTranslator( tmpDir.c_str() );
+        CFileTranslator *result = NULL;
+        {
+            if ( const char *sysPath = tmpDir.c_str() )
+            {
+                result = fileSystem->CreateTranslator( sysPath );
+            }
+            else if ( const wchar_t *sysPath = tmpDir.w_str() )
+            {
+                result = fileSystem->CreateTranslator( sysPath );
+            }
+        }
 
         if ( result )
+        {
             return result;
+        }
     }
 
     return NULL;
@@ -500,7 +506,7 @@ size_t CFileSystem::Size( const char *path )
 bool CFileSystem::ReadToBuffer( const char *path, std::vector <char>& output )
 {
 #ifdef _WIN32
-    HANDLE file = CreateFile( path, GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, NULL );
+    HANDLE file = CreateFileA( path, GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, NULL );
 
     if ( file == INVALID_HANDLE_VALUE )
         return false;

@@ -390,7 +390,14 @@ CIMGArchiveTranslator::~CIMGArchiveTranslator( void )
         // Delete all temporary files by deleting our entire folder structure.
         if ( CFileTranslator *sysTmpRoot = m_imgExtension.GetTempRoot() )
         {
-            sysTmpRoot->Delete( path.c_str() );
+            if ( const char *sysPath = path.c_str() )
+            {
+                sysTmpRoot->Delete( sysPath );
+            }
+            else if ( const wchar_t *sysPath = path.w_str() )
+            {
+                sysTmpRoot->Delete( sysPath );
+            }
         }
     }
 }

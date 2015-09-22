@@ -119,6 +119,7 @@ struct defaultMemAlloc
 
 // Main window plugin entry points.
 extern void InitializeRWFileSystemWrap( void );
+extern void InitializeMassconvToolEnvironment( void );
 extern void InitializeGUISerialization( void );
 
 static defaultMemAlloc _factMemAlloc;
@@ -127,6 +128,7 @@ int main(int argc, char *argv[])
 {
     // Initialize all main window plugins.
     InitializeRWFileSystemWrap();
+    InitializeMassconvToolEnvironment();
     InitializeGUISerialization();
 
 	QStringList paths = QCoreApplication::libraryPaths();
