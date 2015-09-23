@@ -100,7 +100,7 @@ MainWindow::MainWindow(QString appPath, QWidget *parent) :
         {
 	        /* --- Window --- */
             updateWindowTitle();
-            setMinimumSize(460, 300);
+            setMinimumSize(560, 300);
 	        resize(900, 680);
 
 	        /* --- Log --- */

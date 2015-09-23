@@ -364,6 +364,14 @@ QLineEdit {
     selection-background-color: #150064;
 }
 
+QLineEdit:disabled {
+	border-bottom-width: 0px;
+}
+
+QLineEdit:hover:!disabled {
+	border-bottom-color: #d1db2f;
+}
+
 QCheckBox {
     spacing: 5px;
     color: #ffffff;
