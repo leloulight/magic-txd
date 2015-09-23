@@ -8,6 +8,7 @@
 #include <QFileInfo>
 #include <QLabel>
 #include <QScrollArea>
+#include <QSplitter>
 
 #include <renderware.h>
 
@@ -58,7 +59,7 @@ private:
 public:
     void openTxdFile(QString fileName);
     void setCurrentTXD( rw::TexDictionary *txdObj );
-    void updateTextureList( void );
+    void updateTextureList(bool selectLastItemInList);
 
     void updateWindowTitle( void );
     void updateTextureMetaInfo( void );
@@ -116,6 +117,9 @@ public slots:
 
     void onRequestMassConvert(bool checked);
 
+    void onToogleDarkTheme(bool checked);
+    void onToogleLightTheme(bool checked);
+
 private:
     QString requestValidImagePath( void );
 
@@ -127,7 +131,6 @@ public slots:
     void onResizeTexture( bool checked );
     void onManipulateTexture( bool checked );
     void onExportTexture( bool checked );
-    void onTimerUpdate();
 
 protected:
     void addTextureFormatExportLinkToMenu( QMenu *theMenu, const char *defaultExt, const char *formatName );
@@ -169,6 +172,10 @@ private:
 
     QPushButton *rwVersionButton;
 
+    QMovie *starsMovie;
+
+    QSplitter *mainSplitter;
+
     bool drawMipmapLayers;
 	bool showBackground;
 
@@ -195,6 +202,10 @@ private:
     QAction *actionCancelAllChanges;
     QAction *actionAllTextures;
     QAction *actionSetupTXDVersion;
+    QAction *actionThemeDark;
+    QAction *actionThemeLight;
+
+    bool recheckingThemeItem;
 
     // EXPORT MENU.
     std::list <QAction*> actionsExportImage;

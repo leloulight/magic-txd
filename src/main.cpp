@@ -138,9 +138,7 @@ int main(int argc, char *argv[])
     QCoreApplication::setLibraryPaths(paths);
 
     MagicTXDApplication a(argc, argv);
-
     a.setStyleSheet(styles::get(a.applicationDirPath(), "resources\\dark.shell"));
-
     mainWindowConstructor wnd_constr(a.applicationDirPath());
 
     MainWindow *w = mainWindowFactory.ConstructTemplate(_factMemAlloc, wnd_constr);

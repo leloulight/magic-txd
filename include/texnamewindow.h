@@ -103,6 +103,9 @@ public slots:
 
                 // Update the info item.
                 texInfo->updateInfo();
+
+                // Update texture list width
+                texInfo->listItem->setSizeHint(QSize(mainWnd->textureListWidget->sizeHintForColumn(0), 54));
             }
         }
 

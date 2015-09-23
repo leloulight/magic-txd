@@ -13,6 +13,7 @@
 #include <QFileDialog>
 #include <QDir>
 
+#include "styles.h"
 #include "textureViewport.h"
 #include "rwversiondialog.h"
 #include "texnamewindow.h"
@@ -43,6 +44,7 @@ MainWindow::MainWindow(QString appPath, QWidget *parent) :
     this->resizeDlg = NULL;
     this->platformDlg = NULL;
     this->rwVersionButton = NULL;
+    this->recheckingThemeItem = false;
 
     // Initialize configuration to default.
     {
@@ -109,7 +111,7 @@ MainWindow::MainWindow(QString appPath, QWidget *parent) :
 	        /* --- List --- */
 	        QListWidget *listWidget = new QListWidget();
 	        listWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
-		    listWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+		    //listWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
             listWidget->setMaximumWidth(350);
 	        //listWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
@@ -129,14 +131,14 @@ MainWindow::MainWindow(QString appPath, QWidget *parent) :
 		    imageView->setAlignment(Qt::AlignCenter);
 
 	        /* --- Splitter --- */
-	        QSplitter *splitter = new QSplitter;
-	        splitter->addWidget(listWidget);
-		    splitter->addWidget(imageView);
+            mainSplitter = new QSplitter;
+	        mainSplitter->addWidget(listWidget);
+		    mainSplitter->addWidget(imageView);
 	        QList<int> sizes;
 	        sizes.push_back(200);
-	        sizes.push_back(splitter->size().width() - 200);
-	        splitter->setSizes(sizes);
-	        splitter->setChildrenCollapsible(false);
+	        sizes.push_back(mainSplitter->size().width() - 200);
+            mainSplitter->setSizes(sizes);
+            mainSplitter->setChildrenCollapsible(false);
 
 	        /* --- Top panel --- */
 	        QWidget *txdNameBackground = new QWidget();
@@ -150,10 +152,12 @@ MainWindow::MainWindow(QString appPath, QWidget *parent) :
 
             QGridLayout *txdNameLayout = new QGridLayout();
             QLabel *starsBox = new QLabel;
-            QMovie *stars = new QMovie;
-            stars->setFileName(makeAppPath("resources\\dark\\stars.gif"));
-            starsBox->setMovie(stars);
-            stars->start();
+            starsMovie = new QMovie;
+
+            // set default theme movie
+            starsMovie->setFileName(makeAppPath("resources\\dark\\stars.gif"));
+            starsBox->setMovie(starsMovie);
+            starsMovie->start();
             txdNameLayout->addWidget(starsBox, 0, 0);
             txdNameLayout->addWidget(txdName, 0, 0);
             txdNameLayout->setContentsMargins(0, 0, 0, 0);
@@ -407,8 +411,20 @@ MainWindow::MainWindow(QString appPath, QWidget *parent) :
             connect( actionShowLog, &QAction::triggered, this, &MainWindow::onToggleShowLog );
 
 	        viewMenu->addSeparator();
-	        QAction *actionSetupTheme = new QAction("&Setup theme", this);
-	        viewMenu->addAction(actionSetupTheme);
+	        
+            this->actionThemeDark = new QAction("&Dark theme", this);
+            this->actionThemeDark->setCheckable(true);
+            this->actionThemeLight = new QAction("&Light theme", this);
+            this->actionThemeLight->setCheckable(true);
+
+            // enable needed theme in menu before connecting a slot
+            actionThemeDark->setChecked(true);
+
+            connect(this->actionThemeDark, &QAction::triggered, this, &MainWindow::onToogleDarkTheme);
+            connect(this->actionThemeLight, &QAction::triggered, this, &MainWindow::onToogleLightTheme);
+
+            viewMenu->addAction(this->actionThemeDark);
+            viewMenu->addAction(this->actionThemeLight);
 
 	        actionQuit->setShortcut(QKeySequence::Quit);
 	        connect(actionQuit, &QAction::triggered, this, &MainWindow::close);
@@ -465,7 +481,7 @@ MainWindow::MainWindow(QString appPath, QWidget *parent) :
 	        /* --- Main layout --- */
 	        QVBoxLayout *mainLayout = new QVBoxLayout;
 	        mainLayout->addLayout(topLayout);
-	        mainLayout->addWidget(splitter);
+	        mainLayout->addWidget(mainSplitter);
 	        mainLayout->addLayout(bottomLayout);
 
 	        mainLayout->setContentsMargins(0, 0, 0, 0);
@@ -604,14 +620,14 @@ void MainWindow::setCurrentTXD( rw::TexDictionary *txdObj )
     {
         this->currentTXD = txdObj;
 
-        this->updateTextureList();
+        this->updateTextureList(false);
     }
 
     // We should update how we let the user access the GUI.
     this->UpdateAccessibility();
 }
 
-void MainWindow::updateTextureList( void )
+void MainWindow::updateTextureList( bool selectLastItemInList )
 {
     rw::TexDictionary *txdObj = this->currentTXD;
 
@@ -624,7 +640,7 @@ void MainWindow::updateTextureList( void )
     
     if ( txdObj )
     {
-	    bool selected = false;
+        TexInfoWidget *texInfoToSelect = NULL;
 
 	    for ( rw::TexDictionary::texIter_t iter( txdObj->GetTextureIterator() ); iter.IsEnd() == false; iter.Increment() )
 	    {
@@ -635,15 +651,14 @@ void MainWindow::updateTextureList( void )
             TexInfoWidget *texInfoWidget = new TexInfoWidget(item, texItem);
 	        listWidget->setItemWidget(item, texInfoWidget);
 		    item->setSizeHint(QSize(listWidget->sizeHintForColumn(0), 54));
-		    // select first item in a list
-		    if (!selected)
-		    {
-                listWidget->setItemSelected(item, true);
-                this->currentSelectedTexture = texInfoWidget;
-                this->updateTextureView();
-			    selected = true;
-		    }
+
+		    // select first or last item in a list
+		    if (!texInfoToSelect || selectLastItemInList)
+                texInfoToSelect = texInfoWidget;
 	    }
+
+        if (texInfoToSelect)
+            listWidget->setCurrentItem(texInfoToSelect->listItem);
     }
 }
 
@@ -934,6 +949,36 @@ void MainWindow::onToggleShowLog( bool checked )
 	this->txdLog->show();
 }
 
+void MainWindow::onToogleDarkTheme(bool checked) {
+    if (checked && !this->recheckingThemeItem) {
+        this->actionThemeLight->setChecked(false);
+        this->starsMovie->stop();
+        this->setStyleSheet(styles::get(this->m_appPath, "resources\\dark.shell"));
+        this->starsMovie->setFileName(makeAppPath("resources\\dark\\stars.gif"));
+        this->starsMovie->start();
+    }
+    else {
+        this->recheckingThemeItem = true;
+        this->actionThemeDark->setChecked(true);
+        this->recheckingThemeItem = false;
+    }
+}
+
+void MainWindow::onToogleLightTheme(bool checked) {
+    if (checked && !this->recheckingThemeItem) {
+        this->actionThemeDark->setChecked(false);
+        this->starsMovie->stop();
+        this->setStyleSheet(styles::get(this->m_appPath, "resources\\light.shell"));
+        this->starsMovie->setFileName(makeAppPath("resources\\light\\stars.gif"));
+        this->starsMovie->start();
+    }
+    else {
+        this->recheckingThemeItem = true;
+        this->actionThemeLight->setChecked(true);
+        this->recheckingThemeItem = false;
+    }
+}
+
 void MainWindow::onSelectPlatform( bool checked )
 {
     // Show the window with a combo box of all available platforms.
@@ -1106,7 +1151,7 @@ void MainWindow::DoAddTexture( const TexAddDialog::texAddOperation& params )
                 newTexture->AddToDictionary( currentTXD );
 
                 // Update the texture list.
-                this->updateTextureList();
+                this->updateTextureList(true);
             }
             else
             {

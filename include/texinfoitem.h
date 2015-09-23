@@ -99,6 +99,7 @@ public:
 
         this->texNameLabel->setText( tr( this->rwTextureHandle->GetName().c_str() ) );
         this->texInfoLabel->setText( textureInfo );
+
     }
 
     inline void remove( void )
@@ -110,7 +111,8 @@ private:
     QLabel *texNameLabel;
     QLabel *texInfoLabel;
 
-    QListWidgetItem *listItem;
-
     rw::TextureBase *rwTextureHandle;
+
+public:
+    QListWidgetItem *listItem;
 };
