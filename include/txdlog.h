@@ -123,7 +123,9 @@ public:
 		listWidget->setObjectName("logList");
 		mainLayout->addWidget(listWidget);
 		listWidget->setSelectionMode(QAbstractItemView::SelectionMode::MultiSelection);
-		listWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+
+        // Still not fure, but looks like weird bug with scrollbars was fixed in Qt5.x
+		//listWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
 
 		mainLayout->setContentsMargins(0, 0, 0, 0);
 		mainLayout->setMargin(0);

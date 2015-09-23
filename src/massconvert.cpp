@@ -239,7 +239,7 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
     // Add a log.
     QPlainTextEdit *logEdit = new QPlainTextEdit();
 
-    logEdit->setMinimumWidth( 650 );
+    logEdit->setMinimumWidth( 450 );
     logEdit->setReadOnly( true );
 
     this->logEdit = logEdit;
