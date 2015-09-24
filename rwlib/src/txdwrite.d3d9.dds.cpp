@@ -425,10 +425,10 @@ bool d3d9NativeTextureTypeProvider::IsNativeImageFormat( Interface *engineInterf
 
     uint32 ddsFlags = header.dwFlags;
 
-    uint32 fourCC = header.ddspf.dwFourCC;
-    bool hasValidFourCC = ( header.ddspf.dwFlags & DDPF_FOURCC ) != 0;
-
     uint32 pixelFormatFlags = header.ddspf.dwFlags;
+
+    uint32 fourCC = header.ddspf.dwFourCC;
+    bool hasValidFourCC = ( pixelFormatFlags & DDPF_FOURCC ) != 0;
 
     uint32 layerWidth = header.dwWidth;
     uint32 layerHeight = header.dwHeight;
@@ -440,10 +440,34 @@ bool d3d9NativeTextureTypeProvider::IsNativeImageFormat( Interface *engineInterf
     if ( !hasValidBitDepth )
     {
         // We could have a valid bit depth stored in the header instead.
-        if ( header.ddspf.dwFlags & ( DDPF_RGB | DDPF_YUV | DDPF_LUMINANCE ) )
+        if ( pixelFormatFlags & ( DDPF_RGB | DDPF_YUV | DDPF_LUMINANCE ) )
         {
             // We take the value from the header.
             bitDepth = header.ddspf.dwRGBBitCount;
+
+            hasValidBitDepth = true;
+        }
+        else if ( pixelFormatFlags & DDPF_PALETTEINDEXED1 )
+        {
+            bitDepth = 1;
+
+            hasValidBitDepth = true;
+        }
+        else if ( pixelFormatFlags & DDPF_PALETTEINDEXED2 )
+        {
+            bitDepth = 2;
+
+            hasValidBitDepth = true;
+        }
+        else if ( pixelFormatFlags & DDPF_PALETTEINDEXED4 )
+        {
+            bitDepth = 4;
+
+            hasValidBitDepth = true;
+        }
+        else if ( pixelFormatFlags & DDPF_PALETTEINDEXED8 )
+        {
+            bitDepth = 8;
 
             hasValidBitDepth = true;
         }
@@ -813,6 +837,7 @@ void d3d9NativeTextureTypeProvider::SerializeNativeImage( Interface *engineInter
     eColorOrdering dstColorOrder;
 
     ePaletteType dstPaletteType = PALETTE_NONE;
+    uint32 dstPaletteSize = 0;
 
     D3DFORMAT dstFormat = d3dFormat;
 
@@ -831,61 +856,114 @@ void d3d9NativeTextureTypeProvider::SerializeNativeImage( Interface *engineInter
     bool isAlphaOnly = false;
     bool isFourCC = false;
 
-    bool hasDirectMapping =
-        getDDSMappingFromD3DFormat(
-            d3dFormat, isRGB, isLum, isAlphaOnly, isYUV, isFourCC,
-            redMask, greenMask, blueMask, alphaMask, fourCC
-        );
+    bool isRawRasterEncoding = false;
+    bool hasDirectMapping = false;
 
-    // If we do not have any direct mapping, we will have to convert our native texture into something
-    // understandable.
-    if ( !hasDirectMapping )
+    // We can also write a palette image.
+    if ( srcPaletteType != PALETTE_NONE )
     {
-        // Writing into the DDS depends on what type of texture we have.
-        if ( d3dRasterFormatLink || usedFormatHandler != NULL )
+        if ( srcPaletteType == PALETTE_4BIT || srcPaletteType == PALETTE_8BIT )
         {
-            // We will write a full quality color DDS.
-            dstRasterFormat = RASTER_8888;
-            dstDepth = 32;
-            dstColorOrder = COLOR_BGRA;
+            // We can directly write the palette indice.
+            dstPaletteType = srcPaletteType;
+        }
+        else if ( srcPaletteType == PALETTE_4BIT_LSB )
+        {
+            dstPaletteType = PALETTE_4BIT;
         }
         else
         {
-            throw RwException( "unsupported texture format in DDS serialization of Direct3D 9 native texture" );
+            // We encountered an unknown palette encoding, so expand to full width.
+            dstPaletteType = PALETTE_8BIT;
         }
-        
-        // Calculate the D3DFORMAT that represents the new destination raster format.
-        D3DFORMAT mapD3DFORMAT;
 
-        bool canMapToFormat =
-            getD3DFormatFromRasterType(
-                dstRasterFormat, PALETTE_NONE, dstColorOrder, dstDepth,
-                mapD3DFORMAT
-            );
+        // Determine the depth.
+        if ( dstPaletteType == PALETTE_4BIT )
+        {
+            dstDepth = 4;
+        }
+        else if ( dstPaletteType == PALETTE_8BIT )
+        {
+            dstDepth = 8;
+        }
+        else
+        {
+            assert( 0 );
+        }
 
-        assert( canMapToFormat == true );
+        // The palette can only be written as 32bit RGBA.
+        dstRasterFormat = RASTER_8888;
+        dstColorOrder = COLOR_RGBA;
 
-        // Get a DDS mapping for it.
-        bool hasIndirectMapping =
+        // Check for direct mapping support.
+        hasDirectMapping = ( srcDepth == dstDepth && srcPaletteType == dstPaletteType );
+
+        isRawRasterEncoding = true;
+    }
+    else
+    {
+        // Otherwise we write some D3DFORMAT encoding.
+        hasDirectMapping =
             getDDSMappingFromD3DFormat(
-                mapD3DFORMAT,
-                isRGB, isLum, isAlphaOnly, isYUV, isFourCC,
+                d3dFormat, isRGB, isLum, isAlphaOnly, isYUV, isFourCC,
                 redMask, greenMask, blueMask, alphaMask, fourCC
             );
 
-        assert( hasIndirectMapping == true );
+        // If we do not have any direct mapping, we will have to convert our native texture into something
+        // understandable.
+        if ( !hasDirectMapping )
+        {
+            // Writing into the DDS depends on what type of texture we have.
+            if ( d3dRasterFormatLink || usedFormatHandler != NULL )
+            {
+                // We will write a full quality color DDS.
+                dstRasterFormat = RASTER_8888;
+                dstDepth = 32;
+                dstColorOrder = COLOR_BGRA;
+            }
+            else
+            {
+                throw RwException( "unsupported texture format in DDS serialization of Direct3D 9 native texture" );
+            }
+        
+            // Calculate the D3DFORMAT that represents the new destination raster format.
+            D3DFORMAT mapD3DFORMAT;
 
-        dstFormat = mapD3DFORMAT;
+            bool canMapToFormat =
+                getD3DFormatFromRasterType(
+                    dstRasterFormat, PALETTE_NONE, dstColorOrder, dstDepth,
+                    mapD3DFORMAT
+                );
+
+            assert( canMapToFormat == true );
+
+            // Get a DDS mapping for it.
+            bool hasIndirectMapping =
+                getDDSMappingFromD3DFormat(
+                    mapD3DFORMAT,
+                    isRGB, isLum, isAlphaOnly, isYUV, isFourCC,
+                    redMask, greenMask, blueMask, alphaMask, fourCC
+                );
+
+            assert( hasIndirectMapping == true );
+
+            dstFormat = mapD3DFORMAT;
+        }
     }
 
     // Calculate the real surface dimensions of the base layer now.
     uint32 baseDstSurfWidth, baseDstSurfHeight;
 
-    bool couldGetSurfaceDimensions =
-        dds_header::calculateSurfaceDimensions(
+    bool couldGetSurfaceDimensions = false;
+
+    if ( isRawRasterEncoding == false )
+    {
+        // Having a raw raster encoding means that our d3dFormat field does not matter.
+        couldGetSurfaceDimensions = dds_header::calculateSurfaceDimensions(
             dstFormat, baseLayer.layerWidth, baseLayer.layerHeight,
             baseDstSurfWidth, baseDstSurfHeight
         );
+    }
 
     if ( !couldGetSurfaceDimensions )
     {
@@ -897,18 +975,26 @@ void d3d9NativeTextureTypeProvider::SerializeNativeImage( Interface *engineInter
     // Also decide whether we want to output with pitch or with linear size.
     bool outputAsPitchOrLinearSize;     // true == pitch, false == linear size
     {
-        // This entirely depends on the destination D3DFORMAT.
-        if ( dds_header::doesFormatSupportPitch( dstFormat ) == false )
+        if ( isRawRasterEncoding )
         {
-            outputAsPitchOrLinearSize = false;
+            // Basically, raw raste encodings _must_ have a pitch.
+            outputAsPitchOrLinearSize = true;
         }
         else
         {
-            outputAsPitchOrLinearSize = true;
+            // This entirely depends on the destination D3DFORMAT.
+            if ( dds_header::doesFormatSupportPitch( dstFormat ) == false )
+            {
+                outputAsPitchOrLinearSize = false;
+            }
+            else
+            {
+                outputAsPitchOrLinearSize = true;
+            }
+
+            assert( dds_header::doesFormatSupportPitch( d3dFormat ) == outputAsPitchOrLinearSize );
         }
     }
-
-    assert( dds_header::doesFormatSupportPitch( d3dFormat ) == outputAsPitchOrLinearSize );
 
     // Get the bit depth.
     uint32 bitDepth;
@@ -934,6 +1020,8 @@ void d3d9NativeTextureTypeProvider::SerializeNativeImage( Interface *engineInter
         }
         else
         {
+            assert( isRawRasterEncoding == false );
+
             // Here things start becoming more complicated.
             // This format does not support aligning, so we have to calculate its size somehow.
             // Even if the format did support aligning, it should not screw up this math.
@@ -1044,6 +1132,17 @@ void d3d9NativeTextureTypeProvider::SerializeNativeImage( Interface *engineInter
     {
         pixelFlags |= DDPF_FOURCC;
     }
+    else if ( dstPaletteType != PALETTE_NONE )
+    {
+        if ( dstPaletteType == PALETTE_4BIT )
+        {
+            pixelFlags |= DDPF_PALETTEINDEXED4;
+        }
+        else if ( dstPaletteType == PALETTE_8BIT )
+        {
+            pixelFlags |= DDPF_PALETTEINDEXED8;
+        }
+    }
 
     // Calculate first capability flags.
     uint32 caps1 = ( DDSCAPS_TEXTURE );
@@ -1067,6 +1166,13 @@ void d3d9NativeTextureTypeProvider::SerializeNativeImage( Interface *engineInter
         {
             usedFormatHandler->GetTextureRWFormat( mipRasterFormat, mipDepth, mipColorOrder );
         }
+        else
+        {
+            // Basically, we transform from the source.
+            mipRasterFormat = srcRasterFormat;
+            mipDepth = srcDepth;
+            mipColorOrder = srcColorOrder;
+        }
     }
 
     // TODO: actually implement cube map logic for Direct3D 9 native texture.
@@ -1078,12 +1184,13 @@ void d3d9NativeTextureTypeProvider::SerializeNativeImage( Interface *engineInter
     header.dwWidth = baseLayer.layerWidth;
     header.dwHeight = baseLayer.layerHeight;
     header.dwPitchOrLinearSize = mainSurfacePitchOrLinearSize;
+    header.dwDepth = 0; // TODO.
     header.dwMipmapCount = (uint32)mipmapCount;
     memset( header.dwReserved1, 0, sizeof( header.dwReserved1 ) );
     header.ddspf.dwSize = sizeof( header.ddspf );
     header.ddspf.dwFlags = pixelFlags;
     header.ddspf.dwFourCC = fourCC;
-    header.ddspf.dwRGBBitCount = ( isRGB || isLum || isYUV || isAlphaOnly ? bitDepth : 0 );
+    header.ddspf.dwRGBBitCount = ( isRGB || isLum || isYUV || isAlphaOnly || isRawRasterEncoding ? bitDepth : 0 );
     header.ddspf.dwRBitMask = redMask;
     header.ddspf.dwGBitMask = greenMask;
     header.ddspf.dwBBitMask = blueMask;
@@ -1097,6 +1204,62 @@ void d3d9NativeTextureTypeProvider::SerializeNativeImage( Interface *engineInter
     // Write the header.
     inputStream->write( &header, sizeof( header ) );
 
+    // If we are palettized, we want to write the palette.
+    if ( dstPaletteType != PALETTE_NONE )
+    {
+        assert( srcPaletteType != PALETTE_NONE );
+
+        uint32 srcPalRasterDepth = Bitmap::getRasterFormatDepth( srcRasterFormat );
+        uint32 dstPalRasterDepth = Bitmap::getRasterFormatDepth( dstRasterFormat );
+
+        dstPaletteSize = getPaletteItemCount( dstPaletteType );
+
+        uint32 dstPaletteDataSize = getPaletteDataSize( dstPaletteSize, dstPalRasterDepth );
+
+        // Check whether we can directly aquire the palette.
+        bool canPaletteDirectlyAcquire = ( srcRasterFormat == dstRasterFormat && srcColorOrder == dstColorOrder );
+
+        if ( canPaletteDirectlyAcquire )
+        {
+            // Just write it.
+            uint32 actualPaletteDataSize = getPaletteDataSize( srcPaletteSize, dstPalRasterDepth );
+
+            writePartialStreamSafe( inputStream, srcPaletteData, actualPaletteDataSize, dstPaletteDataSize );
+        }
+        else
+        {
+            // We have to convert before writing.
+            void *dstPaletteData = engineInterface->PixelAllocate( dstPaletteDataSize );
+
+            if ( dstPaletteData == NULL )
+            {
+                throw RwException( "failed to allocate destination palette data for DDS color format transformation" );
+            }
+
+            try
+            {
+                ConvertPaletteData(
+                    srcPaletteData, dstPaletteData,
+                    srcPaletteSize, dstPaletteSize,
+                    srcRasterFormat, srcColorOrder, srcPalRasterDepth,
+                    dstRasterFormat, dstColorOrder, dstPalRasterDepth
+                );
+
+                // Now write it.
+                inputStream->write( dstPaletteData, dstPaletteDataSize );
+            }
+            catch( ... )
+            {
+                engineInterface->PixelFree( dstPaletteData );
+
+                throw;
+            }
+
+            // Release the memory.
+            engineInterface->PixelFree( dstPaletteData );
+        }
+    }
+
     // Now write the mipmap layers.
     for ( size_t n = 0; n < mipmapCount; n++ )
     {
@@ -1108,12 +1271,16 @@ void d3d9NativeTextureTypeProvider::SerializeNativeImage( Interface *engineInter
 
         uint32 dstSurfWidth, dstSurfHeight;
 
-        bool gotDstDimms =
-            dds_header::calculateSurfaceDimensions(
+        bool gotDstDimms = false;
+
+        if ( !isRawRasterEncoding )
+        {
+            gotDstDimms = dds_header::calculateSurfaceDimensions(
                 dstFormat,
                 mipLayer.layerWidth, mipLayer.layerHeight,
                 dstSurfWidth, dstSurfHeight
             );
+        }
 
         if ( !gotDstDimms )
         {
@@ -1132,15 +1299,27 @@ void d3d9NativeTextureTypeProvider::SerializeNativeImage( Interface *engineInter
 
         if ( canWriteDirectly )
         {
-            // If we have a different output format, we cannot write directly.
-            if ( dstFormat != d3dFormat )
+            if ( !isRawRasterEncoding )
             {
-                canWriteDirectly = false;
+                // If we have a different output format, we cannot write directly.
+                if ( dstFormat != d3dFormat )
+                {
+                    canWriteDirectly = false;
+                }
+            }
+            else
+            {
+                // TODO?
             }
         }
 
         uint32 srcRowSize;
         uint32 dstRowSize;
+
+        if ( outputAsPitchOrLinearSize == true )
+        {
+            srcRowSize = getRasterDataRowSize( dstSurfWidth, srcDepth, srcRowAlignment );
+        }
 
         if ( canWriteDirectly )
         {
@@ -1155,8 +1334,6 @@ void d3d9NativeTextureTypeProvider::SerializeNativeImage( Interface *engineInter
                 {
                     dstRowSize = getRasterDataRowSize( surfWidth, bitDepth, 1 );
                 }
-
-                srcRowSize = getRasterDataRowSize( dstSurfWidth, srcDepth, srcRowAlignment );
 
                 if ( dstRowSize != srcRowSize )
                 {
@@ -1254,8 +1431,8 @@ void d3d9NativeTextureTypeProvider::SerializeNativeImage( Interface *engineInter
                                     0, 0,
                                     surfWidth, 1,
                                     surfWidth, surfHeight,
-                                    mipRasterFormat, mipDepth, getD3DTextureDataRowAlignment(), mipColorOrder, PALETTE_NONE, 0,
-                                    dstRasterFormat, dstDepth, dstRowAlignment, dstColorOrder, PALETTE_NONE, 0
+                                    mipRasterFormat, mipDepth, getD3DTextureDataRowAlignment(), mipColorOrder, srcPaletteType, srcPaletteSize,
+                                    dstRasterFormat, dstDepth, dstRowAlignment, dstColorOrder, dstPaletteType, dstPaletteSize
                                 );
                             }
 
@@ -1368,10 +1545,16 @@ void d3d9NativeTextureTypeProvider::DeserializeNativeImage( Interface *engineInt
     bool hasLum = ( ddsPixelFlags & DDPF_LUMINANCE ) != 0;
     bool hasAlphaOnly = ( ddsPixelFlags & DDPF_ALPHA ) != 0;
     bool hasAlpha = ( ddsPixelFlags & DDPF_ALPHAPIXELS ) != 0;
+    bool hasPal4 = ( ddsPixelFlags & DDPF_PALETTEINDEXED4 ) != 0;
+    bool hasPal8 = ( ddsPixelFlags & DDPF_PALETTEINDEXED8 ) != 0;
 
-    // To acquire it, we must determine it's D3DFORMAT field.
+    // To acquire it, we must map it to a valid thing for us.
+    // This is if it either has a d3dFormat or a palette format.
     D3DFORMAT d3dFormat;
     bool hasValidFormat = false;
+
+    ePaletteType paletteType = PALETTE_NONE;
+    bool hasPaletteFormat = false;
 
     uint32 bitDepth;
     bool hasBitDepth;
@@ -1411,6 +1594,28 @@ void d3d9NativeTextureTypeProvider::DeserializeNativeImage( Interface *engineInt
                 hasLum = false;
 
                 engineInterface->PushWarning( "DDS file has ambiguous format type (*YUV or LUM)" );
+            }
+
+            // Must not ignore palette.
+            if ( hasPal4 && hasPal8 )
+            {
+                throw RwException( "ambiguous palette format in DDS file" );
+            }
+
+            if ( hasPal4 && hasYUV )
+            {
+                // Kinda have to downgrade.
+                hasYUV = false;
+
+                engineInterface->PushWarning( "DDS file has ambiguous format type (YUV or *PAL4)" );
+            }
+
+            if ( hasPal8 && hasYUV )
+            {
+                // Kinda have to downgrade.
+                hasYUV = false;
+
+                engineInterface->PushWarning( "DDS file has ambiguous format type (YUV or *PAL8)" );
             }
         }
 
@@ -1551,21 +1756,68 @@ void d3d9NativeTextureTypeProvider::DeserializeNativeImage( Interface *engineInt
                 throw RwException( "failed to map alpha DDS file to Direct3D 9 native texture" );
             }
         }
+        else if ( hasPal4 || hasPal8 )
+        {
+            bitDepth = header.ddspf.dwRGBBitCount;
+
+            hasBitDepth = true;
+
+            // Determine the actual palette type.
+            if ( hasPal4 )
+            {
+                paletteType = PALETTE_4BIT;
+            }
+            else if ( hasPal8 )
+            {
+                paletteType = PALETTE_8BIT;
+            }
+            else
+            {
+                assert( 0 );
+            }
+
+            hasPaletteFormat = true;
+
+            // Check whether the bit depth is valid.
+            bool validDepth = false;
+
+            if ( paletteType == PALETTE_4BIT )
+            {
+                validDepth = ( bitDepth == 4 || bitDepth == 8 );
+            }
+            else if ( paletteType == PALETTE_8BIT )
+            {
+                validDepth = ( bitDepth == 8 );
+            }
+
+            if ( !validDepth )
+            {
+                throw RwException( "invalid palette bit depth in DDS file deserialization" );
+            }
+
+            // We have no D3DFORMAT.
+            hasValidFormat = false;
+        }
         else
         {
             throw RwException( "unknown DDS image pixel format type" );
         }
     }
 
-    if ( !hasValidFormat )
+    if ( !hasValidFormat && !hasPaletteFormat )
     {
-        throw RwException( "could not map DDS file to a valid D3DFORMAT" );
+        throw RwException( "could not map DDS file to a valid D3D9 raster representation" );
     }
 
     bool hasValidMapping = false;
 
     // Check whether we are DXT compressed.
-    uint32 dxtType = getCompressionFromD3DFormat( d3dFormat );
+    uint32 dxtType = 0;
+
+    if ( hasValidFormat )
+    {
+        dxtType = getCompressionFromD3DFormat( d3dFormat );
+    }
 
     if ( dxtType != 0 )
     {
@@ -1576,443 +1828,702 @@ void d3d9NativeTextureTypeProvider::DeserializeNativeImage( Interface *engineInt
     bool d3dRasterFormatLink = false;
     bool originalRWCompat = false;
 
+    d3dpublic::nativeTextureFormatHandler *usedFormatHandler = NULL;
+
     // Determine the mapping to original RW types.
     eRasterFormat rasterFormat = RASTER_DEFAULT;
     eColorOrdering colorOrder = COLOR_BGRA;
 
-    bool isVirtualMapping = false;
-
-    bool hasRepresentingFormat = getRasterFormatFromD3DFormat(
-        d3dFormat, hasAlpha || hasAlphaOnly,
-        rasterFormat, colorOrder, isVirtualMapping
-    );
-
-    d3dpublic::nativeTextureFormatHandler *usedFormatHandler = NULL;
-
-    if ( hasRepresentingFormat )
+    if ( hasValidFormat )
     {
-        if ( isVirtualMapping == false )
+        bool isVirtualMapping = false;
+
+        bool hasRepresentingFormat = getRasterFormatFromD3DFormat(
+            d3dFormat, hasAlpha || hasAlphaOnly,
+            rasterFormat, colorOrder, isVirtualMapping
+        );
+
+        if ( hasRepresentingFormat )
         {
-            d3dRasterFormatLink = true;
+            if ( isVirtualMapping == false )
+            {
+                d3dRasterFormatLink = true;
 
-            // Could be compatible with RW. Let's check.
-            originalRWCompat =
-                isRasterFormatOriginalRWCompatible(
-                    rasterFormat, colorOrder, bitDepth,
-                    PALETTE_NONE    // DDS files never have palettes.
-                );
+                // Could be compatible with RW. Let's check.
+                originalRWCompat =
+                    isRasterFormatOriginalRWCompatible(
+                        rasterFormat, colorOrder, bitDepth,
+                        PALETTE_NONE    // DDS files never have palettes.
+                    );
+            }
+
+            hasValidMapping = true;
         }
-
-        hasValidMapping = true;
-    }
     
-    if ( !hasValidMapping )
+        if ( !hasValidMapping )
+        {
+            // We could still have an extension that takes care of us.
+            usedFormatHandler = this->GetFormatHandler( d3dFormat );
+
+            hasValidMapping = true;
+        }
+    }
+    else
     {
-        // We could still have an extension that takes care of us.
-        usedFormatHandler = this->GetFormatHandler( d3dFormat );
+        // Palette are always encoded the same.
+        d3dRasterFormatLink = true;
+        originalRWCompat = true;
+   
+        rasterFormat = RASTER_8888;
+        colorOrder = COLOR_RGBA;
 
         hasValidMapping = true;
+
+        d3dFormat = D3DFMT_P8;
     }
 
-    // Begin writing to the texture.
-    NativeTextureD3D9 *nativeTex = (NativeTextureD3D9*)objMem;
+    // If we do not directly map to a D3DFORMAT, then the DDS travels in a special non-native format.
+    // In that case we have to make sure we convert the data to a proper format.
+    bool canRawDirectlyAcquire = false;
 
-    uint32 maybeMipmapCount = ( hasMipmapCount ? header.dwMipmapCount : 1 );
+    uint32 dstDepth;    // must set this field.
 
-    // Verify some capabilities.
+    eRasterFormat dstRasterFormat = rasterFormat;
+    eColorOrdering dstColorOrder = colorOrder;
+    ePaletteType dstPaletteType = paletteType;
+
+    if ( hasValidFormat )
     {
-        bool isComplex = ( header.dwCaps & DDSCAPS_COMPLEX ) != 0;
-
-        if ( !isComplex && maybeMipmapCount > 1 )
-        {
-            engineInterface->PushWarning( "DDS file does have mipmaps but is not marked complex" );
-        }
-
-        if ( ( header.dwCaps & DDSCAPS_TEXTURE ) == 0 )
-        {
-            engineInterface->PushWarning( "DDS file is missing DDSCAPS_TEXTURE" );
-        }
-
-        // We ignore any cubemap settings.
-    }
-
-    // Get the pitch or linear size.
-    // Either way, we should be able to understand this.
-    uint32 mainSurfacePitchOrLinearSize = header.dwPitchOrLinearSize;
-
-    bool isLinearSize = ( ( header.dwFlags & DDSD_LINEARSIZE ) != 0 );
-    bool isPitch ( ( header.dwFlags & DDSD_PITCH ) != 0 );
-
-    if ( isLinearSize && isPitch )
-    {
-        engineInterface->PushWarning( "ambiguous DDS file property; both pitch and linear size property set (using pitch)" );
-
-        isPitch = false;
-    }
-
-    // We now want to read all mipmaps and store them!
-    mipGenLevelGenerator mipGen( header.dwWidth, header.dwHeight );
-
-    if ( !mipGen.isValidLevel() )
-    {
-        throw RwException( "invalid DDS file dimensions" );
-    }
-
-    uint32 mipmapCount = 0;
-
-    for ( uint32 n = 0; n < maybeMipmapCount; n++ )
-    {
-        bool hasEstablishedLevel = true;
-
-        if ( n != 0 )
-        {
-            hasEstablishedLevel = mipGen.incrementLevel();
-        }
-
-        if ( !hasEstablishedLevel )
-        {
-            break;
-        }
-
-        // Read the mipmap data.
-        uint32 layerWidth = mipGen.getLevelWidth();
-        uint32 layerHeight = mipGen.getLevelHeight();
-
-        // Calculate the surface dimensions.
-        uint32 surfWidth, surfHeight;
-
-        calculateSurfaceDimensions( layerWidth, layerHeight, hasValidFormat, d3dFormat, surfWidth, surfHeight );
-        
-        // Get the source pitch, if available.
-        uint32 dstPitch;
-        bool hasDstPitch = false;
+        canRawDirectlyAcquire = true;
 
         if ( hasBitDepth )
         {
-            dstPitch = getD3DRasterDataRowSize( surfWidth, bitDepth );
-
-            hasDstPitch = true;
+            dstDepth = bitDepth;
         }
+    }
+    else if ( hasPaletteFormat )
+    {
+        assert( hasBitDepth == true );
 
-        // Verify that we have this mipmap data.
-        uint32 mipLevelDataSize;
+        // Ask the runtime about a proper format to encode to.
+        dstDepth = bitDepth;
 
-        bool hasDataSize = false;
+        convertCompatibleRasterFormat( dstRasterFormat, dstColorOrder, dstDepth, dstPaletteType, d3dFormat );
 
-        uint32 srcPitch;
-        bool hasSrcPitch = false;
+        // Check for direct acquisition.
+        canRawDirectlyAcquire =
+            doesRasterFormatNeedConversion(
+                rasterFormat, bitDepth, colorOrder, paletteType,
+                dstRasterFormat, dstDepth, dstColorOrder, dstPaletteType
+            ) == false;
+    }
+    else
+    {
+        assert( 0 );
+    }
 
-        if ( n == 0 )
+    // If we are palette encoded, we want to read the palette and store it.
+    // TODO: since this palette reading follows a common pattern, maybe create a helper for reading palette data!
+    void *paletteData = NULL;
+    uint32 paletteSize = 0;
+
+    if ( paletteType != PALETTE_NONE )
+    {
+        assert( dstPaletteType != PALETTE_NONE );
+
+        paletteSize = getPaletteItemCount( paletteType );
+
+        uint32 srcPalRasterDepth = Bitmap::getRasterFormatDepth( rasterFormat );
+
+        uint32 srcPaletteDataSize = getPaletteDataSize( paletteSize, srcPalRasterDepth );
+
+        checkAhead( outputStream, srcPaletteDataSize );
+
+        // We should a buffer that can hold the destination texels.
+        // But we will also need a buffe rthat can hold the texels of transformation from the file, which is the buffer
+        // we start with.
+        void *srcPaletteData = engineInterface->PixelAllocate( srcPaletteDataSize );
+
+        if ( srcPaletteData == NULL )
         {
-            if ( isLinearSize )
-            {
-                mipLevelDataSize = mainSurfacePitchOrLinearSize;
-
-                hasDataSize = true;
-            }
-            else if ( isPitch )
-            {
-                mipLevelDataSize = getRasterDataSizeByRowSize( mainSurfacePitchOrLinearSize, surfHeight );
-
-                hasDataSize = true;
-
-                // If we have a pitch, we can check whether we are properly aligned here.
-                srcPitch = mainSurfacePitchOrLinearSize;
-
-                hasSrcPitch = true;
-            }
-        }
-            
-        if ( !hasDataSize )
-        {
-            // For this we need to have valid bit depth.
-            if ( hasBitDepth )
-            {
-                uint32 mipStride = getRasterDataRowSize( surfWidth, bitDepth, 1 );  // byte alignment.
-
-                mipLevelDataSize = getRasterDataSizeByRowSize( mipStride, surfHeight );
-
-                hasDataSize = true;
-
-                srcPitch = mipStride;
-
-                hasSrcPitch = true;
-            }
-        }
-
-        if ( !hasDataSize )
-        {
-            throw RwException( "failed to determine DDS mipmap data size" );
-        }
-
-        // Check whether we can directly acquire.
-        bool canDirectlyAcquire = false;
-
-        if ( hasSrcPitch && hasDstPitch )
-        {
-            canDirectlyAcquire = ( srcPitch == dstPitch );
-        }
-        else
-        {
-            // TODO: decide whether we want to trust this data, because we do not know whether
-            // it is properly aligned.
-            canDirectlyAcquire = true;
-        }
-
-        // Data inside of the DDS file can be aligned in whatever way.
-        // If the rows are already DWORD aligned, we can directly read this mipmap data.
-        // Otherwise we have to read row-by-row.
-        checkAhead( outputStream, mipLevelDataSize );
-
-        uint32 dstTexelsDataSize = 0;
-
-        if ( canDirectlyAcquire )
-        {
-            dstTexelsDataSize = mipLevelDataSize;
-        }
-        else
-        {
-            if ( hasDstPitch )
-            {
-                dstTexelsDataSize = getRasterDataSizeByRowSize( dstPitch, surfHeight );   
-            }
-            else
-            {
-                throw RwException( "failed to determine Direct3D 9 native texture mipmap data size in DDS deserialization" );
-            }
-        }
-
-        void *texels = engineInterface->PixelAllocate( dstTexelsDataSize );
-
-        if ( !texels )
-        {
-            throw RwException( "failed to allocate Direct3D 9 native texture texel memory in DDS deserialization" );
+            throw RwException( "failed to allocate palette color buffer in DDS palettized deserialization" );
         }
 
         try
         {
-            if ( canDirectlyAcquire )
-            {
-                // Just read the data.
-                size_t texelReadCount = outputStream->read( texels, mipLevelDataSize );
+            // Read the palette.
+            size_t readPalSize = outputStream->read( srcPaletteData, srcPaletteDataSize );
 
-                if ( texelReadCount != mipLevelDataSize )
-                {
-                    throw RwException( "failed to read DDS mipmap texture memory" );
-                }
+            if ( srcPaletteDataSize != readPalSize )
+            {
+                throw RwException( "DDS file has corrupted palette data (failed to read completely)" );
+            }
+
+            // Now, we might need to transform the texels that we read, or not.
+            uint32 dstPalRasterDepth = Bitmap::getRasterFormatDepth( dstRasterFormat );
+
+            bool doesPaletteNeedTransform =
+                doesRasterFormatNeedConversion(
+                    rasterFormat, srcPalRasterDepth, colorOrder, PALETTE_NONE,
+                    dstRasterFormat, dstPalRasterDepth, dstColorOrder, PALETTE_NONE
+                );
+
+            if ( doesPaletteNeedTransform == false )
+            {
+                // We can simply give our buffer.
+                paletteData = srcPaletteData;
             }
             else
             {
-                // WARNING: make sure that we only realign actually re-alignable formats!
-                // compressed formats for instance are not re-alignable!
-                // Our current assumption is that we will never trigger this code path
-                // for compressed formats.
-
-                assert( hasSrcPitch == true && hasDstPitch == true );
-
-                int64 mipmapDataOffset = outputStream->tell();
-
-                // Read the data row by row.
-                for ( uint32 row = 0; row < surfHeight; row++ )
+                // We have to transform things, maybe even into another buffer.
+                if ( srcPalRasterDepth != dstPalRasterDepth )
                 {
-                    // Seek to the required row.
-                    if ( row != 0 )
+                    uint32 dstPalDataSize = getPaletteDataSize( paletteSize, dstPalRasterDepth );
+
+                    paletteData = engineInterface->PixelAllocate( dstPalDataSize );
+
+                    if ( !paletteData )
                     {
-                        outputStream->seek( mipmapDataOffset + srcPitch * row, RWSEEK_BEG );
+                        throw RwException( "failed to allocate final palette buffer for DDS palette color conversion" );
                     }
-
-                    void *dstRowData = getTexelDataRow( texels, dstPitch, row );
-
-                    // Read stuff.
-                    outputStream->read( dstRowData, dstPitch );
+                }
+                else
+                {
+                    // We can just transform into the same buffer.
+                    paletteData = srcPaletteData;
                 }
 
-                // Seek to the real stream end.
-                outputStream->seek( mipmapDataOffset + srcPitch * surfHeight, RWSEEK_BEG );
+                try
+                {
+                    ConvertPaletteData(
+                        srcPaletteData, paletteData,
+                        paletteSize, paletteSize,
+                        rasterFormat, colorOrder, srcPalRasterDepth,
+                        dstRasterFormat, dstColorOrder, dstPalRasterDepth
+                    );
+                }
+                catch( ...  )
+                {
+                    if ( paletteData != srcPaletteData )
+                    {
+                        engineInterface->PixelFree( paletteData );
+                    }
+
+                    throw;
+                }
             }
         }
         catch( ... )
         {
-            // Release temporary texel buffer.
-            engineInterface->PixelFree( texels );
+            engineInterface->PixelFree( srcPaletteData );
 
             throw;
         }
 
-        // Store this mipmap layer.
-        NativeTextureD3D9::mipmapLayer mipLevel;
-        mipLevel.layerWidth = layerWidth;
-        mipLevel.layerHeight = layerHeight;
-        mipLevel.width = surfWidth;
-        mipLevel.height = surfHeight;
-        mipLevel.texels = texels;
-        mipLevel.dataSize = dstTexelsDataSize;
-
-        // Add this layer.
-        nativeTex->mipmaps.push_back( mipLevel );
-
-        // Increase the amount of actual mipmaps.
-        mipmapCount++;
-    }
-
-    if ( mipmapCount == 0 )
-    {
-        throw RwException( "empty DDS file (no mipmaps)" );
-    }
-
-    // We have to determine whether this native texture actually has transparent data.
-    bool shouldHaveAlpha = ( hasAlpha || hasAlphaOnly );
-
-    if ( dxtType != 0 || d3dRasterFormatLink || usedFormatHandler != NULL )
-    {
-        bool hasAlphaByTexels = false;
-
-        if ( dxtType != 0 )
+        // Release not required buffers.
+        if ( srcPaletteData != paletteData )
         {
-            // We traverse DXT mipmap layers and check them.
-            for ( uint32 n = 0; n < mipmapCount; n++ )
+            engineInterface->PixelFree( srcPaletteData );
+        }
+    }
+
+    try
+    {
+        // Begin writing to the texture.
+        NativeTextureD3D9 *nativeTex = (NativeTextureD3D9*)objMem;
+
+        uint32 maybeMipmapCount = ( hasMipmapCount ? header.dwMipmapCount : 1 );
+
+        // Verify some capabilities.
+        {
+            bool isComplex = ( header.dwCaps & DDSCAPS_COMPLEX ) != 0;
+
+            if ( !isComplex && maybeMipmapCount > 1 )
             {
-                const NativeTextureD3D9::mipmapLayer& mipLayer = nativeTex->mipmaps[ n ];
+                engineInterface->PushWarning( "DDS file does have mipmaps but is not marked complex" );
+            }
 
-                bool hasLayerAlpha = dxtMipmapCalculateHasAlpha(
-                    mipLayer.width, mipLayer.height, mipLayer.layerWidth, mipLayer.layerHeight, mipLayer.texels,
-                    dxtType
-                );
+            if ( ( header.dwCaps & DDSCAPS_TEXTURE ) == 0 )
+            {
+                engineInterface->PushWarning( "DDS file is missing DDSCAPS_TEXTURE" );
+            }
 
-                if ( hasLayerAlpha )
+            // We ignore any cubemap settings.
+        }
+
+        // Get the pitch or linear size.
+        // Either way, we should be able to understand this.
+        uint32 mainSurfacePitchOrLinearSize = header.dwPitchOrLinearSize;
+
+        bool isLinearSize = ( ( header.dwFlags & DDSD_LINEARSIZE ) != 0 );
+        bool isPitch ( ( header.dwFlags & DDSD_PITCH ) != 0 );
+
+        if ( isLinearSize && isPitch )
+        {
+            engineInterface->PushWarning( "ambiguous DDS file property; both pitch and linear size property set (using pitch)" );
+
+            isPitch = false;
+        }
+
+        // We now want to read all mipmaps and store them!
+        mipGenLevelGenerator mipGen( header.dwWidth, header.dwHeight );
+
+        if ( !mipGen.isValidLevel() )
+        {
+            throw RwException( "invalid DDS file dimensions" );
+        }
+
+        uint32 mipmapCount = 0;
+
+        for ( uint32 n = 0; n < maybeMipmapCount; n++ )
+        {
+            bool hasEstablishedLevel = true;
+
+            if ( n != 0 )
+            {
+                hasEstablishedLevel = mipGen.incrementLevel();
+            }
+
+            if ( !hasEstablishedLevel )
+            {
+                break;
+            }
+
+            // Read the mipmap data.
+            uint32 layerWidth = mipGen.getLevelWidth();
+            uint32 layerHeight = mipGen.getLevelHeight();
+
+            // Calculate the surface dimensions.
+            uint32 surfWidth, surfHeight;
+
+            calculateSurfaceDimensions( layerWidth, layerHeight, hasValidFormat, d3dFormat, surfWidth, surfHeight );
+        
+            // Get the source pitch, if available.
+            uint32 dstPitch;
+            bool hasDstPitch = false;
+
+            if ( hasBitDepth )
+            {
+                dstPitch = getD3DRasterDataRowSize( surfWidth, dstDepth );
+
+                hasDstPitch = true;
+            }
+
+            // Verify that we have this mipmap data.
+            uint32 mipLevelDataSize;
+
+            bool hasDataSize = false;
+
+            uint32 srcPitch;
+            bool hasSrcPitch = false;
+
+            if ( n == 0 )
+            {
+                if ( isLinearSize )
                 {
-                    hasAlphaByTexels = true;
-                    break;
+                    mipLevelDataSize = mainSurfacePitchOrLinearSize;
+
+                    hasDataSize = true;
+                }
+                else if ( isPitch )
+                {
+                    mipLevelDataSize = getRasterDataSizeByRowSize( mainSurfacePitchOrLinearSize, surfHeight );
+
+                    hasDataSize = true;
+
+                    // If we have a pitch, we can check whether we are properly aligned here.
+                    srcPitch = mainSurfacePitchOrLinearSize;
+
+                    hasSrcPitch = true;
                 }
             }
-        }
-        else
-        {
-            assert( hasBitDepth == true );
-
-            // Determine the raster format we should use for the mipmap alpha check.
-            eRasterFormat mipRasterFormat;
-            uint32 mipDepth;
-            eColorOrdering mipColorOrder;
-
-            bool directCheck = false;
-        
-            if ( d3dRasterFormatLink )
+            
+            if ( !hasDataSize )
             {
-                mipRasterFormat = rasterFormat;
-                mipDepth = bitDepth;
-                mipColorOrder = colorOrder;
-
-                directCheck = true;
-            }
-            else if ( usedFormatHandler != NULL )
-            {
-                usedFormatHandler->GetTextureRWFormat( mipRasterFormat, mipDepth, mipColorOrder );
-
-                directCheck = false;
-            }
-
-            // Check by raster format whether alpha data is even possible.
-            if ( canRasterFormatHaveAlpha( mipRasterFormat ) )
-            {
-                for ( uint32 n = 0; n < mipmapCount; n++ )
+                // For this we need to have valid bit depth.
+                if ( hasBitDepth )
                 {
-                    const NativeTextureD3D9::mipmapLayer& mipLayer = nativeTex->mipmaps[ n ];
+                    uint32 mipStride = getRasterDataRowSize( surfWidth, bitDepth, 1 );  // byte alignment.
 
-                    uint32 mipWidth = mipLayer.width;
-                    uint32 mipHeight = mipLayer.height;
+                    mipLevelDataSize = getRasterDataSizeByRowSize( mipStride, surfHeight );
 
-                    uint32 srcDataSize = mipLayer.dataSize;
-                    uint32 dstDataSize = srcDataSize;
+                    hasDataSize = true;
 
-                    void *srcTexels = mipLayer.texels;
-                    void *dstTexels = srcTexels;
+                    srcPitch = mipStride;
 
-                    if ( !directCheck )
+                    hasSrcPitch = true;
+                }
+            }
+
+            if ( !hasDataSize )
+            {
+                throw RwException( "failed to determine DDS mipmap data size" );
+            }
+
+            // Check whether we can directly acquire.
+            bool canDirectlyAcquireByDimensions = false;
+
+            if ( hasSrcPitch && hasDstPitch )
+            {
+                canDirectlyAcquireByDimensions = ( srcPitch == dstPitch );
+            }
+            else
+            {
+                // TODO: decide whether we want to trust this data, because we do not know whether
+                // it is properly aligned.
+                canDirectlyAcquireByDimensions = true;
+            }
+
+            // If we can directly acquire, then, if the format is important, we must make sure it is the same as the destination.
+            bool isFormatSame = false;
+
+            if ( canDirectlyAcquireByDimensions )
+            {
+                if ( hasValidFormat )
+                {
+                    isFormatSame = true;
+                }
+                else
+                {
+                    isFormatSame = canRawDirectlyAcquire;
+                }
+            }
+
+            // Data inside of the DDS file can be aligned in whatever way.
+            // If the rows are already DWORD aligned, we can directly read this mipmap data.
+            // Otherwise we have to read row-by-row.
+            checkAhead( outputStream, mipLevelDataSize );
+
+            uint32 dstTexelsDataSize = 0;
+
+            if ( canDirectlyAcquireByDimensions )
+            {
+                dstTexelsDataSize = mipLevelDataSize;
+            }
+            else
+            {
+                if ( hasDstPitch )
+                {
+                    dstTexelsDataSize = getRasterDataSizeByRowSize( dstPitch, surfHeight );   
+                }
+                else
+                {
+                    throw RwException( "failed to determine Direct3D 9 native texture mipmap data size in DDS deserialization" );
+                }
+            }
+
+            // Allocate the pure destination texel buffer.
+            // This does not have to be the target of the read operations, but will be the target of the destination transformation.
+            void *texels = engineInterface->PixelAllocate( dstTexelsDataSize );
+
+            if ( !texels )
+            {
+                throw RwException( "failed to allocate Direct3D 9 native texture texel memory in DDS deserialization" );
+            }
+
+            try
+            {
+                if ( isFormatSame )
+                {
+                    // Just read the data.
+                    size_t texelReadCount = outputStream->read( texels, mipLevelDataSize );
+
+                    if ( texelReadCount != mipLevelDataSize )
                     {
-                        uint32 dstStride = getD3DRasterDataRowSize( mipWidth, mipDepth ); 
+                        throw RwException( "failed to read DDS mipmap texture memory" );
+                    }
+                }
+                else
+                {
+                    // WARNING: make sure that we only realign actually re-alignable formats!
+                    // compressed formats for instance are not re-alignable!
+                    // Our current assumption is that we will never trigger this code path
+                    // for compressed formats.
 
-                        dstDataSize = getRasterDataSizeByRowSize( dstStride, mipHeight );
+                    assert( hasSrcPitch == true && hasDstPitch == true );
 
-                        dstTexels = engineInterface->PixelAllocate( dstDataSize );
+                    // Check whether we need a new destination buffer for transformation.
+                    void *dstTransformBuffer = texels;
 
-                        if ( dstTexels == NULL )
+                    if ( hasValidFormat )
+                    {
+                        // Here we basically must have established the fact that our format is the same.
+                        // This is kinda common sense, because we have a valid format.
+                        // It automatically means that we really take that texture, a contract to the future.
+                    }
+                    else if ( hasPaletteFormat )
+                    {
+                        if ( bitDepth != dstDepth )
                         {
-                            throw RwException( "failed to determine native texture alpha due to memory allocation failure" );
-                        }
+                            // If the transformation buffer is not the destination, then it is a single row buffer
+                            // that is redirected to the destination buffer.
+                            uint32 transBufferSize = srcPitch;
 
-                        try
-                        {
-                            usedFormatHandler->ConvertToRW( srcTexels, mipWidth, mipHeight, dstStride, srcDataSize, dstTexels );
-                        }
-                        catch( ... )
-                        {
-                            engineInterface->PixelFree( dstTexels );
+                            dstTransformBuffer = engineInterface->PixelAllocate( transBufferSize );
 
-                            throw;
+                            if ( !dstTransformBuffer )
+                            {
+                                throw RwException( "failed to allocate destination transformation buffer for DDS row parsing" );
+                            }
                         }
                     }
 
-                    bool hasMipmapAlpha = false;
+                    int64 mipmapDataOffset = outputStream->tell();
 
                     try
                     {
-                        hasMipmapAlpha =
-                            rawMipmapCalculateHasAlpha(
-                                mipWidth, mipHeight, dstTexels, dstDataSize,
-                                mipRasterFormat, mipDepth, getD3DTextureDataRowAlignment(), mipColorOrder, PALETTE_NONE, NULL, 0
-                            );
+                        // Read the data row by row.
+                        for ( uint32 row = 0; row < surfHeight; row++ )
+                        {
+                            // Seek to the required row.
+                            if ( row != 0 )
+                            {
+                                outputStream->seek( mipmapDataOffset + srcPitch * row, RWSEEK_BEG );
+                            }
+
+                            void *dstRowData = getTexelDataRow( texels, dstPitch, row );
+
+                            if ( texels == dstTransformBuffer )
+                            {
+                                // Read stuff.
+                                // We want to simply read anyway, since destination transformation is guarranteed without redirection.
+                                outputStream->read( dstRowData, dstPitch );
+                            }
+                            else
+                            {
+                                // Read, transform and write.
+                                outputStream->read( dstTransformBuffer, srcPitch );
+
+                                // Transform now.
+                                assert( hasPaletteFormat == true ); // the contract of having source and destination format bridge
+
+                                moveTexels(
+                                    dstTransformBuffer, dstRowData,
+                                    0, 0,
+                                    0, 0,
+                                    layerWidth, 1,
+                                    surfWidth, surfHeight,
+                                    rasterFormat, bitDepth, 1, colorOrder, paletteType, paletteSize,
+                                    dstRasterFormat, dstDepth, getD3DTextureDataRowAlignment(), dstColorOrder, dstPaletteType, paletteSize
+                                );
+
+                                // We have written in the same step.
+                            }
+                        }
                     }
                     catch( ... )
                     {
-                        if ( srcTexels != dstTexels )
+                        if ( texels != dstTransformBuffer )
                         {
-                            engineInterface->PixelFree( dstTexels );
+                            engineInterface->PixelFree( dstTransformBuffer );
                         }
 
                         throw;
                     }
 
-                    // Free texels if we allocated any.
-                    if ( srcTexels != dstTexels )
+                    if ( texels != dstTransformBuffer )
                     {
-                        engineInterface->PixelFree( dstTexels );
+                        engineInterface->PixelFree( dstTransformBuffer );
                     }
 
-                    if ( hasMipmapAlpha )
+                    // Seek to the real stream end.
+                    outputStream->seek( mipmapDataOffset + srcPitch * surfHeight, RWSEEK_BEG );
+                }
+            }
+            catch( ... )
+            {
+                // Release temporary texel buffer.
+                engineInterface->PixelFree( texels );
+
+                throw;
+            }
+
+            // Store this mipmap layer.
+            NativeTextureD3D9::mipmapLayer mipLevel;
+            mipLevel.layerWidth = layerWidth;
+            mipLevel.layerHeight = layerHeight;
+            mipLevel.width = surfWidth;
+            mipLevel.height = surfHeight;
+            mipLevel.texels = texels;
+            mipLevel.dataSize = dstTexelsDataSize;
+
+            // Add this layer.
+            nativeTex->mipmaps.push_back( mipLevel );
+
+            // Increase the amount of actual mipmaps.
+            mipmapCount++;
+        }
+
+        if ( mipmapCount == 0 )
+        {
+            throw RwException( "empty DDS file (no mipmaps)" );
+        }
+
+        // We have to determine whether this native texture actually has transparent data.
+        bool shouldHaveAlpha = ( hasAlpha || hasAlphaOnly );
+
+        if ( dxtType != 0 || d3dRasterFormatLink || usedFormatHandler != NULL )
+        {
+            bool hasAlphaByTexels = false;
+
+            if ( dxtType != 0 )
+            {
+                // We traverse DXT mipmap layers and check them.
+                for ( uint32 n = 0; n < mipmapCount; n++ )
+                {
+                    const NativeTextureD3D9::mipmapLayer& mipLayer = nativeTex->mipmaps[ n ];
+
+                    bool hasLayerAlpha = dxtMipmapCalculateHasAlpha(
+                        mipLayer.width, mipLayer.height, mipLayer.layerWidth, mipLayer.layerHeight, mipLayer.texels,
+                        dxtType
+                    );
+
+                    if ( hasLayerAlpha )
                     {
-                        // If anything has alpha, we can break.
                         hasAlphaByTexels = true;
                         break;
                     }
                 }
             }
+            else
+            {
+                assert( hasBitDepth == true );
+
+                // Determine the raster format we should use for the mipmap alpha check.
+                eRasterFormat mipRasterFormat;
+                uint32 mipDepth;
+                eColorOrdering mipColorOrder;
+
+                bool directCheck = false;
+        
+                if ( d3dRasterFormatLink )
+                {
+                    mipRasterFormat = dstRasterFormat;
+                    mipDepth = dstDepth;
+                    mipColorOrder = dstColorOrder;
+
+                    directCheck = true;
+                }
+                else if ( usedFormatHandler != NULL )
+                {
+                    usedFormatHandler->GetTextureRWFormat( mipRasterFormat, mipDepth, mipColorOrder );
+
+                    directCheck = false;
+                }
+
+                // Check by raster format whether alpha data is even possible.
+                if ( canRasterFormatHaveAlpha( mipRasterFormat ) )
+                {
+                    for ( uint32 n = 0; n < mipmapCount; n++ )
+                    {
+                        const NativeTextureD3D9::mipmapLayer& mipLayer = nativeTex->mipmaps[ n ];
+
+                        uint32 mipWidth = mipLayer.width;
+                        uint32 mipHeight = mipLayer.height;
+
+                        uint32 srcDataSize = mipLayer.dataSize;
+                        uint32 dstDataSize = srcDataSize;
+
+                        void *srcTexels = mipLayer.texels;
+                        void *dstTexels = srcTexels;
+
+                        if ( !directCheck )
+                        {
+                            uint32 dstStride = getD3DRasterDataRowSize( mipWidth, mipDepth ); 
+
+                            dstDataSize = getRasterDataSizeByRowSize( dstStride, mipHeight );
+
+                            dstTexels = engineInterface->PixelAllocate( dstDataSize );
+
+                            if ( dstTexels == NULL )
+                            {
+                                throw RwException( "failed to determine native texture alpha due to memory allocation failure" );
+                            }
+
+                            try
+                            {
+                                usedFormatHandler->ConvertToRW( srcTexels, mipWidth, mipHeight, dstStride, srcDataSize, dstTexels );
+                            }
+                            catch( ... )
+                            {
+                                engineInterface->PixelFree( dstTexels );
+
+                                throw;
+                            }
+                        }
+
+                        bool hasMipmapAlpha = false;
+
+                        try
+                        {
+                            hasMipmapAlpha =
+                                rawMipmapCalculateHasAlpha(
+                                    mipWidth, mipHeight, dstTexels, dstDataSize,
+                                    mipRasterFormat, mipDepth, getD3DTextureDataRowAlignment(), mipColorOrder, dstPaletteType, paletteData, paletteSize
+                                );
+                        }
+                        catch( ... )
+                        {
+                            if ( srcTexels != dstTexels )
+                            {
+                                engineInterface->PixelFree( dstTexels );
+                            }
+
+                            throw;
+                        }
+
+                        // Free texels if we allocated any.
+                        if ( srcTexels != dstTexels )
+                        {
+                            engineInterface->PixelFree( dstTexels );
+                        }
+
+                        if ( hasMipmapAlpha )
+                        {
+                            // If anything has alpha, we can break.
+                            hasAlphaByTexels = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // Give data back to the runtime.
+            shouldHaveAlpha = hasAlphaByTexels;
         }
 
-        // Give data back to the runtime.
-        shouldHaveAlpha = hasAlphaByTexels;
+        // Store properties about this texture.
+        nativeTex->rasterFormat = dstRasterFormat;
+        nativeTex->depth = ( hasBitDepth ? dstDepth : 0 );
+        nativeTex->colorOrdering = dstColorOrder;
+        nativeTex->paletteType = dstPaletteType;
+        nativeTex->palette = paletteData;
+        nativeTex->paletteSize = paletteSize;
+
+        nativeTex->d3dFormat = d3dFormat;
+
+        nativeTex->d3dRasterFormatLink = d3dRasterFormatLink;
+        nativeTex->anonymousFormatLink = usedFormatHandler;
+
+        nativeTex->isOriginalRWCompatible = originalRWCompat;
+
+        nativeTex->hasAlpha = shouldHaveAlpha;  // is not always correct, but most of the time.
+        nativeTex->isCubeTexture = false;
+        nativeTex->autoMipmaps = false;
+        nativeTex->dxtCompression = dxtType;
+        nativeTex->rasterType = 4;
     }
+    catch( ... )
+    {
+        if ( paletteData )
+        {
+            engineInterface->PixelFree( paletteData );
 
-    // Store properties about this texture.
-    nativeTex->rasterFormat = rasterFormat;
-    nativeTex->depth = ( hasBitDepth ? bitDepth : 0 );
-    nativeTex->colorOrdering = colorOrder;
-    nativeTex->paletteType = PALETTE_NONE;
-    nativeTex->palette = NULL;
-    nativeTex->paletteSize = 0;
+            paletteData = NULL;
+        }
 
-    nativeTex->d3dFormat = d3dFormat;
-
-    nativeTex->d3dRasterFormatLink = d3dRasterFormatLink;
-    nativeTex->anonymousFormatLink = usedFormatHandler;
-
-    nativeTex->isOriginalRWCompatible = originalRWCompat;
-
-    nativeTex->hasAlpha = shouldHaveAlpha;  // is not always correct, but most of the time.
-    nativeTex->isCubeTexture = false;
-    nativeTex->autoMipmaps = false;
-    nativeTex->dxtCompression = dxtType;
-    nativeTex->rasterType = 4;
+        throw;
+    }
 
     // Success!
 }

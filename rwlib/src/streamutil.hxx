@@ -30,6 +30,32 @@ inline void writeStringIntoBufferSafe( rw::Interface *engineInterface, const std
     memset( buf + nameLen, 0, bufSize - nameLen );
 }
 
+inline rw::uint32 writePartialStreamSafe( rw::Stream *output, const void *srcData, rw::uint32 srcDataSize, rw::uint32 streamSize )
+{
+    rw::uint32 streamWriteCount = std::min(srcDataSize, streamSize);
+
+    output->write( srcData, streamWriteCount );
+
+    rw::uint32 writeCount = streamWriteCount;
+
+    // Write the remainder, if required.
+    if (srcDataSize < streamSize)
+    {
+        rw::uint32 leftDataSize = ( streamSize - srcDataSize );
+
+        for ( rw::uint32 n = 0; n < leftDataSize; n++ )
+        {
+            rw::uint8 writeData = 0;
+
+            output->write( &writeData, sizeof( writeData ) );
+        }
+
+        writeCount += leftDataSize;
+    }
+
+    return writeCount;
+}
+
 inline rw::uint32 writePartialBlockSafe( rw::BlockProvider& outputProvider, const void *srcData, rw::uint32 srcDataSize, rw::uint32 streamSize )
 {
     rw::uint32 streamWriteCount = std::min(srcDataSize, streamSize);
