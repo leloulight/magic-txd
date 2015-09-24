@@ -218,9 +218,8 @@ struct rwImagingEnv
         return false;
     }
 
-    inline bool Serialize( Interface *engineInterface, Stream *outputStream, const char *formatDescriptor, const imagingLayerTraversal& theLayer ) const
+    inline imagingFormatExtension* FindSupportedFormat( const char *formatDescriptor ) const
     {
-        // We get the image format that is properly described by formatDescriptor and serialize the Bitmap with it.
         imagingFormatExtension *fittingFormat = NULL;
 
         for ( rwImagingEnv::formatList_t::const_iterator iter = this->registeredFormats.cbegin(); iter != this->registeredFormats.cend(); iter++ )
@@ -236,6 +235,14 @@ struct rwImagingEnv
                 break;
             }
         }
+
+        return fittingFormat;
+    }
+
+    inline bool Serialize( Interface *engineInterface, Stream *outputStream, const char *formatDescriptor, const imagingLayerTraversal& theLayer ) const
+    {
+        // We get the image format that is properly described by formatDescriptor and serialize the Bitmap with it.
+        imagingFormatExtension *fittingFormat = FindSupportedFormat( formatDescriptor );
 
         if ( fittingFormat != NULL )
         {
@@ -641,6 +648,23 @@ bool UnregisterImagingFormat( Interface *engineInterface, imagingFormatExtension
 #endif //RWLIB_INCLUDE_IMAGING
 
     return success;
+}
+
+// Query support for an imaging format.
+bool IsImagingFormatAvailable( Interface *engineInterface, const char *formatDescriptor )
+{
+#ifdef RWLIB_INCLUDE_IMAGING
+    if ( const rwImagingEnv *imgEnv = GetImagingEnvironment( engineInterface ) )
+    {
+        imagingFormatExtension *foundExt = imgEnv->FindSupportedFormat( formatDescriptor );
+
+        if ( foundExt != NULL )
+            return true;
+    }
+#endif //RWLIB_INCLUDE_IMAGING
+
+    // We do not know about it.
+    return false;
 }
 
 // Public function to get all registered imaging formats.

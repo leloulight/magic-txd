@@ -588,9 +588,11 @@ TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create
                     this->textureMaskNameEdit = NULL;
                 }
                 // If the current TXD already has a platform, we disable editing this platform and simply use it.
+                bool lockdownPlatform = ( _lockdownPlatform && mainWnd->lockDownTXDPlatform );
+
                 const char *currentForcedPlatform = mainWnd->GetTXDPlatformString(mainWnd->currentTXD);
                 QWidget *platformDisplayWidget;
-                if (_lockdownPlatform == false || currentForcedPlatform == NULL)
+                if (lockdownPlatform == false || currentForcedPlatform == NULL)
                 {
                     QComboBox *platformComboBox = createPlatformSelectComboBox(mainWnd);
                     platformComboBox->setFixedWidth(LEFTPANELADDDIALOGWIDTH);
@@ -694,11 +696,14 @@ TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create
 
             leftPanelLayout->addSpacing(12);
 
-            QCheckBox *generateMipmapsToggle = new QCheckBox("Generate mipmaps");
             { // Add some basic properties that exist no matter what platform.
+                QCheckBox *generateMipmapsToggle = new QCheckBox("Generate mipmaps");
+                generateMipmapsToggle->setChecked( mainWnd->addImageGenMipmaps );
+
                 this->propGenerateMipmaps = generateMipmapsToggle;
+
+                leftPanelLayout->addWidget(generateMipmapsToggle);
             }
-            leftPanelLayout->addWidget(generateMipmapsToggle);
         }
         topLayout->addLayout(leftPanelLayout);
 
@@ -792,6 +797,9 @@ TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create
         {
             this->OnPlatformSelect(curPlatformText);
         }
+
+        // Set focus on the apply button, so users can quickly add textures.
+        this->applyButton->setDefault( true );
     }
 }
 
@@ -802,20 +810,26 @@ TexAddDialog::~TexAddDialog(void)
     rw::DeleteRaster(this->platformOrigRaster);
 
     this->releaseConvRaster();
+
+    // Remember properties that count for any raster format.
+    this->mainWnd->addImageGenMipmaps = this->propGenerateMipmaps->isChecked();
 }
 
 void TexAddDialog::UpdatePreview() {
     rw::Raster *previewRaster = this->GetDisplayRaster();
     if (previewRaster) {
         try {
-            // Put the contents of the platform original into the preview widget.
-            // We want to transform the raster into a bitmap, basically.
-            rw::Bitmap rasterBmp = previewRaster->getBitmap();
+            int w, h;
+            {
+                // Put the contents of the platform original into the preview widget.
+                // We want to transform the raster into a bitmap, basically.
+                QPixmap pixmap = convertRWBitmapToQPixmap( previewRaster->getBitmap() );
 
-            // Do it.
-            QPixmap &pixmap = convertRWBitmapToQPixmap(rasterBmp);
-            this->previewLabel->setPixmap(pixmap);
-            int w = pixmap.width(), h = pixmap.height();
+                w = pixmap.width(), h = pixmap.height();
+
+                this->previewLabel->setPixmap(pixmap);
+            }
+
             if (scaledPreviewCheckBox->isChecked()) {
                 int maxLen = w > h ? w : h;
                 if (maxLen > 300 || fillPreviewCheckBox->isChecked()) {

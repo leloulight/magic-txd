@@ -6,6 +6,8 @@
 bool DeserializeMipmapLayer( Stream *inputStream, rawMipmapLayer& rawLayer );
 bool SerializeMipmapLayer( Stream *outputStream, const char *formatDescriptor, const rawMipmapLayer& rawLayer );
 
+bool IsImagingFormatAvailable( Interface *engineInterface, const char *formatDescriptor );
+
 // The main API for pushing and pulling pixels.
 bool DeserializeImage( Stream *inputStream, Bitmap& outputPixels );
 bool SerializeImage( Stream *outputStream, const char *formatDescriptor, const Bitmap& inputPixels );

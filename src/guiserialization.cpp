@@ -83,6 +83,12 @@ struct mainWindowSerialization
     CFileTranslator *appRoot;       // directory the application module is in.
     CFileTranslator *toolRoot;      // the current directory we launched in
 
+    struct mtxd_cfg_struct
+    {
+        bool addImageGenMipmaps;
+        bool lockDownTXDPlatform;
+    };
+
     struct txdgen_cfg_struct
     {
         endian::little_endian <rw::KnownVersions::eGameVersion> c_gameVersion;
@@ -141,6 +147,33 @@ struct mainWindowSerialization
             }
         }
 
+        // MTXD configuration block.
+        {
+            rw::BlockProvider mtxdConfig( &mainBlock );
+
+            mtxdConfig.EnterContext();
+
+            try
+            {
+                if ( mtxdConfig.getBlockID() == rw::CHUNK_STRUCT )
+                {
+                    mtxd_cfg_struct cfgStruct;
+                    mtxdConfig.readStruct( cfgStruct );
+
+                    mainwnd->addImageGenMipmaps = cfgStruct.addImageGenMipmaps;
+                    mainwnd->lockDownTXDPlatform = cfgStruct.lockDownTXDPlatform;
+                }
+            }
+            catch( ... )
+            {
+                mtxdConfig.LeaveContext();
+
+                throw;
+            }
+
+            mtxdConfig.LeaveContext();
+        }
+
         // TxdGen configuration block.
         if ( massconvEnv *massconv = massconvEnvRegister.GetPluginStruct( mainwnd ) )
         {
@@ -191,6 +224,30 @@ struct mainWindowSerialization
     {
         RwWriteUnicodeString( mainBlock, mainwnd->lastTXDSaveDir.toStdWString() );
         RwWriteUnicodeString( mainBlock, mainwnd->lastImageFileOpenDir.toStdWString() );
+
+        // MTXD config block.
+        {
+            rw::BlockProvider mtxdConfig( &mainBlock );
+
+            mtxdConfig.EnterContext();
+
+            try
+            {
+                mtxd_cfg_struct cfgStruct;
+                cfgStruct.addImageGenMipmaps = mainwnd->addImageGenMipmaps;
+                cfgStruct.lockDownTXDPlatform = mainwnd->lockDownTXDPlatform;
+
+                mtxdConfig.writeStruct( cfgStruct );
+            }
+            catch( ... )
+            {
+                mtxdConfig.LeaveContext();
+
+                throw;
+            }
+
+            mtxdConfig.LeaveContext();
+        }
 
         // TxdGen config block.
         if ( const massconvEnv *massconv = massconvEnvRegister.GetConstPluginStruct( mainwnd ) )

@@ -2443,6 +2443,51 @@ void* Raster::getDriverNativeInterface( void )
     return texProvider->GetDriverNativeInterface();
 }
 
+inline bool IsNativeTextureSupportedImagingFormat( Interface *engineInterface, const texNativeTypeProvider *texProvider, const char *method )
+{
+    const char *nativeImageImplExt = texProvider->GetNativeImageFormatExtension();
+
+    return ( nativeImageImplExt != NULL && stricmp( nativeImageImplExt, method ) == 0 );
+}
+
+bool Raster::supportsImageMethod( const char *method ) const
+{
+    scoped_rwlock_reader <rwlock> rasterConsistency( GetRasterLock( this ) );
+
+    Interface *engineInterface = this->engineInterface;
+
+    PlatformTexture *platformTex = this->platformData;
+
+    if ( platformTex == NULL )
+    {
+        throw RwException( "no native data" );
+    }
+
+    texNativeTypeProvider *texProvider = GetNativeTextureTypeProvider( engineInterface, platformTex );
+
+    if ( !texProvider )
+    {
+        throw RwException( "invalid native texture" );
+    }
+
+    // First check native support.
+    if ( IsNativeTextureSupportedImagingFormat( engineInterface, texProvider, method ) )
+    {
+        // The format is natively supported.
+        return true;
+    }
+
+    // Other than that, we may have general support.
+    if ( IsImagingFormatAvailable( engineInterface, method ) )
+    {
+        // Basic support is still support.
+        return true;
+    }
+
+    // Nothing.
+    return false;
+}
+
 void Raster::writeImage(Stream *outputStream, const char *method)
 {
     scoped_rwlock_reader <rwlock> rasterConsistency( GetRasterLock( this ) );
@@ -2468,7 +2513,7 @@ void Raster::writeImage(Stream *outputStream, const char *method)
     // First we try to serialize in the native texture implementation format.
     const char *nativeImageImplExt = texProvider->GetNativeImageFormatExtension();
 
-    if ( nativeImageImplExt != NULL && stricmp( nativeImageImplExt, method ) == 0 )
+    if ( IsNativeTextureSupportedImagingFormat( engineInterface, texProvider, method ) )
     {
         // We want to serialize using this.
         texProvider->SerializeNativeImage( engineInterface, outputStream, platformTex );

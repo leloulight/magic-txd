@@ -9,6 +9,7 @@
 #include <QLabel>
 #include <QScrollArea>
 #include <QSplitter>
+#include <QAction>
 
 #include <renderware.h>
 
@@ -37,6 +38,8 @@ struct SystemEventHandlerWidget abstract
 
 #include "MagicExport.h"
 
+#define _FEATURES_NOT_IN_CURRENT_RELEASE
+
 class MainWindow : public QMainWindow
 {
     friend class TexAddDialog;
@@ -54,6 +57,7 @@ private:
     void initializeNativeFormats( void );
     void shutdownNativeFormats( void );
 
+    void UpdateExportAccessibility( void );
     void UpdateAccessibility( void );
 
 public:
@@ -198,9 +202,11 @@ private:
     QAction *actionSetupMipmaps;
     QAction *actionClearMipmaps;
     QAction *actionRenderProps;
+#ifndef _FEATURES_NOT_IN_CURRENT_RELEASE
     QAction *actionViewAllChanges;
     QAction *actionCancelAllChanges;
     QAction *actionAllTextures;
+#endif //_FEATURES_NOT_IN_CURRENT_RELEASE
     QAction *actionSetupTXDVersion;
     QAction *actionThemeDark;
     QAction *actionThemeLight;
@@ -208,7 +214,21 @@ private:
     bool recheckingThemeItem;
 
     // EXPORT MENU.
-    std::list <QAction*> actionsExportImage;
+    class TextureExportAction : public QAction
+    {
+    public:
+        TextureExportAction( QString defaultExt, QString formatName, QWidget *parent ) : QAction( QString( "&" ) + defaultExt, parent )
+        {
+            this->defaultExt = defaultExt;
+            this->formatName = formatName;
+        }
+
+        QString defaultExt;
+        QString formatName;
+    };
+
+    std::list <TextureExportAction*> actionsExportItems;
+    QAction *exportAllImages;
 
 	TxdLog *txdLog; // log management class
     RwVersionDialog *verDlg; // txd version setup class
@@ -249,6 +269,8 @@ public:
     // Use this if you need to get a path relatively to app directory
     QString makeAppPath(QString subPath);
 
+    // NOTE: there are multiple ways to get absolute path to app directory coded in this editor!
+
 public:
     CFileSystem *fileSystem;
 
@@ -256,6 +278,9 @@ public:
     QString lastTXDOpenDir;     // maybe.
     QString lastTXDSaveDir;
     QString lastImageFileOpenDir;
+
+    bool addImageGenMipmaps;
+    bool lockDownTXDPlatform;
 };
 
 typedef StaticPluginClassFactory <MainWindow> mainWindowFactory_t;

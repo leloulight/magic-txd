@@ -413,6 +413,7 @@ struct Raster
     void SetEngineVersion( LibraryVersion version );
     LibraryVersion GetEngineVersion( void ) const;
 
+    bool supportsImageMethod(const char *method) const;
     void writeImage(rw::Stream *outputStream, const char *method);
     void readImage(rw::Stream *inputStream);
 

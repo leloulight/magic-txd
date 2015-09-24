@@ -386,6 +386,8 @@ static void convThreadEntryPoint( rw::thread_t threadHandle, rw::Interface *engi
         MassConvertTxdGenModule module( massconvWnd, engineInterface );
 
         module.ApplicationMain( run_cfg );
+
+        massconvWnd->postLogMessage( "\nconversion finished!\n\n" );
     }
     catch( ... )
     {

@@ -51,6 +51,8 @@ MainWindow::MainWindow(QString appPath, QWidget *parent) :
         this->lastTXDOpenDir = QDir::current().absolutePath();
         this->lastTXDSaveDir = this->lastTXDOpenDir;
         this->lastImageFileOpenDir = this->makeAppPath( "" );
+        this->addImageGenMipmaps = true;
+        this->lockDownTXDPlatform = true;
     }
 
     this->drawMipmapLayers = false;
@@ -282,6 +284,8 @@ MainWindow::MainWindow(QString appPath, QWidget *parent) :
 
             connect( actionSetupRenderingProperties, &QAction::triggered, this, &MainWindow::onSetupRenderingProps );
 
+#ifndef _FEATURES_NOT_IN_CURRENT_RELEASE
+
 	        editMenu->addSeparator();
 	        QAction *actionViewAllChanges = new QAction("&View all changes", this);
 	        editMenu->addAction(actionViewAllChanges);
@@ -298,6 +302,8 @@ MainWindow::MainWindow(QString appPath, QWidget *parent) :
 	        editMenu->addAction(actionAllTextures);
 
             this->actionAllTextures = actionAllTextures;
+
+#endif //_FEATURES_NOT_IN_CURRENT_RELEASE
 
 	        editMenu->addSeparator();
 	        QAction *actionSetupTxdVersion = new QAction("&Setup TXD version", this);
@@ -378,16 +384,20 @@ MainWindow::MainWindow(QString appPath, QWidget *parent) :
                 }
             }
 
+#ifndef _FEATURES_NOT_IN_CURRENT_RELEASE
+
 	        QAction *actionExportTTXD = new QAction("&Text-based TXD", this);
 	        exportMenu->addAction(actionExportTTXD);
 
             this->actionsExportImage.push_back( actionExportTTXD );
 
+#endif //_FEATURES_NOT_IN_CURRENT_RELEASE
+
 	        exportMenu->addSeparator();
 	        QAction *actionExportAll = new QAction("&Export all", this);
 	        exportMenu->addAction(actionExportAll);
 
-            this->actionsExportImage.push_back( actionExportAll );
+            this->exportAllImages = actionExportAll;
 
 	        QMenu *viewMenu = menu->addMenu(tr("&View"));
 	        QAction *actionBackground = new QAction("&Background", this);
@@ -396,9 +406,14 @@ MainWindow::MainWindow(QString appPath, QWidget *parent) :
 
 		    connect(actionBackground, &QAction::triggered, this, &MainWindow::onToggleShowBackground);
 
+#ifndef _FEATURES_NOT_IN_CURRENT_RELEASE
+
 	        QAction *action3dView = new QAction("&3D View", this);
 		    action3dView->setCheckable(true);
 	        viewMenu->addAction(action3dView);
+
+#endif //_FEATURES_NOT_IN_CURRENT_RELEASE
+
 	        QAction *actionShowMipLevels = new QAction("&Display mip-levels", this);
 		    actionShowMipLevels->setCheckable(true);
 	        viewMenu->addAction(actionShowMipLevels);
@@ -543,19 +558,6 @@ MainWindow::~MainWindow()
 	delete txdLog;
 }
 
-class TextureExportAction : public QAction
-{
-public:
-    TextureExportAction( QString defaultExt, QString formatName, QWidget *parent ) : QAction( QString( "&" ) + defaultExt, parent )
-    {
-        this->defaultExt = defaultExt;
-        this->formatName = formatName;
-    }
-
-    QString defaultExt;
-    QString formatName;
-};
-
 void MainWindow::addTextureFormatExportLinkToMenu( QMenu *theMenu, const char *defaultExt, const char *formatName )
 {
     TextureExportAction *formatActionExport = new TextureExportAction( defaultExt, QString( formatName ), this );
@@ -563,10 +565,47 @@ void MainWindow::addTextureFormatExportLinkToMenu( QMenu *theMenu, const char *d
 
     formatActionExport->setData( QString( defaultExt ) );
 
-    this->actionsExportImage.push_back( formatActionExport );
+    this->actionsExportItems.push_back( formatActionExport );
 
     // Connect it to the export signal handler.
     connect( formatActionExport, &QAction::triggered, this, &MainWindow::onExportTexture );
+}
+
+void MainWindow::UpdateExportAccessibility( void )
+{
+    // Export options are available depending on what texture has been selected.
+    bool has_txd = ( this->currentTXD != NULL );
+   
+    for ( TextureExportAction *exportAction : this->actionsExportItems )
+    {
+        bool shouldEnable = has_txd;
+
+        if ( shouldEnable )
+        {
+            // We should only enable if the currently selected texture actually supports us.
+            bool hasSupport = false;
+
+            if ( TexInfoWidget *curSelTex = this->currentSelectedTexture )
+            {
+                if ( rw::Raster *texRaster = curSelTex->GetTextureHandle()->GetRaster() )
+                {
+                    std::string ansiMethodName = exportAction->defaultExt.toStdString();
+
+                    hasSupport = texRaster->supportsImageMethod( ansiMethodName.c_str() );
+                }
+            }
+            
+            if ( !hasSupport )
+            {
+                // No texture item selected means we cannot export anyway.
+                shouldEnable = false;
+            }
+        }
+
+        exportAction->setDisabled( !shouldEnable );
+    }
+
+    this->exportAllImages->setDisabled( !has_txd );
 }
 
 void MainWindow::UpdateAccessibility( void )
@@ -574,6 +613,8 @@ void MainWindow::UpdateAccessibility( void )
     // If we have no TXD available, we should not allow the user to pick TXD related options.
     bool has_txd = ( this->currentTXD != NULL );
 
+    this->actionSaveTXD->setDisabled( !has_txd );
+    this->actionSaveTXDAs->setDisabled( !has_txd );
     this->actionCloseTXD->setDisabled( !has_txd );
     this->actionAddTexture->setDisabled( !has_txd );
     this->actionReplaceTexture->setDisabled( !has_txd );
@@ -585,15 +626,14 @@ void MainWindow::UpdateAccessibility( void )
     this->actionSetupMipmaps->setDisabled( !has_txd );
     this->actionClearMipmaps->setDisabled( !has_txd );
     this->actionRenderProps->setDisabled( !has_txd );
+#ifndef _FEATURES_NOT_IN_CURRENT_RELEASE
     this->actionViewAllChanges->setDisabled( !has_txd );
     this->actionCancelAllChanges->setDisabled( !has_txd );
     this->actionAllTextures->setDisabled( !has_txd );
+#endif //_FEATURES_NOT_IN_CURRENT_RELEASE
     this->actionSetupTXDVersion->setDisabled( !has_txd );
 
-    for ( QAction *exportAction : this->actionsExportImage )
-    {
-        exportAction->setDisabled( !has_txd );
-    }
+    this->UpdateExportAccessibility();
 }
 
 void MainWindow::setCurrentTXD( rw::TexDictionary *txdObj )
@@ -879,6 +919,9 @@ void MainWindow::onTextureItemChanged(QListWidgetItem *listItem, QListWidgetItem
     this->currentSelectedTexture = texItem;
 
     this->updateTextureView();
+
+    // Change what textures we can export to.
+    this->UpdateExportAccessibility();
 }
 
 void MainWindow::updateTextureView( void )
