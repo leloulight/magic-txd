@@ -1263,7 +1263,7 @@ void MainWindow::onAddTexture( bool checked )
 
             TexAddDialog *texAddTask = new TexAddDialog( this, params, std::move( cb_lambda ) );
 
-            texAddTask->move( 200, 250 );
+            //texAddTask->move( 200, 250 );
             texAddTask->setVisible( true );
         }
     }

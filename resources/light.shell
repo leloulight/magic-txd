@@ -1,6 +1,6 @@
 QMenuBar
 {
-    min-height: 47px;
+    min-height: 52px;
     background-color: transparent;
     font-family:"Segoe UI Light";
     font-size: 26px;
@@ -364,7 +364,7 @@ QLineEdit {
     border-bottom-color: #050018;
     color: #050018;
     background-color: rgba(16, 59, 219, 30);
-    selection-background-color: #150064;
+    selection-background-color: #103bdb;
 }
 
 QLineEdit:disabled {
@@ -429,4 +429,13 @@ $   image: url(resources/light/radio_checked.png);
 
 QRadioButton:indicator:checked:hover {
 $   image: url(resources/light/radio_checked_hover.png);
+}
+
+QPlainTextEdit {
+    background-color: rgba(16, 59, 219, 20);
+	font-family:"Nokia Pure Text";
+    font-size: 12px;
+    color: #050018;
+	selection-background-color: #103bdb;
+	selection-color: #ffffff;
 }
