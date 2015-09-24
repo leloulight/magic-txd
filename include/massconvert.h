@@ -89,7 +89,7 @@ public:
     MassConvertWindow( MainWindow *mainwnd );
     ~MassConvertWindow();
 
-    bool event( QEvent *evt ) override;
+    void customEvent( QEvent *evt ) override;
 
     void postLogMessage( QString msg );
 
@@ -132,9 +132,7 @@ private:
     } rwconf;
 
 public:
-    rw::thread_t conversionThread;
+    volatile rw::thread_t conversionThread;
 
-    rw::rwlock *convConsistencyLock;
-
-    bool terminate;
+    rw::rwlock *volatile convConsistencyLock;
 };

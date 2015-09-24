@@ -329,13 +329,10 @@ _thread64_procNative PROC
 
     ;ASSUME rcx:PTR nativeThreadPlugin
 
-	; We ACTUALLY have to combat a compiler bug of Visual Studio here.
-	; For some fucking reason the MSVC compiler assumes that there is stack space above its frame to save registers at.
-	; Since we have pretty much a ot of stack space available, we can sacrifice some.
-	; Why, Microsoft?
-    sub rsp,40h
+	; We have to reserve some stack space for x64 calling-convention register spilling, at a minimum 32bytes.
+    sub rsp,20h
+
     call nativeThreadPluginInterface_ThreadProcCPP
-    add rsp,40h
 
     ; Set the first argument for the next function call.
     mov rcx,rbx
@@ -344,9 +341,10 @@ _thread64_procNative PROC
     mov rbx,[rbx].nativeThreadPlugin.terminationReturn
 
     ; Give control of the native thread back to the manager.
-    sub rsp,40h
     call nativeThreadPluginInterface_OnNativeThreadEnd
-    add rsp,40h
+
+    ; Free the register spilling stack space.
+    add rsp,20h
 
     ;ASSUME ebx:nothing
 
@@ -362,6 +360,7 @@ NoTerminationReturn:
     mov rsp,rdi
 
     ; We return to the WinNT thread dispatcher.
+    mov rax,0
     ret
 _thread64_procNative ENDP
 

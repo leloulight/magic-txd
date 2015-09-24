@@ -177,9 +177,6 @@ struct nativeThreadPluginInterface : public ExecutiveManager::threadPluginContai
 
             // Enter the routine.
             threadInfo->entryPoint( threadInfo, threadInfo->userdata );
-
-            // Terminate our thread.
-            threadInfo->Terminate();
         }
         catch( ... )
         {
@@ -187,7 +184,11 @@ struct nativeThreadPluginInterface : public ExecutiveManager::threadPluginContai
         }
 
         // We are terminated.
-        info->status = THREAD_TERMINATED;
+        {
+            nativeLock lock( info->threadLock );
+
+            info->status = THREAD_TERMINATED;
+        }
 
         return ERROR_SUCCESS;
     }
@@ -208,14 +209,8 @@ struct nativeThreadPluginInterface : public ExecutiveManager::threadPluginContai
         // If we are not the current thread, we must do certain precautions.
         bool isCurrentThread = theThread->IsCurrent();
 
-        if ( !isCurrentThread )
-        {
-            // Suspend our thread.
-            // We must not use locking functions for that.
-            DWORD suspendCount = SuspendThread( threadInfo->hThread );
-        }
-
         // Set our status to terminating.
+        // The moment we set this the thread starts terminating.
         threadInfo->status = THREAD_TERMINATING;
 
         // Depends on whether we are the current thread or not.
@@ -226,49 +221,38 @@ struct nativeThreadPluginInterface : public ExecutiveManager::threadPluginContai
         }
         else
         {
-            // Only do termination if the thread has been initialized.
-            if ( threadInfo->hasThreadBeenInitialized )
+            // TODO: make hazard management thread safe, because I think there are some issues.
+
+            // Terminate all possible hazards.
             {
-                // Terminate all possible hazards.
+                executiveHazardManagerEnv *hazardEnv = executiveHazardManagerEnvRegister.GetPluginStruct( (CExecutiveManagerNative*)manager );
+
+                if ( hazardEnv )
                 {
-                    executiveHazardManagerEnv *hazardEnv = executiveHazardManagerEnvRegister.GetPluginStruct( (CExecutiveManagerNative*)manager );
-
-                    if ( hazardEnv )
-                    {
-                        hazardEnv->PurgeThreadHazards( theThread );
-                    }
+                    hazardEnv->PurgeThreadHazards( theThread );
                 }
-
-                // We do not need the lock anymore.
-                ctxLock.Suspend();
-
-                // We can resume the thread again.
-                ResumeThread( threadInfo->hThread );
-
-                // Wait for thread termination.
-                while ( threadInfo->status != THREAD_TERMINATED )
-                {
-                    WaitForSingleObject( threadInfo->hThread, INFINITE );
-                }
-
-                // If we return here, the thread must be terminated.
-            }
-            else
-            {
-                // The thread is now terminated.
-                threadInfo->status = THREAD_TERMINATED;
             }
 
-            // We can now terminate the handle.
-            TerminateThread( threadInfo->hThread, ERROR_SUCCESS );
+            // We do not need the lock anymore.
+            ctxLock.Suspend();
+
+            // Wait for thread termination.
+            while ( threadInfo->status != THREAD_TERMINATED )
+            {
+                WaitForSingleObject( threadInfo->hThread, INFINITE );
+            }
+
+            // If we return here, the thread must be terminated.
+
+            // TODO: allow safe termination of suspended threads.
         }
 
         // If we were the current thread, we cannot reach this point.
         assert( isCurrentThread == false );
     }
 
-    bool OnPluginConstruct( CExecThread *thread, ExecutiveManager::threadPluginContainer_t::pluginOffset_t pluginOffset, ExecutiveManager::threadPluginContainer_t::pluginDescriptor id );
-    void OnPluginDestroy( CExecThread *thread, ExecutiveManager::threadPluginContainer_t::pluginOffset_t pluginOffset, ExecutiveManager::threadPluginContainer_t::pluginDescriptor id );
+    bool OnPluginConstruct( CExecThread *thread, ExecutiveManager::threadPluginContainer_t::pluginOffset_t pluginOffset, ExecutiveManager::threadPluginContainer_t::pluginDescriptor id ) override;
+    void OnPluginDestruct( CExecThread *thread, ExecutiveManager::threadPluginContainer_t::pluginOffset_t pluginOffset, ExecutiveManager::threadPluginContainer_t::pluginDescriptor id ) override;
 };
 
 extern "C" DWORD WINAPI nativeThreadPluginInterface_ThreadProcCPP( LPVOID param )
@@ -341,36 +325,37 @@ bool nativeThreadPluginInterface::OnPluginConstruct( CExecThread *thread, Execut
     // Otherwise we know that it starts suspended.
     info->status = ( !thread->isRemoteThread ) ? THREAD_SUSPENDED : THREAD_RUNNING;
 
+    // Set up synchronization object.
+    InitializeCriticalSection( &info->threadLock );
+
+    // Add it to visibility.
     {
         nativeLock lock( this->runningThreadListLock );
 
         LIST_INSERT( runningThreads.root, info->node );
     }
-
-    // Set up synchronization object.
-    InitializeCriticalSection( &info->threadLock );
     return true;
 }
 
-void nativeThreadPluginInterface::OnPluginDestroy( CExecThread *thread, ExecutiveManager::threadPluginContainer_t::pluginOffset_t pluginOffset, ExecutiveManager::threadPluginContainer_t::pluginDescriptor id )
+void nativeThreadPluginInterface::OnPluginDestruct( CExecThread *thread, ExecutiveManager::threadPluginContainer_t::pluginOffset_t pluginOffset, ExecutiveManager::threadPluginContainer_t::pluginDescriptor id )
 {
     nativeThreadPlugin *info = ExecutiveManager::threadPluginContainer_t::RESOLVE_STRUCT <nativeThreadPlugin> ( thread, pluginOffset );
 
-    // Only terminate if we have not acquired a remote thread.
+    // We must destroy the handle only if we are terminated.
     if ( !thread->isRemoteThread )
     {
-        // Terminate the thread.
-        thread->Terminate();
+        assert( info->status == THREAD_TERMINATED );
+    }
+
+    // Remove the thread from visibility.
+    {
+        nativeLock lock( this->runningThreadListLock );
+
+        LIST_REMOVE( info->node );
     }
 
     // Delete synchronization object.
     DeleteCriticalSection( &info->threadLock );
-
-    {
-        nativeLock lock( this->runningThreadListLock );
-
-        LIST_REMOVE( runningThreads.root );
-    }
 
     CloseHandle( info->hThread );
 }
@@ -815,11 +800,7 @@ CExecThread* CExecutiveManager::GetCurrentThread( void )
                     if ( successPluginCreation == false )
                     {
                         // Delete the thread object again.
-                        {
-                            nativeLock lock( threadPluginsLock );
-
-                            this->threadPlugins.Destroy( ExecutiveManager::moduleAllocator, newThreadInfo );
-                        }
+                        CloseThread( newThreadInfo );
                     }
                 }
             }
@@ -836,7 +817,7 @@ CExecThread* CExecutiveManager::AcquireThread( CExecThread *thread )
 
     // TODO: make sure that we do not overflow the refCount.
 
-    long prevRefCount = thread->refCount++;
+    unsigned long prevRefCount = thread->refCount++;
 
     assert( prevRefCount != 0 );
 
@@ -856,8 +837,7 @@ void CExecutiveManager::CloseThread( CExecThread *thread )
         {
             if ( !thread->isRemoteThread )
             {
-                assert( 0 );
-                return;
+                *(char*)0 = 0;
             }
         }
         

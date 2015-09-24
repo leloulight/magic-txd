@@ -167,7 +167,7 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
 
     QLineEdit *maxMipLevelEdit = new QLineEdit( QString( "%1" ).arg( massconv->txdgenConfig.c_mipGenMaxLevel ) );
 
-    QIntValidator *maxMipLevelVal = new QIntValidator( 0, 32, maxMipLevelEdit );
+    QIntValidator *maxMipLevelVal = new QIntValidator( 0, 32, this );
 
     maxMipLevelEdit->setValidator( maxMipLevelVal );
 
@@ -254,8 +254,6 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
 
     this->conversionThread = NULL;
 
-    this->terminate = false;
-
     // Remember some important stuff.
     rwconf.warningManager = rwEngine->GetWarningManager();
     rwconf.palRuntimeType = rwEngine->GetPaletteRuntime();
@@ -269,8 +267,6 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
 
 MassConvertWindow::~MassConvertWindow( void )
 {
-    this->terminate = true;
-
     // Make sure we finished the thread.
     rw::Interface *rwEngine = this->mainwnd->GetEngine();
 
@@ -336,7 +332,7 @@ void MassConvertWindow::serialize( void )
 
 struct AppendConsoleMessageEvent : public QEvent
 {
-    inline AppendConsoleMessageEvent( QString msg ) : QEvent( QEvent::None )
+    inline AppendConsoleMessageEvent( QString msg ) : QEvent( QEvent::User )
     {
         this->msg = msg;
     }
@@ -430,7 +426,7 @@ void MassConvertWindow::OnRequestCancel( bool checked )
     this->close();
 }
 
-bool MassConvertWindow::event( QEvent *evt )
+void MassConvertWindow::customEvent( QEvent *evt )
 {
     if ( AppendConsoleMessageEvent *appendMsgEvt = dynamic_cast <AppendConsoleMessageEvent*> ( evt ) )
     {
@@ -438,8 +434,8 @@ bool MassConvertWindow::event( QEvent *evt )
         this->logEdit->insertPlainText( appendMsgEvt->msg );
         this->logEdit->moveCursor( QTextCursor::End );
 
-        return true;
+        return;
     }
 
-    return QDialog::event( evt );
+    QDialog::customEvent( evt );
 }

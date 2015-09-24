@@ -268,6 +268,7 @@ __thread86_procNative@4 PROC
 
 NoTerminationReturn:
     ; We return to the WinNT thread dispatcher.
+    mov eax,0
     ret
 __thread86_procNative@4 ENDP
 
