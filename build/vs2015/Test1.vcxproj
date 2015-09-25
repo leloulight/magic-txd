@@ -641,6 +641,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\defs.h" />
+    <ClInclude Include="..\..\include\exportallwindow.h" />
     <ClInclude Include="..\..\include\guiserialization.h" />
     <ClInclude Include="..\..\include\MagicExport.h" />
     <ClInclude Include="..\..\include\massconvert.h" />

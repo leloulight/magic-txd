@@ -48,6 +48,7 @@ class MainWindow : public QMainWindow
     friend class RenderPropWindow;
     friend class TexResizeWindow;
     friend class PlatformSelWindow;
+    friend class ExportAllWindow;
 
 public:
     MainWindow(QString appPath, QWidget *parent = 0);
@@ -135,6 +136,7 @@ public slots:
     void onResizeTexture( bool checked );
     void onManipulateTexture( bool checked );
     void onExportTexture( bool checked );
+    void onExportAllTextures( bool checked );
 
 protected:
     void addTextureFormatExportLinkToMenu( QMenu *theMenu, const char *defaultExt, const char *formatName );
@@ -281,6 +283,10 @@ public:
 
     bool addImageGenMipmaps;
     bool lockDownTXDPlatform;
+
+    // ExportAllWindow
+    std::string lastUsedAllExportFormat;
+    std::wstring lastAllExportTarget;
 };
 
 typedef StaticPluginClassFactory <MainWindow> mainWindowFactory_t;

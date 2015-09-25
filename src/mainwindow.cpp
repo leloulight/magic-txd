@@ -21,6 +21,7 @@
 #include "resizewindow.h"
 #include "platformselwindow.h"
 #include "massconvert.h"
+#include "exportallwindow.h"
 
 #include "tools/txdgen.h"
 
@@ -53,6 +54,8 @@ MainWindow::MainWindow(QString appPath, QWidget *parent) :
         this->lastImageFileOpenDir = this->makeAppPath( "" );
         this->addImageGenMipmaps = true;
         this->lockDownTXDPlatform = true;
+        this->lastUsedAllExportFormat = "PNG";
+        this->lastAllExportTarget = this->makeAppPath( "" ).toStdWString();
     }
 
     this->drawMipmapLayers = false;
@@ -398,6 +401,8 @@ MainWindow::MainWindow(QString appPath, QWidget *parent) :
 	        exportMenu->addAction(actionExportAll);
 
             this->exportAllImages = actionExportAll;
+
+            connect( actionExportAll, &QAction::triggered, this, &MainWindow::onExportAllTextures );
 
 	        QMenu *viewMenu = menu->addMenu(tr("&View"));
 	        QAction *actionBackground = new QAction("&Background", this);
@@ -769,6 +774,9 @@ void MainWindow::updateTextureMetaInfo( void )
     {
         // Update it.
         infoWidget->updateInfo();
+
+        // We also want to update the exportability, as the format may have changed.
+        this->UpdateExportAccessibility();
     }
 }
 
@@ -789,6 +797,9 @@ void MainWindow::updateAllTextureMetaInfo( void )
             texInfo->updateInfo();
         }
     }
+
+    // Make sure we update exportability.
+    this->UpdateExportAccessibility();
 }
 
 void MainWindow::onCreateNewTXD( bool checked )
@@ -1534,6 +1545,20 @@ void MainWindow::onExportTexture( bool checked )
 
                 // We proceed.
             }
+        }
+    }
+}
+
+void MainWindow::onExportAllTextures( bool checked )
+{
+    if ( rw::TexDictionary *texDict = this->currentTXD )
+    {
+        // No point in exporting empty TXD.
+        if ( texDict->GetTextureCount() != 0 )
+        {
+            ExportAllWindow *curDlg = new ExportAllWindow( this, texDict );
+
+            curDlg->setVisible( true );
         }
     }
 }

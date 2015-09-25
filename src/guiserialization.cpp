@@ -4,6 +4,7 @@
 
 #define MAGICTXD_UNICODE_STRING_ID      0xBABE0001
 #define MAGICTXD_CONFIG_BLOCK           0xBABE0002
+#define MAGICTXD_ANSI_STRING_ID         0xBABE0003
 
 // Our string blocks.
 void RwWriteUnicodeString( rw::BlockProvider& prov, const std::wstring& in )
@@ -60,6 +61,68 @@ bool RwReadUnicodeString( rw::BlockProvider& prov, std::wstring& out )
 
             // Skip the remainder.
             stringBlock.skip( blockLength - unicodeDataLength );
+
+            gotString = true;
+        }
+    }
+    catch( ... )
+    {
+        stringBlock.LeaveContext();
+
+        throw;
+    }
+
+    stringBlock.LeaveContext();
+
+    return gotString;
+}
+
+// ANSI string stuff.
+void RwWriteANSIString( rw::BlockProvider& parentBlock, const std::string& str )
+{
+    rw::BlockProvider stringBlock( &parentBlock );
+
+    stringBlock.EnterContext();
+
+    try
+    {
+        stringBlock.setBlockID( MAGICTXD_ANSI_STRING_ID );
+
+        stringBlock.write( str.c_str(), str.size() );
+    }
+    catch( ... )
+    {
+        stringBlock.LeaveContext();
+
+        throw;
+    }
+
+    stringBlock.LeaveContext();
+}
+
+bool RwReadANSIString( rw::BlockProvider& parentBlock, std::string& stringOut )
+{
+    bool gotString = false;
+
+    rw::BlockProvider stringBlock( &parentBlock );
+
+    stringBlock.EnterContext();
+
+    try
+    {
+        if ( stringBlock.getBlockID() == MAGICTXD_ANSI_STRING_ID )
+        {
+            // We read as much as we can into a memory buffer.
+            rw::int64 blockSize = stringBlock.getBlockLength();
+
+            size_t ansiStringLength = (size_t)blockSize;
+
+            stringOut.resize( ansiStringLength );
+
+            stringBlock.read( (void*)stringOut.data(), ansiStringLength );
+
+            // Skip the rest.
+            stringBlock.skip( blockSize - ansiStringLength );
 
             gotString = true;
         }
@@ -147,6 +210,27 @@ struct mainWindowSerialization
             }
         }
 
+        // Export all window stuff.
+        {
+            rw::BlockProvider exportAllBlock( &mainBlock );
+
+            exportAllBlock.EnterContext();
+            
+            try
+            {
+                RwReadANSIString( exportAllBlock, mainwnd->lastUsedAllExportFormat );
+                RwReadUnicodeString( exportAllBlock, mainwnd->lastAllExportTarget );
+            }
+            catch( ... )
+            {
+                exportAllBlock.LeaveContext();
+
+                throw;
+            }
+
+            exportAllBlock.LeaveContext();
+        }
+
         // MTXD configuration block.
         {
             rw::BlockProvider mtxdConfig( &mainBlock );
@@ -224,6 +308,27 @@ struct mainWindowSerialization
     {
         RwWriteUnicodeString( mainBlock, mainwnd->lastTXDSaveDir.toStdWString() );
         RwWriteUnicodeString( mainBlock, mainwnd->lastImageFileOpenDir.toStdWString() );
+
+        // Export all window.
+        {
+            rw::BlockProvider exportAllBlock( &mainBlock );
+
+            exportAllBlock.EnterContext();
+
+            try
+            {
+                RwWriteANSIString( exportAllBlock, mainwnd->lastUsedAllExportFormat );
+                RwWriteUnicodeString( exportAllBlock, mainwnd->lastAllExportTarget );
+            }
+            catch( ... )
+            {
+                exportAllBlock.LeaveContext();
+
+                throw;
+            }
+
+            exportAllBlock.LeaveContext();
+        }
 
         // MTXD config block.
         {

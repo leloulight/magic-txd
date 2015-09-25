@@ -87,6 +87,9 @@
     <ClInclude Include="..\..\src\qtinteroputils.hxx">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\exportallwindow.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">
