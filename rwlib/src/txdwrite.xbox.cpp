@@ -103,7 +103,7 @@ void xboxNativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, P
 
                 metaInfo.hasAlpha = ( platformTex->hasAlpha ? 1 : 0 );
 
-                metaInfo.notSwizzled = ( platformTex->isNotSwizzled ? 1 : 0 );
+                metaInfo.isCubeMap = ( platformTex->isCubeMap ? 1 : 0 );
 
                 metaInfo.mipmapCount = (uint8)mipmapCount;
 

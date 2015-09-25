@@ -117,10 +117,10 @@ void xboxNativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
 
                 platformTex->hasAlpha = ( metaInfo.hasAlpha != 0 );
 
-                platformTex->isNotSwizzled = ( metaInfo.notSwizzled != 0 );
+                platformTex->isCubeMap = ( metaInfo.isCubeMap != 0 );
 
 #if _DEBUG
-                assert( platformTex->isNotSwizzled == false );
+                assert( platformTex->isCubeMap == false );
 #endif
 
                 uint32 depth = metaInfo.depth;
