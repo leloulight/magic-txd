@@ -36,26 +36,34 @@ public:
 
     bool                    CanLockDirectories      ( void );
 
-    CFileTranslator*        CreateTranslator        ( const char *path );
-    CFileTranslator*        CreateTranslator        ( const wchar_t *path );
+    using CFileSystemInterface::CreateTranslator;
 
-    CArchiveTranslator*     OpenArchive             ( CFile& file );
+    CFileTranslator*        CreateTranslator        ( const char *path ) override final;
+    CFileTranslator*        CreateTranslator        ( const wchar_t *path ) override final;
 
-    CArchiveTranslator*     OpenZIPArchive          ( CFile& file );
-    CArchiveTranslator*     CreateZIPArchive        ( CFile& file );
+    CArchiveTranslator*     OpenArchive             ( CFile& file ) override final;
 
-    CIMGArchiveTranslatorHandle*    OpenIMGArchive      ( CFileTranslator *srcRoot, const char *srcPath );
-    CIMGArchiveTranslatorHandle*    CreateIMGArchive    ( CFileTranslator *srcRoot, const char *srcPath, eIMGArchiveVersion version );
+    CArchiveTranslator*     OpenZIPArchive          ( CFile& file ) override final;
+    CArchiveTranslator*     CreateZIPArchive        ( CFile& file ) override final;
 
-    CIMGArchiveTranslatorHandle*    OpenIMGArchive      ( CFileTranslator *srcRoot, const wchar_t *srcPath );
-    CIMGArchiveTranslatorHandle*    CreateIMGArchive    ( CFileTranslator *srcRoot, const wchar_t *srcPath, eIMGArchiveVersion version );
+    using CFileSystemInterface::OpenIMGArchive;
+    using CFileSystemInterface::CreateIMGArchive;
+
+    CIMGArchiveTranslatorHandle*    OpenIMGArchive      ( CFileTranslator *srcRoot, const char *srcPath ) override final;
+    CIMGArchiveTranslatorHandle*    CreateIMGArchive    ( CFileTranslator *srcRoot, const char *srcPath, eIMGArchiveVersion version ) override final;
+
+    CIMGArchiveTranslatorHandle*    OpenIMGArchive      ( CFileTranslator *srcRoot, const wchar_t *srcPath ) override final;
+    CIMGArchiveTranslatorHandle*    CreateIMGArchive    ( CFileTranslator *srcRoot, const wchar_t *srcPath, eIMGArchiveVersion version ) override final;
     
-    // Special functions for IMG archives that should support compression.
-    CIMGArchiveTranslatorHandle*    OpenCompressedIMGArchive    ( CFileTranslator *srcRoot, const char *srcPath );
-    CIMGArchiveTranslatorHandle*    CreateCompressedIMGArchive  ( CFileTranslator *srcRoot, const char *srcPath, eIMGArchiveVersion version );
+    using CFileSystemInterface::OpenCompressedIMGArchive;
+    using CFileSystemInterface::CreateCompressedIMGArchive;
 
-    CIMGArchiveTranslatorHandle*    OpenCompressedIMGArchive    ( CFileTranslator *srcRoot, const wchar_t *srcPath );
-    CIMGArchiveTranslatorHandle*    CreateCompressedIMGArchive  ( CFileTranslator *srcRoot, const wchar_t *arcPath, eIMGArchiveVersion version );
+    // Special functions for IMG archives that should support compression.
+    CIMGArchiveTranslatorHandle*    OpenCompressedIMGArchive    ( CFileTranslator *srcRoot, const char *srcPath ) override final;
+    CIMGArchiveTranslatorHandle*    CreateCompressedIMGArchive  ( CFileTranslator *srcRoot, const char *srcPath, eIMGArchiveVersion version ) override final;
+
+    CIMGArchiveTranslatorHandle*    OpenCompressedIMGArchive    ( CFileTranslator *srcRoot, const wchar_t *srcPath ) override final;
+    CIMGArchiveTranslatorHandle*    CreateCompressedIMGArchive  ( CFileTranslator *srcRoot, const wchar_t *arcPath, eIMGArchiveVersion version ) override final;
 
     // Function to cast a CFileTranslator into a CArchiveTranslator.
     // If not possible, it returns NULL.
@@ -66,17 +74,17 @@ public:
     CFileTranslator*        GenerateTempRepository  ( void );
 
     // Insecure functions
-    bool                    IsDirectory             ( const char *path );
+    bool                    IsDirectory             ( const char *path ) override final;
 #ifdef _WIN32
     bool                    WriteMiniDump           ( const char *path, _EXCEPTION_POINTERS *except );
 #endif //_WIN32
-    bool                    Exists                  ( const char *path );
-    size_t                  Size                    ( const char *path );
-    bool                    ReadToBuffer            ( const char *path, std::vector <char>& output );
+    bool                    Exists                  ( const char *path ) override final;
+    size_t                  Size                    ( const char *path ) override final;
+    bool                    ReadToBuffer            ( const char *path, std::vector <char>& output ) override final;
 
     // Settings.
-    void                    SetIncludeAllDirectoriesInScan  ( bool enable )             { m_includeAllDirsInScan = enable; }
-    bool                    GetIncludeAllDirectoriesInScan  ( void ) const              { return m_includeAllDirsInScan; }
+    void                    SetIncludeAllDirectoriesInScan  ( bool enable ) final       { m_includeAllDirsInScan = enable; }
+    bool                    GetIncludeAllDirectoriesInScan  ( void ) const final        { return m_includeAllDirsInScan; }
 
     // Members.
     bool                    m_includeAllDirsInScan;     // decides whether ScanDir implementations should apply patterns on directories

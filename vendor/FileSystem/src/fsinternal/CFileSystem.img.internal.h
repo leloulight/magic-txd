@@ -285,7 +285,7 @@ protected:
 
                 if ( fileRoot )
                 {
-                    resourceSize = fileRoot->Size( ourPath.c_str() );
+                    resourceSize = fileRoot->Size( ourPath );
                 }
             }
             else

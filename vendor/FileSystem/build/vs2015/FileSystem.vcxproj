@@ -311,12 +311,14 @@
     <ClInclude Include="..\..\src\CFileSystem.Utils.hxx" />
     <ClInclude Include="..\..\src\CFileSystem.zip.h" />
     <ClInclude Include="..\..\src\CFileSystemInterface.h" />
+    <ClInclude Include="..\..\src\fsinternal\CFileSystem.config.h" />
     <ClInclude Include="..\..\src\fsinternal\CFileSystem.img.internal.h" />
     <ClInclude Include="..\..\src\fsinternal\CFileSystem.img.public.h" />
     <ClInclude Include="..\..\src\fsinternal\CFileSystem.internal.common.h" />
     <ClInclude Include="..\..\src\fsinternal\CFileSystem.internal.h" />
     <ClInclude Include="..\..\src\fsinternal\CFileSystem.internal.nativeimpl.hxx" />
     <ClInclude Include="..\..\src\fsinternal\CFileSystem.internal.repo.h" />
+    <ClInclude Include="..\..\src\fsinternal\CFileSystem.random.h" />
     <ClInclude Include="..\..\src\fsinternal\CFileSystem.stream.buffered.h" />
     <ClInclude Include="..\..\src\fsinternal\CFileSystem.stream.raw.h" />
     <ClInclude Include="..\..\src\fsinternal\CFileSystem.translator.pathutil.h" />
@@ -332,8 +334,10 @@
     <ClCompile Include="..\..\src\CFileSystem.cpp" />
     <ClCompile Include="..\..\src\CFileSystem.img.cpp" />
     <ClCompile Include="..\..\src\CFileSystem.zip.cpp" />
+    <ClCompile Include="..\..\src\fsinternal\CFileSystem.config.cpp" />
     <ClCompile Include="..\..\src\fsinternal\CFileSystem.img.translator.compress.cpp" />
     <ClCompile Include="..\..\src\fsinternal\CFileSystem.img.translator.cpp" />
+    <ClCompile Include="..\..\src\fsinternal\CFileSystem.random.cpp" />
     <ClCompile Include="..\..\src\fsinternal\CFileSystem.stream.buffered.cpp" />
     <ClCompile Include="..\..\src\fsinternal\CFileSystem.stream.raw.cpp" />
     <ClCompile Include="..\..\src\fsinternal\CFileSystem.translator.pathutil.cpp" />

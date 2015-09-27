@@ -390,14 +390,7 @@ CIMGArchiveTranslator::~CIMGArchiveTranslator( void )
         // Delete all temporary files by deleting our entire folder structure.
         if ( CFileTranslator *sysTmpRoot = m_imgExtension.GetTempRoot() )
         {
-            if ( const char *sysPath = path.c_str() )
-            {
-                sysTmpRoot->Delete( sysPath );
-            }
-            else if ( const wchar_t *sysPath = path.w_str() )
-            {
-                sysTmpRoot->Delete( sysPath );
-            }
+            sysTmpRoot->Delete( path );
         }
     }
 }
@@ -471,7 +464,7 @@ CFile* CIMGArchiveTranslator::OpenNativeFileStream( file *fsObject, unsigned int
         // If the data has been extracted already from the archive, we need to open a disk stream.
         if ( fsObject->metaData.isExtracted )
         {
-            CFile *diskFile = fileRoot->Open( relPath.c_str(), "rb+" );
+            CFile *diskFile = fileRoot->Open( relPath, "rb+" );
 
             if ( diskFile )
             {
@@ -531,7 +524,7 @@ CFile* CIMGArchiveTranslator::OpenNativeFileStream( file *fsObject, unsigned int
                     
                     if ( fileRoot )
                     {
-                        CFile *extractedStream = fileRoot->Open( relPath.c_str(), "wb+" );
+                        CFile *extractedStream = fileRoot->Open( relPath, "wb+" );
 
                         if ( extractedStream )
                         {
@@ -577,7 +570,7 @@ CFile* CIMGArchiveTranslator::OpenNativeFileStream( file *fsObject, unsigned int
 
         if ( fileRoot )
         {
-            CFile *diskFile = fileRoot->Open( relPath.c_str(), "wb+" );
+            CFile *diskFile = fileRoot->Open( relPath, "wb+" );
 
             if ( diskFile )
             {
@@ -600,7 +593,7 @@ CFile* CIMGArchiveTranslator::OpenNativeFileStream( file *fsObject, unsigned int
             {
                 delete diskFile;
 
-                fileRoot->Delete( relPath.c_str() );
+                fileRoot->Delete( relPath );
             }
         }
 
@@ -731,7 +724,7 @@ void CIMGArchiveTranslator::fileMetaData::OnFileDelete( void )
         {
             const filePath& ourPath = this->fileNode->GetRelativePath();
 
-            fileRoot->Delete( ourPath.c_str() );
+            fileRoot->Delete( ourPath );
         }
     }
 }
@@ -759,7 +752,7 @@ bool CIMGArchiveTranslator::fileMetaData::OnFileCopy( const dirTree& tree, const
 
             dstPath += newName;
 
-            copySuccess = fileRoot->Copy( ourPath.c_str(), dstPath.c_str() );
+            copySuccess = fileRoot->Copy( ourPath, dstPath );
         }
     }
     else
@@ -795,7 +788,7 @@ bool CIMGArchiveTranslator::fileMetaData::OnFileRename( const dirTree& tree, con
 
             dstPath += newName;
 
-            renameSuccess = fileRoot->Rename( ourPath.c_str(), dstPath.c_str() );
+            renameSuccess = fileRoot->Rename( ourPath, dstPath );
         }
     }
     else
@@ -886,7 +879,7 @@ void CIMGArchiveTranslator::GenerateArchiveStructure( directory& baseDir, archiv
         // Get the block count of this file entry.
         unsigned long blockCount = 0;
 
-        const char *relativePath = theFile->relPath.c_str();
+        const filePath& relativePath = theFile->relPath.c_str();
 
         // Determine whether we need to compress this file.
         bool requiresCompression = false;
@@ -1225,7 +1218,7 @@ void CIMGArchiveTranslator::WriteFiles( CFile *targetStream, directory& baseDir 
 
             if ( fileRoot )
             {
-                srcStream = fileRoot->Open( theFile->relPath.c_str(), "rb" );
+                srcStream = fileRoot->Open( theFile->relPath, "rb" );
             }
         }
         else if ( theFile->metaData.isExtracted )
@@ -1234,7 +1227,7 @@ void CIMGArchiveTranslator::WriteFiles( CFile *targetStream, directory& baseDir 
 
             if ( fileRoot )
             {
-                srcStream = fileRoot->Open( theFile->relPath.c_str(), "rb" );
+                srcStream = fileRoot->Open( theFile->relPath, "rb" );
             }
         }
 
@@ -1366,7 +1359,7 @@ void CIMGArchiveTranslator::Save( void )
 
             if ( fileRoot )
             {
-                fileRoot->Delete( compressRootPath.c_str() );
+                fileRoot->Delete( compressRootPath );
             }
         }
     }

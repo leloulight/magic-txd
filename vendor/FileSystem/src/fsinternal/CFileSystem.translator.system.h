@@ -72,6 +72,20 @@ public:
     size_t          Size                            ( const wchar_t *path ) const override;
     bool            Stat                            ( const wchar_t *path, struct stat *stats ) const override;
 
+    AINLINE CFile*  OpenEx( const filePath& path, const filePath& mode, unsigned int flags )
+    {
+        return filePath_dispatch( path,
+            [&] ( auto path )
+            {
+                typedef resolve_type <decltype(path)>::type charType;
+
+                filePathLink <charType> modeLink( mode );
+
+                return OpenEx( path, modeLink.to_char(), flags );
+            }
+        );
+    }
+
 private:
     template <typename charType>
     bool            GenGetRelativePathTreeFromRoot  ( const charType *path, dirTree& tree, bool& file ) const;

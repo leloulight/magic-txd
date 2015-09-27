@@ -343,7 +343,7 @@ public:
 
                 if ( realtimeRoot )
                 {
-                    resourceSize = realtimeRoot->Size( ourPath.c_str() );
+                    resourceSize = realtimeRoot->Size( ourPath );
                 }
             }
 

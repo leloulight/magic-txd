@@ -301,7 +301,7 @@ inline bool obtainAbsolutePath( const wchar_t *path, CFileTranslator*& transOut,
         }
     }
 
-    if ( fileRoot->GetFullPath( inputPath.w_str(), true, thePath ) )
+    if ( fileRoot->GetFullPath( inputPath, true, thePath ) )
     {
         translator = fileRoot;
 
@@ -349,7 +349,7 @@ inline bool obtainAbsolutePath( const wchar_t *path, CFileTranslator*& transOut,
 
         if ( createDir )
         {
-            bool createPath = translator->CreateDir( thePath.w_str() );
+            bool createPath = translator->CreateDir( thePath );
 
             if ( createPath )
             {
@@ -358,7 +358,7 @@ inline bool obtainAbsolutePath( const wchar_t *path, CFileTranslator*& transOut,
         }
         else
         {
-            bool existsPath = translator->Exists( thePath.w_str() );
+            bool existsPath = translator->Exists( thePath );
 
             if ( existsPath )
             {
@@ -368,7 +368,7 @@ inline bool obtainAbsolutePath( const wchar_t *path, CFileTranslator*& transOut,
 
         if ( canCreateTranslator )
         {
-            CFileTranslator *actualRoot = fileSystem->CreateTranslator( thePath.w_str() );
+            CFileTranslator *actualRoot = fileSystem->CreateTranslator( thePath );
 
             if ( actualRoot )
             {

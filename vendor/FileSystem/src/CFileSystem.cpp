@@ -110,7 +110,6 @@ CFileSystem* CFileSystem::Create( void )
     assert( _hasBeenInitialized == false );
 
     // Make sure our environment can run CFileSystem in the first place.
-    // I need to sort out some compatibility problems before allowing a x64 build.
     bool isLibraryBootable = _CheckLibraryIntegrity();
 
     if ( !isLibraryBootable )
@@ -296,21 +295,23 @@ CFileTranslator* CFileSystemNative::GenCreateTranslator( const charType *path )
 #endif //OS DEPENDANT CODE
     else
     {
-        char pathBuffer[1024];
-        getcwd( pathBuffer, sizeof(pathBuffer) );
+        wchar_t pathBuffer[1024];
+        _wgetcwd( pathBuffer, NUMELMS(pathBuffer) - 1 );
+
+        pathBuffer[ NUMELMS( pathBuffer ) - 1 ] = 0;
 
         root += pathBuffer;
         root += "\\";
         root += path;
 
 #ifdef _WIN32
-        if (!_File_ParseRelativePath( root.c_str() + 3, tree, bFile ))
+        if (!_File_ParseRelativePath( root.w_str() + 3, tree, bFile ))
             return NULL;
 
         root.resize( 2 );
         root += "/";
 #elif defined(__linux__)
-        if (!_File_ParseRelativePath( root.c_str() + 1, tree, bFile ))
+        if (!_File_ParseRelativePath( root.w_str() + 1, tree, bFile ))
             return NULL;
 
         root = "/";
@@ -357,7 +358,7 @@ CFileTranslator* CFileSystem::CreateTranslator( const wchar_t *path )   { return
 
 CFileTranslator* CFileSystem::GenerateTempRepository( void )
 {
-    filePath tmpDir;
+    filePath tmpDirBase;
 
     // Check whether we have a handle to the global temporary system storage.
     // If not, attempt to retrieve it.
@@ -371,8 +372,8 @@ CFileTranslator* CFileSystem::GenerateTempRepository( void )
         buf[ NUMELMS( buf ) - 1 ] = 0;
 
         // Transform the path into something we can recognize.
-        tmpDir.insert( 0, buf, 2 );
-        tmpDir += L'/';
+        tmpDirBase.insert( 0, buf, 2 );
+        tmpDirBase += L'/';
 
         dirTree tree;
         bool isFile;
@@ -381,7 +382,7 @@ CFileTranslator* CFileSystem::GenerateTempRepository( void )
 
         assert( parseSuccess == true && isFile == false );
 
-        _File_OutputPathTree( tree, isFile, tmpDir );
+        _File_OutputPathTree( tree, isFile, tmpDirBase );
 #elif defined(__linux__)
         const char *dir = getenv("TEMPDIR");
 
@@ -397,7 +398,7 @@ CFileTranslator* CFileSystem::GenerateTempRepository( void )
             exit( 7098 );
 #endif //OS DEPENDANT CODE
 
-        this->sysTmp = fileSystem->CreateTranslator( tmpDir.w_str() );
+        this->sysTmp = fileSystem->CreateTranslator( tmpDirBase.w_str() );
 
         // We failed to get the handle to the temporary storage, hence we cannot deposit temporary files!
         if ( !this->sysTmp )
@@ -405,23 +406,39 @@ CFileTranslator* CFileSystem::GenerateTempRepository( void )
     }
     else
     {
-        bool success = this->sysTmp->GetFullPath( "@", false, tmpDir );
+        bool success = this->sysTmp->GetFullPath( "@", false, tmpDirBase );
 
         if ( !success )
             return NULL;
     }
 
     // Generate a random sub-directory inside of the global OS temp directory.
-    {
-        std::stringstream stream;
+    // We need to generate until we find a unique directory.
+    bool hasValidDirectory = false;
+    unsigned int numOfTries = 0;
 
-        stream.precision( 0 );
-        stream << ( rand() % 647251833 );
+    filePath tmpDir;
+
+    while ( !hasValidDirectory && numOfTries < 50 )
+    {
+        tmpDir = tmpDirBase;
 
         tmpDir += "&$!reAr";
-        tmpDir += stream.str();
+        tmpDir += std::to_string( fsrandom::getSystemRandom( this ) );
         tmpDir += "_/";
+
+        if ( this->sysTmp->Exists( tmpDir ) == false )
+        {
+            hasValidDirectory = true;
+            break;
+        }
+
+        numOfTries++;
     }
+
+    // We can fail to get a random temporary directory.
+    if ( !hasValidDirectory )
+        return NULL;
 
     // Make sure the temporary directory exists.
     bool creationSuccessful = _File_CreateDirectory( tmpDir );
@@ -429,17 +446,7 @@ CFileTranslator* CFileSystem::GenerateTempRepository( void )
     if ( creationSuccessful )
     {
         // Create the .zip temporary root
-        CFileTranslator *result = NULL;
-        {
-            if ( const char *sysPath = tmpDir.c_str() )
-            {
-                result = fileSystem->CreateTranslator( sysPath );
-            }
-            else if ( const wchar_t *sysPath = tmpDir.w_str() )
-            {
-                result = fileSystem->CreateTranslator( sysPath );
-            }
-        }
+        CFileTranslator *result = fileSystem->CreateTranslator( tmpDir );
 
         if ( result )
         {

@@ -400,6 +400,10 @@ public:
 #ifdef _FILESYSTEM_WIDEPATH_SUPPORT
     virtual bool            CreateDir( const wchar_t *path ) = 0;
 #endif
+    AINLINE bool            CreateDir( const filePath& path )
+    {
+        return filePath_dispatch( path, [&] ( auto path ) { return CreateDir( path ); } );
+    }
 
     /*===================================================
         CFileTranslator::Open
@@ -417,6 +421,19 @@ public:
 #ifdef _FILESYSTEM_WIDEPATH_SUPPORT
     virtual CFile*          Open( const wchar_t *path, const wchar_t *mode ) = 0;
 #endif
+    AINLINE CFile*          Open( const filePath& path, const filePath& mode )
+    {
+        return filePath_dispatch( path,
+            [&] ( auto path )
+            {
+                typedef resolve_type <decltype(path)>::type charType;
+
+                filePathLink <charType> modeLink( mode );
+
+                return Open( path, modeLink.to_char() );
+            }
+        );
+    }
 
     /*===================================================
         CFileTranslator::Exists
@@ -430,6 +447,10 @@ public:
 #ifdef _FILESYSTEM_WIDEPATH_SUPPORT
     virtual bool            Exists( const wchar_t *path ) const = 0;
 #endif
+    virtual bool            Exists( const filePath& path ) const
+    {
+        return filePath_dispatch( path, [&] ( auto path ) { return Exists( path ); } );
+    }
 
     /*===================================================
         CFileTranslator::Delete
@@ -446,6 +467,10 @@ public:
 #ifdef _FILESYSTEM_WIDEPATH_SUPPORT
     virtual bool            Delete( const wchar_t *path ) = 0;
 #endif
+    AINLINE bool            Delete( const filePath& path )
+    {
+        return filePath_dispatch( path, [&] ( auto path ) { return Delete( path ); } );
+    }
 
     /*===================================================
         CFileTranslator::Copy
@@ -462,6 +487,19 @@ public:
 #ifdef _FILESYSTEM_WIDEPATH_SUPPORT
     virtual bool            Copy( const wchar_t *src, const wchar_t *dst ) = 0;
 #endif
+    AINLINE bool            Copy( const filePath& src, const filePath& dst )
+    {
+        return filePath_dispatch( src,
+            [&] ( auto src )
+            {
+                typedef typename resolve_type <decltype(src)>::type charType;
+
+                filePathLink <charType> dstLink( dst );
+
+                return Copy( src, dstLink.to_char() );
+            }
+        );
+    }
 
     /*===================================================
         CFileTranslator::Rename
@@ -477,6 +515,19 @@ public:
 #ifdef _FILESYSTEM_WIDEPATH_SUPPORT
     virtual bool            Rename( const wchar_t *src, const wchar_t *dst ) = 0;
 #endif
+    AINLINE bool            Rename( const filePath& src, const filePath& dst )
+    {
+        return filePath_dispatch( src,
+            [&] ( auto src )
+            {
+                typedef typename resolve_type <decltype(src)>::type charType;
+
+                filePathLink <charType> dstLink( dst );
+
+                return Rename( src, dstLink.to_char() );
+            }
+        );
+    }
 
     /*===================================================
         CFileTranslator::Size
@@ -491,6 +542,10 @@ public:
 #ifdef _FILESYSTEM_WIDEPATH_SUPPORT
     virtual size_t          Size( const wchar_t *path ) const = 0;
 #endif
+    AINLINE size_t          Size( const filePath& path ) const
+    {
+        return filePath_dispatch( path, [&] ( auto path ) { return Size( path ); } );
+    }
 
     /*===================================================
         CFileTranslator::Stat
@@ -507,6 +562,10 @@ public:
 #ifdef _FILESYSTEM_WIDEPATH_SUPPORT
     virtual bool            Stat( const wchar_t *path, struct stat *stats ) const = 0;
 #endif
+    AINLINE bool            Stat( const filePath& path, struct stat *stats ) const
+    {
+        return filePath_dispatch( path, [&] ( auto path ) { return Stat( path, stats ); } );
+    }
 
     /*==============================================================
         Path Translation functions
@@ -533,6 +592,10 @@ public:
 #ifdef _FILESYSTEM_WIDEPATH_SUPPORT
     virtual bool            GetFullPathTreeFromRoot( const wchar_t *path, dirTree& tree, bool& file ) const = 0;
 #endif
+    AINLINE bool            GetFullPathTreeFromRoot( const filePath& path, dirTree& tree, bool& file ) const
+    {
+        return filePath_dispatch( path, [&] ( auto path ) { return GetFullPathTreeFromRoot( path, tree, file ); } );
+    }
 
     /*===================================================
         CFileTranslator::GetFullPathTree
@@ -549,6 +612,10 @@ public:
 #ifdef _FILESYSTEM_WIDEPATH_SUPPORT
     virtual bool            GetFullPathTree( const wchar_t *path, dirTree& tree, bool& file ) const = 0;
 #endif
+    AINLINE bool            GetFullPathTree( const filePath& path, dirTree& tree, bool& file ) const
+    {
+        return filePath_dispatch( path, [&] ( auto path ) { return GetFullPathTree( path, tree, file ); } );
+    }
 
     /*===================================================
         CFileTranslator::GetRelativePathTreeFromRoot
@@ -567,6 +634,10 @@ public:
 #ifdef _FILESYSTEM_WIDEPATH_SUPPORT
     virtual bool            GetRelativePathTreeFromRoot( const wchar_t *path, dirTree& tree, bool& file ) const = 0;
 #endif
+    AINLINE bool            GetRelativePathTreeFromRoot( const filePath& path, dirTree& tree, bool& file ) const
+    {
+        return filePath_dispatch( path, [&] ( auto path ) { return GetRelativePathTreeFromRoot( path, tree, file ); } );
+    }
 
     /*===================================================
         CFileTranslator::GetRelativePathTree
@@ -583,6 +654,10 @@ public:
 #ifdef _FILESYSTEM_WIDEPATH_SUPPORT
     virtual bool            GetRelativePathTree( const wchar_t *path, dirTree& tree, bool& file ) const = 0;
 #endif
+    AINLINE bool            GetRelativePathTree( const filePath& path, dirTree& tree, bool& file) const
+    {
+        return filePath_dispatch( path, [&] ( auto path ) { return GetRelativePathTree( path, tree, file ); } );
+    }
 
     /*===================================================
         CFileTranslator::GetFullPathFromRoot
@@ -600,6 +675,10 @@ public:
 #ifdef _FILESYSTEM_WIDEPATH_SUPPORT
     virtual bool            GetFullPathFromRoot( const wchar_t *path, bool allowFile, filePath& output ) const = 0;
 #endif
+    virtual bool            GetFullPathFromRoot( const filePath& path, bool allowFile, filePath& output ) const
+    {
+        return filePath_dispatch( path, [&] ( auto path ) { return GetFullPathFromRoot( path, allowFile, output ); } );
+    }
 
     /*===================================================
         CFileTranslator::GetFullPath
@@ -617,6 +696,10 @@ public:
 #ifdef _FILESYSTEM_WIDEPATH_SUPPORT
     virtual bool            GetFullPath( const wchar_t *path, bool allowFile, filePath& output ) const = 0;
 #endif
+    AINLINE bool            GetFullPath( const filePath& path, bool allowFile, filePath& output ) const
+    {
+        return filePath_dispatch( path, [&]( auto path ) { return GetFullPath( path, allowFile, output ); } );
+    }
 
     /*===================================================
         CFileTranslator::GetRelativePathFromRoot
@@ -633,6 +716,10 @@ public:
 #ifdef _FILESYSTEM_WIDEPATH_SUPPORT
     virtual bool            GetRelativePathFromRoot( const wchar_t *path, bool allowFile, filePath& output ) const = 0;
 #endif
+    AINLINE bool            GetRelativePathFromRoot( const filePath& path, bool allowFile, filePath& output ) const
+    {
+        return filePath_dispatch( path, [&]( auto path ) { return GetRelativePathFromRoot( path, allowFile, output ); } );
+    }
 
     /*===================================================
         CFileTranslator::GetRelativePath
@@ -649,6 +736,10 @@ public:
 #ifdef _FILESYSTEM_WIDEPATH_SUPPORT
     virtual bool            GetRelativePath( const wchar_t *path, bool allowFile, filePath& output ) const = 0;
 #endif
+    AINLINE bool            GetRelativePath( const filePath& path, bool allowFile, filePath& output ) const
+    {
+        return filePath_dispatch( path, [&]( auto path ) { return GetRelativePath( path, allowFile, output ); } );
+    }
 
     /*===================================================
         CFileTranslator::ChangeDirectory
@@ -663,6 +754,10 @@ public:
 #ifdef _FILESYSTEM_WIDEPATH_SUPPORT
     virtual bool            ChangeDirectory( const wchar_t *path ) = 0;
 #endif
+    AINLINE bool            ChangeDirectory( const filePath& path )
+    {
+        return filePath_dispatch( path, [&]( auto path ) { return ChangeDirectory( path ); } );
+    }
 
     /*===================================================
         CFileTranslator::GetDirectory
@@ -699,17 +794,59 @@ public:
                                 pathCallback_t fileCallback,
                                 void *userdata ) const = 0;
 #endif
+    AINLINE void            ScanDirectory( const filePath& directory, const filePath& wildcard, bool recurse,
+                                pathCallback_t dirCallback,
+                                pathCallback_t fileCallback,
+                                void *userdata ) const
+    {
+        filePath_dispatch( directory,
+            [&] ( auto directory )
+            {
+                typedef typename resolve_type <decltype(directory)>::type charType;
+
+                filePathLink <charType> wildcardLink( wildcard );
+
+                ScanDirectory( directory, wildcardLink.to_char(), recurse, dirCallback, fileCallback, userdata );
+            }
+        );
+    }
 
     // These functions are easy helpers for ScanDirectory.
     virtual void            GetDirectories( const char *path, const char *wildcard, bool recurse, std::vector <filePath>& output ) const = 0;
 #ifdef _FILESYSTEM_WIDEPATH_SUPPORT
     virtual void            GetDirectories( const wchar_t *path, const wchar_t *wildcard, bool recurse, std::vector <filePath>& output ) const = 0;
 #endif
+    AINLINE void            GetDirectories( const filePath& path, const filePath& wildcard, bool recurse, std::vector <filePath>& output ) const
+    {
+        filePath_dispatch( path,
+            [&] ( auto path )
+            {
+                typedef typename resolve_type <decltype(path)>::type charType;
+
+                filePathLink <charType> wildcardLink( wildcard );
+
+                GetDirectories( path, wildcardLink.to_char(), recurse, output );
+            }
+        );
+    }
 
     virtual void            GetFiles( const char *path, const char *wildcard, bool recurse, std::vector <filePath>& output ) const = 0;
 #ifdef _FILESYSTEM_WIDEPATH_SUPPORT
     virtual void            GetFiles( const wchar_t *path, const wchar_t *wildcard, bool recurse, std::vector <filePath>& output ) const = 0;
 #endif
+    AINLINE void            GetFiles( const filePath& path, const filePath& wildcard, bool recurse, std::vector <filePath>& output ) const
+    {
+        filePath_dispatch( path,
+            [&] ( auto path )
+            {
+                typedef typename resolve_type <decltype(path)>::type charType;
+
+                filePathLink <charType> wildcardLink( wildcard );
+
+                GetDirectories( path, wildcardLink.to_char(), recurse, output );
+            }
+        );
+    }
 };
 
 #include "CFileSystem.common.stl.h"
@@ -738,6 +875,11 @@ public:
 #ifdef _FILESYSTEM_WIDEPATH_SUPPORT
     virtual CFileTranslator*    CreateTranslator    ( const wchar_t *path ) = 0;
 #endif
+    AINLINE CFileTranslator*    CreateTranslator    ( const filePath& path )
+    {
+        return filePath_dispatch( path, [&]( auto path ) { return CreateTranslator( path ); } );
+    }
+
     virtual CArchiveTranslator* OpenArchive         ( CFile& file ) = 0;
 
     virtual CArchiveTranslator* OpenZIPArchive      ( CFile& file ) = 0;
@@ -748,20 +890,38 @@ public:
 #ifdef _FILESYSTEM_WIDEPATH_SUPPORT
     virtual CIMGArchiveTranslatorHandle* OpenIMGArchive         ( CFileTranslator *srcRoot, const wchar_t *srcPath ) = 0;
 #endif
+    AINLINE CIMGArchiveTranslatorHandle* OpenIMGArchive( CFileTranslator *srcRoot, const filePath& srcPath )
+    {
+        return filePath_dispatch( srcPath, [&] ( auto srcPath ) { return OpenIMGArchive( srcRoot, srcPath ); } );
+    }
+
     virtual CIMGArchiveTranslatorHandle* CreateIMGArchive       ( CFileTranslator *srcRoot, const char *srcPath, eIMGArchiveVersion version ) = 0;
 #ifdef _FILESYSTEM_WIDEPATH_SUPPORT
     virtual CIMGArchiveTranslatorHandle* CreateIMGArchive       ( CFileTranslator *srcRoot, const wchar_t *srcPath, eIMGArchiveVersion version ) = 0;
 #endif
+    AINLINE CIMGArchiveTranslatorHandle* CreateIMGArchive( CFileTranslator *srcRoot, const filePath& srcPath, eIMGArchiveVersion version )
+    {
+        return filePath_dispatch( srcPath, [&]( auto srcPath ) { return CreateIMGArchive( srcRoot, srcPath, version ); } );
+    }
 
     // Special functions for IMG archives that should support compression.
     virtual CIMGArchiveTranslatorHandle*    OpenCompressedIMGArchive        ( CFileTranslator *srcRoot, const char *srcPath ) = 0;
 #ifdef _FILESYSTEM_WIDEPATH_SUPPORT
     virtual CIMGArchiveTranslatorHandle*    OpenCompressedIMGArchive        ( CFileTranslator *srcRoot, const wchar_t *srcPath ) = 0;
 #endif
+    AINLINE CIMGArchiveTranslatorHandle*    OpenCompressedIMGArchive( CFileTranslator *srcRoot, const filePath& srcPath )
+    {
+        return filePath_dispatch( srcPath, [&]( auto srcPath ) { return OpenCompressedIMGArchive( srcRoot, srcPath ); } );
+    }
+
     virtual CIMGArchiveTranslatorHandle*    CreateCompressedIMGArchive      ( CFileTranslator *srcRoot, const char *srcPath, eIMGArchiveVersion version ) = 0;
 #ifdef _FILESYSTEM_WIDEPATH_SUPPORT
     virtual CIMGArchiveTranslatorHandle*    CreateCompressedIMGArchive      ( CFileTranslator *srcRoot, const wchar_t *srcPath, eIMGArchiveVersion version ) = 0;
 #endif
+    AINLINE CIMGArchiveTranslatorHandle*    CreateCompressedIMGArchive( CFileTranslator *srcRoot, const filePath& srcPath, eIMGArchiveVersion version )
+    {
+        return filePath_dispatch( srcPath, [&]( auto srcPath ) { return CreateCompressedIMGArchive( srcRoot, srcPath, version ); } );
+    }
 
     // Insecure, use with caution!
     virtual bool                IsDirectory         ( const char *path ) = 0;

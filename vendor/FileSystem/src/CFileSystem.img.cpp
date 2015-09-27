@@ -63,14 +63,7 @@ inline CFile* OpenSeperateIMGRegistryFile( CFileTranslator *srcRoot, const charT
         filePath regFilePath = dirOfArchive + nameItem + ".DIR";
 
         // Open a seperate registry file.
-        if ( const char *sysPath = regFilePath.c_str() )
-        {
-            registryFile = srcRoot->Open( sysPath, GetReadWriteMode <char> ( isNew ) );
-        }
-        else if ( const wchar_t *sysPath = regFilePath.w_str() )
-        {
-            registryFile = srcRoot->Open( sysPath, GetReadWriteMode <wchar_t> ( isNew ) );
-        }
+        registryFile = srcRoot->Open( regFilePath, GetReadWriteMode <wchar_t> ( isNew ) );
     }
 
     return registryFile;

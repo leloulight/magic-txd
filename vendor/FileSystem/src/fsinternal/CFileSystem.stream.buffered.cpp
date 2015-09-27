@@ -45,8 +45,10 @@
 
 CBufferedStreamWrap::CBufferedStreamWrap( CFile *toBeWrapped, bool deleteOnQuit ) : underlyingStream( toBeWrapped )
 {
+    char driverLetter = toBeWrapped->GetPath().at( 0 );
+
     internalIOBuffer.AllocateStorage(
-        systemCapabilities.GetSystemLocationSectorSize( *toBeWrapped->GetPath().c_str() )
+        systemCapabilities.GetSystemLocationSectorSize( driverLetter )
     );
 
     fileSeek.SetHost( this );

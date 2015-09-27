@@ -141,17 +141,7 @@ bool TxdGenModule::ProcessTXDArchive(
                                         {
                                             filePath uniqueTextureNameTGA = directoryPart + fileNamePart + "_" + filePath( theTexture->GetName().c_str() ) + ".tga";
 
-                                            CFile *debugOutputStream = NULL;
-                                            {
-                                                if ( const char *sysPath = uniqueTextureNameTGA.c_str() )
-                                                {
-                                                    debugOutputStream = debugRoot->Open( sysPath, "wb" );
-                                                }
-                                                else if ( const wchar_t *sysPath = uniqueTextureNameTGA.w_str() )
-                                                {
-                                                    debugOutputStream = debugRoot->Open( sysPath, L"wb" );
-                                                }
-                                            }
+                                            CFile *debugOutputStream = debugRoot->Open( uniqueTextureNameTGA, "wb" );
 
                                             if ( debugOutputStream )
                                             {
@@ -390,9 +380,7 @@ struct _discFileSentry
 
         if ( requiresCopy )
         {
-            std::wstring widePath = relPathFromRoot.convert_unicode();
-
-            targetStream = buildRoot->Open( widePath.c_str(), L"wb" );
+            targetStream = buildRoot->Open( relPathFromRoot, L"wb" );
         }
 
         if ( targetStream && sourceStream )
@@ -481,17 +469,7 @@ TxdGenModule::run_config TxdGenModule::ParseConfig( CFileTranslator *root, const
 {
     run_config cfg;
 
-    CFile *cfgStream = NULL;
-    {
-        if ( const char *sysPath = path.c_str() )
-        {
-            cfgStream = root->Open( sysPath, "rb" );
-        }
-        else if ( const wchar_t *sysPath = path.w_str() )
-        {
-            cfgStream = root->Open( sysPath, L"rb" );
-        }
-    }
+    CFile *cfgStream = root->Open( path, "rb" );
 
     if ( cfgStream )
     {

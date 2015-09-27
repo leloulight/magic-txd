@@ -93,6 +93,12 @@
     <ClInclude Include="..\..\src\CFileSystem.common.unichar.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\fsinternal\CFileSystem.config.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\fsinternal\CFileSystem.random.h">
+      <Filter>Include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\CFileSystem.cpp" />
@@ -118,5 +124,7 @@
       <Filter>imgExtension</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\fsinternal\CFileSystem.translator.widewrap.cpp" />
+    <ClCompile Include="..\..\src\fsinternal\CFileSystem.config.cpp" />
+    <ClCompile Include="..\..\src\fsinternal\CFileSystem.random.cpp" />
   </ItemGroup>
 </Project>

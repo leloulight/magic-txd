@@ -69,12 +69,14 @@ typedef StaticPluginClassFactory <CFileSystemNative> fileSystemFactory_t;
 extern fileSystemFactory_t _fileSysFactory;
 
 #include "CFileSystem.internal.common.h"
+#include "CFileSystem.random.h"
 #include "CFileSystem.stream.raw.h"
 #include "CFileSystem.stream.buffered.h"
 #include "CFileSystem.translator.pathutil.h"
 #include "CFileSystem.translator.system.h"
 #include "CFileSystem.translator.widewrap.h"
 #include "CFileSystem.internal.repo.h"
+#include "CFileSystem.config.h"
 
 /*===================================================
     CSystemCapabilities

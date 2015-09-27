@@ -1120,14 +1120,14 @@ public:
         this->strData->AppendUnicode( right, len );
     }
 
-    explicit inline filePath( const char *right )
+    inline filePath( const char *right )
     {
         this->strData = new ansiStringProvider();
 
         this->strData->AppendANSI( right, strlen( right ) );
     }
 
-    explicit inline filePath( const wchar_t *right )
+    inline filePath( const wchar_t *right )
     {
         this->strData = new wideStringProvider();
        
@@ -1474,6 +1474,26 @@ public:
         return !( this->operator == ( right ) );
     }
 
+    inline bool operator == ( const char *right ) const
+    {
+        return equals( right, true );
+    }
+
+    inline bool operator != ( const char *right ) const
+    {
+        return !( this->operator == ( right ) );
+    }
+
+    inline bool operator == ( const wchar_t *right ) const
+    {
+        return equals( right, true );
+    }
+
+    inline bool operator != ( const wchar_t *right ) const
+    {
+        return !( this->operator == ( right ) );
+    }
+
     inline filePath operator + ( const filePath& right ) const
     {
         filePath newPath( *this );
@@ -1692,11 +1712,6 @@ public:
         return outString;
     }
 
-    inline operator const char* ( void ) const
-    {
-        return this->c_str();
-    }
-
     inline const wchar_t *w_str( void ) const
     {
         const wchar_t *outString = L"";
@@ -1815,5 +1830,34 @@ struct filePathLink : public filePath
 
     bool hasMoved;
 };
+
+template <typename funcType>
+AINLINE decltype( auto ) filePath_dispatch( const filePath& path, funcType b )
+{
+    if ( const char *sysPath = path.c_str() )
+    {
+        return b( sysPath );
+    }
+    else if ( const wchar_t *sysPath = path.w_str() )
+    {
+        return b( sysPath );
+    }
+
+    // Unicode is supposed to be able to display anything.
+    std::wstring unicode = path.convert_unicode();
+
+    return b( unicode.c_str() );
+}
+
+template <typename charType>
+struct resolve_type
+{
+    typedef charType type;
+};
+
+template <typename charType>
+struct resolve_type <const charType*>
+    : public resolve_type <charType>
+{};
 
 #endif //_FILESYSTEM_COMMON_PATHRESOLUTION_

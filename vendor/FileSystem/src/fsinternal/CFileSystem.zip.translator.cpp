@@ -171,7 +171,7 @@ CZIPArchiveTranslator::~CZIPArchiveTranslator( void )
         // Delete all temporary files by deleting our entire folder structure.
         if ( CFileTranslator *sysTmpRoot = m_zipExtension.GetTempRoot() )
         {
-            sysTmpRoot->Delete( path.c_str() );
+            sysTmpRoot->Delete( path );
         }
     }
 }
@@ -233,7 +233,7 @@ CFile* CZIPArchiveTranslator::OpenNativeFileStream( file *fsObject, unsigned int
         {
             if ( fsObject->metaData.archived && !fsObject->metaData.cached )
             {
-                dstFile = realtimeRoot->Open( relPath.c_str(), "wb+" );
+                dstFile = realtimeRoot->Open( relPath, "wb+" );
 
                 if ( dstFile )
                 {
@@ -243,7 +243,7 @@ CFile* CZIPArchiveTranslator::OpenNativeFileStream( file *fsObject, unsigned int
             }
             else
             {
-                dstFile = realtimeRoot->Open( relPath.c_str(), "rb+" );
+                dstFile = realtimeRoot->Open( relPath, "rb+" );
             }
         }
     }
@@ -256,7 +256,7 @@ CFile* CZIPArchiveTranslator::OpenNativeFileStream( file *fsObject, unsigned int
         {
             const filePath& relPath = fsObject->relPath;
 
-            dstFile = realtimeRoot->Open( relPath.c_str(), "wb+" );
+            dstFile = realtimeRoot->Open( relPath, "wb+" );
 
             fsObject->metaData.cached = true;
         }
@@ -317,7 +317,7 @@ void CZIPArchiveTranslator::fileMetaData::OnFileDelete( void )
 
         if ( unpackRoot )
         {
-            unpackRoot->Delete( ourPath.c_str() );
+            unpackRoot->Delete( ourPath );
         }
     }
     else
@@ -326,7 +326,7 @@ void CZIPArchiveTranslator::fileMetaData::OnFileDelete( void )
 
         if ( realtimeRoot )
         {
-            realtimeRoot->Delete( ourPath.c_str() );
+            realtimeRoot->Delete( ourPath );
         }
     }
 }
@@ -362,7 +362,7 @@ bool CZIPArchiveTranslator::fileMetaData::OnFileCopy( const dirTree& tree, const
                 _localHeader header;
                 translator->seekFile( *this, header );
 
-                CFile *dstFile = unpackRoot->Open( dstPath.c_str(), "wb" );
+                CFile *dstFile = unpackRoot->Open( dstPath, "wb" );
 
                 if ( dstFile )
                 {
@@ -377,7 +377,7 @@ bool CZIPArchiveTranslator::fileMetaData::OnFileCopy( const dirTree& tree, const
             }
             else
             {
-                copySuccess = unpackRoot->Copy( ourPath.c_str(), dstPath.c_str() );
+                copySuccess = unpackRoot->Copy( ourPath, dstPath );
             }
         }
     }
@@ -388,7 +388,7 @@ bool CZIPArchiveTranslator::fileMetaData::OnFileCopy( const dirTree& tree, const
 
         if ( realtimeRoot )
         {
-            copySuccess = realtimeRoot->Copy( ourPath.c_str(), dstPath.c_str() );
+            copySuccess = realtimeRoot->Copy( ourPath, dstPath );
         }
     }
 
@@ -425,7 +425,7 @@ bool CZIPArchiveTranslator::fileMetaData::OnFileRename( const dirTree& tree, con
                 _localHeader header;
                 translator->seekFile( *this, header );
 
-                CFile *dstFile = unpackRoot->Open( dstPath.c_str(), "wb" );
+                CFile *dstFile = unpackRoot->Open( dstPath, "wb" );
 
                 if ( dstFile )
                 {
@@ -440,7 +440,7 @@ bool CZIPArchiveTranslator::fileMetaData::OnFileRename( const dirTree& tree, con
             }
             else
             {
-                success = unpackRoot->Rename( ourPath.c_str(), dstPath.c_str() );
+                success = unpackRoot->Rename( ourPath, dstPath );
             }
         }
     }
@@ -450,7 +450,7 @@ bool CZIPArchiveTranslator::fileMetaData::OnFileRename( const dirTree& tree, con
 
         if ( realtimeRoot )
         {
-            success = realtimeRoot->Rename( ourPath.c_str(), dstPath.c_str() );
+            success = realtimeRoot->Rename( ourPath, dstPath );
         }
     }
 
@@ -651,7 +651,7 @@ void CZIPArchiveTranslator::Extract( CFile& dstFile, file& info )
 
         if ( unpackRoot )
         {
-            from = unpackRoot->Open( info.relPath.c_str(), "rb" );
+            from = unpackRoot->Open( info.relPath, "rb" );
 
             if ( from )
             {
@@ -710,7 +710,7 @@ void CZIPArchiveTranslator::CacheDirectory( const directory& dir )
             _localHeader header;
             seekFile( fileEntry->metaData, header );
 
-            CFile *dst = unpackRoot->Open( fileEntry->relPath.c_str(), "wb" );
+            CFile *dst = unpackRoot->Open( fileEntry->relPath, "wb" );
 
             FileSystem::StreamCopyCount( m_file, *dst, fileEntry->metaData.sizeCompressed );
 
@@ -894,10 +894,10 @@ void CZIPArchiveTranslator::SaveDirectory( directory& dir, size_t& size )
             size += info.metaData.sizeCompressed;
 
             m_file.WriteStruct( header );
-            m_file.WriteString( info.relPath.c_str() );
+            m_file.WriteString( info.relPath );
             m_file.WriteString( info.metaData.comment );
 
-            CFile *src = unpackRoot->Open( info.relPath.c_str(), "rb" );
+            CFile *src = unpackRoot->Open( info.relPath, "rb" );
 
             FileSystem::StreamCopy( *src, m_file );
 
@@ -916,7 +916,9 @@ void CZIPArchiveTranslator::SaveDirectory( directory& dir, size_t& size )
             m_file.WriteString( info.relPath );
             m_file.WriteString( info.metaData.comment );
 
-            CFile *src = dynamic_cast <CSystemFileTranslator*> ( realtimeRoot )->OpenEx( info.relPath.c_str(), "rb", FILE_FLAG_WRITESHARE );
+            CFile *src = dynamic_cast <CSystemFileTranslator*> ( realtimeRoot )->OpenEx( info.relPath, "rb", FILE_FLAG_WRITESHARE );
+
+            assert( src != NULL );
 
             size_t actualFileSize = src->GetSize();
 
@@ -1003,7 +1005,7 @@ unsigned int CZIPArchiveTranslator::BuildCentralFileHeaders( const directory& di
         header.externalAttr     = info.metaData.externalAttr;
 
         m_file.WriteStruct( header );
-        m_file.WriteString( info.relPath.c_str() );
+        m_file.WriteString( info.relPath );
         m_file.WriteString( info.metaData.extra );
         m_file.WriteString( info.metaData.comment );
 

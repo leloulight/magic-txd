@@ -42,14 +42,7 @@ public:
 
             if ( sysTmp )
             {
-                if ( const char *sysPath = tmpDir.c_str() )
-                {
-                    sysTmp->Delete( sysPath );
-                }
-                else if ( const wchar_t *sysPath = tmpDir.w_str() )
-                {
-                    sysTmp->Delete( sysPath );
-                }
+                sysTmp->Delete( tmpDir );
             }
         }
     }
@@ -86,18 +79,7 @@ public:
                 sysTmpRoot->GetFullPathFromRoot( dirName.c_str(), false, path );
             }
 
-            CFileTranslator *uniqueRoot = NULL;
-
-            if ( const char *sysPath = path.c_str() )
-            {
-                uniqueRoot = fileSystem->CreateTranslator( sysPath );
-            }
-            else if ( const wchar_t *sysPath = path.w_str() )
-            {
-                uniqueRoot = fileSystem->CreateTranslator( sysPath );
-            }
-
-            return uniqueRoot;
+            return fileSystem->CreateTranslator( path );
         }
         return NULL;
     }
@@ -123,14 +105,7 @@ public:
             {
                 rootPath += dirName;
 
-                if ( const char *sysPath = rootPath.c_str() )
-                {
-                    resultTranslator = fileSystem->CreateTranslator( sysPath );
-                }
-                else if ( const wchar_t *sysPath = rootPath.w_str() )
-                {
-                    resultTranslator = fileSystem->CreateTranslator( sysPath );
-                }
+                resultTranslator = fileSystem->CreateTranslator( rootPath );
             }
         }
 

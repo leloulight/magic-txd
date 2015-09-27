@@ -340,6 +340,12 @@ struct AppendConsoleMessageEvent : public QEvent
     QString msg;
 };
 
+struct ConversionFinishEvent : public QEvent
+{
+    inline ConversionFinishEvent( void ) : QEvent( QEvent::User )
+    {}
+};
+
 void MassConvertWindow::postLogMessage( QString msg )
 {
     AppendConsoleMessageEvent *evt = new AppendConsoleMessageEvent( msg );
@@ -387,6 +393,13 @@ static void convThreadEntryPoint( rw::thread_t threadHandle, rw::Interface *engi
 
         module.ApplicationMain( run_cfg );
 
+        // Notify the application that we finished.
+        {
+            ConversionFinishEvent *evt = new ConversionFinishEvent();
+
+            QCoreApplication::postEvent( massconvWnd, evt );
+        }
+
         massconvWnd->postLogMessage( "\nconversion finished!\n\n" );
     }
     catch( ... )
@@ -413,6 +426,10 @@ void MassConvertWindow::OnRequestConvert( bool checked )
     // Update configuration.
     this->serialize();
 
+    // Disable the conversion button, since we cannot run two conversions at the same time in
+    // the same window.
+    this->buttonConvert->setDisabled( true );
+
     // Run some the conversion in a seperate thread.
     rw::Interface *rwEngine = this->mainwnd->GetEngine();
 
@@ -435,6 +452,13 @@ void MassConvertWindow::customEvent( QEvent *evt )
         this->logEdit->moveCursor( QTextCursor::End );
         this->logEdit->insertPlainText( appendMsgEvt->msg );
         this->logEdit->moveCursor( QTextCursor::End );
+
+        return;
+    }
+    else if ( ConversionFinishEvent *convEndEvt = dynamic_cast <ConversionFinishEvent*> ( evt ) )
+    {
+        // We can enable the conversion button again.
+        this->buttonConvert->setDisabled( false );
 
         return;
     }
