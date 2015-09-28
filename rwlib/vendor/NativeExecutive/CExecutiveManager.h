@@ -43,6 +43,10 @@ namespace ExecutiveManager
     typedef StaticPluginClassFactory <CExecThread> threadPluginContainer_t;
 };
 
+// Plugin API definitions.
+typedef ExecutiveManager::threadPluginContainer_t::pluginOffset_t threadPluginOffset;
+typedef ExecutiveManager::threadPluginContainer_t::pluginInterface threadPluginInterface;
+
 END_NATIVE_EXECUTIVE
 
 #include "CExecutiveManager.thread.h"
@@ -81,10 +85,13 @@ public:
     static CExecutiveManager* Create( void );
     static void Delete( CExecutiveManager *manager );
 
-private:
+    // USE WITH CAUTION.
     void            PurgeActiveObjects  ( void );
 
-public:
+    // Plugin API.
+    threadPluginOffset  RegisterThreadPlugin( size_t pluginSize, threadPluginInterface *intf );
+    void                UnregisterThreadPlugin( threadPluginOffset offset );
+
     CExecThread*    CreateThread        ( CExecThread::threadEntryPoint_t proc, void *userdata, size_t stackSize = 0 );
     void            TerminateThread     ( CExecThread *thread );    // DANGEROUS function!
     void            JoinThread          ( CExecThread *thread );    // safe function :)

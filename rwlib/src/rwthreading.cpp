@@ -1,35 +1,13 @@
 #include "StdInc.h"
 
-#include <CExecutiveManager.h>
-
-#include "pluginutil.hxx"
+#include "rwthreading.hxx"
 
 using namespace NativeExecutive;
 
 namespace rw
 {
 
-struct threadingEnvironment
-{
-    inline void Initialize( Interface *engineInterface )
-    {
-        this->nativeMan = CExecutiveManager::Create();
-    }
-
-    inline void Shutdown( Interface *engineInterface )
-    {
-        if ( CExecutiveManager *nativeMan = this->nativeMan )
-        {
-            CExecutiveManager::Delete( nativeMan );
-
-            this->nativeMan = NULL;
-        }
-    }
-
-    CExecutiveManager *nativeMan;   // (optional) NativeExecutive library handle.
-};
-
-static PluginDependantStructRegister <threadingEnvironment, RwInterfaceFactory_t> threadingEnv;
+threadingEnvRegister_t threadingEnv;
 
 inline threadingEnvironment* GetThreadingEnv( Interface *engineInterface )
 {
@@ -341,6 +319,14 @@ void CheckThreadHazards( Interface *engineInterface )
     threadingEnvironment *threadEnv = GetThreadingEnv( engineInterface );
 
     threadEnv->nativeMan->CheckHazardCondition();
+}
+
+void PurgeActiveThreadingObjects( EngineInterface *engineInterface )
+{
+    // USE WITH FRIGGIN CAUTION.
+    threadingEnvironment *threadEnv = GetThreadingEnv( engineInterface );
+
+    threadEnv->nativeMan->PurgeActiveObjects();
 }
 
 // Module initialization.

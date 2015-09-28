@@ -213,4 +213,123 @@ public:
     }
 };
 
+template <typename whatFactory, typename intoFactory>
+struct PluginDependantFactoryRegister
+{
+    inline PluginDependantFactoryRegister( void )
+    {
+        this->regFact = NULL;
+        this->offset = intoFact::INVALID_PLUGIN_OFFSET;
+    }
+    
+    inline ~PluginDependantFactoryRegister( void )
+    {
+        // I guess we do not have to unregister ourselves.
+        // We cannot guarrantee this safely anyway.
+    }
+
+    inline void RegisterPlugin( whatFactory& whatFact, intoFactory& intoFact )
+    {
+        this->_pluginInterface.constrFact = &whatFact;
+
+        this->offset =
+            intoFact.RegisterPlugin( intoFactory::ANONYMOUS_PLUGIN_ID, &this->_pluginInterface );
+
+        this->regFact = &infoFact;
+    }
+
+    inline void UnregisterPlugin( void )
+    {
+        if ( intoFactory::IsOffsetValid( this->offset ) )
+        {
+            this->regFact->UnregisterPlugin( offset );
+
+            this->offset = intoFactory::INVALID_PLUGIN_OFFSET;
+        }
+    }
+
+    typedef typename whatFactory::hostType_t regType_t;
+    typedef typename intoFactory::hostType_t hostedOn_t;
+
+    inline regType_t* GetPluginStruct( hostedOn_t *obj )
+    {
+        return intoFactory::RESOLVE_PLUGIN_STRUCT <regType_t> ( obj, this->offset );
+    }
+
+    inline const regType_t* GetConstPluginStruct( const hostedOn_t *obj )
+    {
+        return intoFactory::RESOLVE_PLUGIN_STRUCT <regType_t> ( obj, this->offset );
+    }
+
+private:
+    typedef typename intoFactory::pluginOffset_t hostedPluginOffset_t;
+    typedef typename intoFactory::pluginDescriptorType hostedPluginDesc_t;
+    
+    struct factConnectionInterface : public intoFactory::pluginInterface
+    {
+        bool OnPluginConstruct( hostedOn_t *object, hostedPluginOffset_t pluginOffset, hostedPluginDesc_t pluginId ) override
+        {
+            void *structMem = pluginId.RESOLVE_STRUCT <void> ( object, pluginOffset );
+
+            if ( structMem == NULL )
+                return false;
+
+            // Construct the thing.
+            bool constrSuccess = this->constrFact.ConstructPlacement( structMem );
+
+            if ( constrSuccess )
+            {
+                // Initialize the struct.
+                regType_t *newObj = (regType_t*)structMem;
+
+                try
+                {
+                    newObj->Initialize( object );
+                }
+                catch( ... )
+                {
+                    this->constrFact.DestroyPlacement( newObj );
+
+                    throw;
+                }
+            }
+
+            return constrSuccess;
+        }
+
+        void OnPluginDestruct( hostedOn_t *object, hostedPluginOffset_t pluginOffset, hostedPluginDesc_t pluginId ) override
+        {
+            regType_t *constrObj = pluginId.RESOLVE_STRUCT <regType_t> ( object, pluginOffset );
+
+            if ( constrObj == NULL )
+                return;
+
+            // First deinitialize the thing.
+            {
+                constrObj->Shutdown( object );
+            }
+
+            // Now destroy it.
+            this->constrFact.DestroyPlacement( constrObj );
+        }
+
+        bool OnPluginAssign( hostedOn_t *dstObject, const hostedOn_t *srcObject, hostedPluginOffset_t pluginOffset, hostedPluginDesc_t pluginId ) override
+        {
+            // Assign stuff, I guess.
+            regType_t *dstConstrObj = pluginId.RESOLVE_STRUCT <regType_t> ( dstObject, pluginOffset );
+            const regType_t *srcConstrObj = pluginId.RESOLVE_STRUCT  <regType_t> ( srcObject, pluginOffset );
+
+            // Do it, eh.
+            return this->constrFact.Assign( dstConstrObj, srcConstrObj );
+        }
+
+        whatFactory *constrFact;
+    };
+    factConnectionInterface _pluginInterface;
+
+    intoFactory *regFact;
+
+    hostedPluginOffset_t offset;
+};
+
 #endif //_PLUGIN_HELPERS_

@@ -5,6 +5,8 @@
 
 #include "pluginutil.hxx"
 
+#include "rwconf.hxx"
+
 namespace rw
 {
 

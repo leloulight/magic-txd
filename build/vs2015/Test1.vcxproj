@@ -651,6 +651,7 @@
     <ClInclude Include="..\..\include\resource.h" />
     <ClInclude Include="..\..\include\rwfswrap.h" />
     <ClInclude Include="..\..\include\rwversiondialog.h" />
+    <ClInclude Include="..\..\include\taskcompletionwindow.h" />
     <ClInclude Include="..\..\include\texnamewindow.h" />
     <ClInclude Include="..\..\include\txdadddialog.h" />
     <ClInclude Include="..\..\include\txdlog.h" />

@@ -2,7 +2,7 @@
 
 #include <sys/stat.h>
 
-#include "rwinterface.hxx"
+#include "rwconf.hxx"
 
 namespace rw
 {
@@ -75,22 +75,18 @@ static ANSIFileInterface _defaultFileInterface;
 #pragma warning(pop)
 
 // Use this function to change the location of library file activity.
-void Interface::SetFileInterface( FileInterface *intf )
+void rwConfigBlock::SetFileInterface( FileInterface *intf )
 {
-    EngineInterface *engineInterface = (EngineInterface*)this;
+    scoped_rwlock_writer <rwlock> lock( GetConfigLock() );
 
-    scoped_rwlock_writer <rwlock> lock( GetReadWriteLock( engineInterface ) );
-
-    engineInterface->customFileInterface = intf;
+    this->customFileInterface = intf;
 }
 
-FileInterface* Interface::GetFileInterface( void )
+FileInterface* rwConfigBlock::GetFileInterface( void ) const
 {
-    EngineInterface *engineInterface = (EngineInterface*)this;
+    scoped_rwlock_reader <rwlock> lock( GetConfigLock() );
 
-    scoped_rwlock_reader <rwlock> lock( GetReadWriteLock( engineInterface ) );
-
-    FileInterface *ourInterface = engineInterface->customFileInterface;
+    FileInterface *ourInterface = this->customFileInterface;
 
     if ( ourInterface == NULL )
     {
@@ -98,6 +94,20 @@ FileInterface* Interface::GetFileInterface( void )
     }
 
     return ourInterface;
+}
+
+void Interface::SetFileInterface( FileInterface *intf )
+{
+    EngineInterface *engineInterface = (EngineInterface*)this;
+
+    GetEnvironmentConfigBlock( engineInterface ).SetFileInterface( intf );
+}
+
+FileInterface* Interface::GetFileInterface( void )
+{
+    const EngineInterface *engineInterface = (const EngineInterface*)this;
+
+    return GetConstEnvironmentConfigBlock( engineInterface ).GetFileInterface();
 }
 
 };

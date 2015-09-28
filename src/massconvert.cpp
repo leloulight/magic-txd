@@ -77,7 +77,7 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
     this->setWindowTitle( "Mass Conversion" );
     this->setAttribute( Qt::WA_DeleteOnClose );
 
-    this->setWindowModality( Qt::WindowModal );
+    this->setWindowFlags( this->windowFlags() & ~Qt::WindowContextHelpButtonHint );
 
     // Display lots of stuff.
     QHBoxLayout *mainLayout = new QHBoxLayout( this );
@@ -253,16 +253,6 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
     this->convConsistencyLock = rw::CreateReadWriteLock( rwEngine );
 
     this->conversionThread = NULL;
-
-    // Remember some important stuff.
-    rwconf.warningManager = rwEngine->GetWarningManager();
-    rwconf.palRuntimeType = rwEngine->GetPaletteRuntime();
-    rwconf.dxtRuntimeType = rwEngine->GetDXTRuntime();
-    rwconf.fixIncompatibleRasters = rwEngine->GetFixIncompatibleRasters();
-    rwconf.dxtPackedDecompression = rwEngine->GetDXTPackedDecompression();
-    rwconf.ignoreSerializationRegions = rwEngine->GetIgnoreSerializationBlockRegions();
-    rwconf.warningLevel = rwEngine->GetWarningLevel();
-    rwconf.ignoreSecureWarnings = rwEngine->GetIgnoreSecureWarnings();
 }
 
 MassConvertWindow::~MassConvertWindow( void )
@@ -296,16 +286,6 @@ MassConvertWindow::~MassConvertWindow( void )
     rw::CloseReadWriteLock( rwEngine, this->convConsistencyLock );
 
     this->serialize();
-
-    // Restore some important stuff.
-    rwEngine->SetWarningManager( rwconf.warningManager );
-    rwEngine->SetPaletteRuntime( rwconf.palRuntimeType );
-    rwEngine->SetDXTRuntime( rwconf.dxtRuntimeType );
-    rwEngine->SetFixIncompatibleRasters( rwconf.fixIncompatibleRasters );
-    rwEngine->SetDXTPackedDecompression( rwconf.dxtPackedDecompression );
-    rwEngine->SetIgnoreSerializationBlockRegions( rwconf.ignoreSerializationRegions );
-    rwEngine->SetWarningLevel( rwconf.warningLevel );
-    rwEngine->SetIgnoreSecureWarnings( rwconf.ignoreSecureWarnings );
 }
 
 void MassConvertWindow::serialize( void )
@@ -384,6 +364,9 @@ static void convThreadEntryPoint( rw::thread_t threadHandle, rw::Interface *engi
     {
         run_cfg = massconv->txdgenConfig;
     }
+
+    // Any RenderWare configuration that we set on this thread should count for this thread only.
+    rw::AssignThreadedRuntimeConfig( engineInterface );
 
     try
     {

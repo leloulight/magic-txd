@@ -15,6 +15,7 @@
 #include <list>
 #include "rwlist.hpp"
 #include <CFileSystem.common.h>
+#include <atomic>
 
 template <typename numberType>
 class InfiniteCollisionlessBlockAllocator
@@ -1383,7 +1384,7 @@ struct StaticPluginClassFactory
 
     static const unsigned int ANONYMOUS_PLUGIN_ID = 0xFFFFFFFF;
 
-    unsigned int aliveClasses;
+    std::atomic <unsigned int> aliveClasses;
 
     inline StaticPluginClassFactory( void )
     {
@@ -1701,6 +1702,24 @@ public:
         basicClassConstructor constructor;
 
         return ClonePlacementEx( memPtr, srcObject, constructor );
+    }
+
+    // Assignment is good.
+    inline bool Assign( classType *dstObj, const classType *srcObj )
+    {
+        // First we assign the language object.
+        // Not that hard.
+        try
+        {
+            *dstObj = *srcObj;
+        }
+        catch( ... )
+        {
+            return false;
+        }
+
+        // Next we should assign the plugin blocks.
+        return structRegistry.AssignPluginBlock( dstObj, srcObj );
     }
 
     inline void DestroyPlacement( classType *classObject )

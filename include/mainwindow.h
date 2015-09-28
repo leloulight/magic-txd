@@ -80,7 +80,7 @@ public:
 
     static const char* GetTXDPlatformString( rw::TexDictionary *txd );
 
-    static void SetTXDPlatformString( rw::TexDictionary *txd, const char *platform );
+    void SetTXDPlatformString( rw::TexDictionary *txd, const char *platform );
 
 private:
     void DoAddTexture( const TexAddDialog::texAddOperation& params );

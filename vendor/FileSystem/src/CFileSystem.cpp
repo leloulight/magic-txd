@@ -88,9 +88,15 @@ inline bool _CheckLibraryIntegrity( void )
     return isValid;
 }
 
+// Sub modules.
+extern void registerRandomGeneratorExtension( void );
+extern void unregisterRandomGeneratorExtension( void );
+
 AINLINE void InitializeLibrary( void )
 {
     // Register addons.
+    registerRandomGeneratorExtension();
+
     CFileSystemNative::RegisterZIPDriver();
     CFileSystemNative::RegisterIMGDriver();
 }
@@ -100,6 +106,8 @@ AINLINE void ShutdownLibrary( void )
     // Unregister all addons.
     CFileSystemNative::UnregisterIMGDriver();
     CFileSystemNative::UnregisterZIPDriver();
+
+    unregisterRandomGeneratorExtension();
 }
 
 // Creators of the CFileSystem instance.

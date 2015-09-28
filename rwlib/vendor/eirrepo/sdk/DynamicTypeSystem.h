@@ -906,8 +906,6 @@ private:
 
         if ( inheritedClass != NULL )
         {
-            scoped_rwlock_read subLock( this->lockProvider, inheritedClass->typeLock );
-
             parentConstructionSuccess = ConstructPlugins( sysPtr, inheritedClass, rtObj );
         }
 
@@ -921,8 +919,6 @@ private:
             {
                 if ( inheritedClass != NULL )
                 {
-                    scoped_rwlock_read subLock( this->lockProvider, inheritedClass->typeLock );
-                    
                     DestructPlugins( sysPtr, inheritedClass, rtObj );
                 }
             }
@@ -951,8 +947,6 @@ private:
 
         if ( inheritedType != NULL )
         {
-            scoped_rwlock_read subLock( this->lockProvider, inheritedType->typeLock );
-
             parentAssignmentSuccess = AssignPlugins( sysPtr, inheritedType, dstRtObj, srcRtObj );
         }
 
@@ -987,8 +981,6 @@ private:
 
         if ( typeInfoBase *inheritedClass = typeInfo->inheritsFrom )
         {
-            scoped_rwlock_read subLock( this->lockProvider, inheritedClass->typeLock );
-
             DestructPlugins( sysPtr, inheritedClass, rtObj );
         }
     }
@@ -1080,6 +1072,10 @@ public:
             // Reference the type info.
             ReferenceTypeInfo( typeInfo );
 
+            // NOTE: TYPE INFOs do NOT CHANGE while they are referenced.
+            // That is why we can loop through the plugin containers without referencing
+            // the type infos!
+
             // Get the specialization interface.
             typeInterface *tInterface = typeInfo->tInterface;
 
@@ -1110,12 +1106,7 @@ public:
             {
                 // Only proceed if we have successfully constructed the object struct.
                 // Now construct the plugins.
-                bool pluginConstructSuccess;
-                {
-                    scoped_rwlock_read subLock( this->lockProvider, typeInfo->typeLock );
-
-                    pluginConstructSuccess = ConstructPlugins( sysPtr, typeInfo, objTypeMeta );
-                }
+                bool pluginConstructSuccess = ConstructPlugins( sysPtr, typeInfo, objTypeMeta );
 
                 if ( pluginConstructSuccess )
                 {
@@ -1241,22 +1232,12 @@ public:
                     // First we have to construct the plugins.
                     bool pluginSuccess = false;
 
-                    bool pluginConstructSuccess;
-                    {
-                        scoped_rwlock_read subLock( this->lockProvider, typeInfo->typeLock );
-
-                        pluginConstructSuccess = ConstructPlugins( sysPtr, typeInfo, objTypeMeta );
-                    }
+                    bool pluginConstructSuccess = ConstructPlugins( sysPtr, typeInfo, objTypeMeta );
 
                     if ( pluginConstructSuccess )
                     {
                         // Now assign the plugins from the source object.
-                        bool pluginAssignSuccess;
-                        {
-                            scoped_rwlock_read subLock( this->lockProvider, typeInfo->typeLock );
-
-                            pluginAssignSuccess = AssignPlugins( sysPtr, typeInfo, objTypeMeta, toBeCloned );
-                        }
+                        bool pluginAssignSuccess = AssignPlugins( sysPtr, typeInfo, objTypeMeta, toBeCloned );
 
                         if ( pluginAssignSuccess )
                         {
@@ -1512,11 +1493,7 @@ public:
         typeInterface *tInterface = typeInfo->tInterface;
 
         // Destroy all object plugins.
-        {
-            scoped_rwlock_read subLock( this->lockProvider, typeInfo->typeLock );
-
-            DestructPlugins( sysPtr, typeInfo, typeStruct );
-        }
+        DestructPlugins( sysPtr, typeInfo, typeStruct );
 
         // Pointer to the language object.
         void *langObj = (void*)( typeStruct + 1 );

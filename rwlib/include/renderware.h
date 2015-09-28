@@ -548,6 +548,10 @@ public:
 Interface*  CreateEngine( LibraryVersion engine_version );
 void        DeleteEngine( Interface *theEngine );
 
+// Configuration interface.
+void AssignThreadedRuntimeConfig( Interface *engineInterface );
+void ReleaseThreadedRuntimeConfig( Interface *engineInterface );
+
 // Framework entry points.
 #ifdef WIN32
 BOOL WINAPI frameworkEntryPoint_win32( HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nCmdShow );

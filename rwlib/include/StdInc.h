@@ -45,8 +45,6 @@ struct EngineInterface : public Interface
     // DO NOT ACCESS THE FIELDS DIRECTLY.
     // THEY MUST BE ACCESSED UNDER MUTUAL EXCLUSION/CONTEXT LOCKING.
 
-    LibraryVersion version;     // version of the output files (III, VC, SA, Manhunt, ...)
-
     // General type system.
     RwMemoryAllocator memAlloc;
 
@@ -116,29 +114,10 @@ struct EngineInterface : public Interface
     };
     rasterTypeInterface _rasterTypeInterface;
 
-private:
-    FileInterface *customFileInterface;
-
-    WarningManagerInterface *warningManager;
-
-    ePaletteRuntimeType palRuntimeType;
-    eDXTCompressionMethod dxtRuntimeType;
-    
-    int warningLevel;
-    bool ignoreSecureWarnings;
-
-    bool fixIncompatibleRasters;
-    bool dxtPackedDecompression;
-
-    bool ignoreSerializationBlockRegions;
-
-public:
     // Information about the running application.
     std::string applicationName;
     std::string applicationVersion;
     std::string applicationDescription;
-
-    bool enableMetaDataTagging;
 };
 
 typedef EngineInterface::RwTypeSystem RwTypeSystem;

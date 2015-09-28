@@ -12,16 +12,61 @@
 
 #include "StdInc.h"
 
+#include "CFileSystem.internal.h"
+
+#include <PluginHelpers.h>
+
 #include <random>
 
 namespace fsrandom
 {
 
-static std::random_device _true_random;
+struct fsRandomGeneratorEnv
+{
+    inline void Initialize( CFileSystemNative *fsys )
+    {
+        return;
+    }
+
+    inline void Shutdown( CFileSystemNative *fsys )
+    {
+        return;
+    }
+
+    inline void operator = ( const fsRandomGeneratorEnv& right )
+    {
+        // Cannot assign random number generators.
+        return;
+    }
+
+    // This may not be available on all systems.
+    std::random_device _true_random;
+};
+
+static PluginDependantStructRegister <fsRandomGeneratorEnv, fileSystemFactory_t> fsRandomGeneratorRegister;
+
+inline fsRandomGeneratorEnv* GetRandomEnv( CFileSystem *fsys )
+{
+    return fsRandomGeneratorRegister.GetPluginStruct( (CFileSystemNative*)fsys );
+}
 
 unsigned long getSystemRandom( CFileSystem *sys )
 {
-    return _true_random();
+    fsRandomGeneratorEnv *env = GetRandomEnv( sys );
+
+    assert( env != NULL );
+
+    return env->_true_random();
 }
 
 };
+
+void registerRandomGeneratorExtension( void )
+{
+    fsrandom::fsRandomGeneratorRegister.RegisterPlugin( _fileSysFactory );
+}
+
+void unregisterRandomGeneratorExtension( void )
+{
+    fsrandom::fsRandomGeneratorRegister.UnregisterPlugin();
+}

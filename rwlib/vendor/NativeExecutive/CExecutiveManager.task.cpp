@@ -128,6 +128,7 @@ static void __stdcall TaskShedulerThread( CExecThread *threadInfo, void *param )
 
 void CExecutiveManager::InitializeTasks( void )
 {
+#if 0
     // Initialize synchronization objects.
     shedulerThread = CreateThread( TaskShedulerThread, NULL );
 
@@ -136,10 +137,16 @@ void CExecutiveManager::InitializeTasks( void )
         // Start the thread.
         shedulerThread->Resume();
     }
+#else
+    // TODO: make this object based, so the user can create a task sheduler on demand.
+    // Then we can re-enable this logic.
+    shedulerThread = NULL;
+#endif
 }
 
 void CExecutiveManager::ShutdownTasks( void )
 {
+#if 0
     if ( shedulerThread )
     {
         // Shutdown synchronization objects.
@@ -149,6 +156,7 @@ void CExecutiveManager::ShutdownTasks( void )
 
         shedulerThread = NULL;
     }
+#endif  
 }
 
 struct execWrapStruct

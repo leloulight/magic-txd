@@ -63,28 +63,25 @@ MainWindow::MainWindow(QString appPath, QWidget *parent) :
 
     this->hasOpenedTXDFileInfo = false;
 
-    // Initialize the filesystem.
-    this->fileSystem = CFileSystem::Create();
+    // Initialize the RenderWare engine.
+    rw::LibraryVersion engineVersion;
+
+    // This engine version is the default version we create resources in.
+    // Resources can change their version at any time, so we do not have to change this.
+    engineVersion.rwLibMajor = 3;
+    engineVersion.rwLibMinor = 6;
+    engineVersion.rwRevMajor = 0;
+    engineVersion.rwRevMinor = 3;
+
+    this->rwEngine = rw::CreateEngine( engineVersion );
+
+    if ( this->rwEngine == NULL )
+    {
+        throw std::exception( "failed to initialize the RenderWare engine" );
+    }
 
     try
     {
-        // Initialize the RenderWare engine.
-        rw::LibraryVersion engineVersion;
-
-        // This engine version is the default version we create resources in.
-        // Resources can change their version at any time, so we do not have to change this.
-        engineVersion.rwLibMajor = 3;
-        engineVersion.rwLibMinor = 6;
-        engineVersion.rwRevMajor = 0;
-        engineVersion.rwRevMinor = 3;
-
-        this->rwEngine = rw::CreateEngine( engineVersion );
-
-        if ( this->rwEngine == NULL )
-        {
-            throw std::exception( "failed to initialize the RenderWare engine" );
-        }
-
         // Set some typical engine properties.
         this->rwEngine->SetIgnoreSerializationBlockRegions( true );
         this->rwEngine->SetIgnoreSecureWarnings( false );
@@ -102,6 +99,9 @@ MainWindow::MainWindow(QString appPath, QWidget *parent) :
         metaInfo.description = "by DK22Pac and The_GTA (https://github.com/quiret/magic-txd)";
 
         this->rwEngine->SetApplicationInfo( metaInfo );
+
+        // Initialize the filesystem.
+        this->fileSystem = CFileSystem::Create();
 
         try
         {
@@ -523,15 +523,15 @@ MainWindow::MainWindow(QString appPath, QWidget *parent) :
         }
         catch( ... )
         {
-            // Delete our engine again.
-            rw::DeleteEngine( this->rwEngine );
+            CFileSystem::Destroy( this->fileSystem );
 
             throw;
         }
     }
     catch( ... )
     {
-        CFileSystem::Destroy( this->fileSystem );
+        // Delete our engine again.
+        rw::DeleteEngine( this->rwEngine );
 
         throw;
     }
@@ -1598,7 +1598,16 @@ void MainWindow::SetTXDPlatformString( rw::TexDictionary *txd, const char *platf
 
         if ( texRaster )
         {
-            rw::ConvertRasterTo( texRaster, platform );
+            try
+            {
+                rw::ConvertRasterTo( texRaster, platform );
+            }
+            catch( rw::RwException& except )
+            {
+                this->txdLog->showError( QString::fromStdString( std::string( "failed to change platform of texture '" ) + texHandle->GetName() + "': " + except.message ) );
+
+                // Continue changing platform.
+            }
         }
     }
 }

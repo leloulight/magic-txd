@@ -6,6 +6,8 @@
 
 #include "rwinterface.hxx"
 
+#include "rwthreading.hxx"
+
 namespace rw
 {
 
@@ -56,9 +58,6 @@ RwInterfaceFactory_t engineFactory;
 
 EngineInterface::EngineInterface( void )
 {
-    // We default to the San Andreas engine.
-    this->version = KnownVersions::getGameVersion( KnownVersions::SA );
-
     // Set up the type system.
     this->typeSystem._memAlloc = &memAlloc;
     this->typeSystem.lockProvider.engineInterface = this;
@@ -75,26 +74,6 @@ EngineInterface::EngineInterface( void )
         this->rwobjTypeInfo = this->typeSystem.RegisterAbstractType <RwObject> ( "rwobj" );
         this->textureTypeInfo = this->typeSystem.RegisterStructType <TextureBase> ( "texture", this->rwobjTypeInfo );
     }
-
-    // Setup standard members.
-    this->customFileInterface = NULL;
-
-    this->warningManager = NULL;
-    this->warningLevel = 3;
-    this->ignoreSecureWarnings = true;
-
-    // Only use the native toolchain.
-    this->palRuntimeType = PALRUNTIME_NATIVE;
-
-    // Prefer the native toolchain.
-    this->dxtRuntimeType = DXTRUNTIME_NATIVE;
-
-    this->fixIncompatibleRasters = true;
-    this->dxtPackedDecompression = false;
-
-    this->ignoreSerializationBlockRegions = false;
-
-    this->enableMetaDataTagging = true;
 }
 
 RwObject::RwObject( Interface *engineInterface, void *construction_params )
@@ -133,18 +112,14 @@ void Interface::SetVersion( LibraryVersion version )
 {
     EngineInterface *engineInterface = (EngineInterface*)this;
 
-    scoped_rwlock_writer <rwlock> lock( GetReadWriteLock( engineInterface ) );
-
-    engineInterface->version = version;
+    GetEnvironmentConfigBlock( engineInterface ).SetVersion( version );
 }
 
 LibraryVersion Interface::GetVersion( void ) const
 {
-    EngineInterface *engineInterface = (EngineInterface*)this;
+    const EngineInterface *engineInterface = (const EngineInterface*)this;
 
-    scoped_rwlock_reader <rwlock> lock( GetReadWriteLock( engineInterface ) );
-
-    return engineInterface->version;
+    return GetConstEnvironmentConfigBlock( engineInterface ).GetVersion();
 }
 
 void Interface::SetApplicationInfo( const softwareMetaInfo& metaInfo )
@@ -185,19 +160,14 @@ void Interface::SetMetaDataTagging( bool enabled )
 {
     EngineInterface *engineInterface = (EngineInterface*)this;
 
-    scoped_rwlock_writer <rwlock> lock( GetReadWriteLock( engineInterface ) );
-
-    // Meta data tagging is useful so that people will find you if they need to (debugging, etc).
-    engineInterface->enableMetaDataTagging = enabled;
+    GetEnvironmentConfigBlock( engineInterface ).SetMetaDataTagging( enabled );
 }
 
 bool Interface::GetMetaDataTagging( void ) const
 {
     const EngineInterface *engineInterface = (const EngineInterface*)this;
 
-    scoped_rwlock_reader <rwlock> lock( GetReadWriteLock( engineInterface ) );
-
-    return engineInterface->enableMetaDataTagging;
+    return GetConstEnvironmentConfigBlock( engineInterface ).GetMetaDataTagging();
 }
 
 std::string GetRunningSoftwareInformation( EngineInterface *engineInterface, bool outputShort )
@@ -207,8 +177,10 @@ std::string GetRunningSoftwareInformation( EngineInterface *engineInterface, boo
     {
         scoped_rwlock_reader <rwlock> lock( GetReadWriteLock( engineInterface ) );
 
+        const rwConfigBlock& cfgBlock = GetConstEnvironmentConfigBlock( engineInterface );
+
         // Only output anything if we enable meta data tagging.
-        if ( engineInterface->enableMetaDataTagging )
+        if ( cfgBlock.GetMetaDataTagging() )
         {
             // First put the software name.
             bool hasAppName = false;
@@ -498,252 +470,118 @@ void Interface::SetWarningManager( WarningManagerInterface *warningMan )
 {
     EngineInterface *engineInterface = (EngineInterface*)this;
 
-    scoped_rwlock_writer <rwlock> lock( GetReadWriteLock( engineInterface ) );
-
-    engineInterface->warningManager = warningMan;
+    GetEnvironmentConfigBlock( engineInterface ).SetWarningManager( warningMan );
 }
 
 WarningManagerInterface* Interface::GetWarningManager( void ) const
 {
-    EngineInterface *engineInterface = (EngineInterface*)this;
+    const EngineInterface *engineInterface = (const EngineInterface*)this;
 
-    scoped_rwlock_reader <rwlock> lock( GetReadWriteLock( engineInterface ) );
-
-    return engineInterface->warningManager;
+    return GetConstEnvironmentConfigBlock( engineInterface ).GetWarningManager();
 }
 
 void Interface::SetWarningLevel( int level )
 {
     EngineInterface *engineInterface = (EngineInterface*)this;
 
-    scoped_rwlock_writer <rwlock> lock( GetReadWriteLock( engineInterface ) );
-
-    engineInterface->warningLevel = level;
+    GetEnvironmentConfigBlock( engineInterface ).SetWarningLevel( level );
 }
 
 int Interface::GetWarningLevel( void ) const
 {
-    EngineInterface *engineInterface = (EngineInterface*)this;
+    const EngineInterface *engineInterface = (const EngineInterface*)this;
 
-    scoped_rwlock_reader <rwlock> lock( GetReadWriteLock( engineInterface ) );
-
-    return engineInterface->warningLevel;
-}
-
-struct warningHandlerPlugin
-{
-    // The purpose of the warning handler stack is to fetch warning output requests and to reroute them
-    // so that they make more sense.
-    std::vector <WarningHandler*> warningHandlerStack;
-
-    inline void Initialize( Interface *engineInterface )
-    {
-
-    }
-
-    inline void Shutdown( Interface *engineInterface )
-    {
-        // We unregister all warning handlers.
-        // The deallocation has to happen through the registree.
-    }
-};
-
-static PluginDependantStructRegister <warningHandlerPlugin, RwInterfaceFactory_t> warningHandlerPluginRegister;
-
-void Interface::PushWarning( const std::string& message )
-{
-    EngineInterface *engineInterface = (EngineInterface*)this;
-
-    scoped_rwlock_writer <rwlock> lock( GetReadWriteLock( engineInterface ) );
-
-    if ( engineInterface->warningLevel > 0 )
-    {
-        // If we have a warning handler, we redirect the message to it instead.
-        // The warning handler is supposed to be an internal class that only the library has access to.
-        WarningHandler *currentWarningHandler = NULL;
-
-        warningHandlerPlugin *whandlerEnv = warningHandlerPluginRegister.GetPluginStruct( engineInterface );
-
-        if ( whandlerEnv )
-        {
-            if ( !whandlerEnv->warningHandlerStack.empty() )
-            {
-                currentWarningHandler = whandlerEnv->warningHandlerStack.back();
-            }
-        }
-
-        if ( currentWarningHandler )
-        {
-            // Give it the warning.
-            currentWarningHandler->OnWarningMessage( message );
-        }
-        else
-        {
-            // Else we just post the warning to the runtime.
-            if ( WarningManagerInterface *warningMan = engineInterface->warningManager )
-            {
-                warningMan->OnWarning( message );
-            }
-        }
-    }
-}
-
-void GlobalPushWarningHandler( EngineInterface *engineInterface, WarningHandler *theHandler )
-{
-    warningHandlerPlugin *whandlerEnv = warningHandlerPluginRegister.GetPluginStruct( engineInterface );
-
-    if ( whandlerEnv )
-    {
-        scoped_rwlock_writer <rwlock> lock( GetReadWriteLock( engineInterface ) );
-
-        whandlerEnv->warningHandlerStack.push_back( theHandler );
-    }
-}
-
-void GlobalPopWarningHandler( EngineInterface *engineInterface )
-{
-    warningHandlerPlugin *whandlerEnv = warningHandlerPluginRegister.GetPluginStruct( engineInterface );
-
-    if ( whandlerEnv )
-    {
-        scoped_rwlock_writer <rwlock> lock( GetReadWriteLock( engineInterface ) );
-
-        assert( whandlerEnv->warningHandlerStack.empty() == false );
-
-        whandlerEnv->warningHandlerStack.pop_back();
-    }
+    return GetConstEnvironmentConfigBlock( engineInterface ).GetWarningLevel();
 }
 
 void Interface::SetIgnoreSecureWarnings( bool doIgnore )
 {
     EngineInterface *engineInterface = (EngineInterface*)this;
 
-    scoped_rwlock_writer <rwlock> lock( GetReadWriteLock( engineInterface ) );
-
-    engineInterface->ignoreSecureWarnings = doIgnore;
+    GetEnvironmentConfigBlock( engineInterface ).SetIgnoreSecureWarnings( doIgnore );
 }
 
 bool Interface::GetIgnoreSecureWarnings( void ) const
 {
-    EngineInterface *engineInterface = (EngineInterface*)this;
+    const EngineInterface *engineInterface = (const EngineInterface*)this;
 
-    scoped_rwlock_reader <rwlock> lock( GetReadWriteLock( engineInterface ) );
-
-    return engineInterface->ignoreSecureWarnings;
+    return GetConstEnvironmentConfigBlock( engineInterface ).GetIgnoreSecureWarnings();
 }
 
 bool Interface::SetPaletteRuntime( ePaletteRuntimeType palRunType )
 {
     EngineInterface *engineInterface = (EngineInterface*)this;
 
-    scoped_rwlock_writer <rwlock> lock( GetReadWriteLock( engineInterface ) );
-
-    // Make sure we support this runtime.
-    bool success = false;
-
-    if ( palRunType == PALRUNTIME_NATIVE )
-    {
-        // We always support the native palette system.
-        engineInterface->palRuntimeType = palRunType;
-
-        success = true;
-    }
-#ifdef RWLIB_INCLUDE_LIBIMAGEQUANT
-    else if ( palRunType == PALRUNTIME_PNGQUANT )
-    {
-        // Depends on whether we compiled with support for it.
-        engineInterface->palRuntimeType = palRunType;
-
-        success = true;
-    }
-#endif //RWLIB_INCLUDE_LIBIMAGEQUANT
-
-    return success;
+    return GetEnvironmentConfigBlock( engineInterface ).SetPaletteRuntime( palRunType );
 }
 
 ePaletteRuntimeType Interface::GetPaletteRuntime( void ) const
 {
     const EngineInterface *engineInterface = (const EngineInterface*)this;
 
-    scoped_rwlock_reader <rwlock> lock( GetReadWriteLock( engineInterface ) );
-
-    return engineInterface->palRuntimeType;
+    return GetConstEnvironmentConfigBlock( engineInterface ).GetPaletteRuntime();
 }
 
 void Interface::SetDXTRuntime( eDXTCompressionMethod dxtRunType )
 {
     EngineInterface *engineInterface = (EngineInterface*)this;
 
-    scoped_rwlock_writer <rwlock> lock( GetReadWriteLock( engineInterface ) );
-
-    engineInterface->dxtRuntimeType = dxtRunType;
+    GetEnvironmentConfigBlock( engineInterface ).SetDXTRuntime( dxtRunType );
 }
 
 eDXTCompressionMethod Interface::GetDXTRuntime( void ) const
 {
     const EngineInterface *engineInterface = (const EngineInterface*)this;
 
-    scoped_rwlock_reader <rwlock> lock( GetReadWriteLock( engineInterface ) );
-
-    return engineInterface->dxtRuntimeType;
+    return GetConstEnvironmentConfigBlock( engineInterface ).GetDXTRuntime();
 }
 
 void Interface::SetFixIncompatibleRasters( bool doFix )
 {
     EngineInterface *engineInterface = (EngineInterface*)this;
 
-    scoped_rwlock_writer <rwlock> lock( GetReadWriteLock( engineInterface ) );
-
-    engineInterface->fixIncompatibleRasters = doFix;
+    GetEnvironmentConfigBlock( engineInterface ).SetFixIncompatibleRasters( doFix );
 }
 
 bool Interface::GetFixIncompatibleRasters( void ) const
 {
     const EngineInterface *engineInterface = (const EngineInterface*)this;
 
-    scoped_rwlock_reader <rwlock> lock( GetReadWriteLock( engineInterface ) );
-
-    return engineInterface->fixIncompatibleRasters;
+    return GetConstEnvironmentConfigBlock( engineInterface ).GetFixIncompatibleRasters();
 }
 
 void Interface::SetDXTPackedDecompression( bool packedDecompress )
 {
     EngineInterface *engineInterface = (EngineInterface*)this;
 
-    scoped_rwlock_writer <rwlock> lock( GetReadWriteLock( engineInterface ) );
-
-    engineInterface->dxtPackedDecompression = packedDecompress;
+    GetEnvironmentConfigBlock( engineInterface ).SetDXTPackedDecompression( packedDecompress );
 }
 
 bool Interface::GetDXTPackedDecompression( void ) const
 {
     const EngineInterface *engineInterface = (const EngineInterface*)this;
 
-    scoped_rwlock_reader <rwlock> lock( GetReadWriteLock( engineInterface ) );
-
-    return engineInterface->dxtPackedDecompression;
+    return GetConstEnvironmentConfigBlock( engineInterface ).GetDXTPackedDecompression();
 }
 
 void Interface::SetIgnoreSerializationBlockRegions( bool doIgnore )
 {
     EngineInterface *engineInterface = (EngineInterface*)this;
 
-    scoped_rwlock_writer <rwlock> lock( GetReadWriteLock( engineInterface ) );
-
-    engineInterface->ignoreSerializationBlockRegions = doIgnore;
+    GetEnvironmentConfigBlock( engineInterface ).SetIgnoreSerializationBlockRegions( doIgnore );
 }
 
 bool Interface::GetIgnoreSerializationBlockRegions( void ) const
 {
     const EngineInterface *engineInterface = (const EngineInterface*)this;
 
-    scoped_rwlock_reader <rwlock> lock( GetReadWriteLock( engineInterface ) );
-
-    return engineInterface->ignoreSerializationBlockRegions;
+    return GetConstEnvironmentConfigBlock( engineInterface ).GetIgnoreSerializationBlockRegions();
 }
 
 // Static library object that takes care of initializing the module dependencies properly.
+extern void registerConfigurationEnvironment( void );
 extern void registerThreadingEnvironment( void );
+extern void registerWarningHandlerEnvironment( void );
 extern void registerRasterConsistency( void );
 extern void registerEventSystem( void );
 extern void registerTXDPlugins( void );
@@ -754,6 +592,8 @@ extern void registerImagingPlugin( void );
 extern void registerWindowingSystem( void );
 extern void registerDriverEnvironment( void );
 extern void registerDrawingLayerEnvironment( void );
+
+extern void registerConfigurationBlockDispatching( void );
 
 static bool hasInitialized = false;
 
@@ -783,13 +623,16 @@ Interface* CreateEngine( LibraryVersion theVersion )
         // Verify data constants before we create a valid engine.
         if ( VerifyLibraryIntegrity() )
         {
+            // Configuration comes first.
+            registerConfigurationEnvironment();
+
             // Initialize our plugins first.
-            warningHandlerPluginRegister.RegisterPlugin( engineFactory );
             refCountRegister.RegisterPlugin( engineFactory );
             rwlockProvider.RegisterPlugin( engineFactory );
 
             // Now do the main modules.
             registerThreadingEnvironment();
+            registerWarningHandlerEnvironment();
             registerRasterConsistency();
             registerEventSystem();
             registerStreamGlobalPlugins();
@@ -800,6 +643,11 @@ Interface* CreateEngine( LibraryVersion theVersion )
             registerWindowingSystem();
             registerDriverEnvironment();
             registerDrawingLayerEnvironment();
+
+            // After all plugins registered themselves, we know that
+            // each configuration entry is properly initialized.
+            // Now we can create a configuration block in the interface!
+            registerConfigurationBlockDispatching();
 
             hasInitialized = true;
         }
@@ -825,8 +673,13 @@ void DeleteEngine( Interface *theEngine )
 {
     assert( hasInitialized == true );
 
+    EngineInterface *engineInterface = (EngineInterface*)theEngine;
+
+    // Kill everything threading related, so we can terminate (WARNING: HACK)
+    PurgeActiveThreadingObjects( engineInterface );
+
     // Destroy the engine again.
-    engineFactory.Destroy( _engineMemAlloc, (EngineInterface*)theEngine );
+    engineFactory.Destroy( _engineMemAlloc, engineInterface );
 }
 
 };

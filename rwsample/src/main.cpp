@@ -25,8 +25,32 @@ namespace rw
         return;
     }
 
+    static rwlock *testLock;
+
+    static void tentry( thread_t threadHandle, Interface *engineInterface, void *ud )
+    {
+        testLock->enter_write();
+    }
+
     int32 rwmain( Interface *engineInterface )
     {
+        // Quick lock test.
+        {
+            testLock = rw::CreateReadWriteLock( engineInterface );
+
+            testLock->enter_read();
+
+            thread_t thandle = rw::MakeThread( engineInterface, tentry, NULL );
+
+            rw::ResumeThread( engineInterface, thandle );
+
+            rw::CloseThread( engineInterface, thandle );
+
+            Sleep( 1000 );
+
+            testLock->enter_read();
+        }
+
         // Give information about the running application to the runtime.
         softwareMetaInfo metaInfo;
         metaInfo.applicationName = "RenderWare Sample";

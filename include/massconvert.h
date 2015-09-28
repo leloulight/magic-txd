@@ -118,19 +118,6 @@ private:
     QPlainTextEdit *logEdit;
     QPushButton *buttonConvert;
 
-    // Configuration of the engine we should remember.
-    struct
-    {
-        rw::WarningManagerInterface *warningManager;
-        rw::ePaletteRuntimeType palRuntimeType;
-        rw::eDXTCompressionMethod dxtRuntimeType;
-        bool fixIncompatibleRasters;
-        bool dxtPackedDecompression;
-        bool ignoreSerializationRegions;
-        int warningLevel;
-        bool ignoreSecureWarnings;
-    } rwconf;
-
 public:
     volatile rw::thread_t conversionThread;
 

@@ -98,7 +98,7 @@ public slots:
             std::string ansiSelPlatform = selPlatform.toStdString();
 
             // Use a helper.
-            MainWindow::SetTXDPlatformString( currentTXD, ansiSelPlatform.c_str() );
+            this->mainWnd->SetTXDPlatformString( currentTXD, ansiSelPlatform.c_str() );
 
             // Update the main window view and texture descriptions.
             this->mainWnd->updateTextureView();

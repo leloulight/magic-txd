@@ -398,6 +398,7 @@
     <ClInclude Include="..\..\src\pixelutil.hxx" />
     <ClInclude Include="..\..\src\pluginutil.hxx" />
     <ClInclude Include="..\..\src\rwcommon.hxx" />
+    <ClInclude Include="..\..\src\rwconf.hxx" />
     <ClInclude Include="..\..\src\rwdrawing.hxx" />
     <ClInclude Include="..\..\src\rwdriver.d3d12.hxx" />
     <ClInclude Include="..\..\src\rwdriver.hxx" />
@@ -407,6 +408,7 @@
     <ClInclude Include="..\..\src\rwinterface.hxx" />
     <ClInclude Include="..\..\src\rwserialize.hxx" />
     <ClInclude Include="..\..\src\rwstatesort.hxx" />
+    <ClInclude Include="..\..\src\rwthreading.hxx" />
     <ClInclude Include="..\..\src\rwwindowing.hxx" />
     <ClInclude Include="..\..\src\streamutil.hxx" />
     <ClInclude Include="..\..\src\txdread.atc.hxx" />
@@ -460,6 +462,8 @@
     <ClCompile Include="..\..\src\renderware.cpp" />
     <ClCompile Include="..\..\src\rwblockapi.cpp" />
     <ClCompile Include="..\..\src\rwbmp.cpp" />
+    <ClCompile Include="..\..\src\rwconf.cpp" />
+    <ClCompile Include="..\..\src\rwconf.dispatch.cpp" />
     <ClCompile Include="..\..\src\rwdrawing.cpp" />
     <ClCompile Include="..\..\src\rwdriver.cpp" />
     <ClCompile Include="..\..\src\rwdriver.d3d12.cpp" />
@@ -487,6 +491,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release 2013|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\..\src\rwinterface.warnings.cpp" />
     <ClCompile Include="..\..\src\rwmem.cpp" />
     <ClCompile Include="..\..\src\rwobjextensions.cpp" />
     <ClCompile Include="..\..\src\rwserialize.cpp" />

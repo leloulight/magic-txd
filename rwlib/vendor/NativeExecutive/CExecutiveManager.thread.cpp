@@ -642,6 +642,16 @@ struct threadObjectConstructor
     CExecThread::threadEntryPoint_t entryPoint;
 };
 
+threadPluginOffset CExecutiveManager::RegisterThreadPlugin( size_t pluginSize, threadPluginInterface *pluginInterface )
+{
+    return this->threadPlugins.RegisterPlugin( pluginSize, ExecutiveManager::threadPluginContainer_t::ANONYMOUS_PLUGIN_ID, pluginInterface );
+}
+
+void CExecutiveManager::UnregisterThreadPlugin( threadPluginOffset offset )
+{
+    this->threadPlugins.UnregisterPlugin( offset );
+}
+
 CExecThread* CExecutiveManager::CreateThread( CExecThread::threadEntryPoint_t entryPoint, void *userdata, size_t stackSize )
 {
     // We must not create new threads if the environment is terminating!

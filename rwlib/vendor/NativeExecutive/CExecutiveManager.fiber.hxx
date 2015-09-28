@@ -54,6 +54,11 @@ struct privateFiberEnvironment
         }
     }
 
+    inline void operator = ( const privateFiberEnvironment& right )
+    {
+        assert( 0 );
+    }
+
     fiberFactory_t fiberFact;   // boys and girls, its fact!
 
     ExecutiveManager::threadPluginContainer_t::pluginOffset_t threadFiberStackPluginOffset;

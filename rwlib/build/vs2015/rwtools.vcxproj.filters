@@ -189,6 +189,12 @@
     <ClInclude Include="..\..\src\txdread.rasterplg.hxx">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\rwconf.hxx">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\rwthreading.hxx">
+      <Filter>Include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\dffread.cpp" />
@@ -257,6 +263,9 @@
     <ClCompile Include="..\..\src\txdread.size.blur.cpp" />
     <ClCompile Include="..\..\src\txdread.size.linear.cpp" />
     <ClCompile Include="..\..\src\txdread.compress.cpp" />
+    <ClCompile Include="..\..\src\rwconf.cpp" />
+    <ClCompile Include="..\..\src\rwconf.dispatch.cpp" />
+    <ClCompile Include="..\..\src\rwinterface.warnings.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="rwtools.natvis">
