@@ -506,13 +506,31 @@ MainWindow::~MainWindow()
         this->currentTXD = NULL;
     }
 
+    delete txdLog;
+
     // Remove the warning manager again.
     this->rwEngine->SetWarningManager( NULL );
 
+    // Delete all child windows.
+    {
+        QObjectList children = this->children();
+
+        for ( QObject *child : children )
+        {
+            if ( child->isWidgetType() )
+            {
+                QWidget *widget = (QWidget*)child;
+
+                if ( widget->isWindow() )
+                {
+                    delete widget;
+                }
+            }
+        }
+    }
+
     // Shutdown the native format handlers.
     this->shutdownNativeFormats();
-
-	delete txdLog;
 }
 
 void MainWindow::addTextureFormatExportLinkToMenu( QMenu *theMenu, const char *defaultExt, const char *formatName )
