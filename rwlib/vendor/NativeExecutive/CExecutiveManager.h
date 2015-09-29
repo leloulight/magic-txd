@@ -13,8 +13,8 @@
 #ifndef _EXECUTIVE_MANAGER_
 #define _EXECUTIVE_MANAGER_
 
-#include <MemoryUtils.h>
-#include <rwlist.hpp>
+#include <sdk/MemoryUtils.h>
+#include <sdk/rwlist.hpp>
 
 // Namespace simplification definitions.
 #define BEGIN_NATIVE_EXECUTIVE      namespace NativeExecutive {

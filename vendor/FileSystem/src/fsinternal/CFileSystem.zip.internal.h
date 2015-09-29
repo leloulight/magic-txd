@@ -29,6 +29,11 @@ struct zipExtension
     void                        Initialize      ( CFileSystemNative *sys );
     void                        Shutdown        ( CFileSystemNative *sys );
 
+    inline void operator = ( const zipExtension& right )
+    {
+        assert( 0 );
+    }
+
     CArchiveTranslator*         NewArchive      ( CFile& writeStream );
     CArchiveTranslator*         OpenArchive     ( CFile& readWriteStream );
 
@@ -62,7 +67,7 @@ public:
                     ~CZIPArchiveTranslator( void );
 
     bool            CreateDir( const char *path ) override;
-    CFile*          Open( const char *path, const char *mode ) override;
+    CFile*          Open( const char *path, const char *mode, eFileOpenFlags flags ) override;
     bool            Exists( const char *path ) const override;
     bool            Delete( const char *path ) override;
     bool            Copy( const char *src, const char *dst ) override;

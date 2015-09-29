@@ -16,6 +16,7 @@ class CSystemPathTranslator : public virtual CFileTranslator
 {
 public:
                     CSystemPathTranslator           ( bool isSystemPath );
+                    ~CSystemPathTranslator          ( void );
 
 private:
     template <typename charType>
@@ -37,27 +38,41 @@ private:
     template <typename charType>
     bool            GenChangeDirectory              ( const charType *path );
 
-public:
-    bool            GetFullPathTreeFromRoot         ( const char *path, dirTree& tree, bool& file ) const override;
-    bool            GetFullPathTree                 ( const char *path, dirTree& tree, bool& file ) const override;
-    bool            GetRelativePathTreeFromRoot     ( const char *path, dirTree& tree, bool& file ) const override;
-    bool            GetRelativePathTree             ( const char *path, dirTree& tree, bool& file ) const override;
-    bool            GetFullPathFromRoot             ( const char *path, bool allowFile, filePath& output ) const override;
-    bool            GetFullPath                     ( const char *path, bool allowFile, filePath& output ) const override;
-    bool            GetRelativePathFromRoot         ( const char *path, bool allowFile, filePath& output ) const override;
-    bool            GetRelativePath                 ( const char *path, bool allowFile, filePath& output ) const override;
-    bool            ChangeDirectory                 ( const char *path ) override;
-    void            GetDirectory                    ( filePath& output ) const override;
+    // GetRelativePathTreeFromRoot
+    // GetRelativePathFromRoot
+    // GetFullPathTree
+    // GetRelativePathTree
 
-    bool            GetFullPathTreeFromRoot         ( const wchar_t *path, dirTree& tree, bool& file ) const;
-    bool            GetFullPathTree                 ( const wchar_t *path, dirTree& tree, bool& file ) const;
-    bool            GetRelativePathTreeFromRoot     ( const wchar_t *path, dirTree& tree, bool& file ) const;
-    bool            GetRelativePathTree             ( const wchar_t *path, dirTree& tree, bool& file ) const;
-    bool            GetFullPathFromRoot             ( const wchar_t *path, bool allowFile, filePath& output ) const;
-    bool            GetFullPath                     ( const wchar_t *path, bool allowFile, filePath& output ) const;
-    bool            GetRelativePathFromRoot         ( const wchar_t *path, bool allowFile, filePath& output ) const;
-    bool            GetRelativePath                 ( const wchar_t *path, bool allowFile, filePath& output ) const;
-    bool            ChangeDirectory                 ( const wchar_t *path );
+    template <typename charType>
+    bool            IntGetRelativePathTreeFromRoot  ( const charType *path, dirTree& tree, bool& file ) const;
+    template <typename charType>
+    bool            IntGetRelativePathFromRoot      ( const charType *path, bool allowFile, filePath& output ) const;
+    template <typename charType>
+    bool            IntGetFullPathTree              ( const charType *path, dirTree& tree, bool& file ) const;
+    template <typename charType>
+    bool            IntGetRelativePathTree          ( const charType *path, dirTree& tree, bool& file ) const;
+
+public:
+    bool            GetFullPathTreeFromRoot         ( const char *path, dirTree& tree, bool& file ) const override final;
+    bool            GetFullPathTree                 ( const char *path, dirTree& tree, bool& file ) const override final;
+    bool            GetRelativePathTreeFromRoot     ( const char *path, dirTree& tree, bool& file ) const override final;
+    bool            GetRelativePathTree             ( const char *path, dirTree& tree, bool& file ) const override final;
+    bool            GetFullPathFromRoot             ( const char *path, bool allowFile, filePath& output ) const override final;
+    bool            GetFullPath                     ( const char *path, bool allowFile, filePath& output ) const override final;
+    bool            GetRelativePathFromRoot         ( const char *path, bool allowFile, filePath& output ) const override final;
+    bool            GetRelativePath                 ( const char *path, bool allowFile, filePath& output ) const override final;
+    bool            ChangeDirectory                 ( const char *path ) override final;
+    void            GetDirectory                    ( filePath& output ) const override final;
+
+    bool            GetFullPathTreeFromRoot         ( const wchar_t *path, dirTree& tree, bool& file ) const override final;
+    bool            GetFullPathTree                 ( const wchar_t *path, dirTree& tree, bool& file ) const override final;
+    bool            GetRelativePathTreeFromRoot     ( const wchar_t *path, dirTree& tree, bool& file ) const override final;
+    bool            GetRelativePathTree             ( const wchar_t *path, dirTree& tree, bool& file ) const override final;
+    bool            GetFullPathFromRoot             ( const wchar_t *path, bool allowFile, filePath& output ) const override final;
+    bool            GetFullPath                     ( const wchar_t *path, bool allowFile, filePath& output ) const override final;
+    bool            GetRelativePathFromRoot         ( const wchar_t *path, bool allowFile, filePath& output ) const override final;
+    bool            GetRelativePath                 ( const wchar_t *path, bool allowFile, filePath& output ) const override final;
+    bool            ChangeDirectory                 ( const wchar_t *path ) override final;
 
     inline bool IsTranslatorRootDescriptor( wchar_t character ) const
     {
@@ -80,9 +95,6 @@ public:
         return character == '' || character == '@';
     }
 
-private:
-    void SetCurrentDirectoryTree( dirTree&& tree );
-
 protected:
     friend class CFileSystem;
     friend struct CFileSystemNative;
@@ -100,8 +112,44 @@ protected:
         return true;
     }
 
+    // Path resolution extension functions.
+    // Override these to extend the way that this translator resolves paths.
+    virtual bool    OnGetRelativePathTreeFromRoot( const char *path, dirTree& output, bool& file, bool& success ) const
+    {
+        return false;
+    }
+    virtual bool    OnGetRelativePathTreeFromRoot( const wchar_t *path, dirTree& output, bool& file, bool& success ) const
+    {
+        return false;
+    }
+
+    virtual bool    OnGetRelativePathTree( const char *path, dirTree& output, bool& file, bool& success ) const
+    {
+        return false;
+    }
+    virtual bool    OnGetRelativePathTree( const wchar_t *path, dirTree& output, bool& file, bool& success ) const
+    {
+        return false;
+    }
+
+    virtual bool    OnGetFullPathTree( const char *path, dirTree& output, bool& file, bool& success ) const
+    {
+        return false;
+    }
+    virtual bool    OnGetFullPathTree( const wchar_t *path, dirTree& output, bool& file, bool& success ) const
+    {
+        return false;
+    }
+
+    virtual void    OnGetFullPath( filePath& curAbsPath ) const
+    {
+        return;
+    }
+
 private:
     bool            m_isSystemPath;
+
+    NativeExecutive::CReadWriteLock *lockPathConsistency;
 };
 
 #endif //_FILESYSTEM_TRANSLATOR_PATHUTIL_

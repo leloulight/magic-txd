@@ -22,7 +22,7 @@ bool CFileTranslatorWideWrap::CreateDir( const wchar_t *path )
     return CreateDir( ansiPath.c_str() );
 }
 
-CFile* CFileTranslatorWideWrap::Open( const wchar_t *path, const wchar_t *mode )
+CFile* CFileTranslatorWideWrap::Open( const wchar_t *path, const wchar_t *mode, eFileOpenFlags flags )
 {
     filePath widePath( path );
     std::string ansiPath = widePath.convert_ansi();
@@ -30,7 +30,7 @@ CFile* CFileTranslatorWideWrap::Open( const wchar_t *path, const wchar_t *mode )
     filePath wideMode( mode );
     std::string ansiMode = wideMode.convert_ansi();
 
-    return Open( ansiPath.c_str(), ansiMode.c_str() );
+    return Open( ansiPath.c_str(), ansiMode.c_str(), flags );
 }
 
 bool CFileTranslatorWideWrap::Exists( const wchar_t *path ) const

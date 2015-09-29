@@ -21,6 +21,9 @@
 // Include native platform utilities.
 #include "fsinternal/CFileSystem.internal.nativeimpl.hxx"
 
+// Include threading utilities for CFileSystem class.
+#include "CFileSystem.lock.hxx"
+
 CFileSystem *fileSystem = NULL;
 CFileTranslator *fileRoot = NULL;
 
@@ -88,14 +91,21 @@ inline bool _CheckLibraryIntegrity( void )
     return isValid;
 }
 
+// Internal plugins.
+fsLockProvider _fileSysLockProvider;
+static fsLockProvider _fileSysTmpDirLockProvider;
+
 // Sub modules.
-extern void registerRandomGeneratorExtension( void );
+extern void registerRandomGeneratorExtension( const fs_construction_params& params );
+
 extern void unregisterRandomGeneratorExtension( void );
 
-AINLINE void InitializeLibrary( void )
+AINLINE void InitializeLibrary( const fs_construction_params& params )
 {
     // Register addons.
-    registerRandomGeneratorExtension();
+    registerRandomGeneratorExtension( params );
+    _fileSysLockProvider.RegisterPlugin( params );
+    _fileSysTmpDirLockProvider.RegisterPlugin( params );
 
     CFileSystemNative::RegisterZIPDriver();
     CFileSystemNative::RegisterIMGDriver();
@@ -107,12 +117,29 @@ AINLINE void ShutdownLibrary( void )
     CFileSystemNative::UnregisterIMGDriver();
     CFileSystemNative::UnregisterZIPDriver();
 
+    _fileSysTmpDirLockProvider.UnregisterPlugin();
+    _fileSysLockProvider.UnregisterPlugin();
     unregisterRandomGeneratorExtension();
 }
 
+struct fs_constructor
+{
+    const fs_construction_params& params;
+
+    inline fs_constructor( const fs_construction_params& params ) : params( params )
+    {
+        return;
+    }
+
+    inline CFileSystemNative* Construct( void *mem ) const
+    {
+        return new (mem) CFileSystemNative( this->params );
+    }
+};
+
 // Creators of the CFileSystem instance.
 // Those are the entry points to this static library.
-CFileSystem* CFileSystem::Create( void )
+CFileSystem* CFileSystem::Create( const fs_construction_params& params )
 {
     // Make sure that there is no second CFileSystem class alive.
     assert( _hasBeenInitialized == false );
@@ -126,10 +153,12 @@ CFileSystem* CFileSystem::Create( void )
         return NULL;
     }
 
-    InitializeLibrary();
+    InitializeLibrary( params );
 
     // Create our CFileSystem instance!
-    CFileSystemNative *instance = _fileSysFactory.Construct( _memAlloc );
+    fs_constructor constructor( params );
+
+    CFileSystemNative *instance = _fileSysFactory.ConstructTemplate( _memAlloc, constructor );
 
     if ( instance )
     {
@@ -145,9 +174,6 @@ CFileSystem* CFileSystem::Create( void )
             // Every application should be able to access itself
             fileRoot = instance->CreateTranslator( cwd_ex.w_str() );
         }
-
-        // Set the global fileSystem variable.
-        fileSystem = instance;
 
         // We have initialized ourselves.
         _hasBeenInitialized = true;
@@ -181,9 +207,6 @@ void CFileSystem::Destroy( CFileSystem *lib )
         
         ShutdownLibrary();
 
-        // Zero the main FileSystem access point.
-        fileSystem = NULL;
-
         // We have successfully destroyed FileSystem activity.
         _hasBeenInitialized = false;
     }
@@ -199,7 +222,7 @@ struct MySecurityAttributes
 
 #endif //_WIN32
 
-CFileSystem::CFileSystem( void )
+CFileSystem::CFileSystem( const fs_construction_params& params )
 {
     // Set up members.
     m_includeAllDirsInScan = false;
@@ -208,10 +231,17 @@ CFileSystem::CFileSystem( void )
 #endif //_WIN32
 
     this->sysTmp = NULL;
+    this->nativeMan = params.nativeExecMan;
+
+    // Set the global fileSystem variable.
+    fileSystem = this;
 }
 
 CFileSystem::~CFileSystem( void )
 {
+    // Zero the main FileSystem access point.
+    fileSystem = NULL;
+
     // Shutdown addon management.
     if ( sysTmp )
     {
@@ -223,6 +253,8 @@ CFileSystem::~CFileSystem( void )
 
 bool CFileSystem::CanLockDirectories( void )
 {
+    NativeExecutive::CReadWriteWriteContextSafe <> consistency( _fileSysLockProvider.GetReadWriteLock( this ) );
+
     // We should set special priviledges for the application if
     // running under Win32.
 #ifdef _WIN32
@@ -271,11 +303,13 @@ bool CFileSystem::CanLockDirectories( void )
 }
 
 template <typename charType>
-CFileTranslator* CFileSystemNative::GenCreateTranslator( const charType *path )
+CFileTranslator* CFileSystemNative::GenCreateTranslator( const charType *path, eDirOpenFlags flags )
 {
     // Without access to directory locking, this function can not execute.
     if ( !CanLockDirectories() )
         return NULL;
+
+    // THREAD-SAFE, because this function does not use shared-state variables.
 
     CSystemFileTranslator *pTranslator;
     filePath root;
@@ -332,7 +366,7 @@ CFileTranslator* CFileSystemNative::GenCreateTranslator( const charType *path )
     _File_OutputPathTree( tree, false, root );
 
 #ifdef _WIN32
-    HANDLE dir = _FileWin32_OpenDirectoryHandle( root );
+    HANDLE dir = _FileWin32_OpenDirectoryHandle( root, flags );
 
     if ( dir == INVALID_HANDLE_VALUE )
         return NULL;
@@ -361,8 +395,8 @@ CFileTranslator* CFileSystemNative::GenCreateTranslator( const charType *path )
     return pTranslator;
 }
 
-CFileTranslator* CFileSystem::CreateTranslator( const char *path )      { return ((CFileSystemNative*)this)->GenCreateTranslator( path ); }
-CFileTranslator* CFileSystem::CreateTranslator( const wchar_t *path )   { return ((CFileSystemNative*)this)->GenCreateTranslator( path ); }
+CFileTranslator* CFileSystem::CreateTranslator( const char *path, eDirOpenFlags flags )         { return ((CFileSystemNative*)this)->GenCreateTranslator( path, flags ); }
+CFileTranslator* CFileSystem::CreateTranslator( const wchar_t *path, eDirOpenFlags flags )      { return ((CFileSystemNative*)this)->GenCreateTranslator( path, flags ); }
 
 CFileTranslator* CFileSystem::GenerateTempRepository( void )
 {
@@ -372,45 +406,50 @@ CFileTranslator* CFileSystem::GenerateTempRepository( void )
     // If not, attempt to retrieve it.
     if ( !this->sysTmp )
     {
+        NativeExecutive::CReadWriteWriteContext <> consistency( _fileSysTmpDirLockProvider.GetReadWriteLock( this ) );
+
+        if ( !this->sysTmp )
+        {
 #ifdef _WIN32
-        wchar_t buf[2048];
+            wchar_t buf[2048];
 
-        GetTempPathW( NUMELMS( buf ) - 1, buf );
+            GetTempPathW( NUMELMS( buf ) - 1, buf );
 
-        buf[ NUMELMS( buf ) - 1 ] = 0;
+            buf[ NUMELMS( buf ) - 1 ] = 0;
 
-        // Transform the path into something we can recognize.
-        tmpDirBase.insert( 0, buf, 2 );
-        tmpDirBase += L'/';
+            // Transform the path into something we can recognize.s
+            tmpDirBase.insert( 0, buf, 2 );
+            tmpDirBase += L'/';
 
-        dirTree tree;
-        bool isFile;
+            dirTree tree;
+            bool isFile;
         
-        bool parseSuccess = _File_ParseRelativePath( buf + 3, tree, isFile );
+            bool parseSuccess = _File_ParseRelativePath( buf + 3, tree, isFile );
 
-        assert( parseSuccess == true && isFile == false );
+            assert( parseSuccess == true && isFile == false );
 
-        _File_OutputPathTree( tree, isFile, tmpDirBase );
+            _File_OutputPathTree( tree, isFile, tmpDirBase );
 #elif defined(__linux__)
-        const char *dir = getenv("TEMPDIR");
+            const char *dir = getenv("TEMPDIR");
 
-        if ( !dir )
-            tmpDir = "/tmp";
-        else
-            tmpDir = dir;
+            if ( !dir )
+                tmpDir = "/tmp";
+            else
+                tmpDir = dir;
 
-        tmpDir += '/';
+            tmpDir += '/';
 
-        // On linux we cannot be sure that our directory exists.
-        if ( !_File_CreateDirectory( tmpDir ) )
-            exit( 7098 );
+            // On linux we cannot be sure that our directory exists.
+            if ( !_File_CreateDirectory( tmpDir ) )
+                exit( 7098 );
 #endif //OS DEPENDANT CODE
 
-        this->sysTmp = fileSystem->CreateTranslator( tmpDirBase.w_str() );
+            this->sysTmp = fileSystem->CreateTranslator( tmpDirBase.w_str() );
 
-        // We failed to get the handle to the temporary storage, hence we cannot deposit temporary files!
-        if ( !this->sysTmp )
-            return NULL;
+            // We failed to get the handle to the temporary storage, hence we cannot deposit temporary files!
+            if ( !this->sysTmp )
+                return NULL;
+        }
     }
     else
     {
@@ -422,14 +461,13 @@ CFileTranslator* CFileSystem::GenerateTempRepository( void )
 
     // Generate a random sub-directory inside of the global OS temp directory.
     // We need to generate until we find a unique directory.
-    bool hasValidDirectory = false;
     unsigned int numOfTries = 0;
 
     filePath tmpDir;
 
-    while ( !hasValidDirectory && numOfTries < 50 )
+    while ( numOfTries < 50 )
     {
-        tmpDir = tmpDirBase;
+        filePath tmpDir( tmpDirBase );
 
         tmpDir += "&$!reAr";
         tmpDir += std::to_string( fsrandom::getSystemRandom( this ) );
@@ -437,31 +475,33 @@ CFileTranslator* CFileSystem::GenerateTempRepository( void )
 
         if ( this->sysTmp->Exists( tmpDir ) == false )
         {
-            hasValidDirectory = true;
-            break;
+            // Once we found a not existing directory, we must create and acquire a handle
+            // to it. This operation can fail if somebody else happens to delete the directory
+            // inbetween or snatched away the handle to the directory before us.
+            // Those situations are very unlikely, but we want to make sure anyway, for quality's sake.
+
+            // Make sure the temporary directory exists.
+            bool creationSuccessful = _File_CreateDirectory( tmpDir );
+
+            if ( creationSuccessful )
+            {
+                // Create the temporary root
+                CFileTranslator *result = fileSystem->CreateTranslator( tmpDir, DIR_FLAG_EXCLUSIVE );
+
+                if ( result )
+                {
+                    // Success!
+                    return result;
+                }
+            }
+            
+            // Well, we failed for some reason, so try again.
         }
 
         numOfTries++;
     }
 
-    // We can fail to get a random temporary directory.
-    if ( !hasValidDirectory )
-        return NULL;
-
-    // Make sure the temporary directory exists.
-    bool creationSuccessful = _File_CreateDirectory( tmpDir );
-
-    if ( creationSuccessful )
-    {
-        // Create the .zip temporary root
-        CFileTranslator *result = fileSystem->CreateTranslator( tmpDir );
-
-        if ( result )
-        {
-            return result;
-        }
-    }
-
+    // Nope. Maybe the user wants to try again?
     return NULL;
 }
 

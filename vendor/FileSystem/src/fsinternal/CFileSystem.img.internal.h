@@ -146,6 +146,11 @@ struct imgExtension
     void                        Initialize      ( CFileSystemNative *sys );
     void                        Shutdown        ( CFileSystemNative *sys );
 
+    inline void operator = ( const imgExtension& right )
+    {
+        assert( 0 );
+    }
+
     CIMGArchiveTranslatorHandle*    NewArchive  ( CFileTranslator *srcRoot, const char *srcPath, eIMGArchiveVersion version );
     CIMGArchiveTranslatorHandle*    OpenArchive ( CFileTranslator *srcRoot, const char *srcPath );
 
@@ -182,7 +187,7 @@ public:
                     ~CIMGArchiveTranslator( void );
 
     bool            CreateDir( const char *path ) override;
-    CFile*          Open( const char *path, const char *mode ) override;
+    CFile*          Open( const char *path, const char *mode, eFileOpenFlags flags ) override;
     bool            Exists( const char *path ) const override;
     bool            Delete( const char *path ) override;
     bool            Copy( const char *src, const char *dst ) override;

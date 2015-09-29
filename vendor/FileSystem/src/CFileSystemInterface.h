@@ -16,6 +16,22 @@
 
 #define _FILESYSTEM_WIDEPATH_SUPPORT
 
+// File open flags.
+enum eFileOpenFlags : unsigned int
+{
+    FILE_FLAG_NONE =            0x00000000,
+    FILE_FLAG_TEMPORARY =       0x00000001,
+    FILE_FLAG_UNBUFFERED =      0x00000002,
+    FILE_FLAG_GRIPLOCK =        0x00000004,
+    FILE_FLAG_WRITESHARE =      0x00000008
+};
+
+enum eDirOpenFlags : unsigned int
+{
+    DIR_FLAG_NONE =             0x00000000,
+    DIR_FLAG_EXCLUSIVE =        0x00000001
+};
+
 /*===================================================
     CFile (stream class)
 
@@ -417,11 +433,11 @@ public:
             Failure is either caused due to locks set by the filesystem
             or by an invalid path or invalid mode descriptor.
     ===================================================*/
-    virtual CFile*          Open( const char *path, const char *mode ) = 0;
+    virtual CFile*          Open( const char *path, const char *modes, eFileOpenFlags flags = FILE_FLAG_NONE ) = 0;
 #ifdef _FILESYSTEM_WIDEPATH_SUPPORT
-    virtual CFile*          Open( const wchar_t *path, const wchar_t *mode ) = 0;
+    virtual CFile*          Open( const wchar_t *path, const wchar_t *mode, eFileOpenFlags flags = FILE_FLAG_NONE ) = 0;
 #endif
-    AINLINE CFile*          Open( const filePath& path, const filePath& mode )
+    AINLINE CFile*          Open( const filePath& path, const filePath& mode, eFileOpenFlags flags = FILE_FLAG_NONE )
     {
         return filePath_dispatch( path,
             [&] ( auto path )
@@ -871,13 +887,13 @@ public:
 class CFileSystemInterface
 {
 public:
-    virtual CFileTranslator*    CreateTranslator    ( const char *path ) = 0;
+    virtual CFileTranslator*    CreateTranslator    ( const char *path, eDirOpenFlags flags = DIR_FLAG_NONE ) = 0;
 #ifdef _FILESYSTEM_WIDEPATH_SUPPORT
-    virtual CFileTranslator*    CreateTranslator    ( const wchar_t *path ) = 0;
+    virtual CFileTranslator*    CreateTranslator    ( const wchar_t *path, eDirOpenFlags flags = DIR_FLAG_NONE ) = 0;
 #endif
-    AINLINE CFileTranslator*    CreateTranslator    ( const filePath& path )
+    AINLINE CFileTranslator*    CreateTranslator    ( const filePath& path, eDirOpenFlags flags = DIR_FLAG_NONE )
     {
-        return filePath_dispatch( path, [&]( auto path ) { return CreateTranslator( path ); } );
+        return filePath_dispatch( path, [&]( auto path ) { return CreateTranslator( path, flags ); } );
     }
 
     virtual CArchiveTranslator* OpenArchive         ( CFile& file ) = 0;

@@ -42,7 +42,7 @@
 struct CFileSystemNative : public CFileSystem
 {
 public:
-    inline CFileSystemNative( void )
+    inline CFileSystemNative( const fs_construction_params& params ) : CFileSystem( params )
     {
         return;
     }
@@ -61,7 +61,7 @@ public:
 
     // Generic things.
     template <typename charType>
-    CFileTranslator* GenCreateTranslator( const charType *path );
+    CFileTranslator* GenCreateTranslator( const charType *path, eDirOpenFlags flags );
 };
 
 typedef StaticPluginClassFactory <CFileSystemNative> fileSystemFactory_t;
@@ -69,6 +69,7 @@ typedef StaticPluginClassFactory <CFileSystemNative> fileSystemFactory_t;
 extern fileSystemFactory_t _fileSysFactory;
 
 #include "CFileSystem.internal.common.h"
+#include "CFileSystem.internal.lockutil.h"
 #include "CFileSystem.random.h"
 #include "CFileSystem.stream.raw.h"
 #include "CFileSystem.stream.buffered.h"

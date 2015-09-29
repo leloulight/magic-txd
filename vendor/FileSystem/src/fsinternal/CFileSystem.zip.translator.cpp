@@ -296,7 +296,7 @@ CFile* CZIPArchiveTranslator::OpenNativeFileStream( file *fsObject, unsigned int
     return outputFile;
 }
 
-CFile* CZIPArchiveTranslator::Open( const char *path, const char *mode )
+CFile* CZIPArchiveTranslator::Open( const char *path, const char *mode, eFileOpenFlags flags )
 {
     return m_virtualFS.OpenStream( path, mode );
 }
@@ -916,7 +916,7 @@ void CZIPArchiveTranslator::SaveDirectory( directory& dir, size_t& size )
             m_file.WriteString( info.relPath );
             m_file.WriteString( info.metaData.comment );
 
-            CFile *src = dynamic_cast <CSystemFileTranslator*> ( realtimeRoot )->OpenEx( info.relPath, "rb", FILE_FLAG_WRITESHARE );
+            CFile *src = realtimeRoot->Open( info.relPath, "rb", FILE_FLAG_WRITESHARE );
 
             assert( src != NULL );
 

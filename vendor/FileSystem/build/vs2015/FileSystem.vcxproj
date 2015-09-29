@@ -158,7 +158,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2015|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../../../rwlib/vendor/eirrepo/sdk/;../../src/;../../../../rwlib/vendor/zlib/;../../../../rwlib/vendor/eirrepo/;../../../lzo-2.08/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../../rwlib/vendor/eirrepo/sdk/;../../src/;../../../../rwlib/vendor/zlib/;../../../../rwlib/vendor/eirrepo/;../../../lzo-2.08/include;../../../../rwlib/vendor/NativeExecutive/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -175,7 +175,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2015|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../../../rwlib/vendor/eirrepo/sdk/;../../src/;../../../../rwlib/vendor/zlib/;../../../../rwlib/vendor/eirrepo/;../../../lzo-2.08/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../../rwlib/vendor/eirrepo/sdk/;../../src/;../../../../rwlib/vendor/zlib/;../../../../rwlib/vendor/eirrepo/;../../../lzo-2.08/include;../../../../rwlib/vendor/NativeExecutive/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
@@ -191,7 +191,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2013|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../../../rwlib/vendor/eirrepo/sdk/;../../src/;../../../../rwlib/vendor/zlib/;../../../../rwlib/vendor/eirrepo/;../../../lzo-2.08/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../../rwlib/vendor/eirrepo/sdk/;../../src/;../../../../rwlib/vendor/zlib/;../../../../rwlib/vendor/eirrepo/;../../../lzo-2.08/include;../../../../rwlib/vendor/NativeExecutive/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -208,7 +208,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2013|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../../../rwlib/vendor/eirrepo/sdk/;../../src/;../../../../rwlib/vendor/zlib/;../../../../rwlib/vendor/eirrepo/;../../../lzo-2.08/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../../rwlib/vendor/eirrepo/sdk/;../../src/;../../../../rwlib/vendor/zlib/;../../../../rwlib/vendor/eirrepo/;../../../lzo-2.08/include;../../../../rwlib/vendor/NativeExecutive/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
@@ -228,7 +228,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
-      <AdditionalIncludeDirectories>../../../../rwlib/vendor/eirrepo/sdk/;../../src/;../../../../rwlib/vendor/zlib/;../../../../rwlib/vendor/eirrepo/;../../../lzo-2.08/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../../rwlib/vendor/eirrepo/sdk/;../../src/;../../../../rwlib/vendor/zlib/;../../../../rwlib/vendor/eirrepo/;../../../lzo-2.08/include;../../../../rwlib/vendor/NativeExecutive/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <WarningLevel>Level3</WarningLevel>
@@ -248,7 +248,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
-      <AdditionalIncludeDirectories>../../../../rwlib/vendor/eirrepo/sdk/;../../src/;../../../../rwlib/vendor/zlib/;../../../../rwlib/vendor/eirrepo/;../../../lzo-2.08/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../../rwlib/vendor/eirrepo/sdk/;../../src/;../../../../rwlib/vendor/zlib/;../../../../rwlib/vendor/eirrepo/;../../../lzo-2.08/include;../../../../rwlib/vendor/NativeExecutive/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <WarningLevel>Level3</WarningLevel>
@@ -268,7 +268,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
-      <AdditionalIncludeDirectories>../../../../rwlib/vendor/eirrepo/sdk/;../../src/;../../../../rwlib/vendor/zlib/;../../../../rwlib/vendor/eirrepo/;../../../lzo-2.08/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../../rwlib/vendor/eirrepo/sdk/;../../src/;../../../../rwlib/vendor/zlib/;../../../../rwlib/vendor/eirrepo/;../../../lzo-2.08/include;../../../../rwlib/vendor/NativeExecutive/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <WarningLevel>Level3</WarningLevel>
@@ -288,7 +288,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
-      <AdditionalIncludeDirectories>../../../../rwlib/vendor/eirrepo/sdk/;../../src/;../../../../rwlib/vendor/zlib/;../../../../rwlib/vendor/eirrepo/;../../../lzo-2.08/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../../rwlib/vendor/eirrepo/sdk/;../../src/;../../../../rwlib/vendor/zlib/;../../../../rwlib/vendor/eirrepo/;../../../lzo-2.08/include;../../../../rwlib/vendor/NativeExecutive/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <WarningLevel>Level3</WarningLevel>
@@ -308,6 +308,7 @@
     <ClInclude Include="..\..\src\CFileSystem.common.unichar.h" />
     <ClInclude Include="..\..\src\CFileSystem.h" />
     <ClInclude Include="..\..\src\CFileSystem.img.h" />
+    <ClInclude Include="..\..\src\CFileSystem.lock.hxx" />
     <ClInclude Include="..\..\src\CFileSystem.Utils.hxx" />
     <ClInclude Include="..\..\src\CFileSystem.zip.h" />
     <ClInclude Include="..\..\src\CFileSystemInterface.h" />
@@ -316,6 +317,7 @@
     <ClInclude Include="..\..\src\fsinternal\CFileSystem.img.public.h" />
     <ClInclude Include="..\..\src\fsinternal\CFileSystem.internal.common.h" />
     <ClInclude Include="..\..\src\fsinternal\CFileSystem.internal.h" />
+    <ClInclude Include="..\..\src\fsinternal\CFileSystem.internal.lockutil.h" />
     <ClInclude Include="..\..\src\fsinternal\CFileSystem.internal.nativeimpl.hxx" />
     <ClInclude Include="..\..\src\fsinternal\CFileSystem.internal.repo.h" />
     <ClInclude Include="..\..\src\fsinternal\CFileSystem.random.h" />

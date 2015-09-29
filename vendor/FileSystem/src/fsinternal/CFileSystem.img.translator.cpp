@@ -311,17 +311,17 @@ void CIMGArchiveTranslator::dataSectorStream::Flush( void )
 // Header of a file entry in the IMG archive.
 struct resourceFileHeader_ver1
 {
-    fsUInt_t            offset;                         // 0
-    fsUInt_t            fileDataSize;                   // 4
-    char                name[24];                       // 8
+    endian::little_endian <fsUInt_t>    offset;         // 0
+    endian::little_endian <fsUInt_t>    fileDataSize;   // 4
+    char                                name[24];       // 8
 };
 
 struct resourceFileHeader_ver2
 {
-    fsUInt_t            offset;                         // 0
-    fsUShort_t          fileDataSize;                   // 4
-    fsUShort_t          expandedSize;                   // 6
-    char                name[24];                       // 8
+    endian::little_endian <fsUInt_t>    offset;         // 0
+    endian::little_endian <fsUShort_t>  fileDataSize;   // 4
+    endian::little_endian <fsUShort_t>  expandedSize;   // 6
+    char                                name[24];       // 8
 };
 
 
@@ -703,7 +703,7 @@ bool CIMGArchiveTranslator::ExtractStream( CFile *input, CFile *output, file *th
     return true;
 }
 
-CFile* CIMGArchiveTranslator::Open( const char *path, const char *mode )
+CFile* CIMGArchiveTranslator::Open( const char *path, const char *mode, eFileOpenFlags flags )
 {
     return m_virtualFS.OpenStream( path, mode );
 }
@@ -1127,11 +1127,8 @@ void CIMGArchiveTranslator::WriteFileHeaders( CFile *targetStream, directory& ba
     {
         file *theFile = *iter;
 
-        union
-        {
-            resourceFileHeader_ver1 _ver1Header;
-            resourceFileHeader_ver2 _ver2Header;
-        };
+        resourceFileHeader_ver1 _ver1Header;
+        resourceFileHeader_ver2 _ver2Header;
 
         void *headerPointer = NULL;
         size_t headerSize = 0;
@@ -1404,11 +1401,8 @@ bool CIMGArchiveTranslator::ReadArchive( void )
         }
 
         // Read the file header.
-        union
-        {
-            resourceFileHeader_ver1 _ver1Header;
-            resourceFileHeader_ver2 _ver2Header;
-        };
+        resourceFileHeader_ver1 _ver1Header;
+        resourceFileHeader_ver2 _ver2Header;
 
         bool hasReadEntryHeader = false;
 

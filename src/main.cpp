@@ -94,13 +94,16 @@ mainWindowFactory_t mainWindowFactory;
 struct mainWindowConstructor
 {
     QString appPath;
+    rw::Interface *rwEngine;
+    CFileSystem *fsHandle;
 
-    inline mainWindowConstructor(QString&& appPath) : appPath(appPath)
+    inline mainWindowConstructor(QString&& appPath, rw::Interface *rwEngine, CFileSystem *fsHandle)
+        : appPath(appPath), rwEngine(rwEngine), fsHandle(fsHandle)
     {}
 
     inline MainWindow* Construct(void *mem) const
     {
-        return new (mem) MainWindow(appPath);
+        return new (mem) MainWindow(appPath, rwEngine, fsHandle);
     }
 };
 
@@ -131,37 +134,116 @@ int main(int argc, char *argv[])
     InitializeMassconvToolEnvironment();
     InitializeGUISerialization();
 
-    QStringList paths = QCoreApplication::libraryPaths();
-    paths.append(".");
-    paths.append("imageformats");
-    paths.append("platforms");
-    QCoreApplication::setLibraryPaths(paths);
+    int iRet = -1;
 
-    MagicTXDApplication a(argc, argv);
-    a.setStyleSheet(styles::get(a.applicationDirPath(), "resources\\dark.shell"));
-    mainWindowConstructor wnd_constr(a.applicationDirPath());
+    // Initialize the RenderWare engine.
+    rw::LibraryVersion engineVersion;
 
-    MainWindow *w = mainWindowFactory.ConstructTemplate(_factMemAlloc, wnd_constr);
-    w->setWindowIcon(QIcon(w->makeAppPath("resources\\icons\\stars.png")));
-    w->show();
-    QApplication::processEvents();
+    // This engine version is the default version we create resources in.
+    // Resources can change their version at any time, so we do not have to change this.
+    engineVersion.rwLibMajor = 3;
+    engineVersion.rwLibMinor = 6;
+    engineVersion.rwRevMajor = 0;
+    engineVersion.rwRevMinor = 3;
 
-    //char text[256];
-    //sprintf(text, "args: %d\n%s\n%s", argc, argv[0], argc > 1? argv[1] : "NO_ARG");
-    //MessageBoxA(0, text, 0, 0);
+    rw::Interface *rwEngine = rw::CreateEngine( engineVersion );
 
-    QStringList appargs = a.arguments();
-
-    if (appargs.size() >= 2) {
-        QString txdFileToBeOpened = appargs.at(1);
-        if (!txdFileToBeOpened.isEmpty()) {
-            w->openTxdFile(txdFileToBeOpened);
-        }
+    if ( rwEngine == NULL )
+    {
+        throw std::exception( "failed to initialize the RenderWare engine" );
     }
 
-    int iRet = a.exec();
+    try
+    {
+        // Set some typical engine properties.
+        rwEngine->SetIgnoreSerializationBlockRegions( true );
+        rwEngine->SetIgnoreSecureWarnings( false );
 
-    mainWindowFactory.Destroy(_factMemAlloc, w);
+        rwEngine->SetWarningLevel( 3 );
+
+        rwEngine->SetDXTRuntime( rw::DXTRUNTIME_SQUISH );
+        rwEngine->SetPaletteRuntime( rw::PALRUNTIME_PNGQUANT );
+
+        // Give RenderWare some info about us!
+        rw::softwareMetaInfo metaInfo;
+        metaInfo.applicationName = "Magic.TXD";
+        metaInfo.applicationVersion = MTXD_VERSION_STRING;
+        metaInfo.description = "by DK22Pac and The_GTA (https://github.com/quiret/magic-txd)";
+
+        rwEngine->SetApplicationInfo( metaInfo );
+
+        // Initialize the filesystem.
+        fs_construction_params fsParams;
+        fsParams.nativeExecMan = (NativeExecutive::CExecutiveManager*)rw::GetThreadingNativeManager( rwEngine );
+
+        CFileSystem *fsHandle = CFileSystem::Create( fsParams );
+
+        if ( !fsHandle )
+        {
+            throw std::exception( "failed to initialize the FileSystem module" );
+        }
+
+        try
+        {
+            QStringList paths = QCoreApplication::libraryPaths();
+            paths.append(".");
+            paths.append("imageformats");
+            paths.append("platforms");
+            QCoreApplication::setLibraryPaths(paths);
+
+            MagicTXDApplication a(argc, argv);
+            a.setStyleSheet(styles::get(a.applicationDirPath(), "resources\\dark.shell"));
+            mainWindowConstructor wnd_constr(a.applicationDirPath(), rwEngine, fsHandle);
+
+            MainWindow *w = mainWindowFactory.ConstructTemplate(_factMemAlloc, wnd_constr);
+
+            try
+            {
+                w->setWindowIcon(QIcon(w->makeAppPath("resources\\icons\\stars.png")));
+                w->show();
+                QApplication::processEvents();
+
+                //char text[256];
+                //sprintf(text, "args: %d\n%s\n%s", argc, argv[0], argc > 1? argv[1] : "NO_ARG");
+                //MessageBoxA(0, text, 0, 0);
+
+                QStringList appargs = a.arguments();
+
+                if (appargs.size() >= 2) {
+                    QString txdFileToBeOpened = appargs.at(1);
+                    if (!txdFileToBeOpened.isEmpty()) {
+                        w->openTxdFile(txdFileToBeOpened);
+                    }
+                }
+
+                iRet = a.exec();
+            }
+            catch( ... )
+            {
+                mainWindowFactory.Destroy( _factMemAlloc, w );
+
+                throw;
+            }
+
+            mainWindowFactory.Destroy(_factMemAlloc, w);
+        }
+        catch( ... )
+        {
+            CFileSystem::Destroy( fsHandle );
+
+            throw;
+        }
+
+        CFileSystem::Destroy( fsHandle );
+    }
+    catch( ... )
+    {
+        rw::DeleteEngine( rwEngine );
+
+        throw;
+    }
+
+    rw::DeleteEngine( rwEngine );
 
     return iRet;
 }

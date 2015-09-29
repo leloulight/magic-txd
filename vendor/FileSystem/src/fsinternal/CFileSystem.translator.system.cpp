@@ -137,7 +137,7 @@ bool CSystemFileTranslator::CreateDir( const char *path )       { return GenCrea
 bool CSystemFileTranslator::CreateDir( const wchar_t *path )    { return GenCreateDir( path ); }
 
 template <typename charType>
-CFile* CSystemFileTranslator::GenOpenEx( const charType *path, const charType *mode, unsigned int flags )
+CFile* CSystemFileTranslator::GenOpen( const charType *path, const charType *mode, eFileOpenFlags flags )
 {
     CFile *outFile = NULL;
 
@@ -182,13 +182,20 @@ CFile* CSystemFileTranslator::GenOpenEx( const charType *path, const charType *m
 
     HANDLE sysHandle = INVALID_HANDLE_VALUE;
 
+    DWORD dwShareMode = FILE_SHARE_READ;
+
+    if ( ( flags & FILE_FLAG_WRITESHARE ) != 0 )
+    {
+        dwShareMode |= FILE_SHARE_WRITE;
+    }
+
     if ( const char *sysPath = output.c_str() )
     {
-        sysHandle = CreateFileA( sysPath, dwAccess, (flags & FILE_FLAG_WRITESHARE) != 0 ? FILE_SHARE_READ | FILE_SHARE_WRITE : FILE_SHARE_READ, NULL, dwCreate, flagAttr, NULL );
+        sysHandle = CreateFileA( sysPath, dwAccess, dwShareMode, NULL, dwCreate, flagAttr, NULL );
     }
     else if ( const wchar_t *sysPath = output.w_str() )
     {
-        sysHandle = CreateFileW( sysPath, dwAccess, (flags & FILE_FLAG_WRITESHARE) != 0 ? FILE_SHARE_READ | FILE_SHARE_WRITE : FILE_SHARE_READ, NULL, dwCreate, flagAttr, NULL );
+        sysHandle = CreateFileW( sysPath, dwAccess, dwShareMode, NULL, dwCreate, flagAttr, NULL );
     }
 
     if ( sysHandle == INVALID_HANDLE_VALUE )
@@ -248,17 +255,8 @@ CFile* CSystemFileTranslator::GenOpenEx( const charType *path, const charType *m
     return outFile;
 }
 
-CFile* CSystemFileTranslator::OpenEx( const char *path, const char *mode, unsigned int flags )          { return GenOpenEx( path, mode, flags ); }
-CFile* CSystemFileTranslator::OpenEx( const wchar_t *path, const wchar_t *mode, unsigned int flags )    { return GenOpenEx( path, mode, flags ); }
-
-template <typename charType>
-CFile* CSystemFileTranslator::GenOpen( const charType *path, const charType *mode )
-{
-    return OpenEx( path, mode, 0 );
-}
-
-CFile* CSystemFileTranslator::Open( const char *path, const char *mode )        { return GenOpen( path, mode ); }
-CFile* CSystemFileTranslator::Open( const wchar_t *path, const wchar_t *mode )  { return GenOpen( path, mode ); }
+CFile* CSystemFileTranslator::Open( const char *path, const char *mode, eFileOpenFlags flags )            { return GenOpen( path, mode, flags ); }
+CFile* CSystemFileTranslator::Open( const wchar_t *path, const wchar_t *mode, eFileOpenFlags flags )      { return GenOpen( path, mode, flags ); }
 
 inline bool _File_Stat( const filePath& path, struct stat& statOut )
 {
@@ -661,86 +659,98 @@ size_t CSystemFileTranslator::Size( const wchar_t *path ) const   { return GenSi
 // Handle absolute paths.
 
 template <typename charType>
-bool CSystemFileTranslator::GenGetRelativePathTreeFromRoot( const charType *path, dirTree& tree, bool& file ) const
+bool CSystemFileTranslator::GenOnGetRelativePathTreeFromRoot( const charType *path, dirTree& tree, bool& file, bool& success ) const
 {
     if ( _File_IsAbsolutePath( path ) )
     {
 #ifdef _WIN32
         if ( m_root.compareCharAt( path[0], 0 ) == false )
-            return false;   // drive mismatch
-
-        return _File_ParseRelativeTree( path + 3, m_rootTree, tree, file );
+        {
+            success = false;   // drive mismatch
+        }
+        else
+        {
+            success = _File_ParseRelativeTree( path + 3, m_rootTree, tree, file );
+        }
 #else
-        return _File_ParseRelativeTree( path + 1, m_rootTree, tree, file );
+        success = _File_ParseRelativeTree( path + 1, m_rootTree, tree, file );
 #endif //OS DEPENDANT CODE
+
+        return true;
     }
 
-    return CSystemPathTranslator::GetRelativePathTreeFromRoot( path, tree, file );
+    return false;
 }
 
-bool CSystemFileTranslator::GetRelativePathTreeFromRoot( const char *path, dirTree& tree, bool& file ) const        { return GenGetRelativePathTreeFromRoot( path, tree, file ); }
-bool CSystemFileTranslator::GetRelativePathTreeFromRoot( const wchar_t *path, dirTree& tree, bool& file ) const     { return GenGetRelativePathTreeFromRoot( path, tree, file ); }
+bool CSystemFileTranslator::OnGetRelativePathTreeFromRoot( const char *path, dirTree& tree, bool& file, bool& success ) const       { return GenOnGetRelativePathTreeFromRoot( path, tree, file, success ); }
+bool CSystemFileTranslator::OnGetRelativePathTreeFromRoot( const wchar_t *path, dirTree& tree, bool& file, bool& success ) const    { return GenOnGetRelativePathTreeFromRoot( path, tree, file, success ); }
 
 template <typename charType>
-bool CSystemFileTranslator::GenGetRelativePathTree( const charType *path, dirTree& tree, bool& file ) const
+bool CSystemFileTranslator::GenOnGetRelativePathTree( const charType *path, dirTree& tree, bool& file, bool& success ) const
 {
     if ( _File_IsAbsolutePath( path ) )
     {
 #ifdef _WIN32
         if ( m_root.compareCharAt( path[0], 0 ) == false )
-            return false;   // drive mismatch
-
-        return _File_ParseRelativeTreeDeriviate( path + 3, m_rootTree, m_curDirTree, tree, file );
+        {
+            success = false;   // drive mismatch
+        }
+        else
+        {
+            success = _File_ParseRelativeTreeDeriviate( path + 3, m_rootTree, m_curDirTree, tree, file );
+        }
 #else
-        return _File_ParseRelativeTreeDeriviate( path + 1, m_rootTree, m_curDirTree, tree, file );
+        success = _File_ParseRelativeTreeDeriviate( path + 1, m_rootTree, m_curDirTree, tree, file );
 #endif //OS DEPENDANT CODE
+
+        return true;
     }
 
-    return CSystemPathTranslator::GetRelativePathTree( path, tree, file );
+    return false;
 }
 
-bool CSystemFileTranslator::GetRelativePathTree( const char *path, dirTree& tree, bool& file ) const        { return GenGetRelativePathTree( path, tree, file ); }
-bool CSystemFileTranslator::GetRelativePathTree( const wchar_t *path, dirTree& tree, bool& file ) const     { return GenGetRelativePathTree( path, tree, file ); }
+bool CSystemFileTranslator::OnGetRelativePathTree( const char *path, dirTree& tree, bool& file, bool& success ) const       { return GenOnGetRelativePathTree( path, tree, file, success ); }
+bool CSystemFileTranslator::OnGetRelativePathTree( const wchar_t *path, dirTree& tree, bool& file, bool& success ) const    { return GenOnGetRelativePathTree( path, tree, file, success ); }
 
 template <typename charType>
-bool CSystemFileTranslator::GenGetFullPathTree( const charType *path, dirTree& tree, bool& file ) const
+bool CSystemFileTranslator::GenOnGetFullPathTree( const charType *path, dirTree& tree, bool& file, bool& success ) const
 {
     if ( _File_IsAbsolutePath( path ) )
     {
 #ifdef _WIN32
         if ( m_root.compareCharAt( path[0], 0 ) == false )
-            return false;   // drive mismatch
+        {
+            success = false;   // drive mismatch
+        }
+        else
+        {
+            tree = m_rootTree;
 
+            success = _File_ParseRelativeTree( path + 3, m_rootTree, tree, file );
+        }
+#else
         tree = m_rootTree;
-        return _File_ParseRelativeTree( path + 3, m_rootTree, tree, file );
-#else
-        tree = m_rootTree;
-        return _File_ParseRelativeTree( path + 1, m_rootTree, tree, file );
+        
+        success = _File_ParseRelativeTree( path + 1, m_rootTree, tree, file );
 #endif //OS DEPENDANT CODE
+        
+        return true;
     }
 
-    return CSystemPathTranslator::GetFullPathTree( path, tree, file );
+    return false;
 }
 
-bool CSystemFileTranslator::GetFullPathTree( const char *path, dirTree& tree, bool& file ) const    { return GenGetFullPathTree( path, tree, file ); }
-bool CSystemFileTranslator::GetFullPathTree( const wchar_t *path, dirTree& tree, bool& file ) const { return GenGetFullPathTree( path, tree, file ); }
+bool CSystemFileTranslator::OnGetFullPathTree( const char *path, dirTree& tree, bool& file, bool& success ) const       { return GenOnGetFullPathTree( path, tree, file, success ); }
+bool CSystemFileTranslator::OnGetFullPathTree( const wchar_t *path, dirTree& tree, bool& file, bool& success ) const    { return GenOnGetFullPathTree( path, tree, file, success ); }
 
-template <typename charType>
-bool CSystemFileTranslator::GenGetFullPath( const charType *path, bool allowFile, filePath& output ) const
+void CSystemFileTranslator::OnGetFullPath( filePath& curAbsPath ) const
 {
-    if ( !CSystemPathTranslator::GetFullPath( path, allowFile, output ) )
-        return false;
-
 #ifdef _WIN32
-    output.insert( 0, m_root, 3 );
+    curAbsPath.insert( 0, m_root, 3 );
 #else
-    output.insert( 0, "/", 1 );
+    curAbsPath.insert( 0, "/", 1 );
 #endif //_WIN32
-    return true;
 }
-
-bool CSystemFileTranslator::GetFullPath( const char *path, bool allowFile, filePath& output ) const     { return GenGetFullPath( path, allowFile, output ); }
-bool CSystemFileTranslator::GetFullPath( const wchar_t *path, bool allowFile, filePath& output ) const  { return GenGetFullPath( path, allowFile, output ); }
 
 bool CSystemFileTranslator::OnConfirmDirectoryChange( const dirTree& tree )
 {

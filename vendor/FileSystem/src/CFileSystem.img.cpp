@@ -63,7 +63,7 @@ inline CFile* OpenSeperateIMGRegistryFile( CFileTranslator *srcRoot, const charT
         filePath regFilePath = dirOfArchive + nameItem + ".DIR";
 
         // Open a seperate registry file.
-        registryFile = srcRoot->Open( regFilePath, GetReadWriteMode <wchar_t> ( isNew ) );
+        registryFile = srcRoot->Open( regFilePath, GetReadWriteMode <wchar_t> ( isNew ), FILE_FLAG_WRITESHARE );
     }
 
     return registryFile;
@@ -81,7 +81,7 @@ static inline CIMGArchiveTranslatorHandle* GenNewArchive( imgExtension *env, CFi
         if ( version == IMG_VERSION_1 )
         {
             // Just open the content file.
-            contentFile = srcRoot->Open( srcPath, GetReadWriteMode <charType> ( true ) );
+            contentFile = srcRoot->Open( srcPath, GetReadWriteMode <charType> ( true ), FILE_FLAG_WRITESHARE );
 
             // We need to create a seperate registry file.
             registryFile = OpenSeperateIMGRegistryFile( srcRoot, srcPath, true );
@@ -89,7 +89,7 @@ static inline CIMGArchiveTranslatorHandle* GenNewArchive( imgExtension *env, CFi
         else if ( version == IMG_VERSION_2 )
         {
             // Just create a content file.
-            contentFile = srcRoot->Open( srcPath, GetReadWriteMode <charType> ( true ) );
+            contentFile = srcRoot->Open( srcPath, GetReadWriteMode <charType> ( true ), FILE_FLAG_WRITESHARE );
 
             registryFile = contentFile;
         }
@@ -128,7 +128,7 @@ static inline CIMGArchiveTranslatorHandle* GenOpenArchive( imgExtension *env, CF
     bool hasValidArchive = false;
     eIMGArchiveVersion theVersion;
 
-    CFile *contentFile = srcRoot->Open( srcPath, GetReadWriteMode <charType> ( false ) );
+    CFile *contentFile = srcRoot->Open( srcPath, GetReadWriteMode <charType> ( false ), FILE_FLAG_WRITESHARE );
 
     if ( !contentFile )
     {

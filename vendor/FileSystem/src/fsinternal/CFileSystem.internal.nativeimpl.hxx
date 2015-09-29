@@ -14,17 +14,25 @@
 
 #ifdef _WIN32
 
-inline HANDLE _FileWin32_OpenDirectoryHandle( const filePath& absPath )
+inline HANDLE _FileWin32_OpenDirectoryHandle( const filePath& absPath, eDirOpenFlags flags = DIR_FLAG_NONE )
 {
     HANDLE dir = INVALID_HANDLE_VALUE;
 
+    // Determine the share mode.
+    DWORD dwShareMode = 0;
+
+    if ( ( flags & DIR_FLAG_EXCLUSIVE ) == 0 )
+    {
+        dwShareMode |= ( FILE_SHARE_READ | FILE_SHARE_WRITE );
+    }
+
     if ( const char *sysPath = absPath.c_str() )
     {
-        dir = CreateFileA( sysPath, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL );
+        dir = CreateFileA( sysPath, GENERIC_READ, dwShareMode, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL );
     }
     else if ( const wchar_t *sysPath = absPath.w_str() )
     {
-        dir = CreateFileW( sysPath, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL );
+        dir = CreateFileW( sysPath, GENERIC_READ, dwShareMode, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL );
     }
 
     return dir;

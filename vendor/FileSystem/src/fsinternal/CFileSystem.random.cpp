@@ -18,8 +18,12 @@
 
 #include <random>
 
+#include "CFileSystem.lock.hxx"
+
 namespace fsrandom
 {
+
+static fsLockProvider _fileSysRNGLockProvider;
 
 struct fsRandomGeneratorEnv
 {
@@ -56,17 +60,24 @@ unsigned long getSystemRandom( CFileSystem *sys )
 
     assert( env != NULL );
 
+    // Not sure whether std::random_device is thread-safe, so be careful here.
+    NativeExecutive::CReadWriteWriteContextSafe <> consistency( _fileSysRNGLockProvider.GetReadWriteLock( sys ) );
+
     return env->_true_random();
 }
 
 };
 
-void registerRandomGeneratorExtension( void )
+void registerRandomGeneratorExtension( const fs_construction_params& params )
 {
+    fsrandom::_fileSysRNGLockProvider.RegisterPlugin( params );
+
     fsrandom::fsRandomGeneratorRegister.RegisterPlugin( _fileSysFactory );
 }
 
 void unregisterRandomGeneratorExtension( void )
 {
     fsrandom::fsRandomGeneratorRegister.UnregisterPlugin();
+
+    fsrandom::_fileSysRNGLockProvider.UnregisterPlugin();
 }

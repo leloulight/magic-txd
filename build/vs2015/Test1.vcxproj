@@ -209,7 +209,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level1</WarningLevel>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/FileSystem/src/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;../../vendor/gtaconfig/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/FileSystem/src/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;../../vendor/gtaconfig/include/;../../rwlib/vendor/NativeExecutive/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
@@ -267,7 +267,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level1</WarningLevel>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/FileSystem/src/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;../../vendor/gtaconfig/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/FileSystem/src/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;../../vendor/gtaconfig/include/;../../rwlib/vendor/NativeExecutive/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
@@ -325,7 +325,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level1</WarningLevel>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/FileSystem/src/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;../../vendor/gtaconfig/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/FileSystem/src/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;../../vendor/gtaconfig/include/;../../rwlib/vendor/NativeExecutive/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
@@ -383,7 +383,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level1</WarningLevel>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/FileSystem/src/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;../../vendor/gtaconfig/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/FileSystem/src/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;../../vendor/gtaconfig/include/;../../rwlib/vendor/NativeExecutive/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
@@ -441,7 +441,7 @@
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level1</WarningLevel>
       <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/FileSystem/src/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;../../vendor/gtaconfig/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/FileSystem/src/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;../../vendor/gtaconfig/include/;../../rwlib/vendor/NativeExecutive/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -492,7 +492,7 @@
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level1</WarningLevel>
       <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/FileSystem/src/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;../../vendor/gtaconfig/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/FileSystem/src/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;../../vendor/gtaconfig/include/;../../rwlib/vendor/NativeExecutive/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -543,7 +543,7 @@
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level1</WarningLevel>
       <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/FileSystem/src/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;../../vendor/gtaconfig/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/FileSystem/src/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;../../vendor/gtaconfig/include/;../../rwlib/vendor/NativeExecutive/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -594,7 +594,7 @@
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
       <WarningLevel>Level1</WarningLevel>
       <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
-      <AdditionalIncludeDirectories>../../include/;../../vendor/FileSystem/src/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;../../vendor/gtaconfig/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../include/;../../vendor/FileSystem/src/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;../../vendor/gtaconfig/include/;../../rwlib/vendor/NativeExecutive/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>

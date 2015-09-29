@@ -118,3 +118,5 @@ void JoinThread( Interface *engineInterface, thread_t threadHandle );
 void TerminateThread( Interface *engineInterface, thread_t threadHandle );
 
 void CheckThreadHazards( Interface *engineInterface );
+
+void* GetThreadingNativeManager( Interface *engineInterface );

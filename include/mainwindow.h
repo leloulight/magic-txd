@@ -51,7 +51,7 @@ class MainWindow : public QMainWindow
     friend class ExportAllWindow;
 
 public:
-    MainWindow(QString appPath, QWidget *parent = 0);
+    MainWindow(QString appPath, rw::Interface *rwEngine, CFileSystem *fsHandle, QWidget *parent = 0);
     ~MainWindow();
 
 private:

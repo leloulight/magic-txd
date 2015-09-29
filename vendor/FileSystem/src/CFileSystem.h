@@ -12,34 +12,41 @@
 #ifndef _CFileSystem_
 #define _CFileSystem_
 
-#define FILE_FLAG_TEMPORARY     0x00000001
-#define FILE_FLAG_UNBUFFERED    0x00000002
-#define FILE_FLAG_GRIPLOCK      0x00000004
-#define FILE_FLAG_WRITESHARE    0x00000008
+#include <CExecutiveManager.h>
 
 // Include extensions (public headers only)
 #include "CFileSystem.zip.h"
 #include "CFileSystem.img.h"
 
+struct fs_construction_params
+{
+    inline fs_construction_params( void )
+    {
+        this->nativeExecMan = NULL;
+    }
+
+    NativeExecutive::CExecutiveManager *nativeExecMan;      // set this field if you want MT support in FileSystem.
+};
+
 class CFileSystem : public CFileSystemInterface
 {
 protected:
     // Creation is not allowed by the general runtime anymore.
-                            CFileSystem             ( void );
+                            CFileSystem             ( const fs_construction_params& params );
                             ~CFileSystem            ( void );
 
 public:
     // Global functions for initialization of the FileSystem library.
     // There can be only one CFileSystem object alive at a time.
-    static CFileSystem*     Create                  ( void );
+    static CFileSystem*     Create                  ( const fs_construction_params& params );
     static void             Destroy                 ( CFileSystem *lib );
 
     bool                    CanLockDirectories      ( void );
 
     using CFileSystemInterface::CreateTranslator;
 
-    CFileTranslator*        CreateTranslator        ( const char *path ) override final;
-    CFileTranslator*        CreateTranslator        ( const wchar_t *path ) override final;
+    CFileTranslator*        CreateTranslator        ( const char *path, eDirOpenFlags flags = DIR_FLAG_NONE ) override final;
+    CFileTranslator*        CreateTranslator        ( const wchar_t *path, eDirOpenFlags flags = DIR_FLAG_NONE ) override final;
 
     CArchiveTranslator*     OpenArchive             ( CFile& file ) override final;
 
@@ -94,6 +101,8 @@ public:
 
     // Temporary directory generator members.
     CFileTranslator*        sysTmp;
+
+    NativeExecutive::CExecutiveManager *nativeMan;
 };
 
 // These variables are exported for easy usage by the application.

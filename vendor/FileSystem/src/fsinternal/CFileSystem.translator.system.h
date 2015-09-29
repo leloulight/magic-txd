@@ -35,9 +35,7 @@ private:
     template <typename charType>
     bool            GenCreateDir                    ( const charType *path );
     template <typename charType>
-    CFile*          GenOpen                         ( const charType *path, const charType *mode );
-    template <typename charType>
-    CFile*          GenOpenEx                       ( const charType *path, const charType *mode, unsigned int flags );
+    CFile*          GenOpen                         ( const charType *path, const charType *mode, eFileOpenFlags flags );
     template <typename charType>
     bool            GenExists                       ( const charType *path ) const;
     template <typename charType>
@@ -53,8 +51,7 @@ private:
 
 public:
     bool            CreateDir                       ( const char *path ) override;
-    CFile*          Open                            ( const char *path, const char *mode ) override;
-    CFile*          OpenEx                          ( const char *path, const char *mode, unsigned int flags );
+    CFile*          Open                            ( const char *path, const char *mode, eFileOpenFlags flags ) override;
     bool            Exists                          ( const char *path ) const override;
     bool            Delete                          ( const char *path ) override;
     bool            Copy                            ( const char *src, const char *dst ) override;
@@ -63,8 +60,7 @@ public:
     bool            Stat                            ( const char *path, struct stat *stats ) const override;
 
     bool            CreateDir                       ( const wchar_t *path ) override;
-    CFile*          Open                            ( const wchar_t *path, const wchar_t *mode ) override;
-    CFile*          OpenEx                          ( const wchar_t *path, const wchar_t *mode, unsigned int flags );
+    CFile*          Open                            ( const wchar_t *path, const wchar_t *mode, eFileOpenFlags flags ) override;
     bool            Exists                          ( const wchar_t *path ) const override;
     bool            Delete                          ( const wchar_t *path ) override;
     bool            Copy                            ( const wchar_t *src, const wchar_t *dst ) override;
@@ -72,44 +68,28 @@ public:
     size_t          Size                            ( const wchar_t *path ) const override;
     bool            Stat                            ( const wchar_t *path, struct stat *stats ) const override;
 
-    AINLINE CFile*  OpenEx( const filePath& path, const filePath& mode, unsigned int flags )
-    {
-        return filePath_dispatch( path,
-            [&] ( auto path )
-            {
-                typedef resolve_type <decltype(path)>::type charType;
-
-                filePathLink <charType> modeLink( mode );
-
-                return OpenEx( path, modeLink.to_char(), flags );
-            }
-        );
-    }
-
 private:
     template <typename charType>
-    bool            GenGetRelativePathTreeFromRoot  ( const charType *path, dirTree& tree, bool& file ) const;
+    bool            GenOnGetRelativePathTreeFromRoot( const charType *path, dirTree& tree, bool& file, bool& success ) const;
     template <typename charType>
-    bool            GenGetRelativePathTree          ( const charType *path, dirTree& tree, bool& file ) const;
+    bool            GenOnGetRelativePathTree        ( const charType *path, dirTree& tree, bool& file, bool& success ) const;
     template <typename charType>
-    bool            GenGetFullPathTree              ( const charType *path, dirTree& tree, bool& file ) const;
-    template <typename charType>
-    bool            GenGetFullPath                  ( const charType *path, bool allowFile, filePath& output ) const;
-
-public:
-    // Used to handle absolute paths
-    bool            GetRelativePathTreeFromRoot     ( const char *path, dirTree& tree, bool& file ) const override;
-    bool            GetRelativePathTree             ( const char *path, dirTree& tree, bool& file ) const override;
-    bool            GetFullPathTree                 ( const char *path, dirTree& tree, bool& file ) const override;
-    bool            GetFullPath                     ( const char *path, bool allowFile, filePath& output ) const override;
-
-    bool            GetRelativePathTreeFromRoot     ( const wchar_t *path, dirTree& tree, bool& file ) const override;
-    bool            GetRelativePathTree             ( const wchar_t *path, dirTree& tree, bool& file ) const override;
-    bool            GetFullPathTree                 ( const wchar_t *path, dirTree& tree, bool& file ) const override;
-    bool            GetFullPath                     ( const wchar_t *path, bool allowFile, filePath& output ) const override;
+    bool            GenOnGetFullPathTree            ( const charType *path, dirTree& tree, bool& file, bool& success ) const;
 
 protected:
-    bool            OnConfirmDirectoryChange        ( const dirTree& path ) override;
+    // Used to handle absolute paths
+    bool            OnGetRelativePathTreeFromRoot   ( const char *path, dirTree& tree, bool& file, bool& success ) const override final;
+    bool            OnGetRelativePathTree           ( const char *path, dirTree& tree, bool& file, bool& success ) const override final;
+    bool            OnGetFullPathTree               ( const char *path, dirTree& tree, bool& file, bool& success ) const override final;
+
+    bool            OnGetRelativePathTreeFromRoot   ( const wchar_t *path, dirTree& tree, bool& file, bool& success ) const override final;
+    bool            OnGetRelativePathTree           ( const wchar_t *path, dirTree& tree, bool& file, bool& success ) const override final;
+    bool            OnGetFullPathTree               ( const wchar_t *path, dirTree& tree, bool& file, bool& success ) const override final;
+
+    void            OnGetFullPath                   ( filePath& curAbsPath ) const override final;
+
+protected:
+    bool            OnConfirmDirectoryChange        ( const dirTree& path ) override final;
 
 private:
     template <typename charType>

@@ -13,6 +13,7 @@
 #define _FILESYSTEM_REPOSITORY_UTILITIES_
 
 #include <sstream>
+#include <atomic>
 
 class CRepository
 {
@@ -21,10 +22,14 @@ public:
     {
         this->infiniteSequence = 0;
         this->trans = NULL;
+
+        this->lockRepo = MakeReadWriteLock( fileSystem );
     }
 
     inline ~CRepository( void )
     {
+        DeleteReadWriteLock( fileSystem, lockRepo );
+
         if ( this->trans )
         {
             CFileTranslator *sysTmp = fileSystem->GetSystemTempTranslator();
@@ -51,7 +56,12 @@ public:
     {
         if ( !this->trans )
         {
-            this->trans = fileSystem->GenerateTempRepository();
+            NativeExecutive::CReadWriteWriteContext <> consistency( this->lockRepo );
+
+            if ( !this->trans )
+            {
+                this->trans = fileSystem->GenerateTempRepository();
+            }
         }
 
         return this->trans;
@@ -67,12 +77,8 @@ public:
             // Create temporary storage
             filePath path;
             {
-                std::stringstream number_stream;
-
-                number_stream << this->infiniteSequence++;
-
                 std::string dirName( "/" );
-                dirName += number_stream.str();
+                dirName += std::to_string( this->infiniteSequence++ );
                 dirName += "/";
 
                 sysTmpRoot->CreateDir( dirName.c_str() );
@@ -114,10 +120,12 @@ public:
 
 private:     
     // Sequence used to create unique directories with.
-    unsigned int infiniteSequence;
+    std::atomic <unsigned int> infiniteSequence;
 
     // The translator of this repository.
-    CFileTranslator *trans;
+    CFileTranslator *volatile trans;
+
+    NativeExecutive::CReadWriteLock *lockRepo;
 };
 
 #endif //_FILESYSTEM_REPOSITORY_UTILITIES_

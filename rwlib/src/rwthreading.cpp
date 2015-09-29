@@ -329,6 +329,13 @@ void PurgeActiveThreadingObjects( EngineInterface *engineInterface )
     threadEnv->nativeMan->PurgeActiveObjects();
 }
 
+void* GetThreadingNativeManager( Interface *intf )
+{
+    EngineInterface *engineInterface = (EngineInterface*)intf;
+
+    return GetNativeExecutive( engineInterface );
+}
+
 // Module initialization.
 void registerThreadingEnvironment( void )
 {

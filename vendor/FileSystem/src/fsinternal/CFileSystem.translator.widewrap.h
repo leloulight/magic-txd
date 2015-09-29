@@ -29,7 +29,7 @@ struct CFileTranslatorWideWrap : virtual public CFileTranslator
 
     // We implement all unicode methods here and redirect them to ANSI methods.
     bool            CreateDir( const wchar_t *path ) override;
-    CFile*          Open( const wchar_t *path, const wchar_t *mode ) override;
+    CFile*          Open( const wchar_t *path, const wchar_t *mode, eFileOpenFlags flags ) override;
     bool            Exists( const wchar_t *path ) const override;
     bool            Delete( const wchar_t *path ) override;
     bool            Copy( const wchar_t *src, const wchar_t *dst ) override;
