@@ -645,6 +645,7 @@
     <ClInclude Include="..\..\include\guiserialization.h" />
     <ClInclude Include="..\..\include\MagicExport.h" />
     <ClInclude Include="..\..\include\massconvert.h" />
+    <ClInclude Include="..\..\include\massexport.h" />
     <ClInclude Include="..\..\include\platformselwindow.h" />
     <ClInclude Include="..\..\include\renderpropwindow.h" />
     <ClInclude Include="..\..\include\resizewindow.h" />

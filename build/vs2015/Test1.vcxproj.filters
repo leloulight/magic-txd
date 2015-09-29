@@ -93,6 +93,9 @@
     <ClInclude Include="..\..\include\taskcompletionwindow.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\massexport.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">
