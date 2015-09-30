@@ -92,6 +92,16 @@ AboutDialog::AboutDialog( MainWindow *mainWnd ) : QDialog( mainWnd )
 
     vendorRowTwo->addWidget( libsquishLogo );
 
+    QLabel *qtLogo = new QLabel();
+    qtLogo->setPixmap( QPixmap( mainWnd->makeAppPath( "resources/about/qtlogo.png" ) ).scaled( rowHeight, rowHeight ) );
+
+    vendorRowTwo->addWidget( qtLogo );
+
+    QLabel *rwLogo = new QLabel();
+    rwLogo->setPixmap( QPixmap( mainWnd->makeAppPath( "resources/about/renderwarelogo.png" ) ).scaled( 250, rowHeight ) );
+
+    vendorRowTwo->addWidget( rwLogo );
+
     rootLayout->addLayout( vendorRowTwo );
 
     this->setLayout( rootLayout );
