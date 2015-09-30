@@ -628,6 +628,7 @@
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\src\aboutdialog.cpp" />
     <ClCompile Include="..\..\src\guiserialization.cpp" />
     <ClCompile Include="..\..\src\MagicExport.cpp" />
     <ClCompile Include="..\..\src\main.cpp" />
@@ -642,6 +643,7 @@
     <ClCompile Include="..\..\src\tools\txdgen.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\include\aboutdialog.h" />
     <ClInclude Include="..\..\include\defs.h" />
     <ClInclude Include="..\..\include\exportallwindow.h" />
     <ClInclude Include="..\..\include\guiserialization.h" />

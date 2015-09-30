@@ -17,6 +17,7 @@
       <Filter>tools</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\main.cpp" />
+    <ClCompile Include="..\..\src\aboutdialog.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="../../include/styles.h">
@@ -108,6 +109,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\tools\shared.h">
       <Filter>tools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\aboutdialog.h">
+      <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

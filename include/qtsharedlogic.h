@@ -19,14 +19,10 @@ namespace qtshared
     public slots:
         void OnBrowsePath( bool checked )
         {
-            filePath curPathAbs;
-
-            bool hasPath = fileRoot->GetFullPath( "/", false, curPathAbs );
-
             QString selPath =
                 QFileDialog::getExistingDirectory(
                     this, "Browse Directory...",
-                    hasPath ? QString::fromStdWString( curPathAbs.convert_unicode() ) : QString()
+                    theEdit->text()
                 );
 
             if ( selPath.isEmpty() == false )

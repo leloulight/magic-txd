@@ -12,6 +12,7 @@
 #include <qmovie.h>
 #include <QFileDialog>
 #include <QDir>
+#include <QDesktopServices>
 
 #include "styles.h"
 #include "textureViewport.h"
@@ -45,6 +46,7 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
     this->renderPropDlg = NULL;
     this->resizeDlg = NULL;
     this->platformDlg = NULL;
+    this->aboutDlg = NULL;
     this->rwVersionButton = NULL;
     this->recheckingThemeItem = false;
 
@@ -421,6 +423,20 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
 
 	    actionQuit->setShortcut(QKeySequence::Quit);
 	    connect(actionQuit, &QAction::triggered, this, &MainWindow::close);
+
+        QMenu *infoMenu = menu->addMenu(tr("&Info"));
+
+        QAction *actionOpenWebsite = new QAction("&Website", this);
+        infoMenu->addAction(actionOpenWebsite);
+
+        connect( actionOpenWebsite, &QAction::triggered, this, &MainWindow::onRequestOpenWebsite );
+
+        infoMenu->addSeparator();
+
+        QAction *actionAbout = new QAction("&About", this);
+        infoMenu->addAction(actionAbout);
+
+        connect( actionAbout, &QAction::triggered, this, &MainWindow::onAboutUs );
 
 	    QHBoxLayout *hlayout = new QHBoxLayout;
 	    txdOptionsBackground->setLayout(hlayout);
@@ -1639,6 +1655,26 @@ void MainWindow::onRequestMassExport(bool checked)
     MassExportWindow *massexport = new MassExportWindow( this );
 
     massexport->setVisible( true );
+}
+
+void MainWindow::onRequestOpenWebsite(bool checked)
+{
+    // TODO ;o
+    QDesktopServices::openUrl( QUrl( "http://niceme.me" ) );
+}
+
+void MainWindow::onAboutUs(bool checked)
+{
+    if ( QDialog *curDlg = this->aboutDlg )
+    {
+        curDlg->setFocus();
+    }
+    else
+    {
+        AboutDialog *aboutDlg = new AboutDialog( this );
+
+        aboutDlg->setVisible( true );
+    }
 }
 
 QString MainWindow::makeAppPath(QString subPath) {

@@ -35,6 +35,7 @@ struct SystemEventHandlerWidget abstract
 #include "txdadddialog.h"
 #include "rwfswrap.h"
 #include "guiserialization.h"
+#include "aboutdialog.h"
 
 #include "MagicExport.h"
 
@@ -49,6 +50,7 @@ class MainWindow : public QMainWindow
     friend class TexResizeWindow;
     friend class PlatformSelWindow;
     friend class ExportAllWindow;
+    friend class AboutDialog;
 
 public:
     MainWindow(QString appPath, rw::Interface *rwEngine, CFileSystem *fsHandle, QWidget *parent = 0);
@@ -127,6 +129,9 @@ public slots:
 
     void onToogleDarkTheme(bool checked);
     void onToogleLightTheme(bool checked);
+
+    void onRequestOpenWebsite(bool checked);
+    void onAboutUs(bool checked);
 
 private:
     QString requestValidImagePath( void );
@@ -241,6 +246,7 @@ private:
     RenderPropWindow *renderPropDlg; // change a texture's wrapping or filtering
     TexResizeWindow *resizeDlg; // change raster dimensions
     PlatformSelWindow *platformDlg; // set TXD platform
+    AboutDialog *aboutDlg;  // about us. :-)
 
     struct magf_extension
     {

@@ -436,3 +436,14 @@ QPlainTextEdit {
 	selection-background-color: #103bdb;
 	selection-color: #ffffff;
 }
+
+QLabel#labelCopyrightHolders
+{
+    font-size: 15px;
+}
+
+QLabel#labelDoNotUseCommercially
+{
+    color: #ffff00;
+    font-size: 18px;
+}

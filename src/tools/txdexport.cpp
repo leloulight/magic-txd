@@ -154,52 +154,59 @@ struct _discFileSentry_txdexport
         // Terminate if we are asked to.
         rw::CheckThreadHazards( rwEngine );
 
-        // We just process TXD files.
-        if ( extention.equals( "TXD", false ) == true )
+        try
         {
-            // Send an appropriate status message.
+            // We just process TXD files.
+            if ( extention.equals( "TXD", false ) == true )
             {
-                std::wstring statusFileName;
-
-                if ( isInArchive )
+                // Send an appropriate status message.
                 {
-                    statusFileName += L"$";
+                    std::wstring statusFileName;
+
+                    if ( isInArchive )
+                    {
+                        statusFileName += L"$";
+                    }
+
+                    statusFileName += relPathFromRoot.convert_unicode();
+
+                    module->OnProcessingFile( statusFileName );
                 }
 
-                statusFileName += relPathFromRoot.convert_unicode();
+                // Get the relative path to the file without the filename.
+                filePath relPathFromRootWithoutFile;
 
-                module->OnProcessingFile( statusFileName );
-            }
+                buildRoot->GetRelativePathFromRoot( relPathFromRoot, false, relPathFromRootWithoutFile );
 
-            // Get the relative path to the file without the filename.
-            filePath relPathFromRootWithoutFile;
+                // For each texture that we find, export it as raw image.
+                rw::TexDictionary *texDict = RwTexDictionaryStreamRead( rwEngine, sourceStream );
 
-            buildRoot->GetRelativePathFromRoot( relPathFromRoot, false, relPathFromRootWithoutFile );
-
-            // For each texture that we find, export it as raw image.
-            rw::TexDictionary *texDict = RwTexDictionaryStreamRead( rwEngine, sourceStream );
-
-            if ( texDict )
-            {
-                try
+                if ( texDict )
                 {
-                    // Export everything inside of this.
-                    ExportImagesFromDictionary(
-                        texDict, buildRoot, fileName, relPathFromRootWithoutFile, config->outputType,
-                        config->recImgFormat
-                    );
+                    try
+                    {
+                        // Export everything inside of this.
+                        ExportImagesFromDictionary(
+                            texDict, buildRoot, fileName, relPathFromRootWithoutFile, config->outputType,
+                            config->recImgFormat
+                        );
 
-                    anyWork = true;
-                }
-                catch( ... )
-                {
+                        anyWork = true;
+                    }
+                    catch( ... )
+                    {
+                        rwEngine->DeleteRwObject( texDict );
+
+                        throw;
+                    }
+
                     rwEngine->DeleteRwObject( texDict );
-
-                    throw;
                 }
-
-                rwEngine->DeleteRwObject( texDict );
             }
+        }
+        catch( rw::RwException& except )
+        {
+            // We ignore RenderWare errors.
         }
 
         // Done!
