@@ -1,7 +1,9 @@
 #ifndef _TXDGEN_MODULE_
 #define _TXDGEN_MODULE_
 
-class TxdGenModule
+#include "shared.h"
+
+class TxdGenModule : public MessageReceiver
 {
 public:
     enum eTargetPlatform
@@ -85,9 +87,6 @@ public:
     {
         return this->rwEngine;
     }
-
-    virtual void OnMessage( const std::string& msg ) = 0;
-    virtual void OnMessage( const std::wstring& msg ) = 0;
 
     struct RwWarningBuffer : public rw::WarningManagerInterface
     {

@@ -22,6 +22,7 @@
 #include "platformselwindow.h"
 #include "massconvert.h"
 #include "exportallwindow.h"
+#include "massexport.h"
 
 #include "tools/txdgen.h"
 
@@ -290,6 +291,11 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
 
         connect( actionMassConvert, &QAction::triggered, this, &MainWindow::onRequestMassConvert );
 
+        QAction *actionMassExport = new QAction("&Mass export", this);
+        toolsMenu->addAction(actionMassExport);
+
+        connect( actionMassExport, &QAction::triggered, this, &MainWindow::onRequestMassExport );
+
 	    QMenu *exportMenu = menu->addMenu(tr("&Export"));
 
         this->addTextureFormatExportLinkToMenu( exportMenu, "PNG", "Portable Network Graphics" );
@@ -496,21 +502,8 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
     }
 }
 
-MainWindow::~MainWindow()
+void MainWindow::deleteChildWindows( void )
 {
-    // If we have a loaded TXD, get rid of it.
-    if ( this->currentTXD )
-    {
-        this->rwEngine->DeleteRwObject( this->currentTXD );
-
-        this->currentTXD = NULL;
-    }
-
-    delete txdLog;
-
-    // Remove the warning manager again.
-    this->rwEngine->SetWarningManager( NULL );
-
     // Delete all child windows.
     {
         QObjectList children = this->children();
@@ -528,6 +521,22 @@ MainWindow::~MainWindow()
             }
         }
     }
+}
+
+MainWindow::~MainWindow()
+{
+    // If we have a loaded TXD, get rid of it.
+    if ( this->currentTXD )
+    {
+        this->rwEngine->DeleteRwObject( this->currentTXD );
+
+        this->currentTXD = NULL;
+    }
+
+    delete txdLog;
+
+    // Remove the warning manager again.
+    this->rwEngine->SetWarningManager( NULL );
 
     // Shutdown the native format handlers.
     this->shutdownNativeFormats();
@@ -1623,6 +1632,13 @@ void MainWindow::onRequestMassConvert(bool checked)
     MassConvertWindow *massconv = new MassConvertWindow( this );
 
     massconv->setVisible( true );
+}
+
+void MainWindow::onRequestMassExport(bool checked)
+{
+    MassExportWindow *massexport = new MassExportWindow( this );
+
+    massexport->setVisible( true );
 }
 
 QString MainWindow::makeAppPath(QString subPath) {

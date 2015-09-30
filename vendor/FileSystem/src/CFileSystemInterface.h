@@ -1225,6 +1225,11 @@ namespace FileSystem
         return filePath( fileStartFrom, fileEnd - fileStartFrom );
     }
 
+    AINLINE filePath GetFileNameItem( const filePath& name, bool includeExtension = false, filePath *outDirectory = NULL, filePath *outExtention = NULL )
+    {
+        return filePath_dispatch( name, [=]( auto name ) { return GetFileNameItem( name, includeExtension, outDirectory, outExtention ); } );
+    }
+
     // Returns whether a path is a directory.
     inline bool IsPathDirectory( const filePath& thePath )
     {

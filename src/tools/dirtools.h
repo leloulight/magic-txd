@@ -1,9 +1,11 @@
+#include "shared.h"
+
 template <typename sentryType>
 struct gtaFileProcessor
 {
-    TxdGenModule *module;
+    MessageReceiver *module;
 
-    inline gtaFileProcessor( TxdGenModule *module )
+    inline gtaFileProcessor( MessageReceiver *module )
     {
         this->reconstruct_archives = true;
         this->use_compressed_img_archives = true;
@@ -50,7 +52,7 @@ private:
             this->anyWork = false;
         }
 
-        TxdGenModule *module;
+        MessageReceiver *module;
 
         CFileTranslator *discHandle;
         CFileTranslator *buildRoot;
@@ -68,7 +70,7 @@ private:
     {
         _discFileTraverse *info = (_discFileTraverse*)userdata;
 
-        TxdGenModule *module = info->module;
+        MessageReceiver *module = info->module;
 
         bool anyWork = false;
 
@@ -76,9 +78,7 @@ private:
         // Create a destination file inside of the build root using the relative path from the source trans root.
         filePath relPathFromRoot;
 
-        std::wstring wDiscFilePathAbs = discFilePathAbs.convert_unicode();
-        
-        bool hasTargetRelativePath = info->discHandle->GetRelativePathFromRoot( wDiscFilePathAbs.c_str(), true, relPathFromRoot );
+        bool hasTargetRelativePath = info->discHandle->GetRelativePathFromRoot( discFilePathAbs, true, relPathFromRoot );
 
         if ( hasTargetRelativePath )
         {
@@ -86,26 +86,24 @@ private:
 
             filePath extention;
 
-            filePath fileName = FileSystem::GetFileNameItem( wDiscFilePathAbs.c_str(), false, NULL, &extention );
+            filePath fileName = FileSystem::GetFileNameItem( discFilePathAbs, false, NULL, &extention );
 
             if ( extention.size() != 0 )
             {
                 if ( extention.equals( "IMG", false ) )
                 {
-                    std::wstring wRelPathFromRoot = relPathFromRoot.convert_unicode();
-
-                    module->OnMessage( L"processing " + wRelPathFromRoot + L" ...\n" );
+                    module->OnMessage( L"processing " + relPathFromRoot.convert_unicode() + L" ...\n" );
 
                     // Open the IMG archive.
                     CIMGArchiveTranslatorHandle *srcIMGRoot = NULL;
 
                     if ( info->use_compressed_img_archives )
                     {
-                        srcIMGRoot = fileSystem->OpenCompressedIMGArchive( info->discHandle, wRelPathFromRoot.c_str() );
+                        srcIMGRoot = fileSystem->OpenCompressedIMGArchive( info->discHandle, relPathFromRoot );
                     }
                     else
                     {
-                        srcIMGRoot = fileSystem->OpenIMGArchive( info->discHandle, wRelPathFromRoot.c_str() );
+                        srcIMGRoot = fileSystem->OpenIMGArchive( info->discHandle, relPathFromRoot );
                     }
 
                     if ( srcIMGRoot )
@@ -127,11 +125,11 @@ private:
 
                                 if ( info->use_compressed_img_archives )
                                 {
-                                    newIMGRoot = fileSystem->CreateCompressedIMGArchive( info->buildRoot, wRelPathFromRoot.c_str(), imgVersion );
+                                    newIMGRoot = fileSystem->CreateCompressedIMGArchive( info->buildRoot, relPathFromRoot, imgVersion );
                                 }
                                 else
                                 {
-                                    newIMGRoot = fileSystem->CreateIMGArchive( info->buildRoot, wRelPathFromRoot.c_str(), imgVersion );
+                                    newIMGRoot = fileSystem->CreateIMGArchive( info->buildRoot, relPathFromRoot, imgVersion );
                                 }
 
                                 if ( newIMGRoot )
@@ -145,20 +143,20 @@ private:
                                 // Create a new directory in place of the archive.
                                 filePath srcPathToNewDir;
 
-                                info->discHandle->GetRelativePathFromRoot( wDiscFilePathAbs.c_str(), false, srcPathToNewDir );
+                                info->discHandle->GetRelativePathFromRoot( discFilePathAbs, false, srcPathToNewDir );
 
                                 filePath pathToNewDir;
 
-                                info->buildRoot->GetFullPathFromRoot( srcPathToNewDir.c_str(), false, pathToNewDir );
+                                info->buildRoot->GetFullPathFromRoot( srcPathToNewDir, false, pathToNewDir );
 
-                                pathToNewDir += fileName.c_str();
+                                pathToNewDir += fileName;
                                 pathToNewDir += "_archive/";
 
-                                bool createDirSuccess = info->buildRoot->CreateDir( pathToNewDir.c_str() );
+                                bool createDirSuccess = info->buildRoot->CreateDir( pathToNewDir );
 
                                 if ( createDirSuccess )
                                 {
-                                    CFileTranslator *newDirRoot = fileSystem->CreateTranslator( pathToNewDir.c_str() );
+                                    CFileTranslator *newDirRoot = fileSystem->CreateTranslator( pathToNewDir );
 
                                     if ( newDirRoot )
                                     {
@@ -247,7 +245,7 @@ private:
                 // Copy all files into the build root.
                 CFile *sourceStream = NULL;
                 {
-                    sourceStream = info->discHandle->Open( wDiscFilePathAbs.c_str(), L"rb" );
+                    sourceStream = info->discHandle->Open( discFilePathAbs, L"rb" );
                 }
                 
                 if ( sourceStream )

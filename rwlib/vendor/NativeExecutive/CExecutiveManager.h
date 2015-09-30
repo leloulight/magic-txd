@@ -93,8 +93,8 @@ public:
     void                UnregisterThreadPlugin( threadPluginOffset offset );
 
     CExecThread*    CreateThread        ( CExecThread::threadEntryPoint_t proc, void *userdata, size_t stackSize = 0 );
-    void            TerminateThread     ( CExecThread *thread );    // DANGEROUS function!
-    void            JoinThread          ( CExecThread *thread );    // safe function :)
+    void            TerminateThread     ( CExecThread *thread, bool waitOnRemote = true );
+    void            JoinThread          ( CExecThread *thread );
     CExecThread*    GetCurrentThread    ( void );
     CExecThread*    AcquireThread       ( CExecThread *thread );
     void            CloseThread         ( CExecThread *thread );

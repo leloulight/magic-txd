@@ -305,13 +305,13 @@ void JoinThread( Interface *engineInterface, thread_t threadHandle )
     threadEnv->nativeMan->JoinThread( theThread );
 }
 
-void TerminateThread( Interface *engineInterface, thread_t threadHandle )
+void TerminateThread( Interface *engineInterface, thread_t threadHandle, bool waitOnRemote )
 {
     threadingEnvironment *threadEnv = GetThreadingEnv( engineInterface );
 
     CExecThread *theThread = (CExecThread*)threadHandle;
 
-    threadEnv->nativeMan->TerminateThread( theThread );
+    threadEnv->nativeMan->TerminateThread( theThread, waitOnRemote );
 }
 
 void CheckThreadHazards( Interface *engineInterface )

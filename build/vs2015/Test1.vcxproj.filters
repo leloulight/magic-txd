@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="../../src/main.cpp" />
     <ClCompile Include="../../src/mainwindow.cpp" />
     <ClCompile Include="..\..\src\texadddialog.cpp" />
     <ClCompile Include="..\..\src\texformatextensions.cpp" />
@@ -10,9 +9,14 @@
     <ClCompile Include="..\..\src\guiserialization.cpp" />
     <ClCompile Include="..\..\src\rwfswrap.cpp" />
     <ClCompile Include="..\..\src\tools\txdgen.cpp">
-      <Filter>txdgen</Filter>
+      <Filter>tools</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\massconvert.cpp" />
+    <ClCompile Include="..\..\src\massexport.cpp" />
+    <ClCompile Include="..\..\src\tools\txdexport.cpp">
+      <Filter>tools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="../../include/styles.h">
@@ -76,10 +80,10 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\tools\txdgen.h">
-      <Filter>txdgen</Filter>
+      <Filter>tools</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\tools\dirtools.h">
-      <Filter>txdgen</Filter>
+      <Filter>tools</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\massconvert.h">
       <Filter>include</Filter>
@@ -96,6 +100,15 @@
     <ClInclude Include="..\..\include\massexport.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\qtsharedlogic.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\tools\txdexport.h">
+      <Filter>tools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\tools\shared.h">
+      <Filter>tools</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">
@@ -107,7 +120,7 @@
     <Filter Include="resources">
       <UniqueIdentifier>{b27ee640-2aa4-4644-92f5-957237f3e0f9}</UniqueIdentifier>
     </Filter>
-    <Filter Include="txdgen">
+    <Filter Include="tools">
       <UniqueIdentifier>{e1ccb885-3ab4-49fd-970f-7d53a71344ea}</UniqueIdentifier>
     </Filter>
   </ItemGroup>

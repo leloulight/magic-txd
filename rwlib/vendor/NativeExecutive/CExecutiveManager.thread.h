@@ -41,7 +41,7 @@ public:
 
     eThreadStatus GetStatus( void ) const;
 
-    bool Terminate( void );
+    bool Terminate( bool waitOnRemote = true );
     
     bool Suspend( void );
     bool Resume( void );

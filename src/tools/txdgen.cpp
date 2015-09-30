@@ -341,7 +341,7 @@ bool TxdGenModule::ProcessTXDArchive(
     return hasProcessed;
 }
 
-struct _discFileSentry
+struct _discFileSentry_txdgen
 {
     TxdGenModule *module;
     TxdGenModule::eTargetPlatform targetPlatform;
@@ -992,13 +992,13 @@ bool TxdGenModule::ApplicationMain( const run_config& cfg )
                 {
                     // File roots are prepared.
                     // We can start processing files.
-                    gtaFileProcessor <_discFileSentry> fileProc( this );
+                    gtaFileProcessor <_discFileSentry_txdgen> fileProc( this );
 
                     fileProc.setArchiveReconstruction( cfg.c_reconstructIMGArchives );
 
                     fileProc.setUseCompressedIMGArchives( cfg.c_imgArchivesCompressed );
 
-                    _discFileSentry sentry;
+                    _discFileSentry_txdgen sentry;
                     sentry.module = this;
                     sentry.targetPlatform = cfg.c_targetPlatform;
                     sentry.clearMipmaps = cfg.c_clearMipmaps;

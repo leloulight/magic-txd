@@ -54,6 +54,8 @@ public:
     MainWindow(QString appPath, rw::Interface *rwEngine, CFileSystem *fsHandle, QWidget *parent = 0);
     ~MainWindow();
 
+    void deleteChildWindows( void );
+
 private:
     void initializeNativeFormats( void );
     void shutdownNativeFormats( void );
@@ -121,6 +123,7 @@ public slots:
 	void onSetupTxdVersion(bool checked);
 
     void onRequestMassConvert(bool checked);
+    void onRequestMassExport(bool checked);
 
     void onToogleDarkTheme(bool checked);
     void onToogleLightTheme(bool checked);

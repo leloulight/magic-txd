@@ -200,7 +200,7 @@ struct nativeThreadPluginInterface : public ExecutiveManager::threadPluginContai
         PVOID StackLimit;
     } NT_TIB;
 
-    void RtlTerminateThread( CExecutiveManager *manager, nativeThreadPlugin *threadInfo, nativeLock& ctxLock )
+    void RtlTerminateThread( CExecutiveManager *manager, nativeThreadPlugin *threadInfo, nativeLock& ctxLock, bool waitOnRemote )
     {
         CExecThread *theThread = threadInfo->self;
 
@@ -236,13 +236,16 @@ struct nativeThreadPluginInterface : public ExecutiveManager::threadPluginContai
             // We do not need the lock anymore.
             ctxLock.Suspend();
 
-            // Wait for thread termination.
-            while ( threadInfo->status != THREAD_TERMINATED )
+            if ( waitOnRemote )
             {
-                WaitForSingleObject( threadInfo->hThread, INFINITE );
-            }
+                // Wait for thread termination.
+                while ( threadInfo->status != THREAD_TERMINATED )
+                {
+                    WaitForSingleObject( threadInfo->hThread, INFINITE );
+                }
 
-            // If we return here, the thread must be terminated.
+                // If we return here, the thread must be terminated.
+            }
 
             // TODO: allow safe termination of suspended threads.
         }
@@ -467,7 +470,7 @@ eThreadStatus CExecThread::GetStatus( void ) const
 // Termination of a thread is allowed to be executed by another thread (e.g. the "main" thread).
 // NOTE: logic has been changed to be secure. now proper terminating depends on a contract between runtime
 // and the NativeExecutive library.
-bool CExecThread::Terminate( void )
+bool CExecThread::Terminate( bool waitOnRemote )
 {
     bool returnVal = false;
 
@@ -481,7 +484,7 @@ bool CExecThread::Terminate( void )
         {
             nativeLock lock( info->threadLock );
 
-            if ( info->status != THREAD_TERMINATED )
+            if ( info->status != THREAD_TERMINATING && info->status != THREAD_TERMINATED )
             {
                 // Termination depends on what kind of thread we face.
                 if ( this->isRemoteThread )
@@ -506,7 +509,7 @@ bool CExecThread::Terminate( void )
                     {
                         // User-mode threads have to be cleanly terminated.
                         // This means going down the exception stack.
-                        nativeEnv->_nativePluginInterface.RtlTerminateThread( this->manager, info, lock );
+                        nativeEnv->_nativePluginInterface.RtlTerminateThread( this->manager, info, lock, waitOnRemote );
 
                         // We may not actually get here!
                     }
@@ -695,7 +698,7 @@ CExecThread* CExecutiveManager::CreateThread( CExecThread::threadEntryPoint_t en
     return threadInfo;
 }
 
-void CExecutiveManager::TerminateThread( CExecThread *thread )
+void CExecutiveManager::TerminateThread( CExecThread *thread, bool waitOnRemote )
 {
     thread->Terminate();
 }

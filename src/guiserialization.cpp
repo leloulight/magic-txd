@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 
 #include "massconvert.h"
+#include "massexport.h"
 
 #define MAGICTXD_UNICODE_STRING_ID      0xBABE0001
 #define MAGICTXD_CONFIG_BLOCK           0xBABE0002
@@ -184,6 +185,11 @@ struct mainWindowSerialization
         bool c_ignoreSecureWarnings;
     };
 
+    struct massexp_cfg_struct
+    {
+        endian::little_endian <MassExportModule::eOutputType> outputType;
+    };
+
     inline void loadSerialization( rw::BlockProvider& mainBlock, MainWindow *mainwnd )
     {
         // last directory we were in to save TXD file.
@@ -267,31 +273,34 @@ struct mainWindowSerialization
 
             try
             {
-                RwReadUnicodeString( massconvBlock, massconv->txdgenConfig.c_gameRoot );
-                RwReadUnicodeString( massconvBlock, massconv->txdgenConfig.c_outputRoot );
+                if ( massconvBlock.getBlockID() == rw::CHUNK_STRUCT )
+                {
+                    RwReadUnicodeString( massconvBlock, massconv->txdgenConfig.c_gameRoot );
+                    RwReadUnicodeString( massconvBlock, massconv->txdgenConfig.c_outputRoot );
 
-                txdgen_cfg_struct cfgStruct;
-                massconvBlock.readStruct( cfgStruct );
+                    txdgen_cfg_struct cfgStruct;
+                    massconvBlock.readStruct( cfgStruct );
 
-                massconv->txdgenConfig.c_gameVersion = cfgStruct.c_gameVersion;
-                massconv->txdgenConfig.c_targetPlatform = cfgStruct.c_targetPlatform;
-                massconv->txdgenConfig.c_clearMipmaps = cfgStruct.c_clearMipmaps;
-                massconv->txdgenConfig.c_generateMipmaps = cfgStruct.c_generateMipmaps;
-                massconv->txdgenConfig.c_mipGenMode = cfgStruct.c_mipGenMode;
-                massconv->txdgenConfig.c_mipGenMaxLevel = cfgStruct.c_mipGenMaxLevel;
-                massconv->txdgenConfig.c_improveFiltering = cfgStruct.c_improveFiltering;
-                massconv->txdgenConfig.compressTextures = cfgStruct.compressTextures;
-                massconv->txdgenConfig.c_palRuntimeType = cfgStruct.c_palRuntimeType;
-                massconv->txdgenConfig.c_dxtRuntimeType = cfgStruct.c_dxtRuntimeType;
-                massconv->txdgenConfig.c_reconstructIMGArchives = cfgStruct.c_reconstructIMGArchives;
-                massconv->txdgenConfig.c_fixIncompatibleRasters = cfgStruct.c_fixIncompatibleRasters;
-                massconv->txdgenConfig.c_dxtPackedDecompression = cfgStruct.c_dxtPackedDecompression;
-                massconv->txdgenConfig.c_imgArchivesCompressed = cfgStruct.c_imgArchivesCompressed;
-                massconv->txdgenConfig.c_ignoreSerializationRegions = cfgStruct.c_ignoreSerializationRegions;
-                massconv->txdgenConfig.c_compressionQuality = cfgStruct.c_compressionQuality;
-                massconv->txdgenConfig.c_outputDebug = cfgStruct.c_outputDebug;
-                massconv->txdgenConfig.c_warningLevel = cfgStruct.c_warningLevel;
-                massconv->txdgenConfig.c_ignoreSecureWarnings = cfgStruct.c_ignoreSecureWarnings;
+                    massconv->txdgenConfig.c_gameVersion = cfgStruct.c_gameVersion;
+                    massconv->txdgenConfig.c_targetPlatform = cfgStruct.c_targetPlatform;
+                    massconv->txdgenConfig.c_clearMipmaps = cfgStruct.c_clearMipmaps;
+                    massconv->txdgenConfig.c_generateMipmaps = cfgStruct.c_generateMipmaps;
+                    massconv->txdgenConfig.c_mipGenMode = cfgStruct.c_mipGenMode;
+                    massconv->txdgenConfig.c_mipGenMaxLevel = cfgStruct.c_mipGenMaxLevel;
+                    massconv->txdgenConfig.c_improveFiltering = cfgStruct.c_improveFiltering;
+                    massconv->txdgenConfig.compressTextures = cfgStruct.compressTextures;
+                    massconv->txdgenConfig.c_palRuntimeType = cfgStruct.c_palRuntimeType;
+                    massconv->txdgenConfig.c_dxtRuntimeType = cfgStruct.c_dxtRuntimeType;
+                    massconv->txdgenConfig.c_reconstructIMGArchives = cfgStruct.c_reconstructIMGArchives;
+                    massconv->txdgenConfig.c_fixIncompatibleRasters = cfgStruct.c_fixIncompatibleRasters;
+                    massconv->txdgenConfig.c_dxtPackedDecompression = cfgStruct.c_dxtPackedDecompression;
+                    massconv->txdgenConfig.c_imgArchivesCompressed = cfgStruct.c_imgArchivesCompressed;
+                    massconv->txdgenConfig.c_ignoreSerializationRegions = cfgStruct.c_ignoreSerializationRegions;
+                    massconv->txdgenConfig.c_compressionQuality = cfgStruct.c_compressionQuality;
+                    massconv->txdgenConfig.c_outputDebug = cfgStruct.c_outputDebug;
+                    massconv->txdgenConfig.c_warningLevel = cfgStruct.c_warningLevel;
+                    massconv->txdgenConfig.c_ignoreSecureWarnings = cfgStruct.c_ignoreSecureWarnings;
+                }
             }
             catch( ... )
             {
@@ -301,6 +310,37 @@ struct mainWindowSerialization
             }
 
             massconvBlock.LeaveContext();
+        }
+
+        // Mass Export configuration block.
+        if ( massexportEnv *massexport = massexportEnvRegister.GetPluginStruct( mainwnd ) )
+        {
+            rw::BlockProvider massexportBlock( &mainBlock );
+
+            massexportBlock.EnterContext();
+
+            try
+            {
+                if ( massexportBlock.getBlockID() == rw::CHUNK_STRUCT )
+                {
+                    RwReadUnicodeString( massexportBlock, massexport->config.gameRoot );
+                    RwReadUnicodeString( massexportBlock, massexport->config.outputRoot );
+                    RwReadANSIString( massexportBlock, massexport->config.recImgFormat );
+
+                    massexp_cfg_struct cfgStruct;
+                    massexportBlock.readStruct( cfgStruct );
+
+                    massexport->config.outputType = cfgStruct.outputType;
+                }
+            }
+            catch( ... )
+            {
+                massexportBlock.LeaveContext();
+
+                throw;
+            }
+
+            massexportBlock.LeaveContext();
         }
     }
 
@@ -397,6 +437,34 @@ struct mainWindowSerialization
             }
 
             massconvBlock.LeaveContext();
+        }
+
+        // Mass Export config block.
+        if ( const massexportEnv *massexport = massexportEnvRegister.GetConstPluginStruct( mainwnd ) )
+        {
+            rw::BlockProvider massexportBlock( &mainBlock );
+
+            massexportBlock.EnterContext();
+
+            try
+            {
+                RwWriteUnicodeString( massexportBlock, massexport->config.gameRoot );
+                RwWriteUnicodeString( massexportBlock, massexport->config.outputRoot );
+                RwWriteANSIString( massexportBlock, massexport->config.recImgFormat );
+
+                massexp_cfg_struct cfgStruct;
+                cfgStruct.outputType = massexport->config.outputType;
+
+                massexportBlock.writeStruct( cfgStruct );
+            }
+            catch( ... )
+            {
+                massexportBlock.LeaveContext();
+
+                throw;
+            }
+
+            massexportBlock.LeaveContext();
         }
     }
 

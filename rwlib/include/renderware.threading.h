@@ -115,7 +115,7 @@ thread_t AcquireThread( Interface *engineInterface, thread_t threadHandle );
 bool ResumeThread( Interface *engineInterface, thread_t threadHandle );
 bool SuspendThread( Interface *engineInterface, thread_t theadHandle );
 void JoinThread( Interface *engineInterface, thread_t threadHandle );
-void TerminateThread( Interface *engineInterface, thread_t threadHandle );
+void TerminateThread( Interface *engineInterface, thread_t threadHandle, bool waitOnRemote = true );
 
 void CheckThreadHazards( Interface *engineInterface );
 

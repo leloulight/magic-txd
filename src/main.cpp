@@ -123,6 +123,7 @@ struct defaultMemAlloc
 // Main window plugin entry points.
 extern void InitializeRWFileSystemWrap(void);
 extern void InitializeMassconvToolEnvironment(void);
+extern void InitializeMassExportToolEnvironment( void );
 extern void InitializeGUISerialization(void);
 
 static defaultMemAlloc _factMemAlloc;
@@ -132,6 +133,7 @@ int main(int argc, char *argv[])
     // Initialize all main window plugins.
     InitializeRWFileSystemWrap();
     InitializeMassconvToolEnvironment();
+    InitializeMassExportToolEnvironment();
     InitializeGUISerialization();
 
     int iRet = -1;
@@ -220,10 +222,14 @@ int main(int argc, char *argv[])
             }
             catch( ... )
             {
+                w->deleteChildWindows();
+
                 mainWindowFactory.Destroy( _factMemAlloc, w );
 
                 throw;
             }
+
+            w->deleteChildWindows();
 
             mainWindowFactory.Destroy(_factMemAlloc, w);
         }

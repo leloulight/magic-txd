@@ -6,6 +6,8 @@
 
 #include <QCoreApplication>
 
+#include "qtsharedlogic.h"
+
 massconvEnvRegister_t massconvEnvRegister;
 
 void InitializeMassconvToolEnvironment( void )
@@ -90,8 +92,8 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
 
     QFormLayout *basicPathForm = new QFormLayout();
 
-    QLayout *gameRootLayout = createPathSelectGroup( QString::fromStdWString( massconv->txdgenConfig.c_gameRoot ), this->editGameRoot );
-    QLayout *outputRootLayout = createPathSelectGroup( QString::fromStdWString( massconv->txdgenConfig.c_outputRoot ), this->editOutputRoot );
+    QLayout *gameRootLayout = qtshared::createPathSelectGroup( QString::fromStdWString( massconv->txdgenConfig.c_gameRoot ), this->editGameRoot );
+    QLayout *outputRootLayout = qtshared::createPathSelectGroup( QString::fromStdWString( massconv->txdgenConfig.c_outputRoot ), this->editOutputRoot );
 
     basicPathForm->addRow( new QLabel( "Game root:" ), gameRootLayout );
     basicPathForm->addRow( new QLabel( "Output root: " ), outputRootLayout );

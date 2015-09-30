@@ -1061,7 +1061,7 @@ protected:
     template <>
     inline static stringProvider* CreateStringProvider <wchar_t> ( void )
     {
-        return NULL;
+        return new wideStringProvider();
     }
 
     template <typename charType>

@@ -630,13 +630,15 @@
   <ItemGroup>
     <ClCompile Include="..\..\src\guiserialization.cpp" />
     <ClCompile Include="..\..\src\MagicExport.cpp" />
+    <ClCompile Include="..\..\src\main.cpp" />
     <ClCompile Include="..\..\src\massconvert.cpp" />
+    <ClCompile Include="..\..\src\massexport.cpp" />
     <ClCompile Include="..\..\src\renderpropwindow.cpp" />
     <ClCompile Include="..\..\src\rwfswrap.cpp" />
     <ClCompile Include="..\..\src\texadddialog.cpp" />
     <ClCompile Include="..\..\src\texformatextensions.cpp" />
-    <ClCompile Include="../../src/main.cpp" />
     <ClCompile Include="../../src/mainwindow.cpp" />
+    <ClCompile Include="..\..\src\tools\txdexport.cpp" />
     <ClCompile Include="..\..\src\tools\txdgen.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -647,6 +649,7 @@
     <ClInclude Include="..\..\include\massconvert.h" />
     <ClInclude Include="..\..\include\massexport.h" />
     <ClInclude Include="..\..\include\platformselwindow.h" />
+    <ClInclude Include="..\..\include\qtsharedlogic.h" />
     <ClInclude Include="..\..\include\renderpropwindow.h" />
     <ClInclude Include="..\..\include\resizewindow.h" />
     <ClInclude Include="..\..\include\resource.h" />
@@ -666,6 +669,8 @@
     <ClInclude Include="../../include/texinfoitem.h" />
     <ClInclude Include="../../include/styles.h" />
     <ClInclude Include="..\..\src\tools\dirtools.h" />
+    <ClInclude Include="..\..\src\tools\shared.h" />
+    <ClInclude Include="..\..\src\tools\txdexport.h" />
     <ClInclude Include="..\..\src\tools\txdgen.h" />
   </ItemGroup>
   <ItemGroup>
