@@ -15,6 +15,17 @@ void InitializeMassconvToolEnvironment( void )
     massconvEnvRegister.RegisterPlugin( mainWindowFactory );
 }
 
+void massconvEnv::Shutdown( MainWindow *mainWnd )
+{
+    // Make sure all open dialogs are closed.
+    while ( !LIST_EMPTY( openDialogs.root ) )
+    {
+        MassConvertWindow *wnd = LIST_GETITEM( MassConvertWindow, openDialogs.root.next, node );
+
+        delete wnd;
+    }
+}
+
 struct platformToNatural
 {
     TxdGenModule::eTargetPlatform mode;
@@ -72,7 +83,7 @@ static gameToNaturalList_t gameToNaturalList =
 
 MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
 {
-    const massconvEnv *massconv = massconvEnvRegister.GetConstPluginStruct( mainwnd );
+    massconvEnv *massconv = massconvEnvRegister.GetPluginStruct( mainwnd );
 
     this->mainwnd = mainwnd;
 
@@ -255,10 +266,14 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
     this->convConsistencyLock = rw::CreateReadWriteLock( rwEngine );
 
     this->conversionThread = NULL;
+
+    LIST_INSERT( massconv->openDialogs.root, this->node );
 }
 
 MassConvertWindow::~MassConvertWindow( void )
 {
+    LIST_REMOVE( this->node );
+
     // Make sure we finished the thread.
     rw::Interface *rwEngine = this->mainwnd->GetEngine();
 

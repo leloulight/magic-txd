@@ -7,6 +7,17 @@
 
 massexportEnvRegister_t massexportEnvRegister;
 
+void massexportEnv::Shutdown( MainWindow *mainWnd )
+{
+    // Make sure all open dialogs are closed.
+    while ( !LIST_EMPTY( openDialogs.root ) )
+    {
+        MassExportWindow *wnd = LIST_GETITEM( MassExportWindow, openDialogs.root.next, node );
+
+        delete wnd;
+    }
+}
+
 MassExportWindow::MassExportWindow( MainWindow *mainWnd ) : QDialog( mainWnd )
 {
     // We want a dialog similar to the Mass Export one but it should be without a log.
@@ -14,7 +25,7 @@ MassExportWindow::MassExportWindow( MainWindow *mainWnd ) : QDialog( mainWnd )
 
     this->mainWnd = mainWnd;
 
-    const massexportEnv *env = massexportEnvRegister.GetConstPluginStruct( mainWnd );
+    massexportEnv *env = massexportEnvRegister.GetPluginStruct( mainWnd );
 
     rw::Interface *rwEngine = mainWnd->GetEngine();
 
@@ -145,12 +156,14 @@ MassExportWindow::MassExportWindow( MainWindow *mainWnd ) : QDialog( mainWnd )
 
     this->setLayout( rootLayout );
 
+    LIST_INSERT( env->openDialogs.root, this->node );
+
     // Finito.
 }
 
 MassExportWindow::~MassExportWindow( void )
 {
-    return;
+    LIST_REMOVE( this->node );
 }
 
 struct MagicMassExportModule : public MassExportModule

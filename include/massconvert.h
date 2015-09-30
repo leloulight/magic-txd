@@ -14,19 +14,20 @@
 
 #include "../src/tools/txdgen.h"
 
+struct MassConvertWindow;
+
 struct massconvEnv
 {
     inline void Initialize( MainWindow *mainwnd )
     {
-        return;
+        LIST_CLEAR( this->openDialogs.root );
     }
 
-    inline void Shutdown( MainWindow *mainwnd )
-    {
-        return;
-    }
+    void Shutdown( MainWindow *mainwnd );
 
     TxdGenModule::run_config txdgenConfig;
+
+    RwList <MassConvertWindow> openDialogs;
 };
 
 typedef PluginDependantStructRegister <massconvEnv, mainWindowFactory_t> massconvEnvRegister_t;
@@ -35,6 +36,8 @@ extern massconvEnvRegister_t massconvEnvRegister;
 
 struct MassConvertWindow : public QDialog
 {
+    friend struct massconvEnv;
+
 public:
     MassConvertWindow( MainWindow *mainwnd );
     ~MassConvertWindow();
@@ -72,4 +75,6 @@ public:
     volatile rw::thread_t conversionThread;
 
     rw::rwlock *volatile convConsistencyLock;
+
+    RwListEntry <MassConvertWindow> node;
 };

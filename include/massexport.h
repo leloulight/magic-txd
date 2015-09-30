@@ -13,19 +13,20 @@
 
 #include "../src/tools/txdexport.h"
 
+struct MassExportWindow;
+
 struct massexportEnv
 {
     inline void Initialize( MainWindow *mainWnd )
     {
-        return;
+        LIST_CLEAR( this->openDialogs.root );
     }
 
-    inline void Shutdown( MainWindow *mainWnd )
-    {
-        return;
-    }
+    void Shutdown( MainWindow *mainWnd );
 
     MassExportModule::run_config config;
+
+    RwList <MassExportWindow> openDialogs;
 };
 
 typedef PluginDependantStructRegister <massexportEnv, mainWindowFactory_t> massexportEnvRegister_t;
@@ -36,6 +37,8 @@ extern massexportEnvRegister_t massexportEnvRegister;
 // It is a convenient way of dumping all image files, even from IMG containers.
 struct MassExportWindow : public QDialog
 {
+    friend struct massexportEnv;
+
     MassExportWindow( MainWindow *mainWnd );
     ~MassExportWindow( void );
 
@@ -54,4 +57,6 @@ private:
     QRadioButton *optionExportPlain;
     QRadioButton *optionExportTXDName;
     QRadioButton *optionExportFolders;
+
+    RwListEntry <MassExportWindow> node;
 };

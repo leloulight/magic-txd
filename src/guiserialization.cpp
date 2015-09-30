@@ -3,6 +3,8 @@
 #include "massconvert.h"
 #include "massexport.h"
 
+#include <QByteArray>
+
 #define MAGICTXD_UNICODE_STRING_ID      0xBABE0001
 #define MAGICTXD_CONFIG_BLOCK           0xBABE0002
 #define MAGICTXD_ANSI_STRING_ID         0xBABE0003
@@ -147,10 +149,18 @@ struct mainWindowSerialization
     CFileTranslator *appRoot;       // directory the application module is in.
     CFileTranslator *toolRoot;      // the current directory we launched in
 
+    enum eSelectedTheme
+    {
+        THEME_DARK,
+        THEME_LIGHT
+    };
+
     struct mtxd_cfg_struct
     {
         bool addImageGenMipmaps;
         bool lockDownTXDPlatform;
+        endian::little_endian <eSelectedTheme> selectedTheme;
+        bool showLogOnWarning;
     };
 
     struct txdgen_cfg_struct
@@ -252,6 +262,52 @@ struct mainWindowSerialization
 
                     mainwnd->addImageGenMipmaps = cfgStruct.addImageGenMipmaps;
                     mainwnd->lockDownTXDPlatform = cfgStruct.lockDownTXDPlatform;
+
+                    // Select the appropriate theme.
+                    eSelectedTheme themeOption = cfgStruct.selectedTheme;
+
+                    if ( themeOption == THEME_DARK )
+                    {
+                        mainwnd->onToogleDarkTheme( true );
+                        mainwnd->actionThemeDark->setChecked( true );
+                    }
+                    else if ( themeOption == THEME_LIGHT )
+                    {
+                        mainwnd->onToogleLightTheme( true );
+                        mainwnd->actionThemeLight->setChecked( true );
+                    }
+
+                    mainwnd->showLogOnWarning = cfgStruct.showLogOnWarning;
+
+                    // TXD log settings.
+                    {
+                        rw::BlockProvider logGeomBlock( &mtxdConfig );
+
+                        logGeomBlock.EnterContext();
+
+                        try
+                        {
+                            if ( logGeomBlock.getBlockID() == rw::CHUNK_STRUCT )
+                            {
+                                int geomSize = (int)logGeomBlock.getBlockLength();
+
+                                QByteArray tmpArr( geomSize, 0 );
+
+                                logGeomBlock.read( tmpArr.data(), geomSize );
+
+                                // Restore geometry.
+                                mainwnd->txdLog->restoreGeometry( tmpArr );
+                            }
+                        }
+                        catch( ... )
+                        {
+                            logGeomBlock.LeaveContext();
+
+                            throw;
+                        }
+
+                        logGeomBlock.LeaveContext();
+                    }
                 }
             }
             catch( ... )
@@ -382,7 +438,46 @@ struct mainWindowSerialization
                 cfgStruct.addImageGenMipmaps = mainwnd->addImageGenMipmaps;
                 cfgStruct.lockDownTXDPlatform = mainwnd->lockDownTXDPlatform;
 
+                // Write theme.
+                eSelectedTheme themeOption = THEME_DARK;
+
+                if ( mainwnd->actionThemeDark->isChecked() )
+                {
+                    themeOption = THEME_DARK;
+                }
+                else if ( mainwnd->actionThemeLight->isChecked() )
+                {
+                    themeOption = THEME_LIGHT;
+                }
+
+                cfgStruct.selectedTheme = themeOption;
+                cfgStruct.showLogOnWarning = mainwnd->showLogOnWarning;
+
                 mtxdConfig.writeStruct( cfgStruct );
+
+                // TXD log properties.
+                {
+                    QByteArray logGeom = mainwnd->txdLog->saveGeometry();
+
+                    rw::BlockProvider logGeomBlock( &mtxdConfig );
+
+                    logGeomBlock.EnterContext();
+
+                    try
+                    {
+                        int geomSize = logGeom.size();
+
+                        logGeomBlock.write( logGeom.constData(), geomSize );
+                    }
+                    catch( ... )
+                    {
+                        logGeomBlock.LeaveContext();
+
+                        throw;
+                    }
+
+                    logGeomBlock.LeaveContext();
+                }
             }
             catch( ... )
             {

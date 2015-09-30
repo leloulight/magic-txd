@@ -13,7 +13,7 @@ AboutDialog::AboutDialog( MainWindow *mainWnd ) : QDialog( mainWnd )
     QVBoxLayout *rootLayout = new QVBoxLayout();
 
     this->setMinimumWidth( 350 );
-
+    
     rootLayout->setSizeConstraint( QLayout::SetFixedSize );
 
     QVBoxLayout *headerGroup = new QVBoxLayout();

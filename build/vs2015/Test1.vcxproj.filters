@@ -18,6 +18,8 @@
     </ClCompile>
     <ClCompile Include="..\..\src\main.cpp" />
     <ClCompile Include="..\..\src\aboutdialog.cpp" />
+    <ClCompile Include="..\..\src\optionsdialog.cpp" />
+    <ClCompile Include="..\..\src\txdlog.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="../../include/styles.h">
@@ -111,6 +113,9 @@
       <Filter>tools</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\aboutdialog.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\optionsdialog.h">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>

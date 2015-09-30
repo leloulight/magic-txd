@@ -51,12 +51,12 @@ class MainWindow : public QMainWindow
     friend class PlatformSelWindow;
     friend class ExportAllWindow;
     friend class AboutDialog;
+    friend class OptionsDialog;
+    friend class mainWindowSerialization;
 
 public:
     MainWindow(QString appPath, rw::Interface *rwEngine, CFileSystem *fsHandle, QWidget *parent = 0);
     ~MainWindow();
-
-    void deleteChildWindows( void );
 
 private:
     void initializeNativeFormats( void );
@@ -123,6 +123,7 @@ public slots:
 
     void onSetupRenderingProps( bool checked );
 	void onSetupTxdVersion(bool checked);
+    void onShowOptions(bool checked);
 
     void onRequestMassConvert(bool checked);
     void onRequestMassExport(bool checked);
@@ -218,6 +219,7 @@ private:
     QAction *actionAllTextures;
 #endif //_FEATURES_NOT_IN_CURRENT_RELEASE
     QAction *actionSetupTXDVersion;
+    QAction *actionShowOptions;
     QAction *actionThemeDark;
     QAction *actionThemeLight;
 
@@ -247,6 +249,7 @@ private:
     TexResizeWindow *resizeDlg; // change raster dimensions
     PlatformSelWindow *platformDlg; // set TXD platform
     AboutDialog *aboutDlg;  // about us. :-)
+    QDialog *optionsDlg;    // many options.
 
     struct magf_extension
     {
@@ -292,6 +295,9 @@ public:
 
     bool addImageGenMipmaps;
     bool lockDownTXDPlatform;
+    
+    // Options.
+    bool showLogOnWarning;
 
     // ExportAllWindow
     std::string lastUsedAllExportFormat;

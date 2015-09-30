@@ -222,14 +222,10 @@ int main(int argc, char *argv[])
             }
             catch( ... )
             {
-                w->deleteChildWindows();
-
                 mainWindowFactory.Destroy( _factMemAlloc, w );
 
                 throw;
             }
-
-            w->deleteChildWindows();
 
             mainWindowFactory.Destroy(_factMemAlloc, w);
         }

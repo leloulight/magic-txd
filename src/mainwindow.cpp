@@ -24,6 +24,7 @@
 #include "massconvert.h"
 #include "exportallwindow.h"
 #include "massexport.h"
+#include "optionsdialog.h"
 
 #include "tools/txdgen.h"
 
@@ -47,6 +48,7 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
     this->resizeDlg = NULL;
     this->platformDlg = NULL;
     this->aboutDlg = NULL;
+    this->optionsDlg = NULL;
     this->rwVersionButton = NULL;
     this->recheckingThemeItem = false;
 
@@ -57,6 +59,7 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
         this->lastImageFileOpenDir = this->makeAppPath( "" );
         this->addImageGenMipmaps = true;
         this->lockDownTXDPlatform = true;
+        this->showLogOnWarning = true;
         this->lastUsedAllExportFormat = "PNG";
         this->lastAllExportTarget = this->makeAppPath( "" ).toStdWString();
     }
@@ -81,7 +84,7 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
 	    resize(900, 680);
 
 	    /* --- Log --- */
-	    this->txdLog = new TxdLog(this->m_appPath, this);
+	    this->txdLog = new TxdLog(this, this->m_appPath, this);
 
 	    /* --- List --- */
 	    QListWidget *listWidget = new QListWidget();
@@ -285,6 +288,15 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
         this->actionSetupTXDVersion = actionSetupTxdVersion;
 
 		connect(actionSetupTxdVersion, &QAction::triggered, this, &MainWindow::onSetupTxdVersion);
+
+        editMenu->addSeparator();
+
+        QAction *actionShowOptions = new QAction("&Options", this);
+        editMenu->addAction(actionShowOptions);
+
+        this->actionShowOptions = actionShowOptions;
+        
+        connect(actionShowOptions, &QAction::triggered, this, &MainWindow::onShowOptions);
 
         QMenu *toolsMenu = menu->addMenu(tr("&Tools"));
 
@@ -515,27 +527,6 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
         rwEngine->SetWarningManager( NULL );
 
         throw;
-    }
-}
-
-void MainWindow::deleteChildWindows( void )
-{
-    // Delete all child windows.
-    {
-        QObjectList children = this->children();
-
-        for ( QObject *child : children )
-        {
-            if ( child->isWidgetType() )
-            {
-                QWidget *widget = (QWidget*)child;
-
-                if ( widget->isWindow() )
-                {
-                    delete widget;
-                }
-            }
-        }
     }
 }
 
@@ -1640,6 +1631,20 @@ void MainWindow::onSetupTxdVersion(bool checked) {
 	    dialog->setVisible( true );
 
         this->verDlg = dialog;
+    }
+}
+
+void MainWindow::onShowOptions(bool checked)
+{
+    if ( QDialog *curDlg = this->optionsDlg )
+    {
+        curDlg->setFocus();
+    }
+    else
+    {
+        OptionsDialog *optionsDlg = new OptionsDialog( this );
+
+        optionsDlg->setVisible( true );
     }
 }
 
