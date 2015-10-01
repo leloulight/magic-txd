@@ -69,11 +69,11 @@ inline CFile* OpenSeperateIMGRegistryFile( CFileTranslator *srcRoot, const charT
     return registryFile;
 }
 
-template <typename charType>
-static inline CIMGArchiveTranslatorHandle* GenNewArchive( imgExtension *env, CFileTranslator *srcRoot, const charType *srcPath, eIMGArchiveVersion version )
+template <typename charType, typename handlerType>
+static AINLINE CIMGArchiveTranslatorHandle* GenNewArchiveTemplate( imgExtension *env, CFileTranslator *srcRoot, const charType *srcPath, eIMGArchiveVersion version, handlerType handler )
 {
     // Create an archive depending on version.
-    CIMGArchiveTranslator *resultArchive = NULL;
+    CIMGArchiveTranslatorHandle *resultArchive = NULL;
     {
         CFile *contentFile = NULL;
         CFile *registryFile = NULL;
@@ -96,7 +96,7 @@ static inline CIMGArchiveTranslatorHandle* GenNewArchive( imgExtension *env, CFi
 
         if ( contentFile && registryFile )
         {
-            resultArchive = new CIMGArchiveTranslator( *env, contentFile, registryFile, version );
+            resultArchive = handler( env, registryFile, contentFile, version );
         }
 
         if ( !resultArchive )
@@ -115,13 +115,24 @@ static inline CIMGArchiveTranslatorHandle* GenNewArchive( imgExtension *env, CFi
     return resultArchive;
 }
 
+static AINLINE CIMGArchiveTranslator* _regularIMGConstructor( imgExtension *env, CFile *registryFile, CFile *contentFile, eIMGArchiveVersion version )
+{
+    return new CIMGArchiveTranslator( *env, contentFile, registryFile, version );
+}
+
+template <typename charType>
+static inline CIMGArchiveTranslatorHandle* GenNewArchive( imgExtension *env, CFileTranslator *srcRoot, const charType *srcPath, eIMGArchiveVersion version )
+{
+    return GenNewArchiveTemplate( env, srcRoot, srcPath, version, _regularIMGConstructor );
+}
+
 CIMGArchiveTranslatorHandle* imgExtension::NewArchive( CFileTranslator *srcRoot, const char *srcPath, eIMGArchiveVersion version )
 { return GenNewArchive( this, srcRoot, srcPath, version ); }
 CIMGArchiveTranslatorHandle* imgExtension::NewArchive( CFileTranslator *srcRoot, const wchar_t *srcPath, eIMGArchiveVersion version )
 { return GenNewArchive( this, srcRoot, srcPath, version ); }
 
-template <typename charType>
-static inline CIMGArchiveTranslatorHandle* GenOpenArchive( imgExtension *env, CFileTranslator *srcRoot, const charType *srcPath )
+template <typename charType, typename constructionHandler>
+static inline CIMGArchiveTranslatorHandle* GenOpenArchiveTemplate( imgExtension *env, CFileTranslator *srcRoot, const charType *srcPath, constructionHandler constr )
 {
     CIMGArchiveTranslatorHandle *transOut = NULL;
         
@@ -176,7 +187,7 @@ static inline CIMGArchiveTranslatorHandle* GenOpenArchive( imgExtension *env, CF
 
     if ( hasValidArchive )
     {
-        CIMGArchiveTranslator *translator = new CIMGArchiveTranslator( *env, contentFile, registryFile, theVersion );
+        CIMGArchiveTranslator *translator = constr( env, registryFile, contentFile, theVersion );
 
         if ( translator )
         {
@@ -214,6 +225,12 @@ static inline CIMGArchiveTranslatorHandle* GenOpenArchive( imgExtension *env, CF
     }
 
     return transOut;
+}
+
+template <typename charType>
+static inline CIMGArchiveTranslatorHandle* GenOpenArchive( imgExtension *env, CFileTranslator *srcRoot, const charType *srcPath )
+{
+    return GenOpenArchiveTemplate( env, srcRoot, srcPath, _regularIMGConstructor );
 }
 
 CIMGArchiveTranslatorHandle* imgExtension::OpenArchive( CFileTranslator *srcRoot, const char *srcPath )
@@ -260,19 +277,46 @@ CIMGArchiveTranslatorHandle* CFileSystem::CreateIMGArchive( CFileTranslator *src
 CIMGArchiveTranslatorHandle* CFileSystem::CreateIMGArchive( CFileTranslator *srcRoot, const wchar_t *srcPath, eIMGArchiveVersion version )
 { return GenCreateIMGArchive( this, srcRoot, srcPath, version ); }
 
+#pragma warning(push)
+#pragma warning(disable:4250)
+
+struct CIMGArchiveTranslator_lzo : public CIMGArchiveTranslator
+{
+    inline CIMGArchiveTranslator_lzo( imgExtension& imgExt, CFile *contentFile, CFile *registryFile, eIMGArchiveVersion theVersion )
+        : CIMGArchiveTranslator( imgExt, contentFile, registryFile, theVersion )
+    {
+        // Set the compression provider.
+        this->SetCompressionHandler( &compression );
+    }
+
+    inline ~CIMGArchiveTranslator_lzo( void )
+    {
+        // We must unset the compression handler.
+        this->SetCompressionHandler( NULL );
+    }
+
+    // We need a compressor per translator, so we can compress simultaneously on multiple threads.
+    xboxIMGCompression compression;
+};
+
+#pragma warning(pop)
+
+static AINLINE CIMGArchiveTranslator* _lzoCompressedIMGConstructor( imgExtension *env, CFile *registryFile, CFile *contentFile, eIMGArchiveVersion version )
+{
+    return new CIMGArchiveTranslator_lzo( *env, contentFile, registryFile, version );
+}
+
 template <typename charType>
 static inline CIMGArchiveTranslatorHandle* GenOpenCompressedIMGArchive( CFileSystem *sys, CFileTranslator *srcRoot, const charType *srcPath )
 {
-    CIMGArchiveTranslatorHandle *archiveHandle = GenOpenIMGArchive( sys, srcRoot, srcPath );
-
-    if ( archiveHandle )
+    CIMGArchiveTranslatorHandle *archiveHandle = NULL;
     {
         imgExtension *imgExt = imgExtension::Get( sys );
 
         if ( imgExt )
         {
-            // Set the xbox compression handler.
-            archiveHandle->SetCompressionHandler( &imgExt->xboxCompressionHandler );
+            // Create a translator specifically with the LZO compression algorithm.
+            archiveHandle = GenOpenArchiveTemplate( imgExt, srcRoot, srcPath, _lzoCompressedIMGConstructor );
         }
     }
 
@@ -287,16 +331,14 @@ CIMGArchiveTranslatorHandle* CFileSystem::OpenCompressedIMGArchive( CFileTransla
 template <typename charType>
 static inline CIMGArchiveTranslatorHandle* GenCreateCompressedIMGArchive( CFileSystem *sys, CFileTranslator *srcRoot, const charType *srcPath, eIMGArchiveVersion version )
 {
-    CIMGArchiveTranslatorHandle *archiveHandle = GenCreateIMGArchive( sys, srcRoot, srcPath, version );
-
-    if ( archiveHandle )
+    CIMGArchiveTranslatorHandle *archiveHandle = NULL;
     {
         imgExtension *imgExt = imgExtension::Get( sys );
 
         if ( imgExt )
         {
-            // Set the xbox compression handler.
-            archiveHandle->SetCompressionHandler( &imgExt->xboxCompressionHandler );
+            // Create a translator specifically with the LZO compression algorithm.
+            archiveHandle = GenNewArchiveTemplate( imgExt, srcRoot, srcPath, version, _lzoCompressedIMGConstructor );
         }
     }
 
@@ -308,16 +350,27 @@ CIMGArchiveTranslatorHandle* CFileSystem::CreateCompressedIMGArchive( CFileTrans
 CIMGArchiveTranslatorHandle* CFileSystem::CreateCompressedIMGArchive( CFileTranslator *srcRoot, const wchar_t *srcPath, eIMGArchiveVersion version )
 { return GenCreateCompressedIMGArchive( this, srcRoot, srcPath, version ); }
 
+// Sub modules.
+extern void InitializeXBOXIMGCompressionEnvironment( const fs_construction_params& params );
+
+extern void ShutdownXBOXIMGCompressionEnvironment( void );
+
 fileSystemFactory_t::pluginOffset_t imgExtension::_imgPluginOffset = fileSystemFactory_t::INVALID_PLUGIN_OFFSET;
 
-void CFileSystemNative::RegisterIMGDriver( void )
+void CFileSystemNative::RegisterIMGDriver( const fs_construction_params& params )
 {
     imgExtension::_imgPluginOffset =
         _fileSysFactory.RegisterDependantStructPlugin <imgExtension> ( fileSystemFactory_t::ANONYMOUS_PLUGIN_ID );
+
+    // Register sub modules.
+    InitializeXBOXIMGCompressionEnvironment( params );
 }
 
 void CFileSystemNative::UnregisterIMGDriver( void )
 {
+    // Unregister sub modules.
+    ShutdownXBOXIMGCompressionEnvironment();
+
     if ( imgExtension::_imgPluginOffset != fileSystemFactory_t::INVALID_PLUGIN_OFFSET )
     {
         _fileSysFactory.UnregisterPlugin( imgExtension::_imgPluginOffset );

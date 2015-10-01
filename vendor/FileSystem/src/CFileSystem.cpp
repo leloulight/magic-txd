@@ -107,8 +107,8 @@ AINLINE void InitializeLibrary( const fs_construction_params& params )
     _fileSysLockProvider.RegisterPlugin( params );
     _fileSysTmpDirLockProvider.RegisterPlugin( params );
 
-    CFileSystemNative::RegisterZIPDriver();
-    CFileSystemNative::RegisterIMGDriver();
+    CFileSystemNative::RegisterZIPDriver( params );
+    CFileSystemNative::RegisterIMGDriver( params );
 }
 
 AINLINE void ShutdownLibrary( void )
@@ -239,9 +239,6 @@ CFileSystem::CFileSystem( const fs_construction_params& params )
 
 CFileSystem::~CFileSystem( void )
 {
-    // Zero the main FileSystem access point.
-    fileSystem = NULL;
-
     // Shutdown addon management.
     if ( sysTmp )
     {
@@ -249,6 +246,9 @@ CFileSystem::~CFileSystem( void )
 
         sysTmp = NULL;
     }
+
+    // Zero the main FileSystem access point.
+    fileSystem = NULL;
 }
 
 bool CFileSystem::CanLockDirectories( void )

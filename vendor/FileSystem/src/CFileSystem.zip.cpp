@@ -116,7 +116,7 @@ CArchiveTranslator* CFileSystem::OpenZIPArchive( CFile& file )
 
 fileSystemFactory_t::pluginOffset_t zipExtension::_zipPluginOffset = fileSystemFactory_t::INVALID_PLUGIN_OFFSET;
 
-void CFileSystemNative::RegisterZIPDriver( void )
+void CFileSystemNative::RegisterZIPDriver( const fs_construction_params& params )
 {
     zipExtension::_zipPluginOffset =
         _fileSysFactory.RegisterDependantStructPlugin <zipExtension> ( fileSystemFactory_t::ANONYMOUS_PLUGIN_ID );

@@ -53,10 +53,10 @@ public:
     }
 
     // All drivers have to add their registration routines here.
-    static void RegisterZIPDriver( void );
+    static void RegisterZIPDriver( const fs_construction_params& params );
     static void UnregisterZIPDriver( void );
 
-    static void RegisterIMGDriver( void );
+    static void RegisterIMGDriver( const fs_construction_params& params );
     static void UnregisterIMGDriver( void );
 
     // Generic things.

@@ -15,6 +15,8 @@
 #include "CFileSystem.internal.h"
 #include "CFileSystem.img.internal.h"
 
+#include <PluginHelpers.h>
+
 // Include compression headers.
 // These are very dirty files.
 #include <lzo/lzoconf.h>
@@ -22,13 +24,12 @@
 
 extern CFileSystem *fileSystem;
 
-static bool _isLZOInitialized = false;
-static unsigned long _lzoRefCount = 0;
+static bool _hasLZOInitialized = false;
 
 // For safety, as LZO is not a very stable library.
-static size_t minimumDecompressBufferSize = 1024;
+static const size_t minimumDecompressBufferSize = 1024;
 
-static bool _performLZOChecksumVerify = false;
+static const bool _performLZOChecksumVerify = false;
 
 static unsigned long __cdecl _calculateChecksum( unsigned long c, const void *data, size_t dataSize )
 {
@@ -36,63 +37,61 @@ static unsigned long __cdecl _calculateChecksum( unsigned long c, const void *da
     return lzo_adler32( c, (const unsigned char*)data, dataSize );
 }
 
+struct lzoCompressionEnv
+{
+    inline void Initialize( CFileSystemNative *fsys )
+    {
+        // Prepare checksum calculation.
+        this->_checksumCallback = _calculateChecksum;
+    }
+
+    inline void Shutdown( CFileSystemNative *fsys )
+    {
+        return;
+    }
+
+    typedef unsigned long (__cdecl*checksumCallback_t)( unsigned long c, const void *data, size_t dataSize );
+
+    checksumCallback_t  _checksumCallback;
+};
+
+static PluginDependantStructRegister <lzoCompressionEnv, fileSystemFactory_t> lzoCompressionEnvRegister;
+
 xboxIMGCompression::xboxIMGCompression( void )
 {
-    this->isUsingLZO = false;
-
-    // Prepare checksum calculation.
-    this->_checksumCallback = _calculateChecksum;
-
     // Set the maximum block size that should be used for compression.
     this->compressionMaximumBlockSize = 0x00020000;
 }
 
 xboxIMGCompression::~xboxIMGCompression( void )
 {
-    // Shutdown the LZO library.
-    this->ShutdownLZO();
+    return;
 }
 
-void xboxIMGCompression::InitializeLZO( void )
+void InitializeXBOXIMGCompressionEnvironment( const fs_construction_params& params )
 {
-    if ( !this->isUsingLZO )
+    // Only register if the lzo library is available.
+    bool couldInit = true;
+
+    if ( !_hasLZOInitialized )
     {
-        bool couldInit = false;
+        couldInit = ( lzo_init() == LZO_E_OK );
 
-        if ( _lzoRefCount == 0 )
+        if ( !couldInit )
         {
-            couldInit = ( lzo_init() == LZO_E_OK );
+            _hasLZOInitialized = true;
         }
-        else
-        {
-            couldInit = true;
-        }
+    }
 
-        if ( couldInit )
-        {
-            // Alright, we initialized.
-            this->isUsingLZO = true;
-
-            _lzoRefCount++;
-        }
+    if ( couldInit )
+    {
+        lzoCompressionEnvRegister.RegisterPlugin( _fileSysFactory );
     }
 }
 
-void xboxIMGCompression::ShutdownLZO( void )
+void ShutdownXBOXIMGCompressionEnvironment( void )
 {
-    if ( this->isUsingLZO )
-    {
-        // Decrement the LZO ref count.
-        _lzoRefCount--;
-
-        if ( _lzoRefCount == 0 )
-        {
-            // There actually is no shutdown.
-        }
-
-        // We are not using LZO anymore.
-        this->isUsingLZO = false;
-    }
+    lzoCompressionEnvRegister.UnregisterPlugin();
 }
 
 bool xboxIMGCompression::IsStreamCompressed( CFile *input ) const
@@ -133,9 +132,9 @@ struct perBlockHeader
 bool xboxIMGCompression::Decompress( CFile *input, CFile *output )
 {
     // Make sure we have LZO.
-    this->InitializeLZO();
+    const lzoCompressionEnv *env = lzoCompressionEnvRegister.GetConstPluginStruct( (CFileSystemNative*)fileSystem );
 
-    if ( !this->isUsingLZO )
+    if ( !env )
     {
         // We cannot continue if LZO has failed to initialize.
         return false;
@@ -183,11 +182,11 @@ bool xboxIMGCompression::Decompress( CFile *input, CFile *output )
 
                     bool lzoSuccess = true;
 
-                    checksumCallback_t _checksumCallback = NULL;
+                    lzoCompressionEnv::checksumCallback_t _checksumCallback = NULL;
 
                     if ( _performLZOChecksumVerify )
                     {
-                        _checksumCallback = this->_checksumCallback;
+                        _checksumCallback = env->_checksumCallback;
                     }
 
                     // Verify the checksum.
@@ -342,9 +341,9 @@ repeatDecompress:
 bool xboxIMGCompression::Compress( CFile *input, CFile *output )
 {
     // Make sure we have LZO.
-    this->InitializeLZO();
+    const lzoCompressionEnv *env = lzoCompressionEnvRegister.GetConstPluginStruct( (CFileSystemNative*)fileSystem );
 
-    if ( !this->isUsingLZO )
+    if ( !env )
     {
         // We cannot continue if LZO failed to initialize.
         return false;
@@ -401,7 +400,7 @@ bool xboxIMGCompression::Compress( CFile *input, CFile *output )
 
         unsigned long rawChecksum = 0;
 
-        checksumCallback_t _checksumCallback = this->_checksumCallback;
+        lzoCompressionEnv::checksumCallback_t _checksumCallback = env->_checksumCallback;
 
         if ( _checksumCallback != NULL )
         {

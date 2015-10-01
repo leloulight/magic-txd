@@ -18,15 +18,10 @@ struct xboxIMGCompression : public CIMGArchiveCompressionHandler
                 xboxIMGCompression( void );
                 ~xboxIMGCompression( void );
 
-    void        InitializeLZO( void );
-    void        ShutdownLZO( void );
-
     bool        IsStreamCompressed( CFile *stream ) const;
 
     bool        Decompress( CFile *input, CFile *output );
     bool        Compress( CFile *input, CFile *output );
-
-    bool        isUsingLZO;
 
     struct simpleWorkBuffer
     {
@@ -122,10 +117,6 @@ struct xboxIMGCompression : public CIMGArchiveCompressionHandler
 
     simpleWorkBuffer decompressBuffer;
 
-    typedef unsigned long (__cdecl*checksumCallback_t)( unsigned long c, const void *data, size_t dataSize );
-
-    checksumCallback_t  _checksumCallback;
-
     size_t      compressionMaximumBlockSize;
 };
 
@@ -163,9 +154,6 @@ struct imgExtension
     // Extension members.
     // ... for managing temporary files (OS dependent).
     CRepository                 repo;
-
-    // Compression handlers, that are optional.
-    xboxIMGCompression          xboxCompressionHandler;
 };
 
 #include <sys/stat.h>
