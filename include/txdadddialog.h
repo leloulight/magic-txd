@@ -95,7 +95,7 @@ private:
 
     QString GetCurrentPlatform(void);
 
-    public slots:
+public slots:
     void OnTextureAddRequest(bool checked);
     void OnCloseRequest(bool checked);
 
@@ -147,11 +147,13 @@ private:
     QWidget *platformSelectWidget;
 
     QFormLayout *platformPropForm;
+    QLabel *platformHeaderLabel;
     QWidget *platformRawRasterProp;
     QComboBox *platformCompressionSelectProp;
     QComboBox *platformPaletteSelectProp;
     QComboBox *platformPixelFormatSelectProp;
 
+    bool enableOriginal;
     bool enableRawRaster;
     bool enableCompressSelect;
     bool enablePaletteSelect;

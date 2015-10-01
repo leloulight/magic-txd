@@ -515,6 +515,7 @@ TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create
         this->platformOrigRaster = rw::AcquireRaster(create_params.orig_raster.tex->GetRaster());
     }
 
+    this->enableOriginal = true;
     this->enableRawRaster = true;
     this->enableCompressSelect = true;
     this->enablePaletteSelect = true;
@@ -618,7 +619,9 @@ TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create
                 this->platformSelectWidget = platformDisplayWidget;
                 leftTopLayout->addRow(new QLabel("Platform:"), platformDisplayWidget);
 
-                leftTopLayout->addRow(new QLabel("Raster Format:"));
+                this->platformHeaderLabel = new QLabel("Raster Format:");
+
+                leftTopLayout->addRow(platformHeaderLabel);
 
                 //leftTopWidget->setLayout(leftTopLayout);
                 //leftTopWidget->setObjectName("background_1");
@@ -925,16 +928,23 @@ void TexAddDialog::OnTexturePixelFormatSelect(const QString& newPixelFormat)
 
 void TexAddDialog::OnPlatformSelect(const QString& newText)
 {
+    // Update what options make sense to the user.
+    this->UpdateAccessability();
+
+    // Reload the preview image with what the platform wants us to see.
+    this->loadPlatformOriginal();
+
     // We want to show the user properties based on what this platform supports.
     // So we fill the fields.
+
+    bool hasPreview = this->hasPlatformOriginal;
 
     std::string ansiNativeName = newText.toStdString();
 
     rw::nativeRasterFormatInfo formatInfo;
 
-    bool gotFormatInfo = rw::GetNativeTextureFormatInfo(this->mainWnd->rwEngine, ansiNativeName.c_str(), formatInfo);
-
     // Decide what to do.
+    bool enableOriginal = true;
     bool enableRawRaster = true;
     bool enableCompressSelect = false;
     bool enablePaletteSelect = false;
@@ -948,32 +958,46 @@ void TexAddDialog::OnPlatformSelect(const QString& newText)
     bool supportsDXT4 = true;
     bool supportsDXT5 = true;
 
-    if (gotFormatInfo)
+    if ( hasPreview )
     {
-        if (formatInfo.isCompressedFormat)
-        {
-            // We are a fixed compressed format, so we will pass pixels with high quality to the pipeline.
-            enableRawRaster = false;
-            enableCompressSelect = true;    // decide later.
-            enablePaletteSelect = false;
-            enablePixelFormatSelect = false;
+        bool gotFormatInfo = rw::GetNativeTextureFormatInfo(this->mainWnd->rwEngine, ansiNativeName.c_str(), formatInfo);
 
-            isOnlyCompression = true;
-        }
-        else
+        if (gotFormatInfo)
         {
-            // We are a dynamic raster, so whatever goes best.
-            enableRawRaster = true;
-            enableCompressSelect = true;    // we decide this later again.
-            enablePaletteSelect = formatInfo.supportsPalette;
-            enablePixelFormatSelect = true;
-        }
+            if (formatInfo.isCompressedFormat)
+            {
+                // We are a fixed compressed format, so we will pass pixels with high quality to the pipeline.
+                enableRawRaster = false;
+                enableCompressSelect = true;    // decide later.
+                enablePaletteSelect = false;
+                enablePixelFormatSelect = false;
 
-        supportsDXT1 = formatInfo.supportsDXT1;
-        supportsDXT2 = formatInfo.supportsDXT2;
-        supportsDXT3 = formatInfo.supportsDXT3;
-        supportsDXT4 = formatInfo.supportsDXT4;
-        supportsDXT5 = formatInfo.supportsDXT5;
+                isOnlyCompression = true;
+            }
+            else
+            {
+                // We are a dynamic raster, so whatever goes best.
+                enableRawRaster = true;
+                enableCompressSelect = true;    // we decide this later again.
+                enablePaletteSelect = formatInfo.supportsPalette;
+                enablePixelFormatSelect = true;
+            }
+
+            supportsDXT1 = formatInfo.supportsDXT1;
+            supportsDXT2 = formatInfo.supportsDXT2;
+            supportsDXT3 = formatInfo.supportsDXT3;
+            supportsDXT4 = formatInfo.supportsDXT4;
+            supportsDXT5 = formatInfo.supportsDXT5;
+        }
+    }
+    else
+    {
+        // If there is no preview, we want nothing.
+        enableOriginal = false;
+        enableRawRaster = false;
+        enableCompressSelect = false;
+        enablePaletteSelect = false;
+        enablePixelFormatSelect = false;
     }
 
     // Decide whether enabling the compression select even makes sense.
@@ -985,6 +1009,13 @@ void TexAddDialog::OnPlatformSelect(const QString& newText)
     }
 
     // Do stuff.
+    this->platformOriginalToggle->setVisible(enableOriginal);
+
+    if (QWidget *partnerWidget = this->platformPropForm->labelForField(this->platformOriginalToggle))
+    {
+        partnerWidget->setVisible(enableOriginal);
+    }
+
     this->platformRawRasterProp->setVisible(enableRawRaster);
 
     if (QWidget *partnerWidget = this->platformPropForm->labelForField(this->platformRawRasterProp))
@@ -1013,6 +1044,12 @@ void TexAddDialog::OnPlatformSelect(const QString& newText)
         partnerWidget->setVisible(enablePixelFormatSelect);
     }
 
+    // If no option is visible, hide the label.
+    bool shouldHideLabel = ( !enableOriginal && !enableRawRaster && !enableCompressSelect && !enablePaletteSelect && !enablePixelFormatSelect );
+    
+    this->platformHeaderLabel->setVisible( !shouldHideLabel );
+
+    this->enableOriginal = enableOriginal;
     this->enableRawRaster = enableRawRaster;
     this->enableCompressSelect = enableCompressSelect;
     this->enablePaletteSelect = enablePaletteSelect;
@@ -1125,12 +1162,6 @@ void TexAddDialog::OnPlatformSelect(const QString& newText)
 
         // Well, we do not _have_ to select one.
     }
-
-    // Update what options make sense to the user.
-    this->UpdateAccessability();
-
-    // Reload the preview image with what the platform wants us to see.
-    this->loadPlatformOriginal();
 
     // We want to create a raster special to the configuration.
     this->createRasterForConfiguration();
