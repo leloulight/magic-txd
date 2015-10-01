@@ -127,163 +127,10 @@ void TexAddDialog::loadPlatformOriginal(void)
     // If we have a preview, update the preview widget with its content.
     if (hasPreview)
     {
-        // If we still want a good start setting, we can now determine it.
-        if (this->wantsGoodPlatformSetting)
-        {
-            // Initially set the configuration that is best for the image.
-            // This is what the user normally wants anyway.
-            rw::Raster *origRaster = this->platformOrigRaster;
-
-            {
-                QString info;
-                rw::uint32 width, height;
-                origRaster->getSize(width, height);
-                info += QString::number(width) + QString("x") + QString::number(height);
-                char platformTexInfoBuf[256 + 1];
-                size_t localPlatformTexInfoLength = 0;
-                const size_t availableStringCharSpace = (sizeof(platformTexInfoBuf) - 1);
-                size_t platformTexInfoLength = 0;
-                origRaster->getFormatString(platformTexInfoBuf, availableStringCharSpace, platformTexInfoLength);
-                localPlatformTexInfoLength = std::min(platformTexInfoLength, availableStringCharSpace);
-                platformTexInfoBuf[localPlatformTexInfoLength] = '\0';
-                info += " " + QString((const char*)platformTexInfoBuf);
-                rw::uint32 mipCount = origRaster->getMipmapCount();
-                info += " " + QString::number(mipCount);
-                if (mipCount == 1)
-                    info += " level";
-                else
-                    info += " levels";
-                this->previewInfoLabel->setText(info);
-            }
-
-            bool hasSet = false;
-
-            if (origRaster->isCompressed())
-            {
-                // If the raster is DXT compression, we can select it.
-                rw::eCompressionType comprType = origRaster->getCompressionFormat();
-
-                bool hasFound = false;
-
-                if (comprType == rw::RWCOMPRESS_DXT1)
-                {
-                    this->platformCompressionSelectProp->setCurrentText("DXT1");
-
-                    hasFound = true;
-                }
-                else if (comprType == rw::RWCOMPRESS_DXT2)
-                {
-                    this->platformCompressionSelectProp->setCurrentText("DXT2");
-
-                    hasFound = true;
-                }
-                else if (comprType == rw::RWCOMPRESS_DXT3)
-                {
-                    this->platformCompressionSelectProp->setCurrentText("DXT3");
-
-                    hasFound = true;
-                }
-                else if (comprType == rw::RWCOMPRESS_DXT4)
-                {
-                    this->platformCompressionSelectProp->setCurrentText("DXT4");
-
-                    hasFound = true;
-                }
-                else if (comprType == rw::RWCOMPRESS_DXT5)
-                {
-                    this->platformCompressionSelectProp->setCurrentText("DXT5");
-
-                    hasFound = true;
-                }
-
-                if (hasFound)
-                {
-                    this->platformCompressionToggle->setChecked(true);
-
-                    hasSet = true;
-                }
-            }
-            else
-            {
-                // Set palette type and raster format, if available.
-                {
-                    rw::ePaletteType paletteType = origRaster->getPaletteType();
-
-                    bool hasFound = false;
-
-                    if (paletteType == rw::PALETTE_4BIT || paletteType == rw::PALETTE_4BIT_LSB)
-                    {
-                        this->platformPaletteSelectProp->setCurrentText("PAL4");
-
-                        hasFound = true;
-                    }
-                    else if (paletteType == rw::PALETTE_8BIT)
-                    {
-                        this->platformPaletteSelectProp->setCurrentText("PAL8");
-
-                        hasFound = true;
-                    }
-
-                    if (hasFound && !hasSet)
-                    {
-                        this->platformPaletteToggle->setChecked(true);
-
-                        hasSet = true;
-                    }
-                }
-
-                // Now raster format.
-                {
-                    rw::eRasterFormat rasterFormat = origRaster->getRasterFormat();
-
-                    if (rasterFormat != rw::RASTER_DEFAULT)
-                    {
-                        this->platformPixelFormatSelectProp->setCurrentText(
-                            rw::GetRasterFormatStandardName(rasterFormat)
-                            );
-
-                        if (!hasSet)
-                        {
-                            this->platformRawRasterToggle->setChecked(true);
-
-                            hasSet = true;
-                        }
-                    }
-                }
-            }
-
-            // If nothing was select, we are best off original.
-            if (!hasSet)
-            {
-                this->platformOriginalToggle->setChecked(true);
-            }
-
-            // Done.
-            this->wantsGoodPlatformSetting = false;
-        }
-
-        // If we have a preview, we want to limit the properties box.
-        //int reqWidth = this->propertiesWidget->sizeHint().width();
-
-        //this->propertiesWidget->setMaximumWidth( reqWidth );
-
-        // Set the recommended sizes.
-        rw::uint32 recWidth, recHeight;
-        this->platformOrigRaster->getSize(recWidth, recHeight);
-
-        //this->previewWidget->recommendedWidth = (int)recWidth;
-        //this->previewWidget->recommendedHeight = (int)recHeight;
-        //this->previewWidget->hasSizeProperties = true;
-
         this->UpdatePreview();
-    }
-    else
-    {
-        //this->propertiesWidget->setMaximumWidth( 16777215 );
     }
 
     // Hide or show the changeable properties.
-    //this->platformPropsGroup->setVisible( hasPreview );
     this->propGenerateMipmaps->setVisible(hasPreview);
 
     // If we have no preview, then we also cannot push the data to the texture container.
@@ -424,6 +271,17 @@ void TexAddDialog::createRasterForConfiguration(void)
             {
                 if (compressionType != rw::RWCOMPRESS_NONE)
                 {
+                    // If the raster is already compressed, we want to decompress it.
+                    // Very, very bad practice, but we allow it.
+                    {
+                        rw::eCompressionType curCompressionType = convRaster->getCompressionFormat();
+
+                        if ( curCompressionType != rw::RWCOMPRESS_NONE )
+                        {
+                            convRaster->convertToFormat( rw::RASTER_8888 );
+                        }
+                    }
+
                     // Just compress it.
                     convRaster->compressCustom(compressionType);
                 }
@@ -1058,6 +916,8 @@ void TexAddDialog::OnPlatformSelect(const QString& newText)
     // Fill in fields depending on capabilities.
     if (enableCompressSelect)
     {
+        QString currentText = this->platformCompressionSelectProp->currentText();
+
         this->platformCompressionSelectProp->clear();
 
         if (supportsDXT1)
@@ -1084,9 +944,11 @@ void TexAddDialog::OnPlatformSelect(const QString& newText)
         {
             this->platformCompressionSelectProp->addItem("DXT5");
         }
+
+        this->platformCompressionSelectProp->setCurrentText( currentText );
     }
 
-    // If none of the visible toggles are select, select the first visible toggle.
+    // If none of the visible toggles are selected, select the first visible toggle.
     bool anyToggle = false;
 
     if (this->platformRawRasterToggle->isVisible() && this->platformRawRasterToggle->isChecked())
@@ -1163,11 +1025,123 @@ void TexAddDialog::OnPlatformSelect(const QString& newText)
         // Well, we do not _have_ to select one.
     }
 
+    // If we still want a good start setting, we can now determine it.
+    if (hasPreview && this->wantsGoodPlatformSetting)
+    {
+        // Initially set the configuration that is best for the image.
+        // This is what the user normally wants anyway.
+        rw::Raster *origRaster = this->platformOrigRaster;
+
+        this->previewInfoLabel->setText( TexInfoWidget::getDefaultRasterInfoString( origRaster ) );
+
+        bool hasSet = false;
+
+        if (origRaster->isCompressed())
+        {
+            // If the raster is DXT compression, we can select it.
+            rw::eCompressionType comprType = origRaster->getCompressionFormat();
+
+            bool hasFound = false;
+
+            if (comprType == rw::RWCOMPRESS_DXT1)
+            {
+                this->platformCompressionSelectProp->setCurrentText("DXT1");
+
+                hasFound = true;
+            }
+            else if (comprType == rw::RWCOMPRESS_DXT2)
+            {
+                this->platformCompressionSelectProp->setCurrentText("DXT2");
+
+                hasFound = true;
+            }
+            else if (comprType == rw::RWCOMPRESS_DXT3)
+            {
+                this->platformCompressionSelectProp->setCurrentText("DXT3");
+
+                hasFound = true;
+            }
+            else if (comprType == rw::RWCOMPRESS_DXT4)
+            {
+                this->platformCompressionSelectProp->setCurrentText("DXT4");
+
+                hasFound = true;
+            }
+            else if (comprType == rw::RWCOMPRESS_DXT5)
+            {
+                this->platformCompressionSelectProp->setCurrentText("DXT5");
+
+                hasFound = true;
+            }
+
+            if (hasFound)
+            {
+                this->platformCompressionToggle->setChecked(true);
+
+                hasSet = true;
+            }
+        }
+        else
+        {
+            // Set palette type and raster format, if available.
+            {
+                rw::ePaletteType paletteType = origRaster->getPaletteType();
+
+                bool hasFound = false;
+
+                if (paletteType == rw::PALETTE_4BIT || paletteType == rw::PALETTE_4BIT_LSB)
+                {
+                    this->platformPaletteSelectProp->setCurrentText("PAL4");
+
+                    hasFound = true;
+                }
+                else if (paletteType == rw::PALETTE_8BIT)
+                {
+                    this->platformPaletteSelectProp->setCurrentText("PAL8");
+
+                    hasFound = true;
+                }
+
+                if (hasFound && !hasSet)
+                {
+                    this->platformPaletteToggle->setChecked(true);
+
+                    hasSet = true;
+                }
+            }
+
+            // Now raster format.
+            {
+                rw::eRasterFormat rasterFormat = origRaster->getRasterFormat();
+
+                if (rasterFormat != rw::RASTER_DEFAULT)
+                {
+                    this->platformPixelFormatSelectProp->setCurrentText(
+                        rw::GetRasterFormatStandardName(rasterFormat)
+                        );
+
+                    if (!hasSet)
+                    {
+                        this->platformRawRasterToggle->setChecked(true);
+
+                        hasSet = true;
+                    }
+                }
+            }
+        }
+
+        // If nothing was select, we are best off original.
+        if (!hasSet)
+        {
+            this->platformOriginalToggle->setChecked(true);
+        }
+
+        // Done.
+        this->wantsGoodPlatformSetting = false;
+    }
+
     // We want to create a raster special to the configuration.
     this->createRasterForConfiguration();
-
-    // Fix the width.
-    //this->previewWidget->fixWidth();
 }
 
 void TexAddDialog::OnTextureAddRequest(bool checked)

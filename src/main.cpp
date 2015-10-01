@@ -125,6 +125,7 @@ extern void InitializeRWFileSystemWrap(void);
 extern void InitializeMassconvToolEnvironment(void);
 extern void InitializeMassExportToolEnvironment( void );
 extern void InitializeGUISerialization(void);
+extern void InitializeStreamCompressionEnvironment( void );
 
 static defaultMemAlloc _factMemAlloc;
 
@@ -135,6 +136,7 @@ int main(int argc, char *argv[])
     InitializeMassconvToolEnvironment();
     InitializeMassExportToolEnvironment();
     InitializeGUISerialization();
+    InitializeStreamCompressionEnvironment();
 
     int iRet = -1;
 

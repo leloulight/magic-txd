@@ -505,6 +505,50 @@ CFileTranslator* CFileSystem::GenerateTempRepository( void )
     return NULL;
 }
 
+void CFileSystem::DeleteTempRepository( CFileTranslator *repo )
+{
+    CFileTranslator *sysTmp = this->sysTmp;
+
+    if ( !sysTmp )
+        return;
+
+    filePath pathOfDir;
+
+    bool gotActualPath = repo->GetFullPathFromRoot( "@", false, pathOfDir );
+
+    // We can now release the handle to the directory.
+    delete repo;
+
+    if ( gotActualPath )
+    {
+        // Delete us.
+        sysTmp->Delete( pathOfDir );
+    }
+}
+
+CFile* CFileSystem::GenerateRandomFile( CFileTranslator *root )
+{
+    // We try 42 times to create a randomly named file.
+    unsigned long numAttempts = 0;
+
+    while ( numAttempts++ < 42 )
+    {
+        // Generate some random filename.
+        std::string fileName = "$rnd";
+        fileName += std::to_string( fsrandom::getSystemRandom( this ) );
+
+        CFile *genFile = root->Open( fileName.c_str(), "wb" );
+
+        if ( genFile )
+        {
+            return genFile;
+        }
+    }
+
+    // We failed. This is a valid outcome.
+    return NULL;
+}
+
 bool CFileSystem::IsDirectory( const char *path )
 {
     return File_IsDirectoryAbsolute( path );

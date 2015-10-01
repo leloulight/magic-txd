@@ -36,6 +36,7 @@ struct SystemEventHandlerWidget abstract
 #include "rwfswrap.h"
 #include "guiserialization.h"
 #include "aboutdialog.h"
+#include "streamcompress.h"
 
 #include "MagicExport.h"
 

@@ -637,6 +637,8 @@
     <ClCompile Include="..\..\src\optionsdialog.cpp" />
     <ClCompile Include="..\..\src\renderpropwindow.cpp" />
     <ClCompile Include="..\..\src\rwfswrap.cpp" />
+    <ClCompile Include="..\..\src\streamcompress.cpp" />
+    <ClCompile Include="..\..\src\streamcompress.lzo.cpp" />
     <ClCompile Include="..\..\src\texadddialog.cpp" />
     <ClCompile Include="..\..\src\texformatextensions.cpp" />
     <ClCompile Include="../../src/mainwindow.cpp" />
@@ -660,6 +662,7 @@
     <ClInclude Include="..\..\include\resource.h" />
     <ClInclude Include="..\..\include\rwfswrap.h" />
     <ClInclude Include="..\..\include\rwversiondialog.h" />
+    <ClInclude Include="..\..\include\streamcompress.h" />
     <ClInclude Include="..\..\include\taskcompletionwindow.h" />
     <ClInclude Include="..\..\include\texnamewindow.h" />
     <ClInclude Include="..\..\include\txdadddialog.h" />

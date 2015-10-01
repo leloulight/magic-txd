@@ -20,6 +20,8 @@
     <ClCompile Include="..\..\src\aboutdialog.cpp" />
     <ClCompile Include="..\..\src\optionsdialog.cpp" />
     <ClCompile Include="..\..\src\txdlog.cpp" />
+    <ClCompile Include="..\..\src\streamcompress.cpp" />
+    <ClCompile Include="..\..\src\streamcompress.lzo.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="../../include/styles.h">
@@ -116,6 +118,9 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\optionsdialog.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\streamcompress.h">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>

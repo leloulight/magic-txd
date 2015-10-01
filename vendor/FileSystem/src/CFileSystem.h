@@ -79,6 +79,13 @@ public:
     // Temporary directory generation for temporary data storage.
     CFileTranslator*        GetSystemTempTranslator ( void )                { return sysTmp; }
     CFileTranslator*        GenerateTempRepository  ( void );
+    void                    DeleteTempRepository    ( CFileTranslator *repo );
+
+    CFile*                  GenerateRandomFile      ( CFileTranslator *root );
+
+    // LZO Compression tools.
+    bool                            IsStreamLZOCompressed   ( CFile *stream );
+    CIMGArchiveCompressionHandler*  CreateLZOCompressor     ( void );
 
     // Insecure functions
     bool                    IsDirectory             ( const char *path ) override final;
