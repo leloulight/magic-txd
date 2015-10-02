@@ -549,7 +549,7 @@ AINLINE CFileTranslator* CFileSystemNative::GenCreateSystemMinimumAccessPoint( c
         if ( n >= tree.size() )
             break;
 
-        const filePath& curAdd = tree[ n ];
+        const filePath& curAdd = tree[ n++ ];
 
         root += curAdd;
         root += '/';

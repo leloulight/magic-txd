@@ -700,7 +700,7 @@ CExecThread* CExecutiveManager::CreateThread( CExecThread::threadEntryPoint_t en
 
 void CExecutiveManager::TerminateThread( CExecThread *thread, bool waitOnRemote )
 {
-    thread->Terminate();
+    thread->Terminate( waitOnRemote );
 }
 
 void CExecutiveManager::JoinThread( CExecThread *thread )
