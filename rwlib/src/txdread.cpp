@@ -1706,6 +1706,12 @@ eRasterFormat FindRasterFormatByName( const char *theName )
     {
         return RASTER_555;
     }
+    // NEW FORMATS.
+    else if ( stricmp( theName, "RASTER_LUM_ALPHA" ) == 0 ||
+              stricmp( theName, "LUM_ALPHA" ) == 0 )
+    {
+        return RASTER_LUM_ALPHA;
+    }
 
     // No idea.
     return RASTER_DEFAULT;

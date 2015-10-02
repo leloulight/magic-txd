@@ -308,33 +308,23 @@ inline bool obtainAbsolutePath( const wchar_t *path, CFileTranslator*& transOut,
 
     if ( !hasTranslator )
     {
-        const wchar_t *inputPathPtr = inputPath.w_str();
+        CFileTranslator *diskTranslator = fileSystem->CreateSystemMinimumAccessPoint( inputPath );
 
-        if ( *inputPathPtr != 0 && *(inputPathPtr+1) == ':' && ( *(inputPathPtr+2) == '/' || *(inputPathPtr+2) == '\\' ) )
+        if ( diskTranslator )
         {
-            wchar_t diskRootDesc[4];
-            memcpy( diskRootDesc, inputPathPtr, 3 * sizeof( wchar_t ) );
+            bool canResolve = diskTranslator->GetFullPath( inputPath, true, thePath );
 
-            diskRootDesc[3] = '\0';
-
-            CFileTranslator *diskTranslator = fileSystem->CreateTranslator( diskRootDesc );
-
-            if ( diskTranslator )
+            if ( canResolve )
             {
-                bool canResolve = diskTranslator->GetFullPath( inputPathPtr, true, thePath );
+                newTranslator = true;
+                translator = diskTranslator;
 
-                if ( canResolve )
-                {
-                    newTranslator = true;
-                    translator = diskTranslator;
+                hasTranslator = true;
+            }
 
-                    hasTranslator = true;
-                }
-
-                if ( !hasTranslator )
-                {
-                    delete diskTranslator;
-                }
+            if ( !hasTranslator )
+            {
+                delete diskTranslator;
             }
         }
     }

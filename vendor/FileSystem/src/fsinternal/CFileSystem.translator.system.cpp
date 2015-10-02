@@ -657,29 +657,70 @@ size_t CSystemFileTranslator::Size( const char *path ) const      { return GenSi
 size_t CSystemFileTranslator::Size( const wchar_t *path ) const   { return GenSize( path ); }
 
 // Handle absolute paths.
-
-template <typename charType>
-bool CSystemFileTranslator::GenOnGetRelativePathTreeFromRoot( const charType *path, dirTree& tree, bool& file, bool& success ) const
+template <typename charType, typename procType>
+AINLINE bool CSystemFileTranslator::GenProcessFullPath( const charType *path, dirTree& tree, bool& file, bool& success, procType proc ) const
 {
+#ifdef _WIN32
+    filePath uncPart;
+    const charType *uncEnd;
+#endif
+
     if ( _File_IsAbsolutePath( path ) )
     {
 #ifdef _WIN32
-        if ( m_root.compareCharAt( path[0], 0 ) == false )
+        if ( this->m_pathType != ROOTPATH_DISK || m_root.compareCharAt( path[0], 0 ) == false )
         {
             success = false;   // drive mismatch
         }
         else
         {
-            success = _File_ParseRelativeTree( path + 3, m_rootTree, tree, file );
+            success = proc.ParseAbsolute( path + 3, tree, file );
         }
 #else
-        success = _File_ParseRelativeTree( path + 1, m_rootTree, tree, file );
+        success = proc.parseAbsolute( path + 1, tree, file );
 #endif //OS DEPENDANT CODE
 
         return true;
     }
+#ifdef _WIN32
+    else if ( _File_IsUNCPath( path, uncEnd, uncPart ) )
+    {
+        // Make sure UNC descriptors match.
+        if ( this->m_pathType != ROOTPATH_UNC || uncPart.equals( this->m_unc, false ) == false )
+        {
+            success = false;    // wrong UNC.
+        }
+        else
+        {
+            success = proc.ParseAbsolute( uncEnd, tree, file );
+        }
+        
+        return true;
+    }
+#endif
 
     return false;
+}
+
+template <typename charType>
+bool CSystemFileTranslator::GenOnGetRelativePathTreeFromRoot( const charType *path, dirTree& tree, bool& file, bool& success ) const
+{
+    struct relativePathTreeFromRootProc
+    {
+        AINLINE relativePathTreeFromRootProc( const CSystemFileTranslator *trans )
+        {
+            this->trans = trans;
+        }
+
+        AINLINE bool ParseAbsolute( const charType *path, dirTree& tree, bool& file ) const
+        {
+            return _File_ParseRelativeTree( path, trans->m_rootTree, tree, file );
+        }
+
+        const CSystemFileTranslator *trans;
+    };
+
+    return GenProcessFullPath( path, tree, file, success, relativePathTreeFromRootProc( this ) );
 }
 
 bool CSystemFileTranslator::OnGetRelativePathTreeFromRoot( const char *path, dirTree& tree, bool& file, bool& success ) const       { return GenOnGetRelativePathTreeFromRoot( path, tree, file, success ); }
@@ -688,25 +729,22 @@ bool CSystemFileTranslator::OnGetRelativePathTreeFromRoot( const wchar_t *path, 
 template <typename charType>
 bool CSystemFileTranslator::GenOnGetRelativePathTree( const charType *path, dirTree& tree, bool& file, bool& success ) const
 {
-    if ( _File_IsAbsolutePath( path ) )
+    struct relativePathTreeProc
     {
-#ifdef _WIN32
-        if ( m_root.compareCharAt( path[0], 0 ) == false )
+        AINLINE relativePathTreeProc( const CSystemFileTranslator *trans )
         {
-            success = false;   // drive mismatch
+            this->trans = trans;
         }
-        else
+
+        AINLINE bool ParseAbsolute( const charType *path, dirTree& tree, bool& file ) const
         {
-            success = _File_ParseRelativeTreeDeriviate( path + 3, m_rootTree, m_curDirTree, tree, file );
+            return _File_ParseRelativeTreeDeriviate( path, trans->m_rootTree, trans->m_curDirTree, tree, file );
         }
-#else
-        success = _File_ParseRelativeTreeDeriviate( path + 1, m_rootTree, m_curDirTree, tree, file );
-#endif //OS DEPENDANT CODE
 
-        return true;
-    }
+        const CSystemFileTranslator *trans;
+    };
 
-    return false;
+    return GenProcessFullPath( path, tree, file, success, relativePathTreeProc( this ) );
 }
 
 bool CSystemFileTranslator::OnGetRelativePathTree( const char *path, dirTree& tree, bool& file, bool& success ) const       { return GenOnGetRelativePathTree( path, tree, file, success ); }
@@ -715,29 +753,24 @@ bool CSystemFileTranslator::OnGetRelativePathTree( const wchar_t *path, dirTree&
 template <typename charType>
 bool CSystemFileTranslator::GenOnGetFullPathTree( const charType *path, dirTree& tree, bool& file, bool& success ) const
 {
-    if ( _File_IsAbsolutePath( path ) )
+    struct fullPathTreeProc
     {
-#ifdef _WIN32
-        if ( m_root.compareCharAt( path[0], 0 ) == false )
+        AINLINE fullPathTreeProc( const CSystemFileTranslator *trans )
         {
-            success = false;   // drive mismatch
+            this->trans = trans;
         }
-        else
+
+        AINLINE bool ParseAbsolute( const charType *path, dirTree& tree, bool& file ) const
         {
-            tree = m_rootTree;
+            tree = trans->m_rootTree;
 
-            success = _File_ParseRelativeTree( path + 3, m_rootTree, tree, file );
+            return _File_ParseRelativeTree( path, trans->m_rootTree, tree, file );
         }
-#else
-        tree = m_rootTree;
-        
-        success = _File_ParseRelativeTree( path + 1, m_rootTree, tree, file );
-#endif //OS DEPENDANT CODE
-        
-        return true;
-    }
 
-    return false;
+        const CSystemFileTranslator *trans;
+    };
+
+    return GenProcessFullPath( path, tree, file, success, fullPathTreeProc( this ) );
 }
 
 bool CSystemFileTranslator::OnGetFullPathTree( const char *path, dirTree& tree, bool& file, bool& success ) const       { return GenOnGetFullPathTree( path, tree, file, success ); }
@@ -746,7 +779,22 @@ bool CSystemFileTranslator::OnGetFullPathTree( const wchar_t *path, dirTree& tre
 void CSystemFileTranslator::OnGetFullPath( filePath& curAbsPath ) const
 {
 #ifdef _WIN32
-    curAbsPath.insert( 0, m_root, 3 );
+    eRootPathType pathType = this->m_pathType;
+
+    if ( pathType == ROOTPATH_UNC )
+    {
+        const filePath uncPrefix = filePath( "//" ) + m_unc + filePath( "/" );
+
+        curAbsPath.insert( 0, uncPrefix, uncPrefix.size() );
+    }
+    else if ( pathType == ROOTPATH_DISK )
+    {
+        curAbsPath.insert( 0, m_root, 3 );
+    }
+    else
+    {
+        assert( 0 );
+    }
 #else
     curAbsPath.insert( 0, "/", 1 );
 #endif //_WIN32

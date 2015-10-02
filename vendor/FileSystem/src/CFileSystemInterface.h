@@ -887,13 +887,31 @@ public:
 class CFileSystemInterface
 {
 public:
-    virtual CFileTranslator*    CreateTranslator    ( const char *path, eDirOpenFlags flags = DIR_FLAG_NONE ) = 0;
+    virtual bool                GetSystemRootDescriptor ( const char *path, filePath& descOut ) const = 0;
 #ifdef _FILESYSTEM_WIDEPATH_SUPPORT
-    virtual CFileTranslator*    CreateTranslator    ( const wchar_t *path, eDirOpenFlags flags = DIR_FLAG_NONE ) = 0;
+    virtual bool                GetSystemRootDescriptor ( const wchar_t *path, filePath& descOut ) const = 0;
 #endif
-    AINLINE CFileTranslator*    CreateTranslator    ( const filePath& path, eDirOpenFlags flags = DIR_FLAG_NONE )
+    AINLINE bool                GetSystemRootDescriptor ( const filePath& path, filePath& descOut ) const
+    {
+        return filePath_dispatch( path, [&]( auto path ) { return GetSystemRootDescriptor( path, descOut ); } );
+    }
+
+    virtual CFileTranslator*    CreateTranslator        ( const char *path, eDirOpenFlags flags = DIR_FLAG_NONE ) = 0;
+#ifdef _FILESYSTEM_WIDEPATH_SUPPORT
+    virtual CFileTranslator*    CreateTranslator        ( const wchar_t *path, eDirOpenFlags flags = DIR_FLAG_NONE ) = 0;
+#endif
+    AINLINE CFileTranslator*    CreateTranslator        ( const filePath& path, eDirOpenFlags flags = DIR_FLAG_NONE )
     {
         return filePath_dispatch( path, [&]( auto path ) { return CreateTranslator( path, flags ); } );
+    }
+
+    virtual CFileTranslator*    CreateSystemMinimumAccessPoint  ( const char *path, eDirOpenFlags flags = DIR_FLAG_NONE ) = 0;
+#ifdef _FILESYSTEM_WIDEPATH_SUPPORT
+    virtual CFileTranslator*    CreateSystemMinimumAccessPoint  ( const wchar_t *path, eDirOpenFlags flags = DIR_FLAG_NONE ) = 0;
+#endif
+    AINLINE CFileTranslator*    CreateSystemMinimumAccessPoint  ( const filePath& path, eDirOpenFlags flags = DIR_FLAG_NONE )
+    {
+        return filePath_dispatch( path, [&]( auto path ) { return CreateSystemMinimumAccessPoint( path, flags ); } );
     }
 
     virtual CArchiveTranslator* OpenArchive         ( CFile& file ) = 0;

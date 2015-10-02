@@ -303,6 +303,90 @@ bool CFileSystem::CanLockDirectories( void )
 }
 
 template <typename charType>
+static AINLINE bool _File_ParseSystemRootDescriptor(
+    const charType *path,
+    dirTree& tree, bool& bFile,
+#ifdef _WIN32
+    CSystemFileTranslator::eRootPathType& pathTypeOut,
+    filePath& uncPartOut,
+    const charType*& uncEndOut,
+#endif
+    filePath& descOut
+)
+{
+#ifdef _WIN32
+    // We have to handle absolute path, too
+    filePath uncPart;           // valid if pathType == ROOTPATH_UNC
+    const charType *uncEnd;     // helper variable for UNC paths.
+
+    if ( _File_IsAbsolutePath( path ) )
+    {
+        if (!_File_ParseRelativePath( path + 3, tree, bFile ))
+            return NULL;
+
+        descOut += path[0];
+        descOut += ":/";
+
+        pathTypeOut = CSystemFileTranslator::ROOTPATH_DISK;
+
+        return true;
+    }
+    else if ( _File_IsUNCPath( path, uncEnd, uncPart ) )
+    {
+        if (!_File_ParseRelativePath( uncEnd, tree, bFile ))
+            return NULL;
+
+        descOut += "//";
+        descOut += uncPart;
+        descOut += "/";
+
+        pathTypeOut = CSystemFileTranslator::ROOTPATH_UNC;
+
+        uncEndOut = uncEnd;
+        uncPartOut = std::move( uncPart );
+
+        return true;
+    }
+#elif defined(__linux__)
+    if ( *path == '/' || *path == '\\' )
+    {
+        if (!_File_ParseRelativePath( path + 1, tree, bFile ))
+            return NULL;
+
+        descOut = "/";
+
+        return true;
+    }
+#endif //OS DEPENDANT CODE
+
+    return false;
+}
+
+template <typename charType>
+bool CFileSystemNative::GenGetSystemRootDescriptor( const charType *path, filePath& descOut ) const
+{
+#ifdef _WIN32
+    CSystemFileTranslator::eRootPathType pathType;
+    filePath uncPart;
+    const charType *uncEnd;
+#endif
+
+    dirTree tree;
+    bool file;
+
+    return _File_ParseSystemRootDescriptor(
+        path, tree, file,
+#ifdef _WIN32
+        pathType, uncPart, uncEnd,
+#endif
+        descOut
+    );
+}
+
+bool CFileSystem::GetSystemRootDescriptor( const char *path, filePath& descOut ) const      { return ((CFileSystemNative*)this)->GenGetSystemRootDescriptor( path, descOut ); }
+bool CFileSystem::GetSystemRootDescriptor( const wchar_t *path, filePath& descOut ) const   { return ((CFileSystemNative*)this)->GenGetSystemRootDescriptor( path, descOut ); }
+
+template <typename charType>
 CFileTranslator* CFileSystemNative::GenCreateTranslator( const charType *path, eDirOpenFlags flags )
 {
     // Without access to directory locking, this function can not execute.
@@ -317,26 +401,25 @@ CFileTranslator* CFileSystemNative::GenCreateTranslator( const charType *path, e
     bool bFile;
 
 #ifdef _WIN32
+    CSystemFileTranslator::eRootPathType pathType = CSystemFileTranslator::ROOTPATH_UNKNOWN;
+
     // We have to handle absolute path, too
-    if ( _File_IsAbsolutePath( path ) )
-    {
-        if (!_File_ParseRelativePath( path + 3, tree, bFile ))
-            return NULL;
+    filePath uncPart;           // valid if pathType == ROOTPATH_UNC
+    const charType *uncEnd;     // helper variable for UNC paths.
+#endif
 
-        root += path[0];
-        root += ":/";
-    }
-#elif defined(__linux__)
-    if ( *path == '/' || *path == '\\' )
+    bool isSystemPath =
+        _File_ParseSystemRootDescriptor <charType> (
+            path, tree, bFile,
+#ifdef _WIN32
+            pathType, uncPart, uncEnd,
+#endif
+            root
+        );
+    
+    if ( !isSystemPath )
     {
-        if (!_File_ParseRelativePath( path + 1, tree, bFile ))
-            return NULL;
-
-        root = "/";
-    }
-#endif //OS DEPENDANT CODE
-    else
-    {
+        // Try a relative path from the current system directory.
         wchar_t pathBuffer[1024];
         _wgetcwd( pathBuffer, NUMELMS(pathBuffer) - 1 );
 
@@ -347,11 +430,32 @@ CFileTranslator* CFileSystemNative::GenCreateTranslator( const charType *path, e
         root += path;
 
 #ifdef _WIN32
-        if (!_File_ParseRelativePath( root.w_str() + 3, tree, bFile ))
-            return NULL;
+        const wchar_t *parseUNCEnd; // helper variable.
+        const wchar_t *parsePath = root.w_str();
 
-        root.resize( 2 );
-        root += "/";
+        if ( _File_IsAbsolutePath( parsePath ) )
+        {
+            if (!_File_ParseRelativePath( parsePath + 3, tree, bFile ))
+                return NULL;
+
+            root.resize( 2 );
+            root += "/";
+
+            pathType = CSystemFileTranslator::ROOTPATH_DISK;
+        }
+        else if ( _File_IsUNCPath( parsePath, parseUNCEnd, uncPart ) )
+        {
+            if (!_File_ParseRelativePath( uncEnd, tree, bFile ))
+                return NULL;
+
+            root.resize( ( parseUNCEnd - parsePath ) + 1 );
+
+            pathType = CSystemFileTranslator::ROOTPATH_UNC;
+        }
+        else
+        {
+            assert( 0 );
+        }
 #elif defined(__linux__)
         if (!_File_ParseRelativePath( root.w_str() + 1, tree, bFile ))
             return NULL;
@@ -385,6 +489,13 @@ CFileTranslator* CFileSystemNative::GenCreateTranslator( const charType *path, e
     pTranslator->m_rootTree = tree;
 
 #ifdef _WIN32
+    pTranslator->m_pathType = pathType;
+    
+    if ( pathType == CSystemFileTranslator::ROOTPATH_UNC )
+    {
+        pTranslator->m_unc = uncPart;
+    }
+
     pTranslator->m_rootHandle = dir;
     pTranslator->m_curDirHandle = NULL;
 #elif defined(__linux__)
@@ -397,6 +508,65 @@ CFileTranslator* CFileSystemNative::GenCreateTranslator( const charType *path, e
 
 CFileTranslator* CFileSystem::CreateTranslator( const char *path, eDirOpenFlags flags )         { return ((CFileSystemNative*)this)->GenCreateTranslator( path, flags ); }
 CFileTranslator* CFileSystem::CreateTranslator( const wchar_t *path, eDirOpenFlags flags )      { return ((CFileSystemNative*)this)->GenCreateTranslator( path, flags ); }
+
+template <typename charType>
+AINLINE CFileTranslator* CFileSystemNative::GenCreateSystemMinimumAccessPoint( const charType *path, eDirOpenFlags flags )
+{
+    filePath root;
+    dirTree tree;
+    bool bFile;
+
+#ifdef _WIN32
+    CSystemFileTranslator::eRootPathType pathType = CSystemFileTranslator::ROOTPATH_UNKNOWN;
+
+    // We have to handle absolute path, too
+    filePath uncPart;           // valid if pathType == ROOTPATH_UNC
+    const charType *uncEnd;     // helper variable for UNC paths.
+#endif
+
+    bool isSystemPath =
+        _File_ParseSystemRootDescriptor <charType> (
+            path, tree, bFile,
+#ifdef _WIN32
+            pathType, uncPart, uncEnd,
+#endif
+            root
+        );
+
+    if ( !isSystemPath )
+        return NULL;
+
+    if ( bFile )
+    {
+        tree.pop_back();
+    }
+
+    // Try creating the translator starting from the root.
+    size_t n = 0;
+
+    while ( true )
+    {
+        if ( n >= tree.size() )
+            break;
+
+        const filePath& curAdd = tree[ n ];
+
+        root += curAdd;
+        root += '/';
+
+        CFileTranslator *tryTrans = CreateTranslator( root );
+
+        if ( tryTrans )
+        {
+            return tryTrans;
+        }
+    }
+
+    return NULL;
+}
+
+CFileTranslator* CFileSystem::CreateSystemMinimumAccessPoint( const char *path, eDirOpenFlags flags )       { return ((CFileSystemNative*)this)->GenCreateSystemMinimumAccessPoint( path, flags ); }
+CFileTranslator* CFileSystem::CreateSystemMinimumAccessPoint( const wchar_t *path, eDirOpenFlags flags )    { return ((CFileSystemNative*)this)->GenCreateSystemMinimumAccessPoint( path, flags ); }
 
 CFileTranslator* CFileSystem::GenerateTempRepository( void )
 {

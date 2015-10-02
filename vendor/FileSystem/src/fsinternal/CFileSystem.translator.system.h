@@ -69,6 +69,8 @@ public:
     bool            Stat                            ( const wchar_t *path, struct stat *stats ) const override;
 
 private:
+    template <typename charType, typename procType>
+    bool            GenProcessFullPath              ( const charType *path, dirTree& tree, bool& file, bool& success, procType proc ) const;
     template <typename charType>
     bool            GenOnGetRelativePathTreeFromRoot( const charType *path, dirTree& tree, bool& file, bool& success ) const;
     template <typename charType>
@@ -121,6 +123,13 @@ public:
     void            GetDirectories                  ( const wchar_t *path, const wchar_t *wildcard, bool recurse, std::vector <filePath>& output ) const override;
     void            GetFiles                        ( const wchar_t *path, const wchar_t *wildcard, bool recurse, std::vector <filePath>& output ) const override;
 
+    enum eRootPathType
+    {
+        ROOTPATH_UNKNOWN,
+        ROOTPATH_UNC,
+        ROOTPATH_DISK
+    };
+
 private:
     friend class CFileSystem;
     friend struct CFileSystemNative;
@@ -128,6 +137,9 @@ private:
     bool            _CreateDirTree                  ( const dirTree& tree );
 
 #ifdef _WIN32
+    eRootPathType   m_pathType;
+    filePath        m_unc;          // valid if m_pathType == ROOTPATH_UNC
+
     HANDLE          m_rootHandle;
     HANDLE          m_curDirHandle;
 #elif defined(__linux__)
@@ -163,6 +175,74 @@ inline bool _File_IsAbsolutePath( const charType *path )
 
     return false;
 }
+
+#ifdef _WIN32
+
+template <typename charType>
+inline bool _File_IsUNCTerminator( charType c )
+{
+    return ( c == '\\' || c == '/' );
+}
+
+template <typename charType>
+inline bool _File_IsUNCPath( const charType *path, const charType*& uncEndOut, filePath& uncOut )
+{
+    typedef character_env <charType> char_env;
+
+    typename char_env::const_iterator iter( path );
+
+    // We must start with two backslashes.
+    if ( _File_IsUNCTerminator( iter.ResolveAndIncrement() ) && _File_IsUNCTerminator( iter.ResolveAndIncrement() ) )
+    {
+        // Then we need a name of some sort. Every character is allowed.
+        bool hasName = false;
+
+        const charType *uncStart = iter.GetPointer();
+
+        bool gotUNCTerminator = false;
+
+        while ( !iter.IsEnd() )
+        {
+            typename char_env::ucp_t curChar = iter.Resolve();
+
+            if ( _File_IsUNCTerminator( curChar ) )
+            {
+                gotUNCTerminator = true;
+                break;
+            }
+            
+            // We found some name character.
+            hasName = true;
+
+            // Since we count this character as UNC, we can advance.
+            iter.Increment();
+        }
+
+        if ( hasName )
+        {
+            // Verify that it is properly terminated.
+            if ( gotUNCTerminator )
+            {
+                // We got a valid UNC path. Output the UNC name into us.
+                const charType *uncEnd = iter.GetPointer();
+
+                uncOut = filePath( uncStart, ( uncEnd - uncStart ) );
+
+                // Tell the runtime where the UNC path ended.
+                iter.Increment();
+
+                uncEndOut = iter.GetPointer();
+
+                // Yay!
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+#endif
 
 // Important raw system exports.
 bool File_IsDirectoryAbsolute( const char *pPath );

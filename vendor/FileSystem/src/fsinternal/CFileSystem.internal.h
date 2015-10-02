@@ -61,7 +61,11 @@ public:
 
     // Generic things.
     template <typename charType>
-    CFileTranslator* GenCreateTranslator( const charType *path, eDirOpenFlags flags );
+    bool                GenGetSystemRootDescriptor( const charType *path, filePath& descOut ) const;
+    template <typename charType>
+    CFileTranslator*    GenCreateTranslator( const charType *path, eDirOpenFlags flags );
+    template <typename charType>
+    CFileTranslator*    GenCreateSystemMinimumAccessPoint( const charType *path, eDirOpenFlags flags = DIR_FLAG_NONE );
 };
 
 typedef StaticPluginClassFactory <CFileSystemNative> fileSystemFactory_t;

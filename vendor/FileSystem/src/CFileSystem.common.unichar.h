@@ -80,6 +80,15 @@ private:
         {
             return iter;
         }
+
+        inline ucp_t ResolveAndIncrement( void )
+        {
+            ucp_t res = Resolve();
+
+            Increment();
+
+            return res;
+        }
     };
 
 public:
@@ -277,6 +286,15 @@ private:
         {
             return this->iter;
         }
+
+        inline ucp_t ResolveAndIncrement( void )
+        {
+            ucp_t res = Resolve();
+
+            Increment();
+
+            return res;
+        }
     };
     
 public:
@@ -405,6 +423,15 @@ private:
         inline charType* GetPointer( void ) const
         {
             return iter;
+        }
+
+        inline ucp_t ResolveAndIncrement( void )
+        {
+            ucp_t res = Resolve();
+
+            Increment();
+
+            return res;
         }
     };
 

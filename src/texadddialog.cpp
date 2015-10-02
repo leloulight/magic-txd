@@ -546,6 +546,7 @@ TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create
                 pixelFormatSelect->addItem(rw::GetRasterFormatStandardName(rw::RASTER_8888));
                 pixelFormatSelect->addItem(rw::GetRasterFormatStandardName(rw::RASTER_888));
                 pixelFormatSelect->addItem(rw::GetRasterFormatStandardName(rw::RASTER_555));
+                pixelFormatSelect->addItem(rw::GetRasterFormatStandardName(rw::RASTER_LUM_ALPHA));
 
                 connect(pixelFormatSelect, (void (QComboBox::*)(const QString&))&QComboBox::activated, this, &TexAddDialog::OnTexturePixelFormatSelect);
 

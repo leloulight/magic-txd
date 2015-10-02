@@ -94,7 +94,7 @@ void ShutdownXBOXIMGCompressionEnvironment( void )
     lzoCompressionEnvRegister.UnregisterPlugin();
 }
 
-bool xboxIMGCompression::IsStreamCompressed( CFile *input ) const
+static bool isStreamLZOCompressed( CFile *input )
 {
     // Read the first 4 bytes to verify the magic.
     bool isCompressed = false;
@@ -114,6 +114,16 @@ bool xboxIMGCompression::IsStreamCompressed( CFile *input ) const
     }
 
     return isCompressed;
+}
+
+bool CFileSystem::IsStreamLZOCompressed( CFile *input ) const
+{
+    return isStreamLZOCompressed( input );
+}
+
+bool xboxIMGCompression::IsStreamCompressed( CFile *input ) const
+{
+    return isStreamLZOCompressed( input );
 }
 
 struct compressionHeader
@@ -526,4 +536,17 @@ repeatCompression:
     }
 
     return lzoSuccess;
+}
+
+CIMGArchiveCompressionHandler* CFileSystem::CreateLZOCompressor( void )
+{
+    return new xboxIMGCompression();
+}
+
+void CFileSystem::DestroyLZOCompressor( CIMGArchiveCompressionHandler *handler )
+{
+    // We trust that the guy really gives us back the LZO thing.
+    xboxIMGCompression *lzoCmpr = (xboxIMGCompression*)handler;
+
+    delete lzoCmpr;
 }

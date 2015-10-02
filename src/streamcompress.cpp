@@ -195,7 +195,13 @@ bool UnregisterStreamCompressionManager( MainWindow *mainWnd, compressionManager
     return success;
 }
 
+// Sub modules.
+extern void InitializeLZOStreamCompression( void );
+
 void InitializeStreamCompressionEnvironment( void )
 {
     streamCompressionEnvRegister.RegisterPlugin( mainWindowFactory );
+
+    // Register sub modules.
+    InitializeLZOStreamCompression();
 }

@@ -43,10 +43,18 @@ public:
 
     bool                    CanLockDirectories      ( void );
 
+    using CFileSystemInterface::GetSystemRootDescriptor;
     using CFileSystemInterface::CreateTranslator;
+    using CFileSystemInterface::CreateSystemMinimumAccessPoint;
+
+    bool                    GetSystemRootDescriptor ( const char *path, filePath& descOut ) const override final;
+    bool                    GetSystemRootDescriptor ( const wchar_t *path, filePath& descOut ) const override final;
 
     CFileTranslator*        CreateTranslator        ( const char *path, eDirOpenFlags flags = DIR_FLAG_NONE ) override final;
     CFileTranslator*        CreateTranslator        ( const wchar_t *path, eDirOpenFlags flags = DIR_FLAG_NONE ) override final;
+
+    CFileTranslator*        CreateSystemMinimumAccessPoint  ( const char *path, eDirOpenFlags flags = DIR_FLAG_NONE ) override final;
+    CFileTranslator*        CreateSystemMinimumAccessPoint  ( const wchar_t *path, eDirOpenFlags flags = DIR_FLAG_NONE ) override final;
 
     CArchiveTranslator*     OpenArchive             ( CFile& file ) override final;
 
@@ -84,8 +92,9 @@ public:
     CFile*                  GenerateRandomFile      ( CFileTranslator *root );
 
     // LZO Compression tools.
-    bool                            IsStreamLZOCompressed   ( CFile *stream );
+    bool                            IsStreamLZOCompressed   ( CFile *stream ) const;
     CIMGArchiveCompressionHandler*  CreateLZOCompressor     ( void );
+    void                            DestroyLZOCompressor    ( CIMGArchiveCompressionHandler *handler );
 
     // Insecure functions
     bool                    IsDirectory             ( const char *path ) override final;
