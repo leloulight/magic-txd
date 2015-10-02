@@ -178,6 +178,11 @@ struct MagicMassExportModule : public MassExportModule
         wnd->updateStatusMessage( QString( "processing: " ) + QString::fromStdWString( fileName ) + QString( " ..." ) );
     }
 
+    CFile* WrapStreamCodec( CFile *stream ) override
+    {
+        return CreateDecompressedStream( wnd->mainWnd, stream );
+    }
+
 private:
     TaskCompletionWindow *wnd;
 };

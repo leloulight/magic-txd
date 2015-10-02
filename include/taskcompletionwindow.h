@@ -10,6 +10,7 @@
 
 struct TaskCompletionWindow : public QDialog
 {
+    friend class MagicMassExportModule;
 private:
     struct status_msg_update : public QEvent
     {

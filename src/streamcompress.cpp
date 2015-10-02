@@ -50,6 +50,107 @@ struct streamCompressionEnv
 
 static PluginDependantStructRegister <streamCompressionEnv, mainWindowFactory_t> streamCompressionEnvRegister;
 
+struct CTemporaryFile : public CFile
+{
+    AINLINE CTemporaryFile( CFileTranslator *sourceTrans, CFile *wrapped )
+    {
+        this->sourceTrans = sourceTrans;
+        this->actualFile = wrapped;
+    }
+
+    AINLINE ~CTemporaryFile( void )
+    {
+        filePath pathOfFile = actualFile->GetPath();
+
+        delete actualFile;
+
+        sourceTrans->Delete( pathOfFile );
+    }
+
+    size_t Read( void *buffer, size_t sElement, size_t iNumElements ) override
+    {
+        return actualFile->Read( buffer, sElement, iNumElements );
+    }
+
+    size_t Write( const void *buffer, size_t sElement, size_t iNumElements ) override
+    {
+        return actualFile->Write( buffer, sElement, iNumElements );
+    }
+
+    int Seek( long iOffset, int iType ) override
+    {
+        return actualFile->Seek( iOffset, iType );
+    }
+
+    int SeekNative( fsOffsetNumber_t iOffset, int iType ) override
+    {
+        return actualFile->SeekNative( iOffset, iType );
+    }
+
+    long Tell( void ) const override
+    {
+        return actualFile->Tell();
+    }
+
+    fsOffsetNumber_t TellNative( void ) const override
+    {
+        return actualFile->TellNative();
+    }
+
+    bool IsEOF( void ) const override
+    {
+        return actualFile->IsEOF();
+    }
+
+    bool Stat( struct stat *stats ) const override
+    {
+        return actualFile->Stat( stats );
+    }
+
+    void PushStat( const struct stat *stats ) override
+    {
+        actualFile->PushStat( stats );
+    }
+
+    void SetSeekEnd( void ) override
+    {
+        actualFile->SetSeekEnd();
+    }
+
+    size_t GetSize( void ) const override
+    {
+        return actualFile->GetSize();
+    }
+
+    fsOffsetNumber_t GetSizeNative( void ) const override
+    {
+        return actualFile->GetSizeNative();
+    }
+
+    void Flush( void ) override
+    {
+        actualFile->Flush();
+    }
+
+    const filePath& GetPath( void ) const override
+    {
+        return actualFile->GetPath();
+    }
+
+    bool IsReadable( void ) const override
+    {
+        return actualFile->IsReadable();
+    }
+
+    bool IsWriteable( void ) const override
+    {
+        return actualFile->IsWriteable();
+    }
+
+    CFileTranslator *sourceTrans;
+    CFile *actualFile;
+};
+
 CFile* CreateDecompressedStream( MainWindow *mainWnd, CFile *compressed )
 {
     // We want to pipe the stream if we find out that it really is compressed.
@@ -119,7 +220,9 @@ CFile* CreateDecompressedStream( MainWindow *mainWnd, CFile *compressed )
                                     // Simply return the decompressed file.
                                     decFile->Seek( 0, SEEK_SET );
 
-                                    resultFile = decFile;
+                                    CTemporaryFile *tmpFile = new CTemporaryFile( repo, decFile );
+
+                                    resultFile = tmpFile;
 
                                     // We can free the other handle.
                                     delete compressed;

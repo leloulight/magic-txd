@@ -817,6 +817,29 @@ void MainWindow::onCreateNewTXD( bool checked )
     this->clearCurrentFilePath();
 }
 
+#include "tools/dirtools.h"
+
+static CFile* OpenGlobalFile( MainWindow *mainWnd, const filePath& path, const filePath& mode )
+{
+    CFile *theFile = NULL;
+
+    CFileTranslator *accessPoint = mainWnd->fileSystem->CreateSystemMinimumAccessPoint( path );
+
+    if ( accessPoint )
+    {
+        theFile = accessPoint->Open( path, mode );
+
+        if ( theFile )
+        {
+            theFile = CreateDecompressedStream( mainWnd, theFile );
+        }
+
+        delete accessPoint;
+    }
+
+    return theFile;
+}
+
 void MainWindow::openTxdFile(QString fileName) {
     this->txdLog->beforeTxdLoading();
 
@@ -825,54 +848,68 @@ void MainWindow::openTxdFile(QString fileName) {
         // We got a file name, try to load that TXD file into our editor.
         std::wstring unicodeFileName = fileName.toStdWString();
 
-        rw::streamConstructionFileParamW_t fileOpenParam(unicodeFileName.c_str());
+        CFile *fileStream = OpenGlobalFile( this, unicodeFileName.c_str(), L"rb" );
 
-        rw::Stream *txdFileStream = this->rwEngine->CreateStream(rw::RWSTREAMTYPE_FILE_W, rw::RWSTREAMMODE_READONLY, &fileOpenParam);
-
-        // If the opening succeeded, process things.
-        if (txdFileStream)
+        if ( fileStream )
         {
-            this->txdLog->addLogMessage(QString("loading TXD: ") + fileName);
-
-            // Parse the input file.
-            rw::RwObject *parsedObject = NULL;
-
             try
             {
-                parsedObject = this->rwEngine->Deserialize(txdFileStream);
-            }
-            catch (rw::RwException& except)
-            {
-                this->txdLog->showError(QString("failed to load the TXD archive: %1").arg(QString::fromStdString(except.message)));
-            }
+                rw::Stream *txdFileStream = RwStreamCreateTranslated( this->rwEngine, fileStream );
 
-            if (parsedObject)
-            {
-                // Try to cast it to a TXD. If it fails we did not get a TXD.
-                rw::TexDictionary *newTXD = rw::ToTexDictionary(this->rwEngine, parsedObject);
-
-                if (newTXD)
+                // If the opening succeeded, process things.
+                if (txdFileStream)
                 {
-                    // Okay, we got a new TXD.
-                    // Set it as our current object in the editor.
-                    this->setCurrentTXD(newTXD);
+                    this->txdLog->addLogMessage(QString("loading TXD: ") + fileName);
 
-                    this->setCurrentFilePath(fileName);
-                }
-                else
-                {
-                    const char *objTypeName = this->rwEngine->GetObjectTypeName(parsedObject);
+                    // Parse the input file.
+                    rw::RwObject *parsedObject = NULL;
 
-                    this->txdLog->addLogMessage(QString("found %1 but expected a texture dictionary").arg(objTypeName), LOGMSG_WARNING);
+                    try
+                    {
+                        parsedObject = this->rwEngine->Deserialize(txdFileStream);
+                    }
+                    catch (rw::RwException& except)
+                    {
+                        this->txdLog->showError(QString("failed to load the TXD archive: %1").arg(QString::fromStdString(except.message)));
+                    }
 
-                    // Get rid of the object that is not a TXD.
-                    this->rwEngine->DeleteRwObject(parsedObject);
+                    if (parsedObject)
+                    {
+                        // Try to cast it to a TXD. If it fails we did not get a TXD.
+                        rw::TexDictionary *newTXD = rw::ToTexDictionary(this->rwEngine, parsedObject);
+
+                        if (newTXD)
+                        {
+                            // Okay, we got a new TXD.
+                            // Set it as our current object in the editor.
+                            this->setCurrentTXD(newTXD);
+
+                            this->setCurrentFilePath(fileName);
+                        }
+                        else
+                        {
+                            const char *objTypeName = this->rwEngine->GetObjectTypeName(parsedObject);
+
+                            this->txdLog->addLogMessage(QString("found %1 but expected a texture dictionary").arg(objTypeName), LOGMSG_WARNING);
+
+                            // Get rid of the object that is not a TXD.
+                            this->rwEngine->DeleteRwObject(parsedObject);
+                        }
+                    }
+                    // if parsedObject is NULL, the RenderWare implementation should have error'ed us already.
+
+                    // Remember to close the stream again.
+                    this->rwEngine->DeleteStream(txdFileStream);
                 }
             }
-            // if parsedObject is NULL, the RenderWare implementation should have error'ed us already.
+            catch( ... )
+            {
+                delete fileStream;
+                
+                throw;
+            }
 
-            // Remember to close the stream again.
-            this->rwEngine->DeleteStream(txdFileStream);
+            delete fileStream;
         }
     }
 

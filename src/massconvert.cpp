@@ -368,6 +368,11 @@ struct MassConvertTxdGenModule : public TxdGenModule
     {
         massconvWnd->postLogMessage( QString::fromStdWString( msg ) );
     }
+
+    CFile* WrapStreamCodec( CFile *compressed ) override
+    {
+        return CreateDecompressedStream( massconvWnd->mainwnd, compressed );
+    }
 };
 
 static void convThreadEntryPoint( rw::thread_t threadHandle, rw::Interface *engineInterface, void *ud )

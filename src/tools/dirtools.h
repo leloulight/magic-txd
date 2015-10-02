@@ -247,6 +247,20 @@ private:
                 {
                     sourceStream = info->discHandle->Open( discFilePathAbs, L"rb" );
                 }
+
+                if ( sourceStream )
+                {
+                    try
+                    {
+                        sourceStream = module->WrapStreamCodec( sourceStream );
+                    }
+                    catch( ... )
+                    {
+                        delete sourceStream;
+
+                        throw;
+                    }
+                }
                 
                 if ( sourceStream )
                 {

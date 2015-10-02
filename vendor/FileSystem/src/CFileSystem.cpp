@@ -707,7 +707,7 @@ CFile* CFileSystem::GenerateRandomFile( CFileTranslator *root )
         std::string fileName = "$rnd";
         fileName += std::to_string( fsrandom::getSystemRandom( this ) );
 
-        CFile *genFile = root->Open( fileName.c_str(), "wb" );
+        CFile *genFile = root->Open( fileName.c_str(), "wb+" );
 
         if ( genFile )
         {
