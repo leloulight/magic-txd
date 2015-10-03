@@ -172,34 +172,43 @@ static HRESULT rasterToHBITMAP( rw::Raster *raster, HBITMAP *pBitmap, bool& hasA
 
     void *colorStart = mem;
 
-    for ( rw::uint32 y = 0; y < height; y++ )
+    try
     {
-        for ( rw::uint32 x = 0; x < width; x++ )
+        for ( rw::uint32 y = 0; y < height; y++ )
         {
-            bitmapPixel *pix = (bitmapPixel*)colorStart + y * width + x;
-
-            rw::uint8 r, g, b, a;
-
-            bool gotColor = pixelData.browsecolor( x, y, r, g, b, a );
-
-            if ( !gotColor )
+            for ( rw::uint32 x = 0; x < width; x++ )
             {
-                r = 0;
-                g = 0;
-                b = 0;
-                a = 255;
-            }
+                bitmapPixel *pix = (bitmapPixel*)colorStart + y * width + x;
 
-            if ( a != 255 )
-            {
-                hasAlpha = true;
-            }
+                rw::uint8 r, g, b, a;
 
-            pix->r = r;
-            pix->g = g;
-            pix->b = b;
-            pix->a = a;
+                bool gotColor = pixelData.browsecolor( x, y, r, g, b, a );
+
+                if ( !gotColor )
+                {
+                    r = 0;
+                    g = 0;
+                    b = 0;
+                    a = 255;
+                }
+
+                if ( a != 255 )
+                {
+                    hasAlpha = true;
+                }
+
+                pix->r = r;
+                pix->g = g;
+                pix->b = b;
+                pix->a = a;
+            }
         }
+    }
+    catch( ... )
+    {
+        free( mem );
+
+        throw;
     }
 
     // Create the bitmap!
@@ -226,6 +235,72 @@ static HRESULT rasterToHBITMAP( rw::Raster *raster, HBITMAP *pBitmap, bool& hasA
     return S_OK;
 }
 
+static HRESULT generateRasterPreviewHBITMAP( UINT cx, rw::Raster *texRaster, HBITMAP *pBitmap, WTS_ALPHATYPE *pAlphaType )
+{
+    // So we want to turn this into an experimental HBITMAP.
+    // Lets do it!
+    // First determine the final size that it should have.
+    rw::uint32 width, height;
+    texRaster->getSize( width, height );
+
+    rw::uint32 recWidth, recHeight;
+    {
+        adjustToMaxDimm( width, height, cx, recWidth, recHeight );
+    }
+
+    rw::Raster *srcRaster;
+
+    if ( recWidth == width && recHeight == height )
+    {
+        srcRaster = rw::AcquireRaster( texRaster );
+    }
+    else
+    {
+        srcRaster = rw::CloneRaster( texRaster );
+
+        try
+        {
+            srcRaster->clearMipmaps();
+
+            srcRaster->resize( recWidth, recHeight );
+        }
+        catch( ... )
+        {
+            rw::DeleteRaster( srcRaster );
+
+            throw;
+        }
+    }
+
+    HRESULT res;
+
+    try
+    {
+        // Do stuff.
+        bool hasAlpha = false;
+        HBITMAP bmp;
+
+        res = rasterToHBITMAP( srcRaster, &bmp, hasAlpha );
+
+        if ( res == S_OK )
+        {
+            *pBitmap = bmp;
+            *pAlphaType = ( hasAlpha ? WTSAT_ARGB : WTSAT_RGB );
+        }
+    }
+    catch( ... )
+    {
+        rw::DeleteRaster( srcRaster );
+
+        throw;
+    }
+
+    // Clean up.
+    rw::DeleteRaster( srcRaster );
+
+    return res;
+}
+
 IFACEMETHODIMP RenderWareThumbnailProvider::GetThumbnail( UINT cx, HBITMAP *pBitmap, WTS_ALPHATYPE *pAlphaType )
 {
     if ( !this->isInitialized )
@@ -244,75 +319,16 @@ IFACEMETHODIMP RenderWareThumbnailProvider::GetThumbnail( UINT cx, HBITMAP *pBit
                 {
                     if ( rw::Raster *texRaster = texHandle->GetRaster() )
                     {
-                        // So we want to turn this into an experimental HBITMAP.
-                        // Lets do it!
-                        // First determine the final size that it should have.
-                        rw::uint32 width, height;
-                        texRaster->getSize( width, height );
-
-                        rw::uint32 recWidth, recHeight;
-                        {
-                            adjustToMaxDimm( width, height, cx, recWidth, recHeight );
-                        }
-
-                        rw::Raster *srcRaster;
-
-                        if ( recWidth == width && recHeight == height )
-                        {
-                            srcRaster = rw::AcquireRaster( texRaster );
-                        }
-                        else
-                        {
-                            srcRaster = rw::CloneRaster( texRaster );
-
-                            try
-                            {
-                                srcRaster->clearMipmaps();
-
-                                srcRaster->resize( recWidth, recHeight );
-                            }
-                            catch( ... )
-                            {
-                                rw::DeleteRaster( srcRaster );
-
-                                throw;
-                            }
-                        }
-
-                        HRESULT res;
-
-                        try
-                        {
-                            // Do stuff.
-                            bool hasAlpha = false;
-                            HBITMAP bmp;
-
-                            res = rasterToHBITMAP( srcRaster, &bmp, hasAlpha );
-
-                            if ( res == S_OK )
-                            {
-                                *pBitmap = bmp;
-                                *pAlphaType = ( hasAlpha ? WTSAT_ARGB : WTSAT_RGB );
-                            }
-                        }
-                        catch( ... )
-                        {
-                            rw::DeleteRaster( srcRaster );
-
-                            throw;
-                        }
-
-                        // Clean up.
-                        rw::DeleteRaster( srcRaster );
-
-                        return res;
+                        return generateRasterPreviewHBITMAP( cx, texRaster, pBitmap, pAlphaType );
                     }
                 }
             }
             else if ( rw::TextureBase *texHandle = rw::ToTexture( rwEngine, this->thumbObj ) )
             {
-                // TODO.
-                return S_FALSE;
+                if ( rw::Raster *texRaster = texHandle->GetRaster() )
+                {
+                    return generateRasterPreviewHBITMAP( cx, texRaster, pBitmap, pAlphaType );
+                }
             }
         }
         catch( ... )

@@ -213,12 +213,17 @@ STDAPI DllRegisterServer(void)
         // with the .recipe file class.
         hr = RegisterShellExtThumbnailHandler(L".txd", CLSID_RenderWareThumbnailProvider);
 
-        if ( SUCCEEDED(hr) )
+        if ( SUCCEEDED( hr ) )
         {
-            // This tells the shell to invalidate the thumbnail cache. It is 
-            // important because any .recipe files viewed before registering 
-            // this handler would otherwise show cached blank thumbnails.
-            SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, NULL, NULL);
+            hr = RegisterShellExtThumbnailHandler(L".rwtex", CLSID_RenderWareThumbnailProvider);
+
+            if ( SUCCEEDED(hr) )
+            {
+                // This tells the shell to invalidate the thumbnail cache. It is 
+                // important because any .recipe files viewed before registering 
+                // this handler would otherwise show cached blank thumbnails.
+                SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, NULL, NULL);
+            }
         }
     }
 
@@ -250,6 +255,11 @@ STDAPI DllUnregisterServer(void)
     {
         // Unregister the thumbnail handler.
         hr = UnregisterShellExtThumbnailHandler(L".txd");
+
+        if ( SUCCEEDED(hr) )
+        {
+            hr = UnregisterShellExtThumbnailHandler(L".rwtex");
+        }
     }
 
     return hr;
