@@ -1312,8 +1312,14 @@ void CIMGArchiveTranslator::Save( void )
 
             targetStream->SeekNative( realFileSize, SEEK_SET );
             targetStream->SetSeekEnd();
+        }
 
-            targetStream->SeekNative( 0, SEEK_SET );
+        // Prepare the streams for writing, by resetting them.
+        targetStream->SeekNative( 0, SEEK_SET );
+
+        if ( targetStream != registryStream )
+        {
+            registryStream->SeekNative( 0, SEEK_SET );
         }
 
         // We only write a header in version two archives.

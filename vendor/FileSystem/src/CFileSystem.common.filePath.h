@@ -1831,6 +1831,8 @@ struct filePathLink : public filePath
     bool hasMoved;
 };
 
+#if _MSC_VER >= 1900
+
 template <typename funcType>
 AINLINE decltype( auto ) filePath_dispatch( const filePath& path, funcType b )
 {
@@ -1859,5 +1861,7 @@ template <typename charType>
 struct resolve_type <const charType*>
     : public resolve_type <charType>
 {};
+
+#endif //VS 2015+
 
 #endif //_FILESYSTEM_COMMON_PATHRESOLUTION_

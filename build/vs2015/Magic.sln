@@ -60,6 +60,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FileSystem", "..\..\vendor\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gtaconfig", "..\..\vendor\gtaconfig\build\vs2015\gtaconfig.vcxproj", "{8A99E697-80DE-4F63-81ED-86DB648A3F6B}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rwthumb", "..\..\thumbnail\build\vs2015\rwthumb.vcxproj", "{4D925CF6-B64D-4AD7-8614-D8872CFE3F90}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3D409405-B557-4BB6-B9E1-43215019E381} = {3D409405-B557-4BB6-B9E1-43215019E381}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug 2013|Win32 = Debug 2013|Win32
@@ -328,6 +333,22 @@ Global
 		{8A99E697-80DE-4F63-81ED-86DB648A3F6B}.Release 2015|Win32.Build.0 = Release 2015|Win32
 		{8A99E697-80DE-4F63-81ED-86DB648A3F6B}.Release 2015|x64.ActiveCfg = Release 2015|x64
 		{8A99E697-80DE-4F63-81ED-86DB648A3F6B}.Release 2015|x64.Build.0 = Release 2015|x64
+		{4D925CF6-B64D-4AD7-8614-D8872CFE3F90}.Debug 2013|Win32.ActiveCfg = Debug 2013|Win32
+		{4D925CF6-B64D-4AD7-8614-D8872CFE3F90}.Debug 2013|Win32.Build.0 = Debug 2013|Win32
+		{4D925CF6-B64D-4AD7-8614-D8872CFE3F90}.Debug 2013|x64.ActiveCfg = Debug 2013|x64
+		{4D925CF6-B64D-4AD7-8614-D8872CFE3F90}.Debug 2013|x64.Build.0 = Debug 2013|x64
+		{4D925CF6-B64D-4AD7-8614-D8872CFE3F90}.Debug 2015|Win32.ActiveCfg = Debug 2015|Win32
+		{4D925CF6-B64D-4AD7-8614-D8872CFE3F90}.Debug 2015|Win32.Build.0 = Debug 2015|Win32
+		{4D925CF6-B64D-4AD7-8614-D8872CFE3F90}.Debug 2015|x64.ActiveCfg = Debug 2015|x64
+		{4D925CF6-B64D-4AD7-8614-D8872CFE3F90}.Debug 2015|x64.Build.0 = Debug 2015|x64
+		{4D925CF6-B64D-4AD7-8614-D8872CFE3F90}.Release 2013|Win32.ActiveCfg = Release 2013|Win32
+		{4D925CF6-B64D-4AD7-8614-D8872CFE3F90}.Release 2013|Win32.Build.0 = Release 2013|Win32
+		{4D925CF6-B64D-4AD7-8614-D8872CFE3F90}.Release 2013|x64.ActiveCfg = Release 2013|x64
+		{4D925CF6-B64D-4AD7-8614-D8872CFE3F90}.Release 2013|x64.Build.0 = Release 2013|x64
+		{4D925CF6-B64D-4AD7-8614-D8872CFE3F90}.Release 2015|Win32.ActiveCfg = Release 2015|Win32
+		{4D925CF6-B64D-4AD7-8614-D8872CFE3F90}.Release 2015|Win32.Build.0 = Release 2015|Win32
+		{4D925CF6-B64D-4AD7-8614-D8872CFE3F90}.Release 2015|x64.ActiveCfg = Release 2015|x64
+		{4D925CF6-B64D-4AD7-8614-D8872CFE3F90}.Release 2015|x64.Build.0 = Release 2015|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -59,7 +59,7 @@ public:
 
         bool c_ignoreSerializationRegions = true;
 
-        float c_compressionQuality = 0.5f;
+        float c_compressionQuality = 1.0f;
 
         bool c_outputDebug = false;
 
