@@ -589,7 +589,7 @@ AINLINE void performFiltering1D(
                     double widthProcessRatio = (double)currentWidth / (double)redirTargetWidth;
 
                     filteringDispatcherWidth1D(
-                        currentWidth, currentHeight,
+                        redirTargetWidth, redirTargetHeight,
                         widthProcessRatio, filterProc
                     );
                 }
@@ -693,7 +693,7 @@ AINLINE void performFiltering1D(
                     double heightProcessRatio = (double)currentHeight / (double)redirTargetHeight;
 
                     filteringDispatcherHeight1D(
-                        currentWidth, currentHeight,
+                        redirTargetWidth, redirTargetHeight,
                         heightProcessRatio, filterProc
                     );
                 }
@@ -756,7 +756,7 @@ AINLINE void performMinifyFiltering2D(
     double heightProcessRatio = (double)rawOrigLayerHeight / (double)targetLayerHeight;
 
     filteringDispatcher2D(
-        rawOrigLayerWidth, rawOrigLayerHeight,
+        targetLayerWidth, targetLayerHeight,
         widthProcessRatio,
         heightProcessRatio,
         filterProc
