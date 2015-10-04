@@ -439,3 +439,11 @@ QPlainTextEdit {
 	selection-background-color: #103bdb;
 	selection-color: #ffffff;
 }
+
+QToolTip {
+    border: 0px;
+    background: #dddddd;
+    font-family:"Segoe UI Light";
+    color: #050018;
+    font-size: 20px;
+}

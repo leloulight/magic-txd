@@ -439,11 +439,14 @@ QPlainTextEdit {
 
 QLabel#labelCopyrightHolders
 {
-    font-size: 15px;
+    color: #d1db2f;
+    font-size: 20px;
 }
 
-QLabel#labelDoNotUseCommercially
-{
-    color: #ffff00;
-    font-size: 18px;
+QToolTip {
+    border: 0px;
+    background: #080025;
+    font-family:"Segoe UI Light";
+    color: #ffffff;
+    font-size: 20px;
 }

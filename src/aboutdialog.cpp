@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+#include <QMovie>
 
 AboutDialog::AboutDialog( MainWindow *mainWnd ) : QDialog( mainWnd )
 {
@@ -12,17 +13,22 @@ AboutDialog::AboutDialog( MainWindow *mainWnd ) : QDialog( mainWnd )
     // We should display all kinds of copyright information here.
     QVBoxLayout *rootLayout = new QVBoxLayout();
 
-    this->setMinimumWidth( 350 );
-    
-    rootLayout->setSizeConstraint( QLayout::SetFixedSize );
+    this->setFixedWidth( 580 );
 
     QVBoxLayout *headerGroup = new QVBoxLayout();
 
     QLabel *mainLogoLabel = new QLabel();
     mainLogoLabel->setAlignment( Qt::AlignCenter );
 
-    mainLogoLabel->setPixmap( QPixmap( mainWnd->makeAppPath( "resources/about/magictxd.png" ) ).scaled( QSize( 200, 200 ) ) );
+    QMovie *stars = new QMovie();
 
+    if(mainWnd->actionThemeDark->isChecked())
+        stars->setFileName(mainWnd->makeAppPath("resources\\dark\\stars2.gif"));
+    else
+        stars->setFileName(mainWnd->makeAppPath("resources\\light\\stars2.gif"));
+    mainLogoLabel->setMovie(stars);
+    stars->start();
+    
     headerGroup->addWidget( mainLogoLabel );
 
     QLabel *labelCopyrightHolders = new QLabel( "created by DK22Pac and The_GTA" );
@@ -33,76 +39,93 @@ AboutDialog::AboutDialog( MainWindow *mainWnd ) : QDialog( mainWnd )
 
     headerGroup->addWidget( labelCopyrightHolders );
 
-    headerGroup->setContentsMargins( 0, 0, 0, 20 );
+    //headerGroup->setContentsMargins( 0, 0, 0, 20 );
 
     rootLayout->addLayout( headerGroup );
 
-    QLabel *labelDoNotUseCommercially =
-        new QLabel(
-            "This tool MUST NOT be used commercially without the explicit, written\n"
-            "authorization of all third-parties that contributed to this tool. See the\n"
+    QLabel *labelDoNotUseCommercially = new QLabel();
+    labelDoNotUseCommercially->setWordWrap(true);
+    labelDoNotUseCommercially->setText(
+            "This tool MUST NOT be used commercially without the explicit, written "
+            "authorization of all third-parties that contributed to this tool. See the "
             "licenses for more information.\n\n" \
             "The Magic.TXD team welcomes your support!"
         );
 
-    labelDoNotUseCommercially->setContentsMargins( 0, 0, 0, 15 );
+    labelDoNotUseCommercially->setAlignment(Qt::AlignCenter);
 
-    labelDoNotUseCommercially->setObjectName( "labelDoNotUseCommercially" );
+    rootLayout->addSpacing(10);
 
     rootLayout->addWidget( labelDoNotUseCommercially );
+
+    rootLayout->addSpacing(30);
 
     // Add icons of important vendors.
     QHBoxLayout *vendorRowOne = new QHBoxLayout();
 
-    const int rowHeight = 60;
+    vendorRowOne->setAlignment( Qt::AlignCenter );
 
-    QLabel *ps2Logo = new QLabel();
-    ps2Logo->setPixmap( QPixmap( mainWnd->makeAppPath( "resources/about/ps2logo.png" ) ).scaled( 150, rowHeight ) );
+    vendorRowOne->setSpacing(10);
 
-    vendorRowOne->addWidget( ps2Logo );
+    QLabel *rwLogo = new QLabel();
+    rwLogo->setPixmap(QPixmap(mainWnd->makeAppPath("resources/about/renderwarelogo.png")));
+    rwLogo->setToolTip("RenderWare Graphics");
 
-    QLabel *xboxLogo = new QLabel();
-    xboxLogo->setPixmap( QPixmap( mainWnd->makeAppPath( "resources/about/xboxlogo.png" ) ).scaled( rowHeight, rowHeight ) );
-    
-    vendorRowOne->addWidget( xboxLogo );
+    vendorRowOne->addWidget(rwLogo);
 
     QLabel *amdLogo = new QLabel();
-    amdLogo->setPixmap( QPixmap( mainWnd->makeAppPath( "resources/about/amdlogo.png" ) ).scaled( rowHeight, rowHeight ) );
+    amdLogo->setPixmap(QPixmap(mainWnd->makeAppPath("resources/about/amdlogo.png")));
+    amdLogo->setToolTip("AMD");
 
-    vendorRowOne->addWidget( amdLogo );
+    vendorRowOne->addWidget(amdLogo);
 
     QLabel *powervrLogo = new QLabel();
-    powervrLogo->setPixmap( QPixmap( mainWnd->makeAppPath( "resources/about/powervrlogo.png" ) ).scaled( 150, rowHeight ) );
+    powervrLogo->setPixmap(QPixmap(mainWnd->makeAppPath("resources/about/powervrlogo.png")));
+    powervrLogo->setToolTip("PowerVR");
 
-    vendorRowOne->addWidget( powervrLogo );
+    vendorRowOne->addWidget(powervrLogo);
 
-    QLabel *pngquantLogo = new QLabel();
-    pngquantLogo->setPixmap( QPixmap( mainWnd->makeAppPath( "resources/about/pngquantlogo.png" ) ).scaled( rowHeight, rowHeight ) );
+    rootLayout->addLayout(vendorRowOne);
 
-    vendorRowOne->addWidget( pngquantLogo );
-
-    rootLayout->addLayout( vendorRowOne );
-    
     QHBoxLayout *vendorRowTwo = new QHBoxLayout();
 
     vendorRowTwo->setAlignment( Qt::AlignCenter );
 
-    QLabel *libsquishLogo = new QLabel();
-    libsquishLogo->setPixmap( QPixmap( mainWnd->makeAppPath( "resources/about/squishlogo.png" ) ).scaled( rowHeight * 3, rowHeight ) );
+    vendorRowTwo->setSpacing(10);
 
-    vendorRowTwo->addWidget( libsquishLogo );
+    QLabel *xboxLogo = new QLabel();
+    xboxLogo->setPixmap(QPixmap(mainWnd->makeAppPath("resources/about/xboxlogo.png")));
+    xboxLogo->setToolTip("XBOX");
+
+    vendorRowTwo->addWidget(xboxLogo);
+
+    QLabel *pngquantLogo = new QLabel();
+    pngquantLogo->setPixmap(QPixmap(mainWnd->makeAppPath("resources/about/pngquantlogo.png")));
+    pngquantLogo->setToolTip("pngquant");
+
+    vendorRowTwo->addWidget(pngquantLogo);
+
+    QLabel *libsquishLogo = new QLabel();
+    libsquishLogo->setPixmap( QPixmap( mainWnd->makeAppPath( "resources/about/squishlogo.png" ) ) );
+    libsquishLogo->setToolTip("libsquish");
+
+    vendorRowTwo->addWidget(libsquishLogo);
+
+    QLabel *ps2Logo = new QLabel();
+    ps2Logo->setPixmap(QPixmap(mainWnd->makeAppPath("resources/about/ps2logo.png")));
+    ps2Logo->setToolTip("Playstation 2");
+
+    vendorRowTwo->addWidget(ps2Logo);
 
     QLabel *qtLogo = new QLabel();
-    qtLogo->setPixmap( QPixmap( mainWnd->makeAppPath( "resources/about/qtlogo.png" ) ).scaled( rowHeight, rowHeight ) );
+    qtLogo->setPixmap( QPixmap( mainWnd->makeAppPath( "resources/about/qtlogo.png" ) ) );
+    qtLogo->setToolTip("Qt");
 
-    vendorRowTwo->addWidget( qtLogo );
-
-    QLabel *rwLogo = new QLabel();
-    rwLogo->setPixmap( QPixmap( mainWnd->makeAppPath( "resources/about/renderwarelogo.png" ) ).scaled( 250, rowHeight ) );
-
-    vendorRowTwo->addWidget( rwLogo );
+    vendorRowTwo->addWidget(qtLogo);
 
     rootLayout->addLayout( vendorRowTwo );
+
+    rootLayout->addSpacing(10);
 
     this->setLayout( rootLayout );
 
