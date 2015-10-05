@@ -7,6 +7,10 @@
 const CLSID CLSID_RenderWareThumbnailProvider =
 { 0xa16aca16, 0xf66, 0x480b, { 0x9f, 0x5c, 0xb4, 0x2e, 0x29, 0x76, 0x1a, 0x9b } };
 
+// {EE4F0E71-7A95-42B0-8064-C284EF1A0AC2}
+const CLSID CLSID_RenderWareContextMenuProvider = 
+{ 0xee4f0e71, 0x7a95, 0x42b0, { 0x80, 0x64, 0xc2, 0x84, 0xef, 0x1a, 0xa, 0xc2 } };
+
 
 HMODULE module_instance = NULL;
 std::atomic <unsigned long> module_refCount = 0;
@@ -25,17 +29,36 @@ __declspec( dllexport ) BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, L
     case DLL_PROCESS_ATTACH:
         module_instance = hModule;
 
-        DisableThreadLibraryCalls( hModule );
+        //DisableThreadLibraryCalls( hModule );
 
         // Initialize the module-wide RenderWare environment.
         {
             rw::LibraryVersion libVer;
-            libVer.rwLibMajor = 3;
+            libVer.rwLibMajor = 3;      // the newest RenderWare version ever released under RW3.
             libVer.rwLibMinor = 7;
             libVer.rwRevMajor = 0;
             libVer.rwRevMinor = 0;
 
             rwEngine = rw::CreateEngine( std::move( libVer ) );
+
+            if ( rwEngine )
+            {
+                // Give information about this tool.
+                rw::softwareMetaInfo metaInfo;
+                metaInfo.applicationName = "RWtools_win32shell";
+                metaInfo.applicationVersion = "shell";
+                metaInfo.description = "Win32 shell utilities for RenderWare files (https://github.com/quiret/magic-txd)";
+
+                rwEngine->SetApplicationInfo( metaInfo );
+
+                // We need to properly initialize this engine for common-purpose operation.
+                rwEngine->SetPaletteRuntime( rw::PALRUNTIME_PNGQUANT );
+                rwEngine->SetDXTRuntime( rw::DXTRUNTIME_SQUISH );
+                rwEngine->SetFixIncompatibleRasters( true );
+                rwEngine->SetIgnoreSerializationBlockRegions( true );
+                rwEngine->SetMetaDataTagging( true );
+                rwEngine->SetWarningLevel( 0 );     // the shell is not a warning provider; use Magic.TXD instead.
+            }
         }
 
         InitializeRwWin32StreamEnv();
@@ -44,7 +67,10 @@ __declspec( dllexport ) BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, L
         ShutdownRwWin32StreamEnv();
 
         // Destroy the RenderWare environment.
-        rw::DeleteEngine( rwEngine );
+        if ( rwEngine )
+        {
+            rw::DeleteEngine( rwEngine );
+        }
 
         module_instance = NULL;
         break;
@@ -54,7 +80,7 @@ __declspec( dllexport ) BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, L
 }
 
 // Implementation of the factory object.
-struct thumbNailClassFactory : public IClassFactory
+struct shellClassFactory : public IClassFactory
 {
     // IUnknown
     IFACEMETHODIMP QueryInterface( REFIID riid, void **ppv )
@@ -67,6 +93,15 @@ struct thumbNailClassFactory : public IClassFactory
             this->refCount++;
 
             IClassFactory *comObj = this;
+
+            *ppv = comObj;
+            return S_OK;
+        }
+        else if ( riid == __uuidof(IUnknown) )
+        {
+            this->refCount++;
+
+            IUnknown *comObj = this;
 
             *ppv = comObj;
             return S_OK;
@@ -113,6 +148,30 @@ struct thumbNailClassFactory : public IClassFactory
             *ppv = prov;
             return S_OK;
         }
+        else if ( riid == __uuidof(IContextMenu) )
+        {
+            IContextMenu *prov = new (std::nothrow) RenderWareContextHandlerProvider();
+
+            if ( !prov )
+            {
+                return E_OUTOFMEMORY;
+            }
+
+            *ppv = prov;
+            return S_OK;
+        }
+        else if ( riid == __uuidof(IShellExtInit) )
+        {
+            IShellExtInit *prov = new (std::nothrow) RenderWareContextHandlerProvider();
+
+            if ( !prov )
+            {
+                return E_OUTOFMEMORY;
+            }
+
+            *ppv = prov;
+            return S_OK;
+        }
 
         return E_NOINTERFACE;
     }
@@ -131,13 +190,13 @@ struct thumbNailClassFactory : public IClassFactory
         return S_OK;
     }
 
-    thumbNailClassFactory( void )
+    shellClassFactory( void )
     {
         module_refCount++;
     }
 
 protected:
-    ~thumbNailClassFactory( void )
+    ~shellClassFactory( void )
     {
         module_refCount--;
     }
@@ -167,19 +226,23 @@ STDAPI DllCanUnloadNow( void )
 
 STDAPI DllGetClassObject( REFCLSID rclsid, REFIID riid, void **ppOut )
 {
-    if ( IsEqualCLSID( rclsid, CLSID_RenderWareThumbnailProvider ) && riid == __uuidof(IClassFactory) )
+    if ( IsEqualCLSID( rclsid, CLSID_RenderWareThumbnailProvider ) ||
+         IsEqualCLSID( rclsid, CLSID_RenderWareContextMenuProvider ) )
     {
-        thumbNailClassFactory *thumbFactory = new (std::nothrow) thumbNailClassFactory();
-
-        if ( thumbFactory )
+        if ( riid == __uuidof(IClassFactory) )
         {
-            IClassFactory *comObj = thumbFactory;
+            shellClassFactory *thumbFactory = new (std::nothrow) shellClassFactory();
 
-            *ppOut = comObj;
-            return S_OK;
+            if ( thumbFactory )
+            {
+                IClassFactory *comObj = thumbFactory;
+
+                *ppOut = comObj;
+                return S_OK;
+            }
+
+            return E_OUTOFMEMORY;
         }
-
-        return E_OUTOFMEMORY;
     }
 
     return CLASS_E_CLASSNOTAVAILABLE;
@@ -202,15 +265,13 @@ STDAPI DllRegisterServer(void)
         return hr;
     }
 
-    // Register the component.
+    // Register the thumbnail handler.
     hr = RegisterInprocServer(szModule, CLSID_RenderWareThumbnailProvider, 
         L"rwthumb.RenderWareThumbnailProvider Class", 
         L"Free");
 
     if ( SUCCEEDED(hr) )
     {
-        // Register the thumbnail handler. The thumbnail handler is associated
-        // with the .recipe file class.
         hr = RegisterShellExtThumbnailHandler(L".txd", CLSID_RenderWareThumbnailProvider);
 
         if ( SUCCEEDED( hr ) )
@@ -220,10 +281,28 @@ STDAPI DllRegisterServer(void)
             if ( SUCCEEDED(hr) )
             {
                 // This tells the shell to invalidate the thumbnail cache. It is 
-                // important because any .recipe files viewed before registering 
+                // important because any files viewed before registering 
                 // this handler would otherwise show cached blank thumbnails.
                 SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, NULL, NULL);
             }
+        }
+    }
+
+    // Register the context menu handler.
+    if ( SUCCEEDED(hr) )
+    {
+        hr = RegisterInprocServer(
+            szModule, CLSID_RenderWareContextMenuProvider,
+            L"rwthumb.RenderWareContextMenuProvider Class",
+            L"Apartment"
+        );
+
+        if ( SUCCEEDED(hr) )
+        {
+            hr = RegisterShellExtContextMenuHandler(
+                L".txd", CLSID_RenderWareContextMenuProvider,
+                L"rwthumb.RenderWareContextMenuProvider"
+            );
         }
     }
 
@@ -248,17 +327,31 @@ STDAPI DllUnregisterServer(void)
         return hr;
     }
 
-    // Unregister the component.
-    hr = UnregisterInprocServer( CLSID_RenderWareThumbnailProvider );
-
-    if ( SUCCEEDED(hr) )
+    // Unregister the context menu handler.
+    if ( SUCCEEDED( hr ) )
     {
-        // Unregister the thumbnail handler.
-        hr = UnregisterShellExtThumbnailHandler(L".txd");
+        hr = UnregisterInprocServer( CLSID_RenderWareContextMenuProvider );
+
+        if ( SUCCEEDED( hr ) )
+        {
+            hr = UnregisterShellExtContextMenuHandler( L".txd", CLSID_RenderWareContextMenuProvider );
+        }
+    }
+
+    // Unregister the thumbnail handler
+    if ( SUCCEEDED( hr ) )
+    {
+        hr = UnregisterInprocServer( CLSID_RenderWareThumbnailProvider );
 
         if ( SUCCEEDED(hr) )
         {
-            hr = UnregisterShellExtThumbnailHandler(L".rwtex");
+            // Unregister the thumbnail handler.
+            hr = UnregisterShellExtThumbnailHandler(L".txd");
+
+            if ( SUCCEEDED(hr) )
+            {
+                hr = UnregisterShellExtThumbnailHandler(L".rwtex");
+            }
         }
     }
 

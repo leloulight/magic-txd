@@ -12,6 +12,7 @@
 #include <renderware.h>
 
 #include "thumbprov.h"
+#include "contextprov.h"
 
 #include "rwwin32streamwrap.h"
 

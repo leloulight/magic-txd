@@ -7,9 +7,17 @@ namespace rw
 
 struct rwObjExtensionStore
 {
+    EngineInterface *engineInterface;
+
     inline void Initialize( GenericRTTI *rtObj )
     {
+        RwObject *theObject = (RwObject*)RwTypeSystem::GetObjectFromTypeStruct( rtObj );
+
+        EngineInterface *engineInterface = (EngineInterface*)theObject->engineInterface;
+
         // We store a list of raw extension blocks.
+
+        this->engineInterface = engineInterface;    // remember for clone operations.
     }
 
     inline void Shutdown( GenericRTTI *rtObj )
@@ -27,6 +35,28 @@ struct rwObjExtensionStore
         }
 
         this->serializeExtensions.clear();
+    }
+
+    inline void operator = ( const rwObjExtensionStore& right )
+    {
+        // Copy things over.
+        for ( const rwStoredExtension& ext : right.serializeExtensions )
+        {
+            uint32 ext_size = ext.extensionLength;
+
+            rwStoredExtension new_ext;
+            new_ext.blockID = ext.blockID;
+            new_ext.extensionVersion = ext.extensionVersion;
+            new_ext.extensionLength = ext_size;
+
+            // Clone the memory.
+            new_ext.extMem = engineInterface->MemAllocate( ext_size );
+
+            memcpy( new_ext.extMem, ext.extMem, ext_size );
+
+            // Save the extension.
+            this->serializeExtensions.push_back( new_ext );
+        }
     }
 
     inline void ParseExtension( Interface *engineInterface, BlockProvider& inputProvider )

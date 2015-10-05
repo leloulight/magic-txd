@@ -338,3 +338,133 @@ HRESULT UnregisterShellExtThumbnailHandler(PCWSTR pszFileType)
 
     return hr;
 }
+
+//
+//   FUNCTION: RegisterShellExtContextMenuHandler
+//
+//   PURPOSE: Register the context menu handler.
+//
+//   PARAMETERS:
+//   * pszFileType - The file type that the context menu handler is 
+//     associated with. For example, '*' means all file types; '.txt' means 
+//     all .txt files. The parameter must not be NULL.
+//   * clsid - Class ID of the component
+//   * pszFriendlyName - Friendly name
+//
+//   NOTE: The function creates the following key in the registry.
+//
+//   HKCR
+//   {
+//      NoRemove <File Type>
+//      {
+//          NoRemove shellex
+//          {
+//              NoRemove ContextMenuHandlers
+//              {
+//                  {<CLSID>} = s '<Friendly Name>'
+//              }
+//          }
+//      }
+//   }
+//
+HRESULT RegisterShellExtContextMenuHandler(
+    PCWSTR pszFileType, const CLSID& clsid, PCWSTR pszFriendlyName)
+{
+    if (pszFileType == NULL)
+    {
+        return E_INVALIDARG;
+    }
+
+    HRESULT hr;
+
+    wchar_t szCLSID[MAX_PATH];
+    StringFromGUID2(clsid, szCLSID, ARRAYSIZE(szCLSID));
+
+    wchar_t szSubkey[MAX_PATH];
+
+    // If pszFileType starts with '.', try to read the default value of the 
+    // HKCR\<File Type> key which contains the ProgID to which the file type 
+    // is linked.
+    if (*pszFileType == L'.')
+    {
+        wchar_t szDefaultVal[260];
+        hr = GetHKCRRegistryKeyAndValue(pszFileType, NULL, szDefaultVal, 
+            sizeof(szDefaultVal));
+
+        // If the key exists and its default value is not empty, use the 
+        // ProgID as the file type.
+        if (SUCCEEDED(hr) && szDefaultVal[0] != L'\0')
+        {
+            pszFileType = szDefaultVal;
+        }
+    }
+
+    // Create the key HKCR\<File Type>\shellex\ContextMenuHandlers\{<CLSID>}
+    hr = StringCchPrintfW(szSubkey, ARRAYSIZE(szSubkey), 
+        L"%s\\shellex\\ContextMenuHandlers\\%s", pszFileType, szCLSID);
+    if (SUCCEEDED(hr))
+    {
+        // Set the default value of the key.
+        hr = SetHKCRRegistryKeyAndValue(szSubkey, NULL, pszFriendlyName);
+    }
+
+    return hr;
+}
+
+
+//
+//   FUNCTION: UnregisterShellExtContextMenuHandler
+//
+//   PURPOSE: Unregister the context menu handler.
+//
+//   PARAMETERS:
+//   * pszFileType - The file type that the context menu handler is 
+//     associated with. For example, '*' means all file types; '.txt' means 
+//     all .txt files. The parameter must not be NULL.
+//   * clsid - Class ID of the component
+//
+//   NOTE: The function removes the {<CLSID>} key under 
+//   HKCR\<File Type>\shellex\ContextMenuHandlers in the registry.
+//
+HRESULT UnregisterShellExtContextMenuHandler(
+    PCWSTR pszFileType, const CLSID& clsid)
+{
+    if (pszFileType == NULL)
+    {
+        return E_INVALIDARG;
+    }
+
+    HRESULT hr;
+
+    wchar_t szCLSID[MAX_PATH];
+    StringFromGUID2(clsid, szCLSID, ARRAYSIZE(szCLSID));
+
+    wchar_t szSubkey[MAX_PATH];
+
+    // If pszFileType starts with '.', try to read the default value of the 
+    // HKCR\<File Type> key which contains the ProgID to which the file type 
+    // is linked.
+    if (*pszFileType == L'.')
+    {
+        wchar_t szDefaultVal[260];
+        hr = GetHKCRRegistryKeyAndValue(pszFileType, NULL, szDefaultVal, 
+            sizeof(szDefaultVal));
+
+        // If the key exists and its default value is not empty, use the 
+        // ProgID as the file type.
+        if (SUCCEEDED(hr) && szDefaultVal[0] != L'\0')
+        {
+            pszFileType = szDefaultVal;
+        }
+    }
+
+    // Remove the HKCR\<File Type>\shellex\ContextMenuHandlers\{<CLSID>} key.
+    hr = StringCchPrintfW(szSubkey, ARRAYSIZE(szSubkey), 
+        L"%s\\shellex\\ContextMenuHandlers\\%s", pszFileType, szCLSID);
+    if (SUCCEEDED(hr))
+    {
+        hr = HRESULT_FROM_WIN32(RegDeleteTreeW(HKEY_CLASSES_ROOT, szSubkey));
+    }
+
+    return hr;
+}

@@ -326,6 +326,8 @@ inline void AdjustPixelDataDimensions( Interface *engineInterface, pixelDataTrav
         throw RwException( "invalid mipmap layer dimensions in pixel data dimensions truncation routine" );
     }
 
+    size_t realMipmapCount = 0;
+
     for ( size_t n = 0; n < mipmapCount; n++ )
     {
         bool hasEstablishedLevel = true;
@@ -335,7 +337,10 @@ inline void AdjustPixelDataDimensions( Interface *engineInterface, pixelDataTrav
             hasEstablishedLevel = mipGen.incrementLevel();
         }
 
-        assert( hasEstablishedLevel == true );
+        if ( !hasEstablishedLevel )
+        {
+            break;
+        }
 
         // We truncate this layer.
         uint32 targetLayerWidth = mipGen.getLevelWidth();
@@ -380,6 +385,24 @@ inline void AdjustPixelDataDimensions( Interface *engineInterface, pixelDataTrav
             mipLevel.mipWidth = targetLayerWidth;
             mipLevel.mipHeight = targetLayerHeight;
         }
+
+        // We have one more final mipmap level.
+        realMipmapCount++;
+    }
+
+    // If we have mipmap layers that should not be added anymore, remove them.
+    if ( realMipmapCount != mipmapCount )
+    {
+        for ( size_t n = realMipmapCount; n < mipmapCount; n++ )
+        {
+            pixelDataTraversal::mipmapResource& mipLayer = pixelData.mipmaps[ n ];
+
+            // Delete this layer.
+            mipLayer.Free( engineInterface );
+        }
+
+        // Reduce the total count of mipmaps.
+        pixelData.mipmaps.resize( realMipmapCount );
     }
 
     // Finito.

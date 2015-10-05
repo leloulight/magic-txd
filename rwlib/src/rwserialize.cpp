@@ -112,13 +112,13 @@ bool UnregisterSerialization( Interface *engineInterface, uint32 chunkID, RwType
     return unregisterSuccess;
 }
 
-inline serializationProvider* BrowseForSerializer( EngineInterface *engineInterface, RwObject *objectToStore )
+inline serializationProvider* BrowseForSerializer( EngineInterface *engineInterface, const RwObject *objectToStore )
 {
     serializationProvider *theSerializer = NULL;
 
     serializationStorePlugin *serializeStore = serializationStoreRegister.GetPluginStruct( engineInterface );
 
-    GenericRTTI *rttiObj = RwTypeSystem::GetTypeStructFromObject( objectToStore );
+    const GenericRTTI *rttiObj = RwTypeSystem::GetTypeStructFromConstObject( objectToStore );
 
     if ( rttiObj )
     {

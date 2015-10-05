@@ -116,8 +116,6 @@ AINLINE bool rawMipmapCalculateHasAlpha(
 
         // Alright, the raster can have alpha.
         // If we are palettized, we can just check the palette colors.
-        colorModelDispatcher <const void> fetchDispatch( rasterFormat, colorOrder, depth, NULL, 0, PALETTE_NONE );
-
         if (paletteType != PALETTE_NONE)
         {
             // Determine whether we REALLY use all palette indice.
@@ -156,6 +154,8 @@ AINLINE bool rawMipmapCalculateHasAlpha(
 
             uint32 palFormatDepth = Bitmap::getRasterFormatDepth(rasterFormat);
 
+            colorModelDispatcher <const void> fetchDispatch( rasterFormat, colorOrder, palFormatDepth, NULL, 0, PALETTE_NONE );
+
             for (uint32 n = 0; n < palItemCount; n++)
             {
                 if ( usageFlags[ n ] == true )
@@ -177,6 +177,8 @@ AINLINE bool rawMipmapCalculateHasAlpha(
         }
         else
         {
+            colorModelDispatcher <const void> fetchDispatch( rasterFormat, colorOrder, depth, NULL, 0, PALETTE_NONE );
+
             // We have to process the entire image. Oh boy.
             // For that, we decide based on the main raster only.
             for ( uint32 row = 0; row < layerHeight; row++ )

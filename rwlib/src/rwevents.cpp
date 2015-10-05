@@ -49,6 +49,11 @@ struct eventSystemManager
             }
         }
 
+        inline void operator = ( const objectEvents& right )
+        {
+            // Assigning object event handlers makes no sense.
+        }
+
         inline void RegisterEventHandler( event_t eventID, EventHandler_t handler, void *ud )
         {
             scoped_rwlock_writer <rwlock> lock( this->evtLock );

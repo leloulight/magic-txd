@@ -776,7 +776,7 @@ AINLINE void performMagnifyFiltering2D(
     );
 
     double widthProcessRatio = (double)targetLayerWidth / (double)rawOrigLayerWidth;
-    double heightProcessRatio = (double)targetLayerHeight / (double)rawOrigLayerHeight;
+    double heightProcessRatio    = (double)targetLayerHeight / (double)rawOrigLayerHeight;
 
     filteringDispatcher2D(
         rawOrigLayerWidth, rawOrigLayerHeight,
