@@ -8,12 +8,12 @@ class TexInfoWidget : public QWidget
 public:
 	TexInfoWidget(QListWidgetItem *listItem, rw::TextureBase *texItem) : QWidget()
     {
-        QLabel *texName = new QLabel(QString(), this);
+        QLabel *texName = new QLabel(QString());
         texName->setFixedHeight(23);
         texName->setObjectName("label19px");
-        QLabel *texInfo = new QLabel(QString(), this);
+        QLabel *texInfo = new QLabel(QString());
         texInfo->setObjectName("texInfo");
-        QVBoxLayout *layout = new QVBoxLayout(this);
+        QVBoxLayout *layout = new QVBoxLayout();
         layout->setContentsMargins(5, 4, 0, 5);
         layout->addWidget(texName);
         layout->addWidget(texInfo);
@@ -21,10 +21,11 @@ public:
         this->texNameLabel = texName;
         this->texInfoLabel = texInfo;
         this->rwTextureHandle = texItem;
-
         this->listItem = listItem;
 
         this->updateInfo();
+
+        this->setLayout(layout);
     }
 
     inline rw::TextureBase* GetTextureHandle( void )
