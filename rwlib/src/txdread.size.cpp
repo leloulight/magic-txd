@@ -237,98 +237,102 @@ void Raster::resize(uint32 newWidth, uint32 newHeight, const char *downsampleMod
             assert( mipHoriSampling == eSamplingType::SAME || horiSampling == mipHoriSampling );
             assert( mipVertSampling == eSamplingType::SAME || vertSampling == mipVertSampling );
 
-            // We will have to read texels from this mip surface.
-            // That is why we should make it raw.
-            void *rawOrigTexels = NULL;
-            uint32 rawOrigDataSize = 0;
-
-            uint32 rawOrigLayerWidth, rawOrigLayerHeight;
-
-            bool rawOrigHasChanged =
-                ConvertMipmapLayerNative(
-                    engineInterface, origMipWidth, origMipHeight, origMipLayerWidth, origMipLayerHeight, origTexels, origDataSize,
-                    rasterFormat, depth, rowAlignment, colorOrder, paletteType, paletteData, paletteSize, compressionType,
-                    tmpRasterFormat, tmpItemDepth, rowAlignment, tmpColorOrder, paletteType, paletteData, paletteSize, RWCOMPRESS_NONE,
-                    true,
-                    rawOrigLayerWidth, rawOrigLayerHeight,
-                    rawOrigTexels, rawOrigDataSize
-                );
-
-            try
+            // Check whether we have to do anything for this layer.
+            if ( mipHoriSampling != eSamplingType::SAME || mipVertSampling != eSamplingType::SAME )
             {
-                // Perform the codec operations.
-                void *transMipData = NULL;
-                uint32 transMipSize = 0;
+                // We will have to read texels from this mip surface.
+                // That is why we should make it raw.
+                void *rawOrigTexels = NULL;
+                uint32 rawOrigDataSize = 0;
 
-                PerformRawBitmapResizeFiltering(
-                    engineInterface,
-                    rawOrigLayerWidth, rawOrigLayerHeight, rawOrigTexels,
-                    targetLayerWidth, targetLayerHeight,
-                    tmpRasterFormat, tmpItemDepth, rowAlignment, tmpColorOrder, paletteType, paletteData, paletteSize,
-                    sampleDepth,
-                    dstColorPipe,
-                    mipHoriSampling, mipVertSampling,
-                    upscaleFilter, downsamplingFilter,
-                    upscaleCaps, downsamplingCaps,
-                    transMipData, transMipSize
-                );
+                uint32 rawOrigLayerWidth, rawOrigLayerHeight;
 
-                // Encode the raw mipmap into a correct mipmap that the architecture expects.
-                void *encodedTexels = NULL;
-                uint32 encodedDataSize = 0;
-
-                uint32 encodedWidth, encodedHeight;
+                bool rawOrigHasChanged =
+                    ConvertMipmapLayerNative(
+                        engineInterface, origMipWidth, origMipHeight, origMipLayerWidth, origMipLayerHeight, origTexels, origDataSize,
+                        rasterFormat, depth, rowAlignment, colorOrder, paletteType, paletteData, paletteSize, compressionType,
+                        tmpRasterFormat, tmpItemDepth, rowAlignment, tmpColorOrder, paletteType, paletteData, paletteSize, RWCOMPRESS_NONE,
+                        true,
+                        rawOrigLayerWidth, rawOrigLayerHeight,
+                        rawOrigTexels, rawOrigDataSize
+                    );
 
                 try
                 {
-                    bool hasChanged =
-                        ConvertMipmapLayerNative(
-                            engineInterface, targetLayerWidth, targetLayerHeight, targetLayerWidth, targetLayerHeight, transMipData, transMipSize,
-                            tmpRasterFormat, sampleDepth, rowAlignment, tmpColorOrder, PALETTE_NONE, NULL, 0, RWCOMPRESS_NONE,
-                            rasterFormat, depth, rowAlignment, colorOrder, paletteType, paletteData, paletteSize, compressionType,
-                            true,
-                            encodedWidth, encodedHeight,
-                            encodedTexels, encodedDataSize
-                        );
+                    // Perform the codec operations.
+                    void *transMipData = NULL;
+                    uint32 transMipSize = 0;
+
+                    PerformRawBitmapResizeFiltering(
+                        engineInterface,
+                        rawOrigLayerWidth, rawOrigLayerHeight, rawOrigTexels,
+                        targetLayerWidth, targetLayerHeight,
+                        tmpRasterFormat, tmpItemDepth, rowAlignment, tmpColorOrder, paletteType, paletteData, paletteSize,
+                        sampleDepth,
+                        dstColorPipe,
+                        mipHoriSampling, mipVertSampling,
+                        upscaleFilter, downsamplingFilter,
+                        upscaleCaps, downsamplingCaps,
+                        transMipData, transMipSize
+                    );
+
+                    // Encode the raw mipmap into a correct mipmap that the architecture expects.
+                    void *encodedTexels = NULL;
+                    uint32 encodedDataSize = 0;
+
+                    uint32 encodedWidth, encodedHeight;
+
+                    try
+                    {
+                        bool hasChanged =
+                            ConvertMipmapLayerNative(
+                                engineInterface, targetLayerWidth, targetLayerHeight, targetLayerWidth, targetLayerHeight, transMipData, transMipSize,
+                                tmpRasterFormat, sampleDepth, rowAlignment, tmpColorOrder, PALETTE_NONE, NULL, 0, RWCOMPRESS_NONE,
+                                rasterFormat, depth, rowAlignment, colorOrder, paletteType, paletteData, paletteSize, compressionType,
+                                true,
+                                encodedWidth, encodedHeight,
+                                encodedTexels, encodedDataSize
+                            );
+                    }
+                    catch( ... )
+                    {
+                        engineInterface->PixelFree( transMipData );
+                        throw;
+                    }
+
+                    // If we have new texels now, we can actually free the old ones.
+                    if ( encodedTexels != transMipData )
+                    {
+                        engineInterface->PixelFree( transMipData );
+                    }
+
+                    // Update the mipmap layer.
+                    engineInterface->PixelFree( origTexels );
+
+                    dstMipLayer.width = encodedWidth;
+                    dstMipLayer.height = encodedHeight;
+                    dstMipLayer.mipWidth = targetLayerWidth;
+                    dstMipLayer.mipHeight = targetLayerHeight;
+                    dstMipLayer.texels = encodedTexels;
+                    dstMipLayer.dataSize = encodedDataSize;
+
+                    // Success! On to the next.
                 }
                 catch( ... )
                 {
-                    engineInterface->PixelFree( transMipData );
+                    if ( rawOrigTexels != origTexels )
+                    {
+                        engineInterface->PixelFree( rawOrigTexels );
+                    }
+
                     throw;
                 }
 
-                // If we have new texels now, we can actually free the old ones.
-                if ( encodedTexels != transMipData )
-                {
-                    engineInterface->PixelFree( transMipData );
-                }
-
-                // Update the mipmap layer.
-                engineInterface->PixelFree( origTexels );
-
-                dstMipLayer.width = encodedWidth;
-                dstMipLayer.height = encodedHeight;
-                dstMipLayer.mipWidth = targetLayerWidth;
-                dstMipLayer.mipHeight = targetLayerHeight;
-                dstMipLayer.texels = encodedTexels;
-                dstMipLayer.dataSize = encodedDataSize;
-
-                // Success! On to the next.
-            }
-            catch( ... )
-            {
+                // We do not need the temporary transformed layer anymore.
                 if ( rawOrigTexels != origTexels )
                 {
                     engineInterface->PixelFree( rawOrigTexels );
                 }
-
-                throw;
-            }
-
-            // We do not need the temporary transformed layer anymore.
-            if ( rawOrigTexels != origTexels )
-            {
-                engineInterface->PixelFree( rawOrigTexels );
             }
         }
 
