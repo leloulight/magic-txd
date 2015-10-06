@@ -334,6 +334,12 @@ public:
         height = this->height;
     }
 
+    void scale(
+        Interface *engineInterface,
+        uint32 width, uint32 height,
+        const char *downsamplingMode = "blur", const char *upscaleMode = "linear"
+    );
+
     inline uint32 getWidth( void ) const
     {
         return this->width;

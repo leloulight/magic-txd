@@ -139,9 +139,12 @@ struct bitmapPixel
     unsigned char b, g, r, a;
 };
 
-static HRESULT rasterToHBITMAP( rw::Raster *raster, HBITMAP *pBitmap, bool& hasAlphaOut )
+static HRESULT rasterToHBITMAP( rw::Raster *raster, rw::uint32 bmpWidth, rw::uint32 bmpHeight, HBITMAP *pBitmap, bool& hasAlphaOut )
 {
     rw::Bitmap pixelData = raster->getBitmap();
+
+    // We should scale the bitmap.
+    pixelData.scale( rwEngine, bmpWidth, bmpHeight );
 
     // We want to encode as 32bit HBITMAP.
     rw::uint32 width, height;
@@ -248,29 +251,7 @@ static HRESULT generateRasterPreviewHBITMAP( UINT cx, rw::Raster *texRaster, HBI
         adjustToMaxDimm( width, height, cx, recWidth, recHeight );
     }
 
-    rw::Raster *srcRaster;
-
-    if ( recWidth == width && recHeight == height )
-    {
-        srcRaster = rw::AcquireRaster( texRaster );
-    }
-    else
-    {
-        srcRaster = rw::CloneRaster( texRaster );
-
-        try
-        {
-            srcRaster->clearMipmaps();
-
-            srcRaster->resize( recWidth, recHeight );
-        }
-        catch( ... )
-        {
-            rw::DeleteRaster( srcRaster );
-
-            throw;
-        }
-    }
+    rw::Raster *srcRaster = rw::AcquireRaster( texRaster );
 
     HRESULT res;
 
@@ -280,7 +261,7 @@ static HRESULT generateRasterPreviewHBITMAP( UINT cx, rw::Raster *texRaster, HBI
         bool hasAlpha = false;
         HBITMAP bmp;
 
-        res = rasterToHBITMAP( srcRaster, &bmp, hasAlpha );
+        res = rasterToHBITMAP( srcRaster, recWidth, recHeight, &bmp, hasAlpha );
 
         if ( res == S_OK )
         {

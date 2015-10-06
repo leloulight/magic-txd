@@ -3,6 +3,8 @@
 
 #include "pixelformat.hxx"
 
+#include "txdread.size.hxx"
+
 namespace rw
 {
 
@@ -81,6 +83,82 @@ void Bitmap::setSize( uint32 width, uint32 height )
     this->height = height;
     this->dataSize = dataSize;
     this->rowSize = getRasterDataRowSize( width, this->depth, this->rowAlignment );
+}
+
+void Bitmap::scale(
+    Interface *intf,
+    uint32 width, uint32 height,
+    const char *downsamplingMode, const char *upscaleMode
+)
+{
+    EngineInterface *engineInterface = (EngineInterface*)intf;
+
+    // This is actually scaling the bitmap, not changing the draw plane size.
+    uint32 layerWidth = this->width;
+    uint32 layerHeight = this->height;
+    uint32 depth = this->depth;
+    uint32 rowAlignment = this->rowAlignment;
+    eRasterFormat rasterFormat = this->rasterFormat;
+    eColorOrdering colorOrder = this->colorOrder;
+    
+    // Anything to do at all?
+    if ( layerWidth == width && layerHeight == height )
+        return;
+
+    void *srcTexels = this->texels;
+
+    // We want to perform default filtering, most of the time.
+    rasterResizeFilterInterface *downsamplingFilter, *upscaleFilter;
+    resizeFilteringCaps downsamplingCaps, upscaleCaps;
+
+    FetchResizeFilteringFilters(
+        engineInterface,
+        downsamplingMode, upscaleMode,
+        downsamplingFilter, upscaleFilter,
+        downsamplingCaps, upscaleCaps
+    );
+
+    // The resize filtering expects a cached destination pipe.
+    mipmapLayerResizeColorPipeline dstColorPipe(
+        rasterFormat, depth, rowAlignment, colorOrder,
+        PALETTE_NONE, NULL, 0
+    );
+
+    // We also have to determine the sampling types that should be used beforehand.
+    eSamplingType horiSampling = determineSamplingType( layerWidth, width );
+    eSamplingType vertSampling = determineSamplingType( layerHeight, height );
+
+    // Since we always are a raw raster, we can easily perform the filtering.
+    // We do not have to perform _any_ source and destionation transformations, unlike for rasters.
+    // We also are not bound to raster size rules that prevent certain size targets.
+    void *transMipData = NULL;
+    uint32 transMipSize = 0;
+
+    PerformRawBitmapResizeFiltering(
+        engineInterface, layerWidth, layerHeight, srcTexels,
+        width, height,
+        rasterFormat, depth, rowAlignment, colorOrder, PALETTE_NONE, NULL, 0,
+        depth,
+        dstColorPipe,
+        horiSampling, vertSampling,
+        upscaleFilter, downsamplingFilter,
+        upscaleCaps, downsamplingCaps,
+        transMipData, transMipSize
+    );
+
+    // Replace the pixels.
+    if ( srcTexels )
+    {
+        engineInterface->PixelFree( srcTexels );
+    }
+
+    this->width = width;
+    this->height = height;
+    this->texels = transMipData;
+    this->dataSize = transMipSize;
+
+    // Update the row size.
+    this->rowSize = getRasterDataRowSize( width, depth, rowAlignment );
 }
 
 AINLINE void fetchpackedcolor(
