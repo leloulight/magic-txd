@@ -196,7 +196,27 @@ int main(int argc, char *argv[])
             QCoreApplication::setLibraryPaths(paths);
 
             MagicTXDApplication a(argc, argv);
-            a.setStyleSheet(styles::get(a.applicationDirPath(), "resources\\dark.shell"));
+            {
+                QString styleSheet = styles::get(a.applicationDirPath(), "resources\\dark.shell");
+
+                if ( styleSheet.isEmpty() )
+                {
+                    MessageBoxW(
+                        NULL,
+                        L"Failed to load stylesheet resource \"resources\\dark.shell\"." \
+                        "Please verify whether you have installed Magic.TXD correctly!",
+                        L"Error",
+                        MB_OK
+                    );
+                    
+                    // Even without stylesheet, we allow launching Magic.TXD.
+                    // The user gets what he asked for.
+                }
+                else
+                {
+                    a.setStyleSheet(styleSheet);
+                }
+            }
             mainWindowConstructor wnd_constr(a.applicationDirPath(), rwEngine, fsHandle);
 
             MainWindow *w = mainWindowFactory.ConstructTemplate(_factMemAlloc, wnd_constr);

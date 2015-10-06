@@ -11,21 +11,28 @@ public:
         QString fullPath = appPath + "\\" + filename;
         QString newAppPath = appPath;
         newAppPath.replace('\\', '/');
-        fopen_s(&file, fullPath.toUtf8(), "rt");
-        char line[512];
+        errno_t errnum = fopen_s(&file, fullPath.toUtf8(), "rt");
+
         QString str;
-        while (fgets(line, 512, file)) {
-            if (*line == '$') {
-                QString tmp;
-                tmp.append(&line[1]);
-                tmp.replace("url(", "url(" + newAppPath + "/");
-                str += tmp;
+
+        if ( errnum == 0 )
+        {
+            char line[512];
+            while (fgets(line, 512, file)) {
+                if (*line == '$') {
+                    QString tmp;
+                    tmp.append(&line[1]);
+                    tmp.replace("url(", "url(" + newAppPath + "/");
+                    str += tmp;
+                }
+                else {
+                    str += line;
+                }
             }
-            else {
-                str += line;
-            }
+
+            fclose(file);
         }
-        fclose(file);
+
         return str;
     }
 };

@@ -462,7 +462,7 @@ struct Raster
 
     PlatformTexture *platformData;
 
-    uint32 refCount;
+    std::atomic <uint32> refCount;
 };
 
 struct TexDictionary;

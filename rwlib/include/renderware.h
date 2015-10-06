@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <list>
 #include <tuple>
+#include <atomic>
 
 #define _USE_MATH_DEFINES
 #include <math.h>

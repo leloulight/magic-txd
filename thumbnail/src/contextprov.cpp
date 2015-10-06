@@ -210,9 +210,9 @@ static void ShellGetTargetDirectory( const wchar_t *startPath, resultFunc cb )
     }
 }
 
-static rw::TexDictionary* RwTexDictionaryStreamRead( const wchar_t *fileName )
+static rw::RwObject* RwObjectStreamRead( const wchar_t *fileName )
 {
-    rw::TexDictionary *resultObj = NULL;
+    rw::RwObject *resultObj = NULL;
 
     rw::streamConstructionFileParamW_t fileParam( fileName );
 
@@ -222,26 +222,7 @@ static rw::TexDictionary* RwTexDictionaryStreamRead( const wchar_t *fileName )
     {
         try
         {
-            rw::RwObject *rwObj = rwEngine->Deserialize( theStream );
-
-            if ( rwObj )
-            {
-                try
-                {
-                    resultObj = rw::ToTexDictionary( rwEngine, rwObj );
-                }
-                catch( ... )
-                {
-                    rwEngine->DeleteRwObject( rwObj );
-
-                    throw;
-                }
-
-                if ( !resultObj )
-                {
-                    rwEngine->DeleteRwObject( rwObj );
-                }
-            }
+            resultObj = rwEngine->Deserialize( theStream );
         }
         catch( ... )
         {
@@ -256,7 +237,7 @@ static rw::TexDictionary* RwTexDictionaryStreamRead( const wchar_t *fileName )
     return resultObj;
 }
 
-static void RwTexDictionaryStreamWrite( const wchar_t *dstPath, rw::TexDictionary *texDict )
+static void RwObjectStreamWrite( const wchar_t *dstPath, rw::RwObject *texObj )
 {
     rw::streamConstructionFileParamW_t fileParam( dstPath );
 
@@ -267,7 +248,7 @@ static void RwTexDictionaryStreamWrite( const wchar_t *dstPath, rw::TexDictionar
         try
         {
             // Just write the dict.
-            rwEngine->Serialize( texDict, rwStream );
+            rwEngine->Serialize( texObj, rwStream );
         }
         catch( ... )
         {
@@ -281,178 +262,224 @@ static void RwTexDictionaryStreamWrite( const wchar_t *dstPath, rw::TexDictionar
 }
 
 template <typename callbackType>
-static void TexDict_forAllTextures( rw::TexDictionary *texDict, callbackType cb )
+static void RwObj_deepTraverse( rw::RwObject *rwObj, callbackType cb )
 {
-    // Do mindless exporting.
-    for ( rw::TexDictionary::texIter_t iter( texDict->GetTextureIterator() ); !iter.IsEnd(); iter.Increment() )
+    if ( rw::TexDictionary *texDict = rw::ToTexDictionary( rwEngine, rwObj ) )
     {
-        rw::TextureBase *texHandle = iter.Resolve();
+        for ( rw::TexDictionary::texIter_t iter( texDict->GetTextureIterator() ); !iter.IsEnd(); iter.Increment() )
+        {
+            rw::TextureBase *texHandle = iter.Resolve();
 
-        cb( texHandle );
+            cb( texHandle );
+        }
     }
+
+    cb( rwObj );
 }
 
 template <typename callbackType>
-static void TexDict_forAllTextures_ser( const wchar_t *txdFileName, callbackType cb )
+static void TexObj_forAllTextures( rw::RwObject *texObj, callbackType cb )
 {
-    rw::TexDictionary *texDict = RwTexDictionaryStreamRead( txdFileName );
+    RwObj_deepTraverse( texObj,
+        [&]( rw::RwObject *rwObj )
+    {
+        if ( rw::TextureBase *texHandle = rw::ToTexture( rwEngine, rwObj ) )
+        {
+            cb( texHandle );
+        }
+    });
+}
 
-    if ( texDict )
+template <typename callbackType>
+static void TexObj_forAllTextures_ser( const wchar_t *txdFileName, callbackType cb )
+{
+    rw::RwObject *texObj = RwObjectStreamRead( txdFileName );
+
+    if ( texObj )
     {
         try
         {
-            TexDict_forAllTextures( texDict, cb );
+            TexObj_forAllTextures( texObj, cb );
         }
         catch( ... )
         {
-            rwEngine->DeleteRwObject( texDict );
+            rwEngine->DeleteRwObject( texObj );
 
             throw;
         }
 
         // Remember to clean up resources.
-        rwEngine->DeleteRwObject( texDict );
+        rwEngine->DeleteRwObject( texObj );
     }
 }
 
-static rw::TexDictionary* RwTexDictionaryDeepClone( rw::TexDictionary *texDict )
+template <typename callbackType>
+static void RwObj_deepTraverse_ser( const wchar_t *txdFileName, callbackType cb )
 {
-    rw::TexDictionary *dict = rw::CreateTexDictionary( rwEngine );
+    rw::RwObject *texObj = RwObjectStreamRead( txdFileName );
 
-    if ( dict )
+    if ( texObj )
     {
         try
         {
-            // Clone the textures with new raster objects.
-            for ( rw::TexDictionary::texIter_t iter( texDict->GetTextureIterator() ); !iter.IsEnd(); iter.Increment() )
+            RwObj_deepTraverse( texObj, cb );
+        }
+        catch( ... )
+        {
+            rwEngine->DeleteRwObject( texObj );
+
+            throw;
+        }
+
+        // Remember to clean up resources.
+        rwEngine->DeleteRwObject( texObj );
+    }
+}
+
+static void RwTextureMakeUnique( rw::TextureBase *texHandle )
+{
+    // Make a copy of the raster, if it is not unique.
+    rw::Raster *texRaster = texHandle->GetRaster();
+
+    if ( texRaster->refCount > 1 )
+    {
+        rw::Raster *newRaster = rw::CloneRaster( texRaster );
+
+        try
+        {
+            texHandle->SetRaster( newRaster );
+        }
+        catch( ... )
+        {
+            rw::DeleteRaster( newRaster );
+
+            throw;
+        }
+
+        // Release our reference.
+        rw::DeleteRaster( newRaster );
+    }
+}
+
+static rw::RwObject* RwObjectDeepClone( rw::RwObject *texObj )
+{
+    rw::RwObject *newObj = rwEngine->CloneRwObject( texObj );
+
+    if ( newObj )
+    {
+        try
+        {
+            if ( rw::TexDictionary *newTexDict = rw::ToTexDictionary( rwEngine, newObj ) )
             {
-                rw::TextureBase *texHandle = iter.Resolve();
-
-                rw::TextureBase *cloned = (rw::TextureBase*)rwEngine->CloneRwObject( texHandle );
-
-                if ( cloned )
+                // Clone the textures with new raster objects.
+                for ( rw::TexDictionary::texIter_t iter( newTexDict->GetTextureIterator() ); !iter.IsEnd(); iter.Increment() )
                 {
-                    try
-                    {
-                        // Make a copy of the raster.
-                        rw::Raster *texRaster = cloned->GetRaster();
+                    rw::TextureBase *texHandle = iter.Resolve();
 
-                        if ( texRaster == texHandle->GetRaster() )
-                        {
-                            rw::Raster *newRaster = rw::CloneRaster( texRaster );
-
-                            try
-                            {
-                                cloned->SetRaster( newRaster );
-                            }
-                            catch( ... )
-                            {
-                                rw::DeleteRaster( newRaster );
-
-                                throw;
-                            }
-
-                            // Release our reference.
-                            rw::DeleteRaster( newRaster );
-                        }
-
-                        cloned->AddToDictionary( dict );
-                    }
-                    catch( ... )
-                    {
-                        rwEngine->DeleteRwObject( cloned );
-
-                        throw;
-                    }
+                    RwTextureMakeUnique( texHandle );
                 }
-                else
-                {
-                    throw rw::RwException( "failed to clone texture" );
-                }
+            }
+            else if ( rw::TextureBase *newTexture = rw::ToTexture( rwEngine, newObj ) )
+            {
+                RwTextureMakeUnique( newTexture );
             }
         }
         catch( ... )
         {
-            rwEngine->DeleteRwObject( dict );
-
-            dict = NULL;
-
+            rwEngine->DeleteRwObject( newObj );
             throw;
         }
     }
 
-    return dict;
+    return newObj;
 }
 
 template <typename callbackType>
-static void TexDict_transform_ser( const wchar_t *txdFileName, callbackType cb )
+static void RwObj_transform_ser( const wchar_t *txdFileName, callbackType cb )
 {
-    rw::TexDictionary *texDict = RwTexDictionaryStreamRead( txdFileName );
+    rw::RwObject *texObj = RwObjectStreamRead( txdFileName );
 
-    if ( texDict )
+    if ( texObj )
     {
-        // Make a backup of the original in case something bad happened that causes data loss.
-        rw::TexDictionary *safetyCopy = RwTexDictionaryDeepClone( texDict );
-
         try
         {
-            // Process it.
-            TexDict_forAllTextures( texDict, cb );
+            // Make a backup of the original in case something bad happened that causes data loss.
+            rw::RwObject *safetyCopy = RwObjectDeepClone( texObj );
 
-            // Save it.
             try
             {
-                RwTexDictionaryStreamWrite( txdFileName, texDict );
+                // Process it.
+                cb( texObj );
+
+                // Save it.
+                try
+                {
+                    RwObjectStreamWrite( txdFileName, texObj );
+                }
+                catch( ... )
+                {
+                    // Well, something fucked up our stuff.
+                    // We should restore to the original, because the user does not want data loss!
+                    // If we could not make a safety copy... too bad.
+                    if ( safetyCopy )
+                    {
+                        RwObjectStreamWrite( txdFileName, safetyCopy );
+                    }
+
+                    // Transfer the error anyway.
+                    throw;
+                }
             }
             catch( ... )
             {
-                // Well, something fucked up our stuff.
-                // We should restore to the original, because the user does not want data loss!
-                // If we could not make a safety copy... too bad.
                 if ( safetyCopy )
                 {
-                    RwTexDictionaryStreamWrite( txdFileName, safetyCopy );
+                    rwEngine->DeleteRwObject( safetyCopy );
                 }
 
-                // Transfer the error anyway.
                 throw;
             }
-        }
-        catch( ... )
-        {
+
+            // If we have a safety copy, delete it.
             if ( safetyCopy )
             {
                 rwEngine->DeleteRwObject( safetyCopy );
             }
-
-            rwEngine->DeleteRwObject( texDict );
+        }
+        catch( ... )
+        {
+            rwEngine->DeleteRwObject( texObj );
 
             throw;
         }
 
-        // If we have a safety copy, delete it.
-        if ( safetyCopy )
-        {
-            rwEngine->DeleteRwObject( safetyCopy );
-        }
-
-        rwEngine->DeleteRwObject( texDict );
+        rwEngine->DeleteRwObject( texObj );
     }
     else
     {
-        throw rw::RwException( "not a (valid) TXD" );
+        throw rw::RwException( "invalid RW object" );
     }
 }
 
-template <typename exportHandler>
-static void TexDict_exportAs( const wchar_t *txdFileName, const wchar_t *ext, const wchar_t *targetDir, exportHandler cb )
+template <typename callbackType>
+static void TexObj_transform_ser( const wchar_t *txdFileName, callbackType cb )
 {
-    TexDict_forAllTextures_ser( txdFileName,
+    RwObj_transform_ser( txdFileName,
+        [&]( rw::RwObject *rwObj )
+    {
+        TexObj_forAllTextures( rwObj, cb );
+    });
+}
+
+template <typename exportHandler>
+static void TexObj_exportAs( const wchar_t *txdFileName, const wchar_t *ext, const wchar_t *targetDir, exportHandler cb )
+{
+    TexObj_forAllTextures_ser( txdFileName,
         [=]( rw::TextureBase *texHandle )
     {
         std::wstring targetFilePath( targetDir );
 
-        // We want to give the extension ".rwtex".
+        // Make a file path, with the proper extension.
         const std::string& ansiName = texHandle->GetName();
 
         std::wstring wideTexName( ansiName.begin(), ansiName.end() );   // NO UTF-8 SHIT.
@@ -492,6 +519,16 @@ static void TexDict_exportAs( const wchar_t *txdFileName, const wchar_t *ext, co
         }
     });
 }
+
+typedef std::list <std::pair <std::wstring, rw::KnownVersions::eGameVersion>> gameVerList_t;
+
+static const gameVerList_t gameVerMap =
+{
+    { L"GTA 3", rw::KnownVersions::GTA3 },
+    { L"GTA Vice City", rw::KnownVersions::VC_PC },
+    { L"GTA San Andreas", rw::KnownVersions::SA },
+    { L"Manhunt", rw::KnownVersions::MANHUNT }
+};
 
 IFACEMETHODIMP RenderWareContextHandlerProvider::QueryContextMenu(
     HMENU hMenu, UINT indexMenu,
@@ -543,6 +580,8 @@ IFACEMETHODIMP RenderWareContextHandlerProvider::QueryContextMenu(
 
     HMENU optionsMenu = CreateMenu();
 
+    UINT optionsMenuIndex = 0;
+
     // Add some cool options.
     try
     {
@@ -577,7 +616,7 @@ IFACEMETHODIMP RenderWareContextHandlerProvider::QueryContextMenu(
                         [=]( const wchar_t *targetPath )
                     {
                         // We want to export the contents as raw texture chunks.
-                        TexDict_exportAs( this->fileName.c_str(), L"rwtex", targetPath,
+                        TexObj_exportAs( this->fileName.c_str(), L"rwtex", targetPath,
                             [=]( rw::TextureBase *texHandle, rw::Stream *outStream )
                         {
                             // We export the texture directly.
@@ -635,7 +674,7 @@ IFACEMETHODIMP RenderWareContextHandlerProvider::QueryContextMenu(
                         ShellGetTargetDirectory( this->fileName.c_str(),
                             [&]( const wchar_t *targetDir )
                         {
-                            TexDict_exportAs( this->fileName.c_str(), wideExtention.c_str(), targetDir,
+                            TexObj_exportAs( this->fileName.c_str(), wideExtention.c_str(), targetDir,
                                 [&]( rw::TextureBase *texHandle, rw::Stream *outStream )
                             {
                                 // Only perform if we have a raster, which should be always anyway.
@@ -663,11 +702,15 @@ IFACEMETHODIMP RenderWareContextHandlerProvider::QueryContextMenu(
             extractItemInfo.fState = MFS_ENABLED;
             extractItemInfo.hSubMenu = extractMenu;
         
-            BOOL insertExtractItemSuccess = InsertMenuItemW( optionsMenu, 0, TRUE, &extractItemInfo );
+            BOOL insertExtractItemSuccess = InsertMenuItemW( optionsMenu, optionsMenuIndex, TRUE, &extractItemInfo );
 
             if ( insertExtractItemSuccess == FALSE )
             {
                 throw std::exception();
+            }
+            else
+            {
+                optionsMenuIndex++;
             }
         }
         catch( ... )
@@ -717,7 +760,7 @@ IFACEMETHODIMP RenderWareContextHandlerProvider::QueryContextMenu(
                 {
                     try
                     {
-                        TexDict_transform_ser( this->fileName.c_str(),
+                        TexObj_transform_ser( this->fileName.c_str(),
                             [=]( rw::TextureBase *texHandle )
                         {
                             // Convert to another platform.
@@ -744,6 +787,21 @@ IFACEMETHODIMP RenderWareContextHandlerProvider::QueryContextMenu(
                     return true;
                 };
             }
+
+            MENUITEMINFOW convertMenuInfo;
+            convertMenuInfo.cbSize = sizeof( convertMenuInfo );
+            convertMenuInfo.fMask = MIIM_STRING | MIIM_FTYPE | MIIM_STATE | MIIM_SUBMENU;
+            convertMenuInfo.dwTypeData = L"Set Platform";
+            convertMenuInfo.fType = MFT_STRING;
+            convertMenuInfo.fState = MFS_ENABLED;
+            convertMenuInfo.hSubMenu = convertMenu;
+
+            BOOL insertSetPlatformItemSuccess = InsertMenuItemW( optionsMenu, 1, TRUE, &convertMenuInfo );
+
+            if ( insertSetPlatformItemSuccess == FALSE )
+            {
+                throw std::exception();
+            }
         }
         catch( ... )
         {
@@ -752,22 +810,97 @@ IFACEMETHODIMP RenderWareContextHandlerProvider::QueryContextMenu(
             throw;
         }
 
-        MENUITEMINFOW convertMenuInfo;
-        convertMenuInfo.cbSize = sizeof( convertMenuInfo );
-        convertMenuInfo.fMask = MIIM_STRING | MIIM_FTYPE | MIIM_STATE | MIIM_SUBMENU;
-        convertMenuInfo.dwTypeData = L"Set Platform";
-        convertMenuInfo.fType = MFT_STRING;
-        convertMenuInfo.fState = MFS_ENABLED;
-        convertMenuInfo.hSubMenu = convertMenu;
+        DestroyMenu( convertMenu );
 
-        BOOL insertSetPlatformItemSuccess = InsertMenuItemW( optionsMenu, 1, TRUE, &convertMenuInfo );
+        // We also want the ability to change game version.
+        HMENU versionMenu = CreateMenu();
 
-        if ( insertSetPlatformItemSuccess == FALSE )
+        try
         {
-            throw std::exception();
+            // Add game versions.
+            UINT dyn_id = 0;
+
+            for ( const std::pair <std::wstring, rw::KnownVersions::eGameVersion>& verPair : gameVerMap )
+            {
+                const UINT usedID = curMenuID++;
+
+                MENUITEMINFOW verEntryInfo;
+                verEntryInfo.cbSize = sizeof(verEntryInfo);
+                verEntryInfo.fMask = MIIM_STRING | MIIM_FTYPE | MIIM_ID | MIIM_STATE;
+                verEntryInfo.dwTypeData = (wchar_t*)verPair.first.c_str();
+                verEntryInfo.fType = MFT_STRING;
+                verEntryInfo.wID = idCmdFirst + usedID;
+                verEntryInfo.fState = MFS_ENABLED;
+
+                BOOL succInsertVersionItem = InsertMenuItemW( versionMenu, dyn_id, TRUE, &verEntryInfo );
+
+                if ( succInsertVersionItem == FALSE )
+                {
+                    throw std::exception();
+                }
+                else
+                {
+                    dyn_id++;
+                }
+
+                // Add a handler for it.
+                this->cmdMap[ usedID ] =
+                    [=]( void )
+                {
+                    try
+                    {
+                        // Execute us.
+                        RwObj_transform_ser( this->fileName.c_str(),
+                            [=]( rw::RwObject *rwObj )
+                        {
+                            RwObj_deepTraverse( rwObj,
+                                [=]( rw::RwObject *rwObj )
+                            {
+                                rw::LibraryVersion newVer = rw::KnownVersions::getGameVersion( verPair.second );
+
+                                rwObj->SetEngineVersion( newVer );
+                            });
+                        });
+                    }
+                    catch( rw::RwException& except )
+                    {
+                        // We want to inform about this aswell.
+                        std::string errorMsg( "failed to set game version: " );
+
+                        errorMsg += except.message;
+
+                        MessageBoxA( NULL, errorMsg.c_str(), "Error", MB_OK );
+
+                        // Pass on the error.
+                        throw;
+                    }
+                    return true;
+                };
+            }
+
+            MENUITEMINFOW versionMenuInfo;
+            versionMenuInfo.cbSize = sizeof(versionMenuInfo);
+            versionMenuInfo.fMask = MIIM_STRING | MIIM_FTYPE | MIIM_SUBMENU | MIIM_STATE;
+            versionMenuInfo.dwTypeData = L"Set Version";
+            versionMenuInfo.fType = MFT_STRING;
+            versionMenuInfo.fState = MFS_ENABLED;
+            versionMenuInfo.hSubMenu = versionMenu;
+
+            BOOL insertVersionMenu = InsertMenuItemW( optionsMenu, 2, TRUE, &versionMenuInfo );
+
+            if ( insertVersionMenu == FALSE )
+            {
+                throw std::exception();
+            }
+        }
+        catch( ... )
+        {
+            DestroyMenu( versionMenu );
+
+            throw;
         }
 
-        DestroyMenu( convertMenu );
+        DestroyMenu( versionMenu );
 
         // TODO: detect whether Magic.TXD has been installed into a location.
 
@@ -781,7 +914,7 @@ IFACEMETHODIMP RenderWareContextHandlerProvider::QueryContextMenu(
         openWithMagicTXDInfo.wID = idCmdFirst + openWithMagicTXD_id;
         openWithMagicTXDInfo.fState = MFS_ENABLED;
 
-        BOOL insertMagicTXDItemSuccess = InsertMenuItemW( optionsMenu, 2, TRUE, &openWithMagicTXDInfo );
+        BOOL insertMagicTXDItemSuccess = InsertMenuItemW( optionsMenu, 3, TRUE, &openWithMagicTXDInfo );
 
         if ( insertMagicTXDItemSuccess == FALSE )
         {
@@ -791,7 +924,7 @@ IFACEMETHODIMP RenderWareContextHandlerProvider::QueryContextMenu(
         this->cmdMap[ openWithMagicTXD_id ] =
             [=]( void )
         {
-            __debugbreak();
+            //__debugbreak();
             return true;
         };
 
