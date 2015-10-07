@@ -1,5 +1,7 @@
 #include "StdInc.h"
 
+#include "rwutils.hxx"
+
 RenderWareThumbnailProvider::RenderWareThumbnailProvider( void ) : refCount( 1 )
 {
     this->isInitialized = false;
@@ -100,16 +102,6 @@ IFACEMETHODIMP RenderWareThumbnailProvider::Initialize( IStream *pStream, DWORD 
     this->isInitialized = true;
 
     return S_OK;
-}
-
-static rw::TextureBase* GetFirstTexture( rw::TexDictionary *txd )
-{
-    rw::TexDictionary::texIter_t iter( txd->GetTextureIterator() );
-
-    if ( iter.IsEnd() )
-        return NULL;
-
-    return iter.Resolve();
 }
 
 static void adjustToMaxDimm( rw::uint32 width, rw::uint32 height, rw::uint32 maxDimm, rw::uint32& recWidth, rw::uint32& recHeight )

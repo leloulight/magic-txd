@@ -303,6 +303,14 @@ STDAPI DllRegisterServer(void)
                 L".txd", CLSID_RenderWareContextMenuProvider,
                 L"rwthumb.RenderWareContextMenuProvider"
             );
+
+            if ( SUCCEEDED(hr) )
+            {
+                hr = RegisterShellExtContextMenuHandler(
+                    L".rwtex", CLSID_RenderWareContextMenuProvider,
+                    L"rwthumb.RenderWareContextMenuProvider"
+                );
+            }
         }
     }
 
@@ -335,6 +343,11 @@ STDAPI DllUnregisterServer(void)
         if ( SUCCEEDED( hr ) )
         {
             hr = UnregisterShellExtContextMenuHandler( L".txd", CLSID_RenderWareContextMenuProvider );
+
+            if ( SUCCEEDED( hr ) )
+            {
+                hr = UnregisterShellExtContextMenuHandler( L".rwtex", CLSID_RenderWareContextMenuProvider );
+            }
         }
     }
 

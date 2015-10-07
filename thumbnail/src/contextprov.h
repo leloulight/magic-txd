@@ -1,9 +1,15 @@
 #pragma once
 
+#include <wrl/client.h>
+
+using namespace Microsoft::WRL;
+
+#include <OCIdl.h>
+
 #include <map>
 #include <functional>
 
-struct RenderWareContextHandlerProvider : public IShellExtInit, public IContextMenu
+struct RenderWareContextHandlerProvider : public IShellExtInit, public IContextMenu, public IObjectWithSite
 {
     // IUnknown
     IFACEMETHODIMP QueryInterface( REFIID riid, void **ppOut ) override;
@@ -27,18 +33,125 @@ struct RenderWareContextHandlerProvider : public IShellExtInit, public IContextM
         UINT *pwReserved, LPSTR pszName, UINT cchMax
     ) override;
 
+    IFACEMETHODIMP SetSite( IUnknown *site ) override
+    {
+        this->theSite = site;
+
+        return S_OK;
+    }
+
+    IFACEMETHODIMP GetSite( REFIID riid, void **ppOut ) override
+    {
+        if ( IUnknown *site = this->theSite.Get() )
+        {
+            return site->QueryInterface( riid, ppOut );
+        }
+
+        return E_FAIL;
+    }
+
     RenderWareContextHandlerProvider( void );
 
 protected:
     ~RenderWareContextHandlerProvider( void );
 
-    bool isInitialized;
-    std::wstring fileName;
-
 private:
+    bool isInitialized;
+
     std::atomic <unsigned long> refCount;
 
     typedef std::map <UINT, std::function <bool ( void )>> menuCmdMap_t;
 
     menuCmdMap_t cmdMap;
+
+    typedef std::map <UINT, std::string> verbMap_t;
+
+    verbMap_t verbMap;
+
+    inline bool findCommandANSI( const char *cmdName, UINT& idOut ) const
+    {
+        for ( const std::pair <UINT, std::string>& verbPair : this->verbMap )
+        {
+            if ( verbPair.second == cmdName )
+            {
+                idOut = verbPair.first;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    inline bool findCommandUnicode( const wchar_t *cmdName, UINT& idOut ) const
+    {
+        for ( const std::pair <UINT, std::string>& verbPair : this->verbMap )
+        {
+            std::wstring wideVerb( verbPair.second.begin(), verbPair.second.end() );
+
+            if ( wideVerb == cmdName )
+            {
+                idOut = verbPair.first;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    enum eContextMenuOptionType
+    {
+        CONTEXTOPT_TXD,
+        CONTEXTOPT_TEXTURE
+    };
+
+    struct contextOption_t
+    {
+        std::wstring fileName;
+        eContextMenuOptionType optionType;
+    };
+
+    std::list <contextOption_t> contextOptions;
+
+    inline bool hasContextOption( eContextMenuOptionType type ) const
+    {
+        for ( const contextOption_t& opt : this->contextOptions )
+        {
+            if ( opt.optionType == type )
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    inline bool hasOnlyContextOption( eContextMenuOptionType type ) const
+    {
+        bool hasTheOption = false;
+
+        for ( const contextOption_t& opt : this->contextOptions )
+        {
+            if ( opt.optionType == type )
+            {
+                hasTheOption = true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        return hasTheOption;
+    }
+
+    inline std::wstring getContextDirectory( void ) const;
+
+    template <typename callbackType>
+    inline void forAllContextItems( callbackType cb )
+    {
+        for ( const contextOption_t& ext : this->contextOptions )
+        {
+            cb( ext.fileName.c_str() );
+        }
+    }
+
+    ComPtr <IUnknown> theSite;
 };

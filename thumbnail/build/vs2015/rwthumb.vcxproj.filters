@@ -31,5 +31,8 @@
     <ClInclude Include="..\..\src\contextprov.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\rwutils.hxx">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

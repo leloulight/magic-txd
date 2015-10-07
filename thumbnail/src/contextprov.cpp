@@ -5,12 +5,9 @@
 #include <PathCch.h>
 #pragma comment(lib, "Pathcch.lib")
 
-using namespace Microsoft::WRL;
+#include "rwutils.hxx"
 
-static LRESULT CALLBACK _menu_handler_proc( HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam )
-{
-    return DefWindowProcW( wnd, msg, wParam, lParam );
-}
+using namespace Microsoft::WRL;
 
 RenderWareContextHandlerProvider::RenderWareContextHandlerProvider( void ) : refCount( 1 )
 {
@@ -55,6 +52,19 @@ IFACEMETHODIMP RenderWareContextHandlerProvider::QueryInterface( REFIID riid, vo
 
         *ppOut = comObj;
         return S_OK;
+    }
+    else if ( riid == __uuidof(IObjectWithSite) )
+    {
+        this->refCount++;
+
+        IObjectWithSite *comObj = this;
+
+        *ppOut = comObj;
+        return S_OK;
+    }
+    else if ( riid == __uuidof(IInternetSecurityManager) )
+    {
+        return E_NOINTERFACE;
     }
 
     return E_NOINTERFACE;
@@ -107,15 +117,56 @@ IFACEMETHODIMP RenderWareContextHandlerProvider::Initialize( LPCITEMIDLIST idLis
                         UINT numFiles = DragQueryFileW( drop, 0xFFFFFFFF, NULL, 0 );
 
                         // For now we want to only support operation on one file.
-                        if ( numFiles == 1 )
+                        for ( UINT n = 0; n < numFiles; n++ )
                         {
-                            // Remember the file.
-                            UINT fileNameCharCount = DragQueryFileW( drop, 0, NULL, 0 );
+                            // Check what kind of file we got.
+                            std::wstring fileName;
 
-                            this->fileName.resize( (size_t)fileNameCharCount );
+                            UINT fileNameCharCount = DragQueryFileW( drop, n, NULL, 0 );
 
-                            DragQueryFileW( drop, 0, (LPWSTR)this->fileName.data(), fileNameCharCount + 1 );
+                            fileName.resize( (size_t)fileNameCharCount );
 
+                            DragQueryFileW( drop, n, (LPWSTR)fileName.data(), fileNameCharCount + 1 );
+
+                            // We want to extract the extension, because everything depends on it.
+                            const wchar_t *extPtr = NULL;
+
+                            HRESULT resGotExt = PathCchFindExtension( fileName.c_str(), fileName.size() + 1, &extPtr );
+
+                            if ( SUCCEEDED(resGotExt) )
+                            {
+                                // Check for a known extension.
+                                bool hasKnownExt = false;
+                                eContextMenuOptionType optionType;
+
+                                if ( wcsicmp( extPtr, L".TXD" ) == 0 )
+                                {
+                                    optionType = CONTEXTOPT_TXD;
+
+                                    hasKnownExt = true;
+                                }
+                                else if ( wcsicmp( extPtr, L".RWTEX" ) == 0 )
+                                {
+                                    optionType = CONTEXTOPT_TEXTURE;
+
+                                    hasKnownExt = true;
+                                }
+
+                                if ( hasKnownExt )
+                                {
+                                    // Add this context option.
+                                    contextOption_t opt;
+                                    opt.fileName = std::move( fileName );
+                                    opt.optionType = optionType;
+
+                                    this->contextOptions.push_back( std::move( opt ) );
+                                }
+                            }
+                        }
+
+                        // As long as we processed one valid item, we can show the context menu.
+                        if ( this->contextOptions.empty() == false )
+                        {
                             res = S_OK;
                         }
                     }
@@ -149,8 +200,53 @@ IFACEMETHODIMP RenderWareContextHandlerProvider::Initialize( LPCITEMIDLIST idLis
     return res;
 }
 
+inline std::wstring RenderWareContextHandlerProvider::getContextDirectory( void ) const
+{
+    std::wstring dirPath;
+
+    if ( this->contextOptions.empty() == false )
+    {
+        dirPath = this->contextOptions.front().fileName;
+    }
+
+    if ( !dirPath.empty() )
+    {
+        std::vector <wchar_t> pathBuf( dirPath.data(), dirPath.data() + dirPath.size() + 1 );
+
+        PathCchRemoveFileSpec( pathBuf.data(), pathBuf.size() );
+
+        dirPath = std::wstring( pathBuf.data() );
+    }
+
+    return dirPath;
+}
+
 template <typename resultFunc>
-static void ShellGetTargetDirectory( const wchar_t *startPath, resultFunc cb )
+AINLINE void ShellCallWithResultPath( IFileDialog *resDlg, resultFunc cb )
+{
+    ComPtr <IShellItem> resultItem;
+
+    HRESULT resFetchResult = resDlg->GetResult( &resultItem );
+
+    if ( SUCCEEDED(resFetchResult) )
+    {
+        // We call back the handler with the result.
+        // Since we expect a fs result, we convert to a real path.
+        LPWSTR strFSPath = NULL;
+
+        HRESULT getFSPath = resultItem->GetDisplayName( SIGDN_FILESYSPATH, &strFSPath );
+
+        if ( SUCCEEDED( getFSPath ) )
+        {
+            cb( strFSPath );
+
+            CoTaskMemFree( strFSPath );
+        }
+    }
+}
+
+template <typename resultFunc>
+static void ShellGetTargetDirectory( const std::wstring& startPath, resultFunc cb )
 {
     ComPtr <IFileOpenDialog> dlg;
 
@@ -165,15 +261,11 @@ static void ShellGetTargetDirectory( const wchar_t *startPath, resultFunc cb )
         dlg->SetOkButtonLabel( L"Select" );
         dlg->SetFileNameLabel( L"Target:" );
 
-        if ( startPath )
+        if ( startPath.empty() == false )
         {
-            std::wstring dirPath( startPath );
-
-            PathCchRemoveFileSpec( (wchar_t*)dirPath.data(), dirPath.size() );
-
             ComPtr <IShellItem> dirPathItem;
 
-            HRESULT resParsePath = SHCreateItemFromParsingName( dirPath.c_str(), NULL, IID_PPV_ARGS( &dirPathItem ) );
+            HRESULT resParsePath = SHCreateItemFromParsingName( startPath.c_str(), NULL, IID_PPV_ARGS( &dirPathItem ) );
 
             if ( SUCCEEDED(resParsePath) )
             {
@@ -187,25 +279,63 @@ static void ShellGetTargetDirectory( const wchar_t *startPath, resultFunc cb )
         if ( SUCCEEDED(resShow) )
         {
             // Wait for the result.
-            ComPtr <IShellItem> resultItem;
+            ShellCallWithResultPath( dlg.Get(), cb );
+        }
+    }
+}
 
-            HRESULT resFetchResult = dlg->GetResult( &resultItem );
+template <typename callbackType>
+AINLINE void ShellGetFileTargetPath(
+    const std::wstring& curDirectoryPath,
+    UINT numAvailTypes, const COMDLG_FILTERSPEC *availTypes,
+    const wchar_t *defaultExt,
+    callbackType cb
+)
+{
+    ComPtr <IFileDialog> dlg;
 
-            if ( SUCCEEDED(resFetchResult) )
+    HRESULT resCreateDialog = CoCreateInstance( CLSID_FileSaveDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS( &dlg ) );
+
+    if ( SUCCEEDED(resCreateDialog) )
+    {
+        // Before showing the dialog, we set it up.
+        dlg->SetOptions(
+            FOS_OVERWRITEPROMPT | FOS_NOCHANGEDIR | FOS_FORCEFILESYSTEM |
+            FOS_PATHMUSTEXIST | FOS_NOREADONLYRETURN 
+        );
+
+        // Friendly stuff.
+        dlg->SetTitle( L"Select Target..." );
+        dlg->SetFileTypes( numAvailTypes, availTypes );
+        dlg->SetFileTypeIndex( 1 );
+        dlg->SetOkButtonLabel( L"Save" );
+
+        // Default extension.
+        if ( defaultExt )
+        {
+            dlg->SetDefaultExtension( defaultExt );
+        }
+
+        if ( curDirectoryPath.empty() == false )
+        {
+            ComPtr <IShellItem> dirPathItem;
+
+            HRESULT resParsePath = SHCreateItemFromParsingName( curDirectoryPath.c_str(), NULL, IID_PPV_ARGS( &dirPathItem ) );
+
+            if ( SUCCEEDED(resParsePath) )
             {
-                // We call back the handler with the result.
-                // Since we expect a fs result, we convert to a real path.
-                LPWSTR strFSPath = NULL;
-
-                HRESULT getFSPath = resultItem->GetDisplayName( SIGDN_FILESYSPATH, &strFSPath );
-
-                if ( SUCCEEDED( getFSPath ) )
-                {
-                    cb( strFSPath );
-
-                    CoTaskMemFree( strFSPath );
-                }
+                dlg->SetFolder( dirPathItem.Get() );
             }
+        }
+
+        // OK. Let do this.
+        HRESULT resShowDialog = dlg->Show( NULL );
+
+        if ( SUCCEEDED(resShowDialog) )
+        {
+            // Get the result. There can be only one result.
+            // We want it in FS path format.
+            ShellCallWithResultPath( dlg.Get(), cb );
         }
     }
 }
@@ -530,432 +660,532 @@ static const gameVerList_t gameVerMap =
     { L"Manhunt", rw::KnownVersions::MANHUNT }
 };
 
+AINLINE std::wstring ansi_to_unicode( const char *ansiStr )
+{
+    return std::wstring( ansiStr, ansiStr + strlen( ansiStr ) );
+}
+
 IFACEMETHODIMP RenderWareContextHandlerProvider::QueryContextMenu(
     HMENU hMenu, UINT indexMenu,
     UINT idCmdFirst, UINT idCmdLast, UINT uFlags
 )
 {
+    struct contextMan
+    {
+        HMENU rootMenu;
+        UINT osContextFlags;
+
+        UINT global_menuIndex;
+
+        inline contextMan( RenderWareContextHandlerProvider *prov, UINT indexMenu, UINT idCmdFirst, UINT idCmdLast, UINT osContextFlags, HMENU rootMenu )
+        {
+            this->provider = prov;
+            this->curMenuID = 0;
+            this->idCmdFirst = idCmdFirst;
+            this->idCmdLast = idCmdLast;
+            this->osContextFlags = osContextFlags;
+            this->rootMenu = rootMenu;
+            this->global_menuIndex = indexMenu;
+        }
+
+        struct node
+        {
+        private:
+            friend struct contextMan;
+
+            contextMan *manager;
+            HMENU osMenu;
+            bool isHandleShared;
+
+            UINT local_menuIndex;
+
+            node *parentNode;
+
+            UINT node_id;
+
+            inline node(
+                contextMan *man,
+                UINT startIndex,HMENU osMenu, bool isHandleShared,
+                node *parent, UINT node_id
+            ) : manager( man )
+            {
+                this->osMenu = osMenu;
+                this->isHandleShared = isHandleShared;
+
+                this->local_menuIndex = startIndex;
+
+                this->parentNode = parent;
+                this->node_id = node_id;
+            }
+
+        public:
+            inline ~node( void )
+            {
+                if ( !this->isHandleShared )
+                {
+                    DestroyMenu( this->osMenu );
+                }
+            }
+
+            inline node( node&& right )
+            {
+                this->manager = right.manager;
+                this->osMenu = right.osMenu;
+                this->isHandleShared = right.isHandleShared;
+
+                this->local_menuIndex = right.local_menuIndex;
+                this->parentNode = right.parentNode;
+                this->node_id = right.node_id;
+
+                right.isHandleShared = true;
+                right.osMenu = NULL;
+            }
+
+            inline node( const node& right ) = delete;
+            inline void operator = ( const node& right ) = delete;
+            inline void operator = ( node&& right ) = delete;
+
+        private:
+            inline UINT& AcquireMenuIndex( void )
+            {
+                if ( this->manager->osContextFlags & CMF_SYNCCASCADEMENU )
+                {
+                    return this->manager->global_menuIndex;
+                }
+
+                return this->local_menuIndex;
+            }
+
+        public:
+            inline void AddCommandEntryW( const wchar_t *displayName, std::string&& verbName, std::function <bool ( void )>&& cb )
+            {
+                const UINT usedID = this->manager->curMenuID++;
+
+                MENUITEMINFOW itemInfo;
+                itemInfo.cbSize = sizeof( itemInfo );
+                itemInfo.fMask = MIIM_STRING | MIIM_FTYPE | MIIM_ID | MIIM_STATE;
+                itemInfo.dwTypeData = (wchar_t*)displayName;
+                itemInfo.fType = MFT_STRING;
+                itemInfo.wID = this->manager->idCmdFirst + usedID;
+                itemInfo.fState = MFS_ENABLED;
+
+                UINT& newMenuIndex = AcquireMenuIndex();
+
+                BOOL insertItemSuccess = InsertMenuItemW( this->osMenu, newMenuIndex, TRUE, &itemInfo );
+
+                if ( insertItemSuccess == false )
+                {
+                    throw std::exception( "failed to insert menu item" );
+                }
+                else
+                {
+                    newMenuIndex++;
+                }
+
+                // Add the command handler.
+                this->manager->provider->cmdMap[ usedID ] = cb;
+
+                // Add the natural verb.
+                this->manager->provider->verbMap[ usedID ] = std::string( "rwshell." ) + verbName;
+            }
+
+            inline node AddSubmenuEntryW( const wchar_t *displayName )
+            {
+                // If we are in sequential mode, simply return a redirect node.
+                if ( this->manager->osContextFlags & CMF_SYNCCASCADEMENU )
+                {
+                    return node( this->manager, 0, this->osMenu, true, NULL, 0 );
+                }
+
+                // We want to create a new menu, so be it.
+                HMENU submenuHandle = CreateMenu();
+
+                if ( submenuHandle == NULL )
+                {
+                    throw std::exception( "failed to create Win32 submenu handle" );
+                }
+
+                UINT usedID = this->manager->curMenuID++;
+
+                MENUITEMINFOW itemInfo;
+                itemInfo.cbSize = sizeof( itemInfo );
+                itemInfo.fMask = MIIM_STRING | MIIM_FTYPE | MIIM_SUBMENU | MIIM_ID | MIIM_STATE;
+                itemInfo.dwTypeData = (wchar_t*)displayName;
+                itemInfo.fType = MFT_STRING;
+                itemInfo.hSubMenu = submenuHandle;
+                itemInfo.wID = this->manager->idCmdFirst + usedID;
+                itemInfo.fState = MFS_ENABLED;
+
+                UINT newMenuIndex = AcquireMenuIndex();
+
+                BOOL insertItemSuccess = InsertMenuItemW( this->osMenu, newMenuIndex, TRUE, &itemInfo );
+
+                if ( insertItemSuccess == FALSE )
+                {
+                    throw std::exception( "failed to insert submenu menu item" );
+                }
+                else
+                {
+                    newMenuIndex++;
+                }
+
+                return node( this->manager, 0, submenuHandle, false, this, usedID );
+            }
+
+            inline void Revert( void )
+            {
+                if ( node *parent = this->parentNode )
+                {
+                    // Find and remove ourselves.
+                    UINT absolute_node_cmd = this->manager->idCmdFirst + this->node_id;
+
+                    BOOL couldDelete = DeleteMenu( parent->osMenu, absolute_node_cmd, MF_BYCOMMAND );
+
+                    assert( couldDelete == TRUE );
+                }
+            }
+        };
+
+        inline node ConstructRoot( void )
+        {
+            return node( this, this->global_menuIndex, this->rootMenu, true, NULL, 0 );
+        }
+
+    private:
+        RenderWareContextHandlerProvider *provider;
+        
+        UINT curMenuID;
+        UINT idCmdFirst, idCmdLast;
+    };
+
     // If uFlags include CMF_DEFAULTONLY then we should not do anything.
     if (CMF_DEFAULTONLY & uFlags)
     {
         return MAKE_HRESULT(SEVERITY_SUCCESS, 0, USHORT(0));
     }
 
-    UINT menuIndex = indexMenu;
+    contextMan manager( this, indexMenu, idCmdFirst, idCmdLast, uFlags, hMenu );
 
-    // If there is no separator before us, we want to add one.
-    bool shouldAddSeparator = false;
+    contextMan::node mainMenu = manager.ConstructRoot();
+
+    // Only make options visible that make sense.
+    bool hasTXDOptions = this->hasContextOption( CONTEXTOPT_TXD );
+    bool hasTextureOptions = this->hasContextOption( CONTEXTOPT_TEXTURE );
+
+    bool hasOnlyTextureOptions = this->hasOnlyContextOption( CONTEXTOPT_TEXTURE );
+
+    // Do the menu.
     {
-        MENUITEMINFOW prevItemInfo;
+        contextMan::node optionsNode = mainMenu.AddSubmenuEntryW( L"RenderWare Options" );
 
-        BOOL gotPrevItemInfo =
-            GetMenuItemInfoW( hMenu, indexMenu - 1, TRUE, &prevItemInfo );
-
-        if ( gotPrevItemInfo )
-        {
-            if ( ( prevItemInfo.fMask & MIIM_FTYPE ) == 0 || ( prevItemInfo.fType & MFT_SEPARATOR ) == 0 )
-            {
-                shouldAddSeparator = true;
-            }
-        }
-    }
-
-    if ( shouldAddSeparator )
-    {
-        MENUITEMINFOW sepItemInfo;
-        sepItemInfo.fMask = MIIM_FTYPE;
-        sepItemInfo.fType = MFT_SEPARATOR;
-
-        BOOL sepAddSuccess =
-            InsertMenuItemW( hMenu, menuIndex, TRUE, &sepItemInfo );
-
-        if ( sepAddSuccess == TRUE )
-        {
-            menuIndex++;
-        }
-        // We do not care if it fails.
-    }
-
-    UINT curMenuID = 0;
-
-    HMENU optionsMenu = CreateMenu();
-
-    UINT optionsMenuIndex = 0;
-
-    // Add some cool options.
-    try
-    {
-        HMENU extractMenu = CreateMenu();
-
+        // Add some cool options.
         try
         {
-            // We add the default options that RenderWare supports.
+            // If we have only textures selected and more than one, we can build a TXD out of them!
+            if ( hasOnlyTextureOptions && this->contextOptions.size() > 1 )
             {
-                const UINT extractTexChunksMenuID = curMenuID++;
-
-                MENUITEMINFOW texChunkItemInfo;
-                texChunkItemInfo.cbSize = sizeof( texChunkItemInfo );
-                texChunkItemInfo.fMask = MIIM_STRING | MIIM_FTYPE | MIIM_ID | MIIM_STATE;
-                texChunkItemInfo.dwTypeData = L"Texture Chunks";
-                texChunkItemInfo.fType = MFT_STRING;
-                texChunkItemInfo.wID = idCmdFirst + extractTexChunksMenuID;
-                texChunkItemInfo.fState = MFS_ENABLED;
-
-                BOOL insertTexChunkExtract =
-                    InsertMenuItemW( extractMenu, 0, TRUE, &texChunkItemInfo );
-
-                if ( insertTexChunkExtract == FALSE )
-                {
-                    throw std::exception();
-                }
-
-                this->cmdMap[ extractTexChunksMenuID ] =
+                optionsNode.AddCommandEntryW( L"Build TXD", "build_txd",
                     [=]( void )
                 {
-                    ShellGetTargetDirectory( this->fileName.c_str(),
-                        [=]( const wchar_t *targetPath )
+                    // We need a target path to write the TXD to.
+                    static const COMDLG_FILTERSPEC writeTypes[] =
                     {
-                        // We want to export the contents as raw texture chunks.
-                        TexObj_exportAs( this->fileName.c_str(), L"rwtex", targetPath,
-                            [=]( rw::TextureBase *texHandle, rw::Stream *outStream )
-                        {
-                            // We export the texture directly.
-                            rwEngine->Serialize( texHandle, outStream );
-                        });
-                    });
-                    return true;
-                };
-            }
-
-            try
-            {
-                rw::registered_image_formats_t regFormats;
-                rw::GetRegisteredImageFormats( rwEngine, regFormats );
-
-                UINT dyn_id = 0;
-
-                for ( const rw::registered_image_format& format : regFormats )
-                {
-                    UINT usedID = curMenuID++;
-
-                    // Make a nice display string.
-                    std::string displayString( format.defaultExt );
-                    displayString += " (";
-                    displayString += format.formatName;
-                    displayString += ")";
-
-                    MENUITEMINFOA formatItemInfo;
-                    formatItemInfo.cbSize = sizeof( formatItemInfo );
-                    formatItemInfo.fMask = MIIM_STRING | MIIM_FTYPE | MIIM_ID | MIIM_STATE;
-                    formatItemInfo.dwTypeData = (char*)displayString.c_str();
-                    formatItemInfo.fType = MFT_STRING;
-                    formatItemInfo.wID = idCmdFirst + usedID;
-                    formatItemInfo.fState = MFS_ENABLED;
-
-                    BOOL insertDynamicItem =
-                        InsertMenuItemA( extractMenu, dyn_id + 1, TRUE, &formatItemInfo );
-
-                    if ( insertDynamicItem == FALSE )
-                    {
-                        throw std::exception();
-                    }
-
-                    this->cmdMap[ usedID ] =
-                        [=]( void )
-                    {
-                        // TODO: actually use a good extention instead of the default.
-                        // We want to add support into RW to specify multiple image format extentions.
-
-                        std::string extention( format.defaultExt );
-                        std::wstring wideExtention( extention.begin(), extention.end() );
-
-                        std::transform( wideExtention.begin(), wideExtention.end(), wideExtention.begin(), ::tolower );
-
-                        ShellGetTargetDirectory( this->fileName.c_str(),
-                            [&]( const wchar_t *targetDir )
-                        {
-                            TexObj_exportAs( this->fileName.c_str(), wideExtention.c_str(), targetDir,
-                                [&]( rw::TextureBase *texHandle, rw::Stream *outStream )
-                            {
-                                // Only perform if we have a raster, which should be always anyway.
-                                if ( rw::Raster *texRaster = texHandle->GetRaster() )
-                                {
-                                    texRaster->writeImage( outStream, extention.c_str() );
-                                }
-                            });
-                        });
-                        
-                        return true;
+                        L"RW Texture Dictionary",
+                        L"*.txd"
                     };
-                }
-            }
-            catch( rw::RwException& )
-            {
-                // If there was any RW exception, we continue anyway.
-            }
 
-            MENUITEMINFOW extractItemInfo;
-            extractItemInfo.cbSize = sizeof( extractItemInfo );
-            extractItemInfo.fMask = MIIM_STRING | MIIM_FTYPE | MIIM_STATE | MIIM_SUBMENU;
-            extractItemInfo.dwTypeData = L"Extract";
-            extractItemInfo.fType = MFT_STRING;
-            extractItemInfo.fState = MFS_ENABLED;
-            extractItemInfo.hSubMenu = extractMenu;
-        
-            BOOL insertExtractItemSuccess = InsertMenuItemW( optionsMenu, optionsMenuIndex, TRUE, &extractItemInfo );
-
-            if ( insertExtractItemSuccess == FALSE )
-            {
-                throw std::exception();
-            }
-            else
-            {
-                optionsMenuIndex++;
-            }
-        }
-        catch( ... )
-        {
-            DestroyMenu( extractMenu );
-
-            throw;
-        }
-
-        DestroyMenu( extractMenu );
-
-        // We also might want to convert TXD files.
-        HMENU convertMenu = CreateMenu();
-
-        try
-        {
-            // Fill it with entries of platforms that we can target.
-            rw::platformTypeNameList_t availPlatforms = rw::GetAvailableNativeTextureTypes( rwEngine );
-
-            UINT cur_index = 0;
-
-            for ( const std::string& name : availPlatforms )
-            {
-                const UINT usedID = curMenuID++;
-
-                MENUITEMINFOA platformItemInfo;
-                platformItemInfo.cbSize = sizeof( platformItemInfo );
-                platformItemInfo.fMask = MIIM_STRING | MIIM_FTYPE | MIIM_ID | MIIM_STATE;
-                platformItemInfo.dwTypeData = (char*)name.c_str();
-                platformItemInfo.fType = MFT_STRING;
-                platformItemInfo.wID = idCmdFirst + usedID;
-                platformItemInfo.fState = MFS_ENABLED;
-
-                BOOL insertPlatformItem = InsertMenuItemA( convertMenu, cur_index, TRUE, &platformItemInfo );
-
-                if ( insertPlatformItem == FALSE )
-                {
-                    throw std::exception();
-                }
-                else
-                {
-                    cur_index++;
-                }
-
-                this->cmdMap[ usedID ] =
-                    [=]( void )
-                {
                     try
                     {
-                        TexObj_transform_ser( this->fileName.c_str(),
-                            [=]( rw::TextureBase *texHandle )
+                        ShellGetFileTargetPath( this->getContextDirectory(), ARRAYSIZE( writeTypes ), writeTypes, L"txd",
+                            [=]( const wchar_t *targetPath )
                         {
-                            // Convert to another platform.
-                            // We only want to suceed with stuff if we actually wrote everything.
-                            if ( rw::Raster *texRaster = texHandle->GetRaster() )
+                            // Create a tex dictionary, add the textures to it and write it to disk.
+                            rw::TexDictionary *texDict = rw::CreateTexDictionary( rwEngine );
+
+                            if ( texDict )
                             {
-                                rw::ConvertRasterTo( texRaster, name.c_str() );
+                                try
+                                {
+                                    this->forAllContextItems(
+                                        [&]( const wchar_t *filePath )
+                                    {
+                                        TexObj_forAllTextures_ser( filePath,
+                                            [&]( rw::TextureBase *texHandle )
+                                        {
+                                            // We clone the textures.
+                                            // For this we do not have to perform deep cloning.
+                                            rw::TextureBase *newTex = (rw::TextureBase*)rwEngine->CloneRwObject( texHandle );
+
+                                            if ( newTex )
+                                            {
+                                                newTex->AddToDictionary( texDict );
+                                            }
+                                        });
+                                    });
+
+                                    // Set the version of the TXD to the version of the first texture, if available.
+                                    if ( rw::TextureBase *firstTex = GetFirstTexture( texDict ) )
+                                    {
+                                        texDict->SetEngineVersion( firstTex->GetEngineVersion() );
+                                    }
+
+                                    // Write the TXD now.
+                                    RwObjectStreamWrite( targetPath, texDict );
+                                }
+                                catch( ... )
+                                {
+                                    rwEngine->DeleteRwObject( texDict );
+
+                                    throw;
+                                }
+
+                                rwEngine->DeleteRwObject( texDict );
                             }
                         });
                     }
                     catch( rw::RwException& except )
                     {
-                        // We should display a message box.
-                        std::string errorMessage( "failed to convert to platform: " );
-
-                        errorMessage += except.message;
-
-                        MessageBoxA( NULL, errorMessage.c_str(), "Conversion Error", MB_OK );
-
-                        // Throw further.
-                        throw;
-                    }
-
-                    return true;
-                };
-            }
-
-            MENUITEMINFOW convertMenuInfo;
-            convertMenuInfo.cbSize = sizeof( convertMenuInfo );
-            convertMenuInfo.fMask = MIIM_STRING | MIIM_FTYPE | MIIM_STATE | MIIM_SUBMENU;
-            convertMenuInfo.dwTypeData = L"Set Platform";
-            convertMenuInfo.fType = MFT_STRING;
-            convertMenuInfo.fState = MFS_ENABLED;
-            convertMenuInfo.hSubMenu = convertMenu;
-
-            BOOL insertSetPlatformItemSuccess = InsertMenuItemW( optionsMenu, 1, TRUE, &convertMenuInfo );
-
-            if ( insertSetPlatformItemSuccess == FALSE )
-            {
-                throw std::exception();
-            }
-        }
-        catch( ... )
-        {
-            DestroyMenu( convertMenu );
-
-            throw;
-        }
-
-        DestroyMenu( convertMenu );
-
-        // We also want the ability to change game version.
-        HMENU versionMenu = CreateMenu();
-
-        try
-        {
-            // Add game versions.
-            UINT dyn_id = 0;
-
-            for ( const std::pair <std::wstring, rw::KnownVersions::eGameVersion>& verPair : gameVerMap )
-            {
-                const UINT usedID = curMenuID++;
-
-                MENUITEMINFOW verEntryInfo;
-                verEntryInfo.cbSize = sizeof(verEntryInfo);
-                verEntryInfo.fMask = MIIM_STRING | MIIM_FTYPE | MIIM_ID | MIIM_STATE;
-                verEntryInfo.dwTypeData = (wchar_t*)verPair.first.c_str();
-                verEntryInfo.fType = MFT_STRING;
-                verEntryInfo.wID = idCmdFirst + usedID;
-                verEntryInfo.fState = MFS_ENABLED;
-
-                BOOL succInsertVersionItem = InsertMenuItemW( versionMenu, dyn_id, TRUE, &verEntryInfo );
-
-                if ( succInsertVersionItem == FALSE )
-                {
-                    throw std::exception();
-                }
-                else
-                {
-                    dyn_id++;
-                }
-
-                // Add a handler for it.
-                this->cmdMap[ usedID ] =
-                    [=]( void )
-                {
-                    try
-                    {
-                        // Execute us.
-                        RwObj_transform_ser( this->fileName.c_str(),
-                            [=]( rw::RwObject *rwObj )
-                        {
-                            RwObj_deepTraverse( rwObj,
-                                [=]( rw::RwObject *rwObj )
-                            {
-                                rw::LibraryVersion newVer = rw::KnownVersions::getGameVersion( verPair.second );
-
-                                rwObj->SetEngineVersion( newVer );
-                            });
-                        });
-                    }
-                    catch( rw::RwException& except )
-                    {
-                        // We want to inform about this aswell.
-                        std::string errorMsg( "failed to set game version: " );
+                        std::string errorMsg( "failed to build TXD: " );
 
                         errorMsg += except.message;
 
-                        MessageBoxA( NULL, errorMsg.c_str(), "Error", MB_OK );
+                        MessageBoxA( NULL, errorMsg.c_str(), "Build Error", MB_OK );
 
-                        // Pass on the error.
                         throw;
                     }
                     return true;
-                };
+                });
+            }
+        
+            // We can extract things from texture dictionaries (and textures).
+            if ( hasTXDOptions || hasTextureOptions )
+            {
+                contextMan::node extractNode = optionsNode.AddSubmenuEntryW( L"Extract" );
+
+                try
+                {
+                    // We add the default options that RenderWare supports.
+
+                    // If there are TXD files, it makes sense to allow exporting as texture chunks.
+                    if ( hasTXDOptions )
+                    {
+                        extractNode.AddCommandEntryW( L"Texture Chunks", "extrTexChunks",
+                            [=]( void )
+                        {
+                            ShellGetTargetDirectory( this->getContextDirectory(),
+                                [=]( const wchar_t *targetPath )
+                            {
+                                this->forAllContextItems(
+                                    [=]( const wchar_t *fileName )
+                                {
+                                    // We want to export the contents as raw texture chunks.
+                                    TexObj_exportAs( fileName, L"rwtex", targetPath,
+                                        [=]( rw::TextureBase *texHandle, rw::Stream *outStream )
+                                    {
+                                        // We export the texture directly.
+                                        rwEngine->Serialize( texHandle, outStream );
+                                    });
+                                });
+                            });
+                            return true;
+                        });
+                    }
+
+                    try
+                    {
+                        rw::registered_image_formats_t regFormats;
+                        rw::GetRegisteredImageFormats( rwEngine, regFormats );
+
+                        for ( const rw::registered_image_format& format : regFormats )
+                        {
+                            // Make a nice display string.
+                            std::wstring displayString = ansi_to_unicode( format.defaultExt );
+                            displayString += L" (";
+                            displayString += ansi_to_unicode( format.formatName );
+                            displayString += L")";
+
+                            extractNode.AddCommandEntryW( displayString.c_str(), std::string( "extr_" ) + format.defaultExt,
+                                [=]( void )
+                            {
+                                // TODO: actually use a good extention instead of the default.
+                                // We want to add support into RW to specify multiple image format extentions.
+
+                                std::string extention( format.defaultExt );
+                                std::wstring wideExtention( extention.begin(), extention.end() );
+
+                                std::transform( wideExtention.begin(), wideExtention.end(), wideExtention.begin(), ::tolower );
+
+                                ShellGetTargetDirectory( this->getContextDirectory(),
+                                    [=]( const wchar_t *targetDir )
+                                {
+                                    this->forAllContextItems(
+                                        [=]( const wchar_t *fileName )
+                                    {
+                                        TexObj_exportAs( fileName, wideExtention.c_str(), targetDir,
+                                            [=]( rw::TextureBase *texHandle, rw::Stream *outStream )
+                                        {
+                                            // Only perform if we have a raster, which should be always anyway.
+                                            if ( rw::Raster *texRaster = texHandle->GetRaster() )
+                                            {
+                                                texRaster->writeImage( outStream, extention.c_str() );
+                                            }
+                                        });
+                                    });
+                                });
+                        
+                                return true;
+                            });
+                        }
+                    }
+                    catch( rw::RwException& )
+                    {
+                        // If there was any RW exception, we continue anyway.
+                    }
+                }
+                catch( ... )
+                {
+                    extractNode.Revert();
+
+                    throw;
+                }
             }
 
-            MENUITEMINFOW versionMenuInfo;
-            versionMenuInfo.cbSize = sizeof(versionMenuInfo);
-            versionMenuInfo.fMask = MIIM_STRING | MIIM_FTYPE | MIIM_SUBMENU | MIIM_STATE;
-            versionMenuInfo.dwTypeData = L"Set Version";
-            versionMenuInfo.fType = MFT_STRING;
-            versionMenuInfo.fState = MFS_ENABLED;
-            versionMenuInfo.hSubMenu = versionMenu;
-
-            BOOL insertVersionMenu = InsertMenuItemW( optionsMenu, 2, TRUE, &versionMenuInfo );
-
-            if ( insertVersionMenu == FALSE )
+            if ( hasTXDOptions || hasTextureOptions )
             {
-                throw std::exception();
+                // We also might want to convert TXD files.
+                contextMan::node convertNode = optionsNode.AddSubmenuEntryW( L"Set Platform" );
+
+                try
+                {
+                    // Fill it with entries of platforms that we can target.
+                    rw::platformTypeNameList_t availPlatforms = rw::GetAvailableNativeTextureTypes( rwEngine );
+
+                    UINT cur_index = 0;
+
+                    for ( const std::string& name : availPlatforms )
+                    {
+                        std::wstring displayString = ansi_to_unicode( name.c_str() );
+
+                        convertNode.AddCommandEntryW( displayString.c_str(), "setPlat_" + name,
+                            [=]( void )
+                        {
+                            try
+                            {
+                                this->forAllContextItems(
+                                    [=]( const wchar_t *fileName )
+                                {
+                                    TexObj_transform_ser( fileName,
+                                        [=]( rw::TextureBase *texHandle )
+                                    {
+                                        // Convert to another platform.
+                                        // We only want to suceed with stuff if we actually wrote everything.
+                                        if ( rw::Raster *texRaster = texHandle->GetRaster() )
+                                        {
+                                            rw::ConvertRasterTo( texRaster, name.c_str() );
+                                        }
+                                    });
+                                });
+                            }
+                            catch( rw::RwException& except )
+                            {
+                                // We should display a message box.
+                                std::string errorMessage( "failed to convert to platform: " );
+
+                                errorMessage += except.message;
+
+                                MessageBoxA( NULL, errorMessage.c_str(), "Conversion Error", MB_OK );
+
+                                // Throw further.
+                                throw;
+                            }
+
+                            return true;
+                        });
+                    }
+                }
+                catch( ... )
+                {
+                    convertNode.Revert();
+
+                    throw;
+                }
+            }
+
+            // Every RenderWare object has this ability.
+            // We also want the ability to change game version.
+            {
+                contextMan::node versionNode = optionsNode.AddSubmenuEntryW( L"Set Version" );
+
+                try
+                {
+                    // Add game versions.
+                    for ( const std::pair <std::wstring, rw::KnownVersions::eGameVersion>& verPair : gameVerMap )
+                    {
+                        versionNode.AddCommandEntryW( verPair.first.c_str(), std::string( "gameVer_" ) + std::to_string( verPair.second ),
+                            [=]( void )
+                        {
+                            try
+                            {
+                                // Execute us.
+                                this->forAllContextItems(
+                                    [=]( const wchar_t *fileName )
+                                {
+                                    RwObj_transform_ser( fileName,
+                                        [=]( rw::RwObject *rwObj )
+                                    {
+                                        RwObj_deepTraverse( rwObj,
+                                            [=]( rw::RwObject *rwObj )
+                                        {
+                                            rw::LibraryVersion newVer = rw::KnownVersions::getGameVersion( verPair.second );
+
+                                            rwObj->SetEngineVersion( newVer );
+                                        });
+                                    });
+                                });
+                            }
+                            catch( rw::RwException& except )
+                            {
+                                // We want to inform about this aswell.
+                                std::string errorMsg( "failed to set game version: " );
+
+                                errorMsg += except.message;
+
+                                MessageBoxA( NULL, errorMsg.c_str(), "Error", MB_OK );
+
+                                // Pass on the error.
+                                throw;
+                            }
+                            return true;
+                        });
+                    }
+                }
+                catch( ... )
+                {
+                    versionNode.Revert();
+
+                    throw;
+                }
+            }
+
+            // For texture dictionaries, we allow opening with Magic.TXD.
+            if ( hasTXDOptions && this->contextOptions.size() < 4 )
+            {
+                // TODO: detect whether Magic.TXD has been installed into a location.
+                optionsNode.AddCommandEntryW( L"Open with Magic.TXD", "open_with_mgtxd",
+                    [=]( void )
+                {
+                    //__debugbreak();
+                    return true;
+                });
             }
         }
         catch( ... )
         {
-            DestroyMenu( versionMenu );
+            optionsNode.Revert();
 
-            throw;
-        }
-
-        DestroyMenu( versionMenu );
-
-        // TODO: detect whether Magic.TXD has been installed into a location.
-
-        const UINT openWithMagicTXD_id = curMenuID++;
-
-        MENUITEMINFOW openWithMagicTXDInfo;
-        openWithMagicTXDInfo.cbSize = sizeof( openWithMagicTXDInfo );
-        openWithMagicTXDInfo.fMask = MIIM_STRING | MIIM_FTYPE | MIIM_ID | MIIM_STATE;
-        openWithMagicTXDInfo.dwTypeData = L"Open with Magic.TXD";
-        openWithMagicTXDInfo.fType = MFT_STRING;
-        openWithMagicTXDInfo.wID = idCmdFirst + openWithMagicTXD_id;
-        openWithMagicTXDInfo.fState = MFS_ENABLED;
-
-        BOOL insertMagicTXDItemSuccess = InsertMenuItemW( optionsMenu, 3, TRUE, &openWithMagicTXDInfo );
-
-        if ( insertMagicTXDItemSuccess == FALSE )
-        {
-            throw std::exception();
-        }
-
-        this->cmdMap[ openWithMagicTXD_id ] =
-            [=]( void )
-        {
-            //__debugbreak();
-            return true;
-        };
-
-        MENUITEMINFOW menuInfo;
-        menuInfo.cbSize = sizeof( menuInfo );
-        menuInfo.fMask = MIIM_STRING | MIIM_FTYPE | MIIM_STATE | MIIM_SUBMENU;
-        menuInfo.dwTypeData = L"RenderWare Options";
-        menuInfo.fType = MFT_STRING;
-        menuInfo.fState = MFS_ENABLED;
-        menuInfo.hSubMenu = optionsMenu;
-
-        BOOL insertRWOptionsMenu =
-            InsertMenuItemW( hMenu, menuIndex, TRUE, &menuInfo );
-
-        if ( insertRWOptionsMenu == FALSE )
-        {
-            throw std::exception();
-        }
-        else
-        {
-            menuIndex++;
+            return HRESULT_FROM_WIN32( GetLastError() );
         }
     }
-    catch( ... )
-    {
-        DestroyMenu( optionsMenu );
-
-        return HRESULT_FROM_WIN32( GetLastError() );
-    }
-
-    DestroyMenu( optionsMenu );
 
     // Determine the highest used ID.
     UINT highestID = 0;
@@ -968,17 +1198,73 @@ IFACEMETHODIMP RenderWareContextHandlerProvider::QueryContextMenu(
     return MAKE_HRESULT( SEVERITY_SUCCESS, 0, highestID + 1 );
 }
 
+// EVERYTHING in the shell must have fucking IDs. I am not fucking joking.
+// Just do it. It will save you some frustration.
+
+// So here is a funny dev story for ya, because you love reading source code.
+// I spent an entire day debuggin the Windows(tm) shell(tm) to find out why my IContextHandler broke
+// if the user selected more than 16 entries. Turns out that Microsoft expects the root of the submenu
+// tree to be marked with ID zero! I bet you cannot read that in the docs. And all over the
+// Internet people cry why IContextMenu cannot handle more than friggin 16 entries.
+// The easy samples that Microsoft has released are retarded. They do not even feature sub menus,
+// and their code really works with them, and does a bad job. Well, I will have to see how far my stuff
+// will reach from now on.
+
 IFACEMETHODIMP RenderWareContextHandlerProvider::InvokeCommand( LPCMINVOKECOMMANDINFO pici )
 {
+    // Check whether we do a unicode request.
+    bool isUnicode = false;
+
+    if ( pici->cbSize == sizeof( CMINVOKECOMMANDINFOEX ) )
+    {
+        CMINVOKECOMMANDINFOEX *infoEx = (CMINVOKECOMMANDINFOEX*)pici;
+
+        if ( HIWORD( infoEx->lpVerbW ) != 0 )
+        {
+            isUnicode = true;
+        }
+    }
+
     // We check by context menu id.
     bool isANSIVerbMode = ( HIWORD( pici->lpVerb ) != 0 );
+    
+    bool hasFoundCommandID = false;
+    UINT cmdID = 0xFFFFFFFF;
+
+    if ( !hasFoundCommandID )
+    {
+        // Try to handle the unicode version.
+        if ( isUnicode )
+        {
+            CMINVOKECOMMANDINFOEX *infoEx = (CMINVOKECOMMANDINFOEX*)pici;
+
+            hasFoundCommandID = findCommandUnicode( infoEx->lpVerbW, cmdID );
+        }
+    }
+
+    if ( !hasFoundCommandID ) 
+    {
+        // Try to handle the ANSI version.
+        if ( isANSIVerbMode )
+        {
+            hasFoundCommandID = findCommandANSI( pici->lpVerb, cmdID );
+        }
+    }
+
+    if ( !hasFoundCommandID )
+    {
+        if ( !isANSIVerbMode )
+        {
+            cmdID = LOWORD( pici->lpVerb );
+
+            hasFoundCommandID = true;
+        }
+    }
 
     HRESULT isHandled = E_FAIL;
-    
-    if ( !isANSIVerbMode )
-    {
-        WORD cmdID = LOWORD( pici->lpVerb );
 
+    if ( hasFoundCommandID )
+    {
         // Execute the item.
         menuCmdMap_t::const_iterator iter = this->cmdMap.find( cmdID );
 
@@ -1006,5 +1292,63 @@ IFACEMETHODIMP RenderWareContextHandlerProvider::GetCommandString(
     UINT *pwReserved, LPSTR pszName, UINT cchMax
 )
 {
-    return E_FAIL;
+    HRESULT res = E_FAIL;
+
+    if ( uFlags == GCS_HELPTEXTA || uFlags == GCS_HELPTEXTW )
+    {
+        // No thanks.
+        res = E_FAIL;
+    }
+    else if ( uFlags == GCS_VALIDATEA || uFlags == GCS_VALIDATEW )
+    {
+        // Check by string.
+        bool doesExist = false;
+
+        // We check in the map directly.
+        UINT cmdID = 0xFFFFFFFF;
+
+        if ( uFlags == GCS_VALIDATEA )
+        {
+            doesExist = findCommandANSI( pszName, cmdID );
+        }
+        else if ( uFlags == GCS_VALIDATEW )
+        {
+            doesExist = findCommandUnicode( (const wchar_t*)pszName, cmdID );
+        }
+
+        res = ( doesExist ? S_OK : S_FALSE );
+    }
+    else if ( uFlags == GCS_VERBA || uFlags == GCS_VERBW )
+    {
+        const verbMap_t::const_iterator verbIter = this->verbMap.find( (UINT)idCommand );
+
+        if ( verbIter != this->verbMap.end() )
+        {
+            const std::string& theVerb = verbIter->second;
+
+            if ( uFlags == GCS_VERBA )
+            {
+                if ( cchMax >= theVerb.size() + 1 )
+                {
+                    // Write the string.
+                    strcpy( pszName, theVerb.c_str() );
+
+                    res = S_OK;
+                }
+            }
+            else if ( uFlags == GCS_VERBW )
+            {
+                std::wstring wideVerb( theVerb.begin(), theVerb.end() );
+
+                if ( cchMax >= wideVerb.size() + 1 )
+                {
+                    wcscpy( (wchar_t*)pszName, wideVerb.c_str() );
+
+                    res = S_OK;
+                }
+            }
+        }
+    }
+
+    return res;
 }

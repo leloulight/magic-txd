@@ -347,6 +347,7 @@
     <ClInclude Include="..\..\src\contextprov.h" />
     <ClInclude Include="..\..\src\main.h" />
     <ClInclude Include="..\..\src\Reg.h" />
+    <ClInclude Include="..\..\src\rwutils.hxx" />
     <ClInclude Include="..\..\src\rwwin32streamwrap.h" />
     <ClInclude Include="..\..\src\StdInc.h" />
     <ClInclude Include="..\..\src\thumbprov.h" />
