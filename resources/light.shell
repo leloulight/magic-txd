@@ -447,3 +447,8 @@ QToolTip {
     color: #050018;
     font-size: 20px;
 }
+
+QWidget#friendlyIconSeparator
+{
+    background: #000000;
+}

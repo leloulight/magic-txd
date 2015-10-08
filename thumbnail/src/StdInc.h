@@ -4,6 +4,8 @@
 
 #include <atomic>
 
+#include "../resources/rcdesc.h"
+
 #include "Reg.h"
 #include <strsafe.h>
 

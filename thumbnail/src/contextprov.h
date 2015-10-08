@@ -154,4 +154,6 @@ private:
     }
 
     ComPtr <IUnknown> theSite;
+
+    HBITMAP rwlogo_bitmap;
 };

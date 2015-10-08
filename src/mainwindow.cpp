@@ -52,6 +52,9 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
     this->rwVersionButton = NULL;
     this->recheckingThemeItem = false;
 
+    this->areFriendlyIconsVisible = false;
+    this->shouldShowFriendlyIcons = true;
+
     // Initialize configuration to default.
     {
         this->lastTXDOpenDir = QDir::current().absolutePath();
@@ -491,6 +494,38 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
 	    QWidget *txdOptionsBackground2 = new QWidget;
 	    txdOptionsBackground2->setFixedHeight(59);
 	    txdOptionsBackground2->setObjectName("background_1");
+
+        /* --- Friendly Icons --- */
+        QHBoxLayout *friendlyIconRow = new QHBoxLayout();
+        friendlyIconRow->setContentsMargins( 0, 0, 15, 0 );
+        friendlyIconRow->setAlignment( Qt::AlignRight | Qt::AlignVCenter );
+
+        this->friendlyIconRow = friendlyIconRow;
+
+        QLabel *friendlyIconGame = new QLabel();
+        friendlyIconGame->setVisible( false );
+
+        this->friendlyIconGame = friendlyIconGame;
+
+        friendlyIconRow->addWidget( friendlyIconGame );
+
+        QWidget *friendlyIconSeparator = new QWidget();
+        friendlyIconSeparator->setFixedWidth(1);
+        friendlyIconSeparator->setObjectName( "friendlyIconSeparator" );
+        friendlyIconSeparator->setVisible( false );
+
+        this->friendlyIconSeparator = friendlyIconSeparator;
+
+        friendlyIconRow->addWidget( friendlyIconSeparator );
+
+        QLabel *friendlyIconPlatform = new QLabel();
+        friendlyIconPlatform->setVisible( false );
+
+        this->friendlyIconPlatform = friendlyIconPlatform;
+
+        friendlyIconRow->addWidget( friendlyIconPlatform );
+
+        txdOptionsBackground2->setLayout( friendlyIconRow );
 	
 	    QVBoxLayout *bottomLayout = new QVBoxLayout;
 	    bottomLayout->addWidget(hLineBackground2);
@@ -637,6 +672,9 @@ void MainWindow::setCurrentTXD( rw::TexDictionary *txdObj )
         // Make sure we have no more texture in our viewport.
 		clearViewImage();
 
+        // Since we have no selected texture, we can hide the friendly icons.
+        this->hideFriendlyIcons();
+
         this->currentSelectedTexture = NULL;
 
         this->rwEngine->DeleteRwObject( this->currentTXD );
@@ -668,6 +706,8 @@ void MainWindow::updateTextureList( bool selectLastItemInList )
 
     // We have no more selected texture item.
     this->currentSelectedTexture = NULL;
+
+    this->hideFriendlyIcons();
     
     if ( txdObj )
     {
@@ -763,6 +803,9 @@ void MainWindow::updateTextureMetaInfo( void )
 
         // We also want to update the exportability, as the format may have changed.
         this->UpdateExportAccessibility();
+
+        // We also want to update the friendly icons.
+        this->updateFriendlyIcons();
     }
 }
 
@@ -783,6 +826,9 @@ void MainWindow::updateAllTextureMetaInfo( void )
             texInfo->updateInfo();
         }
     }
+
+    // Also update our friendly icons.
+    this->updateFriendlyIcons();
 
     // Make sure we update exportability.
     this->UpdateExportAccessibility();
@@ -950,7 +996,18 @@ void MainWindow::onTextureItemChanged(QListWidgetItem *listItem, QListWidgetItem
 
     TexInfoWidget *texItem = dynamic_cast <TexInfoWidget*> ( listItemWidget );
 
+    if ( this->currentSelectedTexture == NULL && texItem != NULL )
+    {
+        this->showFriendlyIcons();
+    }
+    if ( this->currentSelectedTexture != NULL && texItem == NULL )
+    {
+        this->hideFriendlyIcons();
+    }
+
     this->currentSelectedTexture = texItem;
+
+    this->updateFriendlyIcons();
 
     this->updateTextureView();
 

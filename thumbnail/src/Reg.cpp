@@ -468,3 +468,134 @@ HRESULT UnregisterShellExtContextMenuHandler(
 
     return hr;
 }
+
+
+//
+//   FUNCTION: RegisterShellExtInfotipHandler
+//
+//   PURPOSE: Register the infotip handler.
+//
+//   PARAMETERS:
+//   * pszFileType - The file type that the context menu handler is 
+//     associated with. For example, '*' means all file types; '.txt' means 
+//     all .txt files. The parameter must not be NULL.
+//   * clsid - Class ID of the component
+//   * pszFriendlyName - Friendly name
+//
+//   NOTE: The function creates the following key in the registry.
+//
+//   HKCR
+//   {
+//      NoRemove <File Type>
+//      {
+//          NoRemove shellex
+//          {
+//              NoRemove {00021500-0000-0000-C000-000000000046}
+//              {
+//                  {<CLSID>} = s '<Friendly Name>'
+//              }
+//          }
+//      }
+//   }
+//
+HRESULT RegisterShellExtInfotipHandler(
+    PCWSTR pszFileType, const CLSID& clsid, PCWSTR pszFriendlyName)
+{
+    if (pszFileType == NULL)
+    {
+        return E_INVALIDARG;
+    }
+
+    HRESULT hr;
+
+    wchar_t szCLSID[MAX_PATH];
+    StringFromGUID2(clsid, szCLSID, ARRAYSIZE(szCLSID));
+
+    wchar_t szSubkey[MAX_PATH];
+
+    // If pszFileType starts with '.', try to read the default value of the 
+    // HKCR\<File Type> key which contains the ProgID to which the file type 
+    // is linked.
+    if (*pszFileType == L'.')
+    {
+        wchar_t szDefaultVal[260];
+        hr = GetHKCRRegistryKeyAndValue(pszFileType, NULL, szDefaultVal, 
+            sizeof(szDefaultVal));
+
+        // If the key exists and its default value is not empty, use the 
+        // ProgID as the file type.
+        if (SUCCEEDED(hr) && szDefaultVal[0] != L'\0')
+        {
+            pszFileType = szDefaultVal;
+        }
+    }
+
+    // Create the key HKCR\<File Type>\shellex\{00021500-0000-0000-C000-000000000046}\{<CLSID>}
+    hr = StringCchPrintfW(szSubkey, ARRAYSIZE(szSubkey), 
+        L"%s\\shellex\\{00021500-0000-0000-C000-000000000046}\\%s", pszFileType, szCLSID);
+    if (SUCCEEDED(hr))
+    {
+        // Set the default value of the key.
+        hr = SetHKCRRegistryKeyAndValue(szSubkey, NULL, pszFriendlyName);
+    }
+
+    return hr;
+}
+
+
+//
+//   FUNCTION: UnregisterShellExtInfotipHandler
+//
+//   PURPOSE: Unregister the infotip handler.
+//
+//   PARAMETERS:
+//   * pszFileType - The file type that the context menu handler is 
+//     associated with. For example, '*' means all file types; '.txt' means 
+//     all .txt files. The parameter must not be NULL.
+//   * clsid - Class ID of the component
+//
+//   NOTE: The function removes the {<CLSID>} key under 
+//   HKCR\<File Type>\shellex\{00021500-0000-0000-C000-000000000046} in the registry.
+//
+HRESULT UnregisterShellExtInfotipHandler(
+    PCWSTR pszFileType, const CLSID& clsid)
+{
+    if (pszFileType == NULL)
+    {
+        return E_INVALIDARG;
+    }
+
+    HRESULT hr;
+
+    wchar_t szCLSID[MAX_PATH];
+    StringFromGUID2(clsid, szCLSID, ARRAYSIZE(szCLSID));
+
+    wchar_t szSubkey[MAX_PATH];
+
+    // If pszFileType starts with '.', try to read the default value of the 
+    // HKCR\<File Type> key which contains the ProgID to which the file type 
+    // is linked.
+    if (*pszFileType == L'.')
+    {
+        wchar_t szDefaultVal[260];
+        hr = GetHKCRRegistryKeyAndValue(pszFileType, NULL, szDefaultVal, 
+            sizeof(szDefaultVal));
+
+        // If the key exists and its default value is not empty, use the 
+        // ProgID as the file type.
+        if (SUCCEEDED(hr) && szDefaultVal[0] != L'\0')
+        {
+            pszFileType = szDefaultVal;
+        }
+    }
+
+    // Remove the HKCR\<File Type>\shellex\{00021500-0000-0000-C000-000000000046}\{<CLSID>} key.
+    hr = StringCchPrintfW(szSubkey, ARRAYSIZE(szSubkey), 
+        L"%s\\shellex\\{00021500-0000-0000-C000-000000000046}\\%s", pszFileType, szCLSID);
+    if (SUCCEEDED(hr))
+    {
+        hr = HRESULT_FROM_WIN32(RegDeleteTreeW(HKEY_CLASSES_ROOT, szSubkey));
+    }
+
+    return hr;
+}

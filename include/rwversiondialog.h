@@ -258,11 +258,24 @@ public slots:
 
                         if ( newTarget )
                         {
-                            bool hasChanged = rw::ConvertRasterTo( texRaster, newTarget );
-
-                            if ( hasChanged )
+                            try
                             {
-                                didPatchPlatform = true;
+                                bool hasChanged = rw::ConvertRasterTo( texRaster, newTarget );
+
+                                if ( hasChanged )
+                                {
+                                    didPatchPlatform = true;
+                                }
+                            }
+                            catch( rw::RwException& except )
+                            {
+                                // We output a warning.
+                                this->mainWnd->txdLog->addLogMessage(
+                                    QString( "failed to adjust texture platform of " ) + QString::fromStdString( texHandle->GetName() ) + QString( ": " ) + QString::fromStdString( except.message ),
+                                    LOGMSG_WARNING
+                                );
+
+                                // Continue anyway.
                             }
                         }
                     }

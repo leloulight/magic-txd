@@ -14,10 +14,20 @@ RenderWareContextHandlerProvider::RenderWareContextHandlerProvider( void ) : ref
     this->isInitialized = false;
     
     module_refCount++;
+
+    this->rwlogo_bitmap =
+        (HBITMAP)LoadImageW( module_instance, MAKEINTRESOURCEW(IDB_RWLOGO), IMAGE_BITMAP, 0, 0, LR_DEFAULTSIZE | LR_LOADTRANSPARENT );
 }
 
 RenderWareContextHandlerProvider::~RenderWareContextHandlerProvider( void )
 {
+    if ( HBITMAP rwbmp = this->rwlogo_bitmap )
+    {
+        DeleteObject( rwbmp );
+
+        this->rwlogo_bitmap = NULL;
+    }
+
     module_refCount--;
 }
 
@@ -757,17 +767,29 @@ IFACEMETHODIMP RenderWareContextHandlerProvider::QueryContextMenu(
             }
 
         public:
-            inline void AddCommandEntryW( const wchar_t *displayName, std::string&& verbName, std::function <bool ( void )>&& cb )
+            inline void AddCommandEntryW( const wchar_t *displayName, std::string&& verbName, std::function <bool ( void )>&& cb, HBITMAP bmpRes = NULL )
             {
                 const UINT usedID = this->manager->curMenuID++;
 
+                UINT fMask = MIIM_STRING | MIIM_FTYPE | MIIM_ID | MIIM_STATE;
+
+                if ( bmpRes != NULL )
+                {
+                    fMask |= MIIM_BITMAP;
+                }
+
                 MENUITEMINFOW itemInfo;
                 itemInfo.cbSize = sizeof( itemInfo );
-                itemInfo.fMask = MIIM_STRING | MIIM_FTYPE | MIIM_ID | MIIM_STATE;
+                itemInfo.fMask = fMask;
                 itemInfo.dwTypeData = (wchar_t*)displayName;
                 itemInfo.fType = MFT_STRING;
                 itemInfo.wID = this->manager->idCmdFirst + usedID;
                 itemInfo.fState = MFS_ENABLED;
+
+                if ( bmpRes != NULL )
+                {
+                    itemInfo.hbmpItem = bmpRes;
+                }
 
                 UINT& newMenuIndex = AcquireMenuIndex();
 
@@ -789,7 +811,7 @@ IFACEMETHODIMP RenderWareContextHandlerProvider::QueryContextMenu(
                 this->manager->provider->verbMap[ usedID ] = std::string( "rwshell." ) + verbName;
             }
 
-            inline node AddSubmenuEntryW( const wchar_t *displayName )
+            inline node AddSubmenuEntryW( const wchar_t *displayName, HBITMAP bmpRes = NULL )
             {
                 // If we are in sequential mode, simply return a redirect node.
                 if ( this->manager->osContextFlags & CMF_SYNCCASCADEMENU )
@@ -805,18 +827,30 @@ IFACEMETHODIMP RenderWareContextHandlerProvider::QueryContextMenu(
                     throw std::exception( "failed to create Win32 submenu handle" );
                 }
 
-                UINT usedID = this->manager->curMenuID++;
+                const UINT usedID = this->manager->curMenuID++;
+                
+                UINT fMask = MIIM_STRING | MIIM_FTYPE | MIIM_SUBMENU | MIIM_ID | MIIM_STATE;
+
+                if ( bmpRes != NULL )
+                {
+                    fMask |= MIIM_BITMAP;
+                }
 
                 MENUITEMINFOW itemInfo;
                 itemInfo.cbSize = sizeof( itemInfo );
-                itemInfo.fMask = MIIM_STRING | MIIM_FTYPE | MIIM_SUBMENU | MIIM_ID | MIIM_STATE;
+                itemInfo.fMask = fMask;
                 itemInfo.dwTypeData = (wchar_t*)displayName;
                 itemInfo.fType = MFT_STRING;
                 itemInfo.hSubMenu = submenuHandle;
                 itemInfo.wID = this->manager->idCmdFirst + usedID;
                 itemInfo.fState = MFS_ENABLED;
 
-                UINT newMenuIndex = AcquireMenuIndex();
+                if ( bmpRes != NULL )
+                {
+                    itemInfo.hbmpItem = bmpRes;
+                }
+
+                UINT& newMenuIndex = AcquireMenuIndex();
 
                 BOOL insertItemSuccess = InsertMenuItemW( this->osMenu, newMenuIndex, TRUE, &itemInfo );
 
@@ -876,7 +910,7 @@ IFACEMETHODIMP RenderWareContextHandlerProvider::QueryContextMenu(
 
     // Do the menu.
     {
-        contextMan::node optionsNode = mainMenu.AddSubmenuEntryW( L"RenderWare Options" );
+        contextMan::node optionsNode = mainMenu.AddSubmenuEntryW( L"RenderWare Options", this->rwlogo_bitmap );
 
         // Add some cool options.
         try

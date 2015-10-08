@@ -71,6 +71,14 @@ public:
     void setCurrentTXD( rw::TexDictionary *txdObj );
     void updateTextureList(bool selectLastItemInList);
 
+    void showFriendlyIcons( void );
+    void hideFriendlyIcons( void );
+    void updateFriendlyIcons( void );
+
+private:
+    void updateFriendlyVisibilityState( void );
+
+public:
     void updateWindowTitle( void );
     void updateTextureMetaInfo( void );
     void updateAllTextureMetaInfo( void );
@@ -223,6 +231,14 @@ private:
     QAction *actionShowOptions;
     QAction *actionThemeDark;
     QAction *actionThemeLight;
+
+    QHBoxLayout *friendlyIconRow;
+    QLabel *friendlyIconGame;
+    QWidget *friendlyIconSeparator;
+    QLabel *friendlyIconPlatform;
+    
+    bool areFriendlyIconsVisible;
+    bool shouldShowFriendlyIcons;
 
     bool recheckingThemeItem;
 

@@ -11,11 +11,11 @@
     <Filter Include="include">
       <UniqueIdentifier>{020cea54-df20-40b1-ada5-3f30c8e728c1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="resources">
+      <UniqueIdentifier>{e1943a93-39ff-48a1-9c97-e81edaf792b5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\main.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\Reg.h">
       <Filter>include</Filter>
     </ClInclude>
@@ -34,5 +34,18 @@
     <ClInclude Include="..\..\src\rwutils.hxx">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\resources\rcdesc.h">
+      <Filter>resources</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\resources\resource.rc">
+      <Filter>resources</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\resources\rwlogo.ico">
+      <Filter>resources</Filter>
+    </Image>
   </ItemGroup>
 </Project>
