@@ -212,6 +212,11 @@ struct tgaImagingExtension : public imagingFormatExtension
                 return false;
             }
 
+            if ( possibleHeader.CMapLength > 256 )
+            {
+                return false;
+            }
+
             uint8 imageType = possibleHeader.ImageType;
 
             if ( imageType != 0 && imageType != 1 && imageType != 2 && imageType != 3 &&

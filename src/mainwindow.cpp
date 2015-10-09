@@ -1447,6 +1447,12 @@ QString MainWindow::requestValidImagePath( void )
 
 static inline rw::TextureBase* RwTextureStreamRead( rw::Interface *engineInterface, QString filePath )
 {
+    // We want to temporarily disable warnings.
+    rw::AssignThreadedRuntimeConfig( engineInterface );
+
+    engineInterface->SetWarningManager( NULL );
+    engineInterface->SetWarningLevel( 0 );
+
     rw::TextureBase *resultObj = NULL;
 
     try
@@ -1496,6 +1502,8 @@ static inline rw::TextureBase* RwTextureStreamRead( rw::Interface *engineInterfa
     {
         // Just continue.
     }
+
+    rw::ReleaseThreadedRuntimeConfig( engineInterface );
 
     return resultObj;
 }
