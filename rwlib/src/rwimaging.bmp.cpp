@@ -45,12 +45,17 @@ inline uint32 getBMPTexelDataRowAlignment( void )
     return sizeof( DWORD );
 }
 
+static const imaging_filename_ext bmp_ext[] =
+{
+    { "BMP", true }
+};
+
 struct bmpImagingEnv : public imagingFormatExtension
 {
     inline void Initialize( Interface *engineInterface )
     {
         // Register ourselves.
-        RegisterImagingFormat( engineInterface, "Raw Bitmap", "BMP", this );
+        RegisterImagingFormat( engineInterface, "Raw Bitmap", IMAGING_COUNT_EXT(bmp_ext), bmp_ext, this );
     }
 
     inline void Shutdown( Interface *engineInterface )

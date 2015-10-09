@@ -550,6 +550,34 @@ bool Interface::GetFixIncompatibleRasters( void ) const
     return GetConstEnvironmentConfigBlock( engineInterface ).GetFixIncompatibleRasters();
 }
 
+void Interface::SetCompatTransformNativeImaging( bool transfEnable )
+{
+    EngineInterface *engineInterface = (EngineInterface*)this;
+
+    GetEnvironmentConfigBlock( engineInterface ).SetCompatTransformNativeImaging( transfEnable );
+}
+
+bool Interface::GetCompatTransformNativeImaging( void ) const
+{
+    const EngineInterface *engineInterface = (const EngineInterface*)this;
+
+    return GetConstEnvironmentConfigBlock( engineInterface ).GetCompatTransformNativeImaging();
+}
+
+void Interface::SetPreferPackedSampleExport( bool preferPacked )
+{
+    EngineInterface *engineInterface = (EngineInterface*)this;
+
+    GetEnvironmentConfigBlock( engineInterface ).SetPreferPackedSampleExport( preferPacked );
+}
+
+bool Interface::GetPreferPackedSampleExport( void ) const
+{
+    const EngineInterface *engineInterface = (const EngineInterface*)this;
+
+    return GetConstEnvironmentConfigBlock( engineInterface ).GetPreferPackedSampleExport();
+}
+
 void Interface::SetDXTPackedDecompression( bool packedDecompress )
 {
     EngineInterface *engineInterface = (EngineInterface*)this;

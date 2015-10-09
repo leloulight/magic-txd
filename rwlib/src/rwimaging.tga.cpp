@@ -172,12 +172,17 @@ inline bool getTGARasterFormat( unsigned int pixelDepth, unsigned int pixelAlpha
     return false;
 }
 
+static const imaging_filename_ext tga_ext[] =
+{
+    { "TGA", true }
+};
+
 struct tgaImagingExtension : public imagingFormatExtension
 {
     inline void Initialize( Interface *engineInterface )
     {
         // We can now address the imaging environment and register ourselves, quite exciting.
-        RegisterImagingFormat( engineInterface, "Truevision Raster Graphics", "TGA", this );
+        RegisterImagingFormat( engineInterface, "Truevision Raster Graphics", IMAGING_COUNT_EXT(tga_ext), tga_ext, this );
     }
 
     inline void Shutdown( Interface *engineInterface )

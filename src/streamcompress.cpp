@@ -300,6 +300,7 @@ bool UnregisterStreamCompressionManager( MainWindow *mainWnd, compressionManager
 
 // Sub modules.
 extern void InitializeLZOStreamCompression( void );
+extern void InitializeMH2ZCompressionEnv( void );
 
 void InitializeStreamCompressionEnvironment( void )
 {
@@ -307,4 +308,5 @@ void InitializeStreamCompressionEnvironment( void )
 
     // Register sub modules.
     InitializeLZOStreamCompression();
+    InitializeMH2ZCompressionEnv();
 }

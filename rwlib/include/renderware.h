@@ -538,6 +538,12 @@ public:
     void                SetFixIncompatibleRasters   ( bool doFix );
     bool                GetFixIncompatibleRasters   ( void ) const;
 
+    void                SetCompatTransformNativeImaging ( bool transfEnable );
+    bool                GetCompatTransformNativeImaging ( void ) const;
+
+    void                SetPreferPackedSampleExport ( bool preferPacked );
+    bool                GetPreferPackedSampleExport ( void ) const;
+
     void                SetDXTPackedDecompression   ( bool packedDecompress );
     bool                GetDXTPackedDecompression   ( void ) const;
 

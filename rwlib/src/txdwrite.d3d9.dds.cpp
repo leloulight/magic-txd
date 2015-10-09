@@ -902,30 +902,71 @@ void d3d9NativeTextureTypeProvider::SerializeNativeImage( Interface *engineInter
     }
     else
     {
-        // Otherwise we write some D3DFORMAT encoding.
-        hasDirectMapping =
-            getDDSMappingFromD3DFormat(
-                d3dFormat, isRGB, isLum, isAlphaOnly, isYUV, isFourCC,
-                redMask, greenMask, blueMask, alphaMask, fourCC
-            );
+        // There are some formats where the artist does not want a direct acquisition.
+        // We have to detect this here.
+        bool wantsDirectAcquisition = true;
 
-        // If we do not have any direct mapping, we will have to convert our native texture into something
-        // understandable.
-        if ( !hasDirectMapping )
+        bool recalculateD3DFORMATSupport = false;
+
+        if ( d3dRasterFormatLink ) // RWCOMPRESS_NONE
         {
-            // Writing into the DDS depends on what type of texture we have.
-            if ( d3dRasterFormatLink || usedFormatHandler != NULL )
+            if ( engineInterface->GetPreferPackedSampleExport() )
             {
-                // We will write a full quality color DDS.
-                dstRasterFormat = RASTER_8888;
-                dstDepth = 32;
-                dstColorOrder = COLOR_BGRA;
+                eRasterFormat redirRasterFormat;
+                uint32 redirDepth;
+
+                bool hasRedirect = RasterFormatSamplePackingTransform(
+                    srcRasterFormat, srcDepth, hasAlpha,
+                    redirRasterFormat, redirDepth
+                );
+
+                if ( hasRedirect )
+                {
+                    // We will have to check for D3DFORMAT support.
+                    recalculateD3DFORMATSupport = true;
+                 
+                    // We take the same format specification but change the depth.
+                    dstRasterFormat = redirRasterFormat;
+                    dstDepth = redirDepth;
+                    dstColorOrder = srcColorOrder;
+
+                    wantsDirectAcquisition = false;
+                }
             }
-            else
+        }
+
+        if ( wantsDirectAcquisition )
+        {
+            // Otherwise we write some D3DFORMAT encoding.
+            hasDirectMapping =
+                getDDSMappingFromD3DFormat(
+                    d3dFormat, isRGB, isLum, isAlphaOnly, isYUV, isFourCC,
+                    redMask, greenMask, blueMask, alphaMask, fourCC
+                );
+
+            // If we do not have any direct mapping, we will have to convert our native texture into something
+            // understandable.
+            if ( !hasDirectMapping )
             {
-                throw RwException( "unsupported texture format in DDS serialization of Direct3D 9 native texture" );
-            }
+                // Writing into the DDS depends on what type of texture we have.
+                if ( d3dRasterFormatLink || usedFormatHandler != NULL )
+                {
+                    // We will write a full quality color DDS.
+                    dstRasterFormat = RASTER_8888;
+                    dstDepth = 32;
+                    dstColorOrder = COLOR_BGRA;
+                }
+                else
+                {
+                    throw RwException( "unsupported texture format in DDS serialization of Direct3D 9 native texture" );
+                }
         
+                recalculateD3DFORMATSupport = true;
+            }
+        }
+
+        if ( recalculateD3DFORMATSupport )
+        {
             // Calculate the D3DFORMAT that represents the new destination raster format.
             D3DFORMAT mapD3DFORMAT;
 
@@ -1853,7 +1894,7 @@ void d3d9NativeTextureTypeProvider::DeserializeNativeImage( Interface *engineInt
                 originalRWCompat =
                     isRasterFormatOriginalRWCompatible(
                         rasterFormat, colorOrder, bitDepth,
-                        PALETTE_NONE    // DDS files never have palettes.
+                        PALETTE_NONE    // This configuration of DDS file has no palette.
                     );
             }
 
@@ -1872,7 +1913,7 @@ void d3d9NativeTextureTypeProvider::DeserializeNativeImage( Interface *engineInt
     {
         // Palette are always encoded the same.
         d3dRasterFormatLink = true;
-        originalRWCompat = true;
+        originalRWCompat = true;    // always compatible with original RW.
    
         rasterFormat = RASTER_8888;
         colorOrder = COLOR_RGBA;
@@ -1894,11 +1935,51 @@ void d3d9NativeTextureTypeProvider::DeserializeNativeImage( Interface *engineInt
 
     if ( hasValidFormat )
     {
-        canRawDirectlyAcquire = true;
-
         if ( hasBitDepth )
         {
             dstDepth = bitDepth;
+        }
+
+        // There are cases when DDS files travel in unoptimized pixel data. The runtime can
+        // automatically optimize the pixel data for hardware if you pass true to
+        // SetCompatTransformNativeImaging. Doing so tells the runtime that you prefer compatibility
+        // over staying true to the formats.
+        bool hasRedirect = false;
+
+        if ( d3dRasterFormatLink )  // RWCOMPRESS_NONE
+        {
+            assert( hasBitDepth == true );
+
+            if ( engineInterface->GetCompatTransformNativeImaging() )
+            {
+                uint32 recDepth;
+                eColorOrdering recColorOrder;
+    
+                bool hasRecDepth, hasRecColorOrder;
+
+                this->GetRecommendedRasterFormat( dstRasterFormat, dstPaletteType, recDepth, hasRecDepth, recColorOrder, hasRecColorOrder );
+
+                if ( hasRecDepth && recDepth != dstDepth )
+                {
+                    dstDepth = recDepth;
+
+                    hasRedirect = true;
+                }
+
+                if ( hasRecColorOrder && recColorOrder != dstColorOrder )
+                {
+                    dstColorOrder = recColorOrder;
+
+                    hasRedirect = true;
+                }
+            }
+        }
+
+        if ( !hasRedirect )
+        {
+            // Since we have not redefined the target, the D3DFORMAT from the DDS applies.
+            // This means that DDS writing is very optimized.
+            canRawDirectlyAcquire = true;
         }
     }
     else if ( hasPaletteFormat )
@@ -2245,26 +2326,41 @@ void d3d9NativeTextureTypeProvider::DeserializeNativeImage( Interface *engineInt
                     // Check whether we need a new destination buffer for transformation.
                     void *dstTransformBuffer = texels;
 
+                    bool requiresTransformation = false;
+
                     if ( hasValidFormat )
                     {
-                        // Here we basically must have established the fact that our format is the same.
-                        // This is kinda common sense, because we have a valid format.
-                        // It automatically means that we really take that texture, a contract to the future.
+                        // We have to check whether we actually can directly take the DDS texels.
+                        // This could not happen if the DDS texels travel in an unoptimized format.
+                        if ( canRawDirectlyAcquire == false )
+                        {
+                            requiresTransformation = true;
+                        }
                     }
                     else if ( hasPaletteFormat )
                     {
+                        // The only factor of palette samples is the depth.
                         if ( bitDepth != dstDepth )
                         {
-                            // If the transformation buffer is not the destination, then it is a single row buffer
-                            // that is redirected to the destination buffer.
-                            uint32 transBufferSize = srcPitch;
+                            requiresTransformation = true;
+                        }
+                    }
 
-                            dstTransformBuffer = engineInterface->PixelAllocate( transBufferSize );
+                    // So if we figured that we need transformations, do it.
+                    if ( requiresTransformation )
+                    {
+                        // We MUST know all about this format here.
+                        assert( d3dRasterFormatLink == true );
 
-                            if ( !dstTransformBuffer )
-                            {
-                                throw RwException( "failed to allocate destination transformation buffer for DDS row parsing" );
-                            }
+                        // If the transformation buffer is not the destination, then it is a single row buffer
+                        // that is redirected to the destination buffer.
+                        uint32 transBufferSize = srcPitch;
+
+                        dstTransformBuffer = engineInterface->PixelAllocate( transBufferSize );
+
+                        if ( !dstTransformBuffer )
+                        {
+                            throw RwException( "failed to allocate destination transformation buffer for DDS row parsing" );
                         }
                     }
 
@@ -2295,7 +2391,7 @@ void d3d9NativeTextureTypeProvider::DeserializeNativeImage( Interface *engineInt
                                 outputStream->read( dstTransformBuffer, srcPitch );
 
                                 // Transform now.
-                                assert( hasPaletteFormat == true ); // the contract of having source and destination format bridge
+                                assert( d3dRasterFormatLink == true ); // the contract of having source and destination format bridge
 
                                 moveTexels(
                                     dstTransformBuffer, dstRowData,

@@ -20,6 +20,12 @@ namespace rw
 #ifdef RWLIB_INCLUDE_JPEG_IMAGING
 static const JOCTET FakeEOI[] = { 0xFF, JPEG_EOI };
 
+static const imaging_filename_ext jpeg_ext[] =
+{
+    { "JPEG", false },
+    { "JPG", true }
+};
+
 // JPEG compliant serialization library for RenderWare.
 struct jpegImagingExtension : public imagingFormatExtension
 {
@@ -766,7 +772,7 @@ struct jpegImagingExtension : public imagingFormatExtension
 
     inline void Initialize( Interface *engineInterface )
     {
-        RegisterImagingFormat( engineInterface, "Joint Photographic Experts Group", "JPEG", this );
+        RegisterImagingFormat( engineInterface, "Joint Photographic Experts Group", IMAGING_COUNT_EXT(jpeg_ext), jpeg_ext, this );
     }
 
     inline void Shutdown( Interface *engineInterface )

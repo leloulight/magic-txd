@@ -34,7 +34,8 @@ enum eKnownGameType
     GAME_GTA3,
     GAME_GTAVC,
     GAME_GTASA,
-    GAME_MANHUNT
+    GAME_MANHUNT,
+    GAME_BULLY
 };
 
 enum eKnownPlatformType
@@ -96,6 +97,12 @@ void MainWindow::updateFriendlyIcons( void )
                 else if ( rasterVersion.rwLibMinor <= 6 )
                 {
                     knownGame = GAME_GTASA;
+
+                    hasKnownConfiguration = true;
+                }
+                else if ( rasterVersion.rwLibMajor == 7 )
+                {
+                    knownGame = GAME_BULLY;
 
                     hasKnownConfiguration = true;
                 }
@@ -192,6 +199,10 @@ void MainWindow::updateFriendlyIcons( void )
         {
             gameIconPath += "G_MH1.png";
         }
+        else if ( knownGame == GAME_BULLY )
+        {
+            gameIconPath += "G_BULLY.png";
+        }
         else
         {
             gameIconPath += "NOGAME.png";
@@ -211,7 +222,7 @@ void MainWindow::updateFriendlyIcons( void )
         }
         else if ( knownPlatform == PLATFORM_XBOX )
         {
-            platIconPath += "PLAT_XBOX.png";
+            platIconPath += "PLAT_XB.png";
         }
         else if ( knownPlatform == PLATFORM_MOBILE )
         {

@@ -143,7 +143,8 @@ struct rwImagingEnv
     struct registeredExtension
     {
         const char *formatName;
-        const char *defaultExt;
+        uint32 num_ext;
+        const imaging_filename_ext *ext_array;
         imagingFormatExtension *intf;
     };
 
@@ -228,7 +229,7 @@ struct rwImagingEnv
             const rwImagingEnv::registeredExtension& regExt = (*iter).second;
 
             if ( stricmp( regExt.formatName, formatDescriptor ) == 0 ||
-                 stricmp( regExt.defaultExt, formatDescriptor ) == 0 )
+                 IsImagingFormatExtension( regExt.num_ext, regExt.ext_array, formatDescriptor ) )
             {
                 // We found our format!
                 fittingFormat = regExt.intf;
@@ -594,7 +595,7 @@ bool SerializeImage( Stream *outputStream, const char *formatDescriptor, const B
     return success;
 }
 
-bool RegisterImagingFormat( Interface *engineInterface, const char *formatName, const char *defaultExt, imagingFormatExtension *intf )
+bool RegisterImagingFormat( Interface *engineInterface, const char *formatName, uint32 num_ext, const imaging_filename_ext *ext_array, imagingFormatExtension *intf )
 {
     bool success = false;
 
@@ -609,7 +610,8 @@ bool RegisterImagingFormat( Interface *engineInterface, const char *formatName, 
             // Alright, lets do this.
             rwImagingEnv::registeredExtension newExt;
             newExt.formatName = formatName;
-            newExt.defaultExt = defaultExt;
+            newExt.num_ext = num_ext;
+            newExt.ext_array = ext_array;
             newExt.intf = intf;
 
             imgEnv->registeredFormats[ formatName ] = newExt;
@@ -679,7 +681,8 @@ void GetRegisteredImageFormats( Interface *engineInterface, registered_image_for
             const rwImagingEnv::registeredExtension& ext = (*iter).second;
 
             registered_image_format formatInfo;
-            formatInfo.defaultExt = ext.defaultExt;
+            formatInfo.num_ext = ext.num_ext;
+            formatInfo.ext_array = ext.ext_array;
             formatInfo.formatName = ext.formatName;
 
             formatsOut.push_back( formatInfo );

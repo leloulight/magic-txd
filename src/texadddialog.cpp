@@ -358,6 +358,8 @@ TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create
     this->setAttribute(Qt::WA_DeleteOnClose);
     this->setWindowModality(Qt::WindowModality::WindowModal);
 
+    this->setWindowFlags( this->windowFlags() & ~Qt::WindowContextHelpButtonHint );
+
     // Create a raster handle that will hold platform original data.
     this->platformOrigRaster = NULL;
     this->convRaster = NULL;

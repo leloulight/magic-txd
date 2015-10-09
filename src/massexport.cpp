@@ -75,8 +75,18 @@ MassExportWindow::MassExportWindow( MainWindow *mainWnd ) : QDialog( mainWnd )
 
         for ( const rw::registered_image_format& format : formats )
         {
-            boxRecomImageFormat->addItem( QString( format.defaultExt ).toUpper() );
+            const char *defaultExt = NULL;
+
+            bool gotDefaultExt = rw::GetDefaultImagingFormatExtension( format.num_ext, format.ext_array, defaultExt );
+
+            if ( gotDefaultExt )
+            {
+                boxRecomImageFormat->addItem( QString( defaultExt ).toUpper() );
+            }
         }
+
+        // And our favourite format, the texture chunk!
+        boxRecomImageFormat->addItem( "RWTEX" );
     }
 
     // If the remembered format exists in our combo box, select it.

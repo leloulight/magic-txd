@@ -157,7 +157,7 @@ public slots:
     void onExportAllTextures( bool checked );
 
 protected:
-    void addTextureFormatExportLinkToMenu( QMenu *theMenu, const char *defaultExt, const char *formatName );
+    void addTextureFormatExportLinkToMenu( QMenu *theMenu, const char *displayName, const char *defaultExt, const char *formatName );
 
 private:
     class rwPublicWarningDispatcher : public rw::WarningManagerInterface
@@ -246,13 +246,15 @@ private:
     class TextureExportAction : public QAction
     {
     public:
-        TextureExportAction( QString defaultExt, QString formatName, QWidget *parent ) : QAction( QString( "&" ) + defaultExt, parent )
+        TextureExportAction( QString&& defaultExt, QString&& displayName, QString&& formatName, QWidget *parent ) : QAction( QString( "&" ) + displayName, parent )
         {
             this->defaultExt = defaultExt;
+            this->displayName = displayName;
             this->formatName = formatName;
         }
 
         QString defaultExt;
+        QString displayName;
         QString formatName;
     };
 
@@ -284,6 +286,8 @@ private:
     {
         std::string formatName;
         std::string defaultExt;
+
+        std::list <std::string> ext_array;
 
         bool isNativeFormat;
         std::string nativeType;

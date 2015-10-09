@@ -315,9 +315,10 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
 
 	    QMenu *exportMenu = menu->addMenu(tr("&Export"));
 
-        this->addTextureFormatExportLinkToMenu( exportMenu, "PNG", "Portable Network Graphics" );
-        this->addTextureFormatExportLinkToMenu( exportMenu, "DDS", "Direct Draw Surface" );
-        this->addTextureFormatExportLinkToMenu( exportMenu, "BMP", "Raw Bitmap" );
+        this->addTextureFormatExportLinkToMenu( exportMenu, "PNG", "PNG", "Portable Network Graphics" );
+        this->addTextureFormatExportLinkToMenu( exportMenu, "RWTEX", "RWTEX", "RW Texture Chunk" );
+        this->addTextureFormatExportLinkToMenu( exportMenu, "DDS", "DDS", "Direct Draw Surface" );
+        this->addTextureFormatExportLinkToMenu( exportMenu, "BMP", "BMP", "Raw Bitmap" );
 
         // Add remaining formats that rwlib supports.
         {
@@ -329,21 +330,42 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
             {
                 const rw::registered_image_format& theFormat = *iter;
 
-                if ( stricmp( theFormat.defaultExt, "PNG" ) != 0 &&
-                        stricmp( theFormat.defaultExt, "DDS" ) != 0 &&
-                        stricmp( theFormat.defaultExt, "BMP" ) != 0 )
+                rw::uint32 num_ext = theFormat.num_ext;
+                const rw::imaging_filename_ext *ext_array = theFormat.ext_array;
+
+                // Decide what the most friendly name of this format is.
+                // The friendly name is the longest extension available.
+                const char *displayName =
+                    rw::GetLongImagingFormatExtension( num_ext, ext_array );
+
+                const char *defaultExt = NULL;
+
+                bool gotDefaultExt = rw::GetDefaultImagingFormatExtension( theFormat.num_ext, theFormat.ext_array, defaultExt );
+
+                if ( gotDefaultExt && displayName != NULL )
                 {
-                    this->addTextureFormatExportLinkToMenu( exportMenu, theFormat.defaultExt, theFormat.formatName );
+                    if ( stricmp( defaultExt, "PNG" ) != 0 &&
+                         stricmp( defaultExt, "DDS" ) != 0 &&
+                         stricmp( defaultExt, "BMP" ) != 0 )
+                    {
+                        this->addTextureFormatExportLinkToMenu( exportMenu, displayName, defaultExt, theFormat.formatName );
+                    }
+
+                    // We want to cache the available formats.
+                    registered_image_format imgformat;
+
+                    imgformat.formatName = theFormat.formatName;
+                    imgformat.defaultExt = defaultExt;
+
+                    for ( rw::uint32 n = 0; n < theFormat.num_ext; n++ )
+                    {
+                        imgformat.ext_array.push_back( std::string( theFormat.ext_array[ n ].ext ) );
+                    }
+
+                    imgformat.isNativeFormat = false;
+
+                    this->reg_img_formats.push_back( std::move( imgformat ) );
                 }
-
-                // We want to cache the available formats.
-                registered_image_format imgformat;
-
-                imgformat.formatName = theFormat.formatName;
-                imgformat.defaultExt = theFormat.defaultExt;
-                imgformat.isNativeFormat = false;
-
-                this->reg_img_formats.push_back( std::move( imgformat ) );
             }
 
             // Also add image formats from native texture types.
@@ -371,6 +393,8 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
                     imgformat.defaultExt = nativeExt;
                     imgformat.isNativeFormat = true;
                     imgformat.nativeType = nativeName;
+
+                    imgformat.ext_array.push_back( nativeExt );
 
                     this->reg_img_formats.push_back( std::move( imgformat ) );
                 }
@@ -584,12 +608,10 @@ MainWindow::~MainWindow()
     this->shutdownNativeFormats();
 }
 
-void MainWindow::addTextureFormatExportLinkToMenu( QMenu *theMenu, const char *defaultExt, const char *formatName )
+void MainWindow::addTextureFormatExportLinkToMenu( QMenu *theMenu, const char *displayName, const char *defaultExt, const char *formatName )
 {
-    TextureExportAction *formatActionExport = new TextureExportAction( defaultExt, QString( formatName ), this );
+    TextureExportAction *formatActionExport = new TextureExportAction( defaultExt, displayName, QString( formatName ), this );
     theMenu->addAction( formatActionExport );
-
-    formatActionExport->setData( QString( defaultExt ) );
 
     this->actionsExportItems.push_back( formatActionExport );
 
@@ -611,13 +633,23 @@ void MainWindow::UpdateExportAccessibility( void )
             // We should only enable if the currently selected texture actually supports us.
             bool hasSupport = false;
 
-            if ( TexInfoWidget *curSelTex = this->currentSelectedTexture )
+            if ( !hasSupport )
             {
-                if ( rw::Raster *texRaster = curSelTex->GetTextureHandle()->GetRaster() )
+                if ( TexInfoWidget *curSelTex = this->currentSelectedTexture )
                 {
-                    std::string ansiMethodName = exportAction->defaultExt.toStdString();
+                    if ( rw::Raster *texRaster = curSelTex->GetTextureHandle()->GetRaster() )
+                    {
+                        std::string ansiMethodName = exportAction->displayName.toStdString();
 
-                    hasSupport = texRaster->supportsImageMethod( ansiMethodName.c_str() );
+                        if ( stricmp( ansiMethodName.c_str(), "RWTEX" ) == 0 )
+                        {
+                            hasSupport = true;
+                        }
+                        else
+                        {
+                            hasSupport = texRaster->supportsImageMethod( ansiMethodName.c_str() );
+                        }
+                    }
                 }
             }
             
@@ -1330,9 +1362,31 @@ QString MainWindow::requestValidImagePath( void )
 
         const registered_image_format& entry = *iter;
 
-        imgExtensionSelect += QString( "*." ) + QString( entry.defaultExt.c_str() ).toLower();
+        bool needsExtSep = false;
+
+        for ( const std::string& extName : entry.ext_array )
+        {
+            if ( needsExtSep )
+            {
+                imgExtensionSelect += ";";
+            }
+
+            imgExtensionSelect += QString( "*." ) + QString::fromStdString( extName ).toLower();
+
+            needsExtSep = true;
+        }
 
         hasExtEntry = true;
+    }
+
+    // TEX CHUNK.
+    {
+        if ( hasExtEntry )
+        {
+            imgExtensionSelect += ";";
+        }
+
+        imgExtensionSelect += QString( "*.rwtex" );
     }
 
     imgExtensionSelect += ")";
@@ -1348,7 +1402,24 @@ QString MainWindow::requestValidImagePath( void )
 
         const registered_image_format& entry = *iter;
 
-        imgExtensionSelect += QString( entry.formatName.c_str() ) + QString( " (*." ) + QString( entry.defaultExt.c_str() ).toLower() + QString( ")" );
+        imgExtensionSelect += QString::fromStdString( entry.formatName ) + QString( " (" );
+        
+        bool needsExtSep = false;
+
+        for ( const std::string& extName : entry.ext_array )
+        {
+            if ( needsExtSep )
+            {
+                imgExtensionSelect += ";";
+            }
+
+            imgExtensionSelect +=
+                QString( "*." ) + QString::fromStdString( extName ).toLower();
+
+            needsExtSep = true;
+        }
+        
+        imgExtensionSelect += QString( ")" );
 
         hasEntry = true;
     }
@@ -1359,7 +1430,7 @@ QString MainWindow::requestValidImagePath( void )
         imgExtensionSelect += ";;";
     }
 
-    imgExtensionSelect += "Any file (*.*)";
+    imgExtensionSelect += "RW Texture Chunk (*.rwtex);;Any file (*.*)";
 
     hasEntry = true;
 
@@ -1374,6 +1445,61 @@ QString MainWindow::requestValidImagePath( void )
     return imagePath;
 }
 
+static inline rw::TextureBase* RwTextureStreamRead( rw::Interface *engineInterface, QString filePath )
+{
+    rw::TextureBase *resultObj = NULL;
+
+    try
+    {
+        std::wstring wFilePath = filePath.toStdWString();
+
+        rw::streamConstructionFileParamW_t fileParam( wFilePath.c_str() );
+
+        rw::Stream *rwStream = engineInterface->CreateStream( rw::RWSTREAMTYPE_FILE_W, rw::RWSTREAMMODE_READONLY, &fileParam );
+
+        if ( rwStream )
+        {
+            try
+            {
+                rw::RwObject *rwObj = engineInterface->Deserialize( rwStream );
+
+                if ( rwObj )
+                {
+                    try
+                    {
+                        resultObj = rw::ToTexture( engineInterface, rwObj );
+                    }
+                    catch( ... )
+                    {
+                        engineInterface->DeleteRwObject( rwObj );
+
+                        throw;
+                    }
+
+                    if ( !resultObj )
+                    {
+                        engineInterface->DeleteRwObject( rwObj );
+                    }
+                }
+            }
+            catch( ... )
+            {
+                engineInterface->DeleteStream( rwStream );
+
+                throw;
+            }
+
+            engineInterface->DeleteStream( rwStream );
+        }
+    }
+    catch( rw::RwException& )
+    {
+        // Just continue.
+    }
+
+    return resultObj;
+}
+
 void MainWindow::onAddTexture( bool checked )
 {
     // Allow importing of a texture.
@@ -1385,20 +1511,32 @@ void MainWindow::onAddTexture( bool checked )
 
         if ( fileName.length() != 0 )
         {
-            auto cb_lambda = [=] ( const TexAddDialog::texAddOperation& params )
+            // Try to load a native RW texture.
+            // If possible, then we add it directly.
+            if ( rw::TextureBase *texHandle = RwTextureStreamRead( this->rwEngine, fileName ) )
             {
-                this->DoAddTexture( params );
-            };
+                texHandle->AddToDictionary( currentTXD );
 
-            TexAddDialog::dialogCreateParams params;
-            params.actionName = "Add";
-            params.type = TexAddDialog::CREATE_IMGPATH;
-            params.img_path.imgPath = fileName;
+                // Update the texture list.
+                this->updateTextureList( true );
+            }
+            else
+            {
+                auto cb_lambda = [=] ( const TexAddDialog::texAddOperation& params )
+                {
+                    this->DoAddTexture( params );
+                };
 
-            TexAddDialog *texAddTask = new TexAddDialog( this, params, std::move( cb_lambda ) );
+                TexAddDialog::dialogCreateParams params;
+                params.actionName = "Add";
+                params.type = TexAddDialog::CREATE_IMGPATH;
+                params.img_path.imgPath = fileName;
 
-            //texAddTask->move( 200, 250 );
-            texAddTask->setVisible( true );
+                TexAddDialog *texAddTask = new TexAddDialog( this, params, std::move( cb_lambda ) );
+
+                //texAddTask->move( 200, 250 );
+                texAddTask->setVisible( true );
+            }
         }
     }
 }
@@ -1416,38 +1554,57 @@ void MainWindow::onReplaceTexture( bool checked )
 
         if ( replaceImagePath.length() != 0 )
         {
-            auto cb_lambda = [=] ( const TexAddDialog::texAddOperation& params )
+            // If we load a direct texture chunk, we want to replace the entire texture handle.
+            if ( rw::TextureBase *texHandle = RwTextureStreamRead( this->rwEngine, replaceImagePath ) )
             {
-                // Replace stuff.
-                rw::TextureBase *tex = curSelTexItem->GetTextureHandle();
+                if ( rw::TextureBase *prevTex = curSelTexItem->GetTextureHandle() )
+                {
+                    prevTex->RemoveFromDictionary();
 
-                // We have to update names.
-                tex->SetName( params.texName.c_str() );
-                tex->SetMaskName( params.maskName.c_str() );
+                    this->rwEngine->DeleteRwObject( prevTex );
+                }
+
+                // Add the new texture.
+                texHandle->AddToDictionary( this->currentTXD );
+
+                // Update the texture list.
+                this->updateTextureList( true );
+            }
+            else
+            {
+                auto cb_lambda = [=] ( const TexAddDialog::texAddOperation& params )
+                {
+                    // Replace stuff.
+                    rw::TextureBase *tex = curSelTexItem->GetTextureHandle();
+
+                    // We have to update names.
+                    tex->SetName( params.texName.c_str() );
+                    tex->SetMaskName( params.maskName.c_str() );
                 
-                // Update raster handle.
-                tex->SetRaster( params.raster );
+                    // Update raster handle.
+                    tex->SetRaster( params.raster );
 
-                // Update info.
-                this->updateTextureMetaInfo();
+                    // Update info.
+                    this->updateTextureMetaInfo();
 
-                this->updateTextureView();
-            };
+                    this->updateTextureView();
+                };
 
-            TexAddDialog::dialogCreateParams params;
-            params.actionName = "Replace";
-            params.type = TexAddDialog::CREATE_IMGPATH;
-            params.img_path.imgPath = replaceImagePath;
+                TexAddDialog::dialogCreateParams params;
+                params.actionName = "Replace";
+                params.type = TexAddDialog::CREATE_IMGPATH;
+                params.img_path.imgPath = replaceImagePath;
 
-            // Overwrite some properties.
-            QString overwriteTexName = QString::fromStdString( curSelTexItem->GetTextureHandle()->GetName() );
+                // Overwrite some properties.
+                QString overwriteTexName = QString::fromStdString( curSelTexItem->GetTextureHandle()->GetName() );
 
-            params.overwriteTexName = &overwriteTexName;
+                params.overwriteTexName = &overwriteTexName;
 
-            TexAddDialog *texAddTask = new TexAddDialog( this, params, std::move( cb_lambda ) );
+                TexAddDialog *texAddTask = new TexAddDialog( this, params, std::move( cb_lambda ) );
 
-            texAddTask->move( 200, 250 );
-            texAddTask->setVisible( true );
+                texAddTask->move( 200, 250 );
+                texAddTask->setVisible( true );
+            }
         }
     }
 }
@@ -1566,12 +1723,13 @@ void MainWindow::onExportTexture( bool checked )
         {
             try
             {
-                const QString& exportFunction = senderAction->defaultExt;
+                const QString& defaultExt = senderAction->defaultExt;
+                const QString& exportFunction = senderAction->displayName;
                 const QString& formatName = senderAction->formatName;
 
                 std::string ansiExportFunction = exportFunction.toStdString();
 
-                const QString actualExt = exportFunction.toLower();
+                const QString actualExt = defaultExt.toLower();
             
                 // Construct a default filename for the object.
                 QString defaultFileName = QString( texHandle->GetName().c_str() ) + "." + actualExt;
@@ -1580,7 +1738,7 @@ void MainWindow::onExportTexture( bool checked )
                 QString finalFilePath =
                     QFileDialog::getSaveFileName(
                         this, QString( "Save " ) + exportFunction + QString( " as..." ), defaultFileName,
-                        formatName + " (*." + actualExt + ")"
+                        formatName + " (*." + actualExt + ");;Any (*.*)"
                     );
 
                 if ( finalFilePath.length() != 0 )
@@ -1596,12 +1754,19 @@ void MainWindow::onExportTexture( bool checked )
                     {
                         try
                         {
-                            // Fetch a bitmap and serialize it.
-                            rw::Raster *texRaster = texHandle->GetRaster();
-
-                            if ( texRaster )
+                            // Directly write us.
+                            if ( stricmp( ansiExportFunction.c_str(), "RWTEX" ) == 0 )
                             {
-                                serializeRaster( imageStream, texRaster, ansiExportFunction.c_str() );
+                                rwEngine->Serialize( texHandle, imageStream );
+                            }
+                            else
+                            {
+                                rw::Raster *texRaster = texHandle->GetRaster();
+
+                                if ( texRaster )
+                                {
+                                    serializeRaster( imageStream, texRaster, ansiExportFunction.c_str() );
+                                }
                             }
                         }
                         catch( ... )

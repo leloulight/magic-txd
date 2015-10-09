@@ -28,6 +28,13 @@ public:
         this->setLayout(layout);
     }
 
+    inline void SetTextureHandle( rw::TextureBase *texHandle )
+    {
+        this->rwTextureHandle = texHandle;
+
+        this->updateInfo();
+    }
+
     inline rw::TextureBase* GetTextureHandle( void )
     {
         return this->rwTextureHandle;

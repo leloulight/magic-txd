@@ -106,7 +106,14 @@ static void ExportImagesFromDictionary(
                             // Write it!
                             try
                             {
-                                texRaster->writeImage( rwStream, imgFormat.c_str() );
+                                if ( stricmp( imgFormat.c_str(), "RWTEX" ) == 0 )
+                                {
+                                    rwEngine->Serialize( texHandle, rwStream );
+                                }
+                                else
+                                {
+                                    texRaster->writeImage( rwStream, imgFormat.c_str() );
+                                }
                             }
                             catch( rw::RwException& )
                             {

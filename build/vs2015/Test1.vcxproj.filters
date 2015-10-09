@@ -23,6 +23,7 @@
     <ClCompile Include="..\..\src\streamcompress.cpp" />
     <ClCompile Include="..\..\src\streamcompress.lzo.cpp" />
     <ClCompile Include="..\..\src\friendlyicons.cpp" />
+    <ClCompile Include="..\..\src\streamcompress.mh2z.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="../../include/styles.h">

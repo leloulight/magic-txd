@@ -266,6 +266,7 @@
     <ClCompile Include="..\..\src\rwconf.cpp" />
     <ClCompile Include="..\..\src\rwconf.dispatch.cpp" />
     <ClCompile Include="..\..\src\rwinterface.warnings.cpp" />
+    <ClCompile Include="..\..\src\rwimaging.utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="rwtools.natvis">

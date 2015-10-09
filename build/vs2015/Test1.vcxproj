@@ -640,6 +640,7 @@
     <ClCompile Include="..\..\src\rwfswrap.cpp" />
     <ClCompile Include="..\..\src\streamcompress.cpp" />
     <ClCompile Include="..\..\src\streamcompress.lzo.cpp" />
+    <ClCompile Include="..\..\src\streamcompress.mh2z.cpp" />
     <ClCompile Include="..\..\src\texadddialog.cpp" />
     <ClCompile Include="..\..\src\texformatextensions.cpp" />
     <ClCompile Include="../../src/mainwindow.cpp" />

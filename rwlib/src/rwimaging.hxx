@@ -39,8 +39,10 @@ struct imagingFormatExtension abstract
     virtual void SerializeImage( Interface *engineInterface, Stream *outputStream, const imagingLayerTraversal& inputPixels ) const = 0;
 };
 
+#define IMAGING_COUNT_EXT(x)    ( sizeof(x) / sizeof(*x) )
+
 // Function to register new imaging formats.
-bool RegisterImagingFormat( Interface *engineInterface, const char *formatName, const char *defaultExt, imagingFormatExtension *intf );
+bool RegisterImagingFormat( Interface *engineInterface, const char *formatName, uint32 num_ext, const imaging_filename_ext *ext_array, imagingFormatExtension *intf );
 bool UnregisterImagingFormat( Interface *engineInterface, imagingFormatExtension *intf );
 
 }

@@ -46,6 +46,12 @@ struct rwConfigBlock
     void                        SetDXTPackedDecompression( bool packed );
     bool                        GetDXTPackedDecompression( void ) const;
 
+    void                        SetCompatTransformNativeImaging( bool transfEnable );
+    bool                        GetCompatTransformNativeImaging( void ) const;
+
+    void                        SetPreferPackedSampleExport( bool prefer );
+    bool                        GetPreferPackedSampleExport( void ) const;
+
     void                        SetIgnoreSerializationBlockRegions( bool doIgnore );
     bool                        GetIgnoreSerializationBlockRegions( void ) const;
 
@@ -66,6 +72,9 @@ private:
 
     bool fixIncompatibleRasters;
     bool dxtPackedDecompression;
+
+    bool compatibilityTransformNativeImaging;
+    bool preferPackedSampleExport;
 
     bool ignoreSerializationBlockRegions;
 

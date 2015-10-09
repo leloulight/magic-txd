@@ -481,6 +481,7 @@
     <ClCompile Include="..\..\src\rwimaging.png.cpp" />
     <ClCompile Include="..\..\src\rwimaging.tga.cpp" />
     <ClCompile Include="..\..\src\rwimaging.tiff.cpp" />
+    <ClCompile Include="..\..\src\rwimaging.utils.cpp" />
     <ClCompile Include="..\..\src\rwinterface.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug 2015|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug 2013|Win32'">Create</PrecompiledHeader>

@@ -55,6 +55,8 @@ __declspec( dllexport ) BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, L
                 rwEngine->SetPaletteRuntime( rw::PALRUNTIME_PNGQUANT );
                 rwEngine->SetDXTRuntime( rw::DXTRUNTIME_SQUISH );
                 rwEngine->SetFixIncompatibleRasters( true );
+                rwEngine->SetCompatTransformNativeImaging( true );
+                rwEngine->SetPreferPackedSampleExport( true );
                 rwEngine->SetIgnoreSerializationBlockRegions( true );
                 rwEngine->SetMetaDataTagging( true );
                 rwEngine->SetWarningLevel( 0 );     // the shell is not a warning provider; use Magic.TXD instead.

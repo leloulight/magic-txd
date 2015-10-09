@@ -80,8 +80,18 @@ private:
 
         for ( const rw::registered_image_format& format : availImageFormats )
         {
-            formatsOut.push_back( format.defaultExt );
+            const char *defaultExt = NULL;
+
+            bool gotDefaultExt = rw::GetDefaultImagingFormatExtension( format.num_ext, format.ext_array, defaultExt );
+
+            if ( gotDefaultExt )
+            {
+                formatsOut.push_back( defaultExt );
+            }
         }
+
+        // And of course, the texture chunk, that is always supported.
+        formatsOut.push_back( "RWTEX" );
 
         return formatsOut;
     }
@@ -226,7 +236,14 @@ public slots:
                                                 // Now attempt the write.
                                                 try
                                                 {
-                                                    texRaster->writeImage( rwStream, ansiFormatTarget.c_str() );
+                                                    if ( stricmp( ansiFormatTarget.c_str(), "RWTEX" ) == 0 )
+                                                    {
+                                                        engineInterface->Serialize( texture, rwStream );
+                                                    }
+                                                    else
+                                                    {
+                                                        texRaster->writeImage( rwStream, ansiFormatTarget.c_str() );
+                                                    }
 
                                                     hasExportedAnything = true;
                                                 }

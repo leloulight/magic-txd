@@ -28,6 +28,11 @@ inline uint32 getPNGRasterDataRowSize( uint32 width, uint32 depth )
     return getRasterDataRowSize( width, depth, getPNGTexelDataRowAlignment() );
 }
 
+static const imaging_filename_ext png_ext[] =
+{
+    { "PNG", true }
+};
+
 struct pngImagingExtension : public imagingFormatExtension
 {
     struct png_chunk_header
@@ -998,7 +1003,7 @@ struct pngImagingExtension : public imagingFormatExtension
 
     inline void Initialize( Interface *engineInterface )
     {
-        RegisterImagingFormat( engineInterface, "Portable Network Graphics", "PNG", this );
+        RegisterImagingFormat( engineInterface, "Portable Network Graphics", IMAGING_COUNT_EXT(png_ext), png_ext, this );
     }
 
     inline void Shutdown( Interface *engineInterface )

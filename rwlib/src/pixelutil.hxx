@@ -98,6 +98,37 @@ inline bool TransformDestinationRasterFormat(
     return wantsUpdate;
 }
 
+// This routine defines the "packing" transformation. It is used by artists to save disk space
+// when exporting from RW TXDs. Enable this transformation by passing true to SetPreferPackedSampleExport.
+// It can only be used in contexts that are known to support packing.
+// Packing only applies to RWCOMPRESS_NONE.
+inline bool RasterFormatSamplePackingTransform(
+    eRasterFormat srcRasterFormat, uint32 srcDepth, bool hasAlpha,
+    eRasterFormat& dstRasterFormat, uint32& dstDepth
+)
+{
+    if ( srcRasterFormat == RASTER_888 )
+    {
+        if ( srcDepth == 32 )
+        {
+            dstRasterFormat = srcRasterFormat;
+            dstDepth = 24;
+            return true;
+        }
+    }
+    else if ( srcRasterFormat == RASTER_8888 )
+    {
+        if ( hasAlpha == false )
+        {
+            dstRasterFormat = RASTER_888;
+            dstDepth = 24;
+            return true;
+        }
+    }
+
+    return false;
+}
+
 // Alpha flag calculation helpers.
 // Returns whether a original RW types only mipmap has transparent texels.
 AINLINE bool rawMipmapCalculateHasAlpha(

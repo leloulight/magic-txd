@@ -165,6 +165,9 @@ int main(int argc, char *argv[])
 
         rwEngine->SetWarningLevel( 3 );
 
+        rwEngine->SetCompatTransformNativeImaging( true );
+        rwEngine->SetPreferPackedSampleExport( true );
+
         rwEngine->SetDXTRuntime( rw::DXTRUNTIME_SQUISH );
         rwEngine->SetPaletteRuntime( rw::PALRUNTIME_PNGQUANT );
 

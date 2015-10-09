@@ -597,13 +597,13 @@ inline void CZIPArchiveTranslator::seekFile( const fileMetaData& info, _localHea
 
 struct zip_inflate_decompression
 {
-    zip_inflate_decompression( void )
+    zip_inflate_decompression( bool hasHeader )
     {
         m_stream.zalloc = NULL;
         m_stream.zfree = NULL;
         m_stream.opaque = NULL;
 
-        if ( inflateInit2( &m_stream, -MAX_WBITS ) != Z_OK )
+        if ( inflateInit2( &m_stream, hasHeader ? MAX_WBITS : -MAX_WBITS ) != Z_OK )
             throw;
     }
 
@@ -637,6 +637,13 @@ struct zip_inflate_decompression
 
     z_stream m_stream;
 };
+
+void CFileSystem::DecompressZLIBStream( CFile *input, CFile *output, size_t inputSize, bool hasHeader ) const
+{
+    zip_inflate_decompression decompressor( hasHeader );
+
+    FileSystem::StreamParserCount( *input, *output, inputSize, decompressor );
+}
 
 void CZIPArchiveTranslator::Extract( CFile& dstFile, file& info )
 {
@@ -674,7 +681,7 @@ void CZIPArchiveTranslator::Extract( CFile& dstFile, file& info )
     }
     else if ( info.metaData.compression == 8 )
     {
-        zip_inflate_decompression decompressor;
+        zip_inflate_decompression decompressor( false );
 
         FileSystem::StreamParserCount( *from, dstFile, comprSize, decompressor );
     }
@@ -728,9 +735,15 @@ void CZIPArchiveTranslator::CacheDirectory( const directory& dir )
         CacheDirectory( **iter );
 }
 
+struct compression_progress
+{
+    fsUInt_t sizeCompressed;
+    fsUInt_t crc32val;
+};
+
 struct zip_stream_compression
 {
-    zip_stream_compression( CZIPArchiveTranslator::_localHeader& header ) : m_header( header )
+    zip_stream_compression( compression_progress& header ) : m_header( header )
     {
         m_header.sizeCompressed = 0;
     }
@@ -764,18 +777,18 @@ struct zip_stream_compression
 
     size_t m_rcv;
     const char* m_buf;
-    CZIPArchiveTranslator::_localHeader& m_header;
+    compression_progress& m_header;
 };
 
 struct zip_deflate_compression : public zip_stream_compression
 {
-    zip_deflate_compression( CZIPArchiveTranslator::_localHeader& header, int level ) : zip_stream_compression( header )
+    zip_deflate_compression( compression_progress& header, int level, bool putHeader ) : zip_stream_compression( header )
     {
         m_stream.zalloc = NULL;
         m_stream.zfree = NULL;
         m_stream.opaque = NULL;
 
-        if ( deflateInit2( &m_stream, level, Z_DEFLATED, -MAX_WBITS, 8, Z_DEFAULT_STRATEGY ) != Z_OK )
+        if ( deflateInit2( &m_stream, level, Z_DEFLATED, putHeader ? MAX_WBITS : -MAX_WBITS, 8, Z_DEFAULT_STRATEGY ) != Z_OK )
             throw;
     }
 
@@ -814,6 +827,14 @@ struct zip_deflate_compression : public zip_stream_compression
     int m_flush;
     z_stream m_stream;
 };
+
+void CFileSystem::CompressZLIBStream( CFile *input, CFile *output, bool putHeader ) const
+{
+    compression_progress progress;
+    zip_deflate_compression compressor( progress, Z_DEFAULT_COMPRESSION, putHeader );
+
+    FileSystem::StreamParser( *input, *output, compressor );
+}
 
 void CZIPArchiveTranslator::SaveDirectory( directory& dir, size_t& size )
 {
@@ -926,15 +947,17 @@ void CZIPArchiveTranslator::SaveDirectory( directory& dir, size_t& size )
 
             header.sizeReal = (fsUInt_t)actualFileSize;
 
+            compression_progress c_prog;
+
             if ( header.compression == 0 )
             {
-                zip_stream_compression compressor( header );
+                zip_stream_compression compressor( c_prog );
 
                 FileSystem::StreamParser( *src, m_file, compressor );
             }
             else if ( header.compression == 8 )
             {
-                zip_deflate_compression compressor( header, Z_DEFAULT_COMPRESSION );
+                zip_deflate_compression compressor( c_prog, Z_DEFAULT_COMPRESSION, false );
 
                 FileSystem::StreamParser( *src, m_file, compressor );
             }
@@ -944,6 +967,10 @@ void CZIPArchiveTranslator::SaveDirectory( directory& dir, size_t& size )
             }
 
             delete src;
+
+            // Finalize the compression information.
+            header.sizeCompressed = c_prog.sizeCompressed;
+            header.crc32val = c_prog.crc32val;
 
             size += info.metaData.sizeCompressed = header.sizeCompressed;
             info.metaData.crc32val = header.crc32val;

@@ -29,6 +29,9 @@ rwConfigBlock::rwConfigBlock( EngineInterface *intf )
     this->fixIncompatibleRasters = true;
     this->dxtPackedDecompression = false;
 
+    this->compatibilityTransformNativeImaging = false;
+    this->preferPackedSampleExport = true;
+
     this->ignoreSerializationBlockRegions = false;
 
     this->enableMetaDataTagging = true;
@@ -69,6 +72,9 @@ rwConfigBlock::rwConfigBlock( const rwConfigBlock& right )
 
     this->fixIncompatibleRasters = right.fixIncompatibleRasters;
     this->dxtPackedDecompression = right.dxtPackedDecompression;
+
+    this->compatibilityTransformNativeImaging = right.compatibilityTransformNativeImaging;
+    this->preferPackedSampleExport = right.preferPackedSampleExport;
 
     this->ignoreSerializationBlockRegions = right.ignoreSerializationBlockRegions;
 
@@ -228,6 +234,34 @@ bool rwConfigBlock::GetDXTPackedDecompression( void ) const
     scoped_rwlock_reader <rwlock> lock( GetConfigLock() );
 
     return this->dxtPackedDecompression;
+}
+
+void rwConfigBlock::SetCompatTransformNativeImaging( bool transfEnable )
+{
+    scoped_rwlock_writer <rwlock> lock( GetConfigLock() );
+
+    this->compatibilityTransformNativeImaging = transfEnable;
+}
+
+bool rwConfigBlock::GetCompatTransformNativeImaging( void ) const
+{
+    scoped_rwlock_reader <rwlock> lock( GetConfigLock() );
+
+    return this->compatibilityTransformNativeImaging;
+}
+
+void rwConfigBlock::SetPreferPackedSampleExport( bool preferPacked )
+{
+    scoped_rwlock_writer <rwlock> lock( GetConfigLock() );
+
+    this->preferPackedSampleExport = preferPacked;
+}
+
+bool rwConfigBlock::GetPreferPackedSampleExport( void ) const
+{
+    scoped_rwlock_reader <rwlock> lock( GetConfigLock() );
+
+    return this->preferPackedSampleExport;
 }
 
 void rwConfigBlock::SetIgnoreSerializationBlockRegions( bool ignore )

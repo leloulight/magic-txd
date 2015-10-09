@@ -23,6 +23,12 @@ static uint16 tiff_alpha_configuration[] =
     EXTRASAMPLE_UNASSALPHA
 };
 
+static const imaging_filename_ext tiff_ext[] =
+{
+    { "TIFF", false },
+    { "TIF", true }
+};
+
 // RenderWare TIFF imaging extension, because it is a great format!
 // Criterion's toolchain had TIFF support, too.
 struct tiffImagingExtension : public imagingFormatExtension
@@ -1366,7 +1372,7 @@ struct tiffImagingExtension : public imagingFormatExtension
 
     inline void Initialize( Interface *engineInterface )
     {
-        RegisterImagingFormat( engineInterface, "Tag Image File Format", "TIFF", this );
+        RegisterImagingFormat( engineInterface, "Tag Image File Format", IMAGING_COUNT_EXT(tiff_ext), tiff_ext, this );
     }
 
     inline void Shutdown( Interface *engineInterface )

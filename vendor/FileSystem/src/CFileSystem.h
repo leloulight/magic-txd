@@ -96,6 +96,10 @@ public:
     CIMGArchiveCompressionHandler*  CreateLZOCompressor     ( void );
     void                            DestroyLZOCompressor    ( CIMGArchiveCompressionHandler *handler );
 
+    // ZLIB Compression tools.
+    void                    DecompressZLIBStream    ( CFile *input, CFile *output, size_t inputSize, bool hasHeader ) const;
+    void                    CompressZLIBStream      ( CFile *input, CFile *output, bool putHeader ) const;
+
     // Insecure functions
     bool                    IsDirectory             ( const char *path ) override final;
 #ifdef _WIN32
