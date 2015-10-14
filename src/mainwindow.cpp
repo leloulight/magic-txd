@@ -62,6 +62,7 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
         this->lastImageFileOpenDir = this->makeAppPath( "" );
         this->addImageGenMipmaps = true;
         this->lockDownTXDPlatform = true;
+        this->adjustTextureChunksOnImport = true;
         this->showLogOnWarning = true;
         this->lastUsedAllExportFormat = "PNG";
         this->lastAllExportTarget = this->makeAppPath( "" ).toStdWString();
@@ -168,6 +169,7 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
         connect( actionOpen, &QAction::triggered, this, &MainWindow::onOpenFile );
 
 	    QAction *actionSave = new QAction("&Save", this);
+        actionSave->setShortcut( QKeySequence( Qt::CTRL | Qt::Key_S ) );
 	    fileMenu->addAction(actionSave);
 
         this->actionSaveTXD = actionSave;
@@ -194,6 +196,7 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
 
 	    QMenu *editMenu = menu->addMenu(tr("&Edit"));
 	    QAction *actionAdd = new QAction("&Add", this);
+        actionAdd->setShortcut( Qt::Key_Insert );
 	    editMenu->addAction(actionAdd);
 
         this->actionAddTexture = actionAdd;
@@ -201,6 +204,7 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
         connect( actionAdd, &QAction::triggered, this, &MainWindow::onAddTexture );
 
 	    QAction *actionReplace = new QAction("&Replace", this);
+        actionReplace->setShortcut( QKeySequence( Qt::CTRL | Qt::Key_R ) );
 	    editMenu->addAction(actionReplace);
 
         this->actionReplaceTexture = actionReplace;
@@ -208,6 +212,7 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
         connect( actionReplace, &QAction::triggered, this, &MainWindow::onReplaceTexture );
 
 	    QAction *actionRemove = new QAction("&Remove", this);
+        actionRemove->setShortcut( Qt::Key_Delete );
 	    editMenu->addAction(actionRemove);
 
         this->actionRemoveTexture = actionRemove;
@@ -215,6 +220,7 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
         connect( actionRemove, &QAction::triggered, this, &MainWindow::onRemoveTexture );
 
 	    QAction *actionRename = new QAction("&Rename", this);
+        actionRename->setShortcut( Qt::Key_N );
 	    editMenu->addAction(actionRename);
 
         this->actionRenameTexture = actionRename;
@@ -229,6 +235,7 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
         connect( actionResize, &QAction::triggered, this, &MainWindow::onResizeTexture );
 
         QAction *actionManipulate = new QAction("&Manipulate", this);
+        actionManipulate->setShortcut( Qt::Key_M );
         editMenu->addAction(actionManipulate);
 
         this->actionManipulateTexture = actionManipulate;
@@ -236,6 +243,7 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
         connect( actionManipulate, &QAction::triggered, this, &MainWindow::onManipulateTexture );
 
 	    QAction *actionSetPixelFormat = new QAction("&Platform", this);
+        actionSetPixelFormat->setShortcut( Qt::Key_P );
 	    editMenu->addAction(actionSetPixelFormat);
 
         this->actionPlatformSelect = actionSetPixelFormat;
@@ -420,6 +428,7 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
 
 	    QMenu *viewMenu = menu->addMenu(tr("&View"));
 	    QAction *actionBackground = new QAction("&Background", this);
+        actionBackground->setShortcut( Qt::Key_F5 );
 		actionBackground->setCheckable(true);
 	    viewMenu->addAction(actionBackground);
 
@@ -434,12 +443,14 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
 #endif //_FEATURES_NOT_IN_CURRENT_RELEASE
 
 	    QAction *actionShowMipLevels = new QAction("&Display mip-levels", this);
+        actionShowMipLevels->setShortcut( Qt::Key_F6 );
 		actionShowMipLevels->setCheckable(true);
 	    viewMenu->addAction(actionShowMipLevels);
 
         connect( actionShowMipLevels, &QAction::triggered, this, &MainWindow::onToggleShowMipmapLayers );
         
         QAction *actionShowLog = new QAction("&Show Log", this);
+        actionShowLog->setShortcut( Qt::Key_F7 );
         viewMenu->addAction(actionShowLog);
 
         connect( actionShowLog, &QAction::triggered, this, &MainWindow::onToggleShowLog );
@@ -1293,42 +1304,57 @@ static void serializeRaster( rw::Stream *outputStream, rw::Raster *texRaster, co
 
 void MainWindow::DoAddTexture( const TexAddDialog::texAddOperation& params )
 {
-    rw::Raster *newRaster = params.raster;
+    TexAddDialog::texAddOperation::eAdditionType add_type = params.add_type;
 
-    if ( newRaster )
+    if ( add_type == TexAddDialog::texAddOperation::ADD_TEXCHUNK )
     {
-        try
+        // This is just adding the texture chunk to our TXD.
+        rw::TextureBase *texHandle = (rw::TextureBase*)rw::AcquireObject( params.add_texture.texHandle );
+
+        texHandle->AddToDictionary( this->currentTXD );
+
+        // Update the texture list.
+        this->updateTextureList(true);
+    }
+    else if ( add_type == TexAddDialog::texAddOperation::ADD_RASTER )
+    {
+        rw::Raster *newRaster = params.add_raster.raster;
+
+        if ( newRaster )
         {
-            // We want to create a texture and put it into our TXD.
-            rw::TextureBase *newTexture = rw::CreateTexture( this->rwEngine, newRaster );
-
-            if ( newTexture )
+            try
             {
-                // We need to set default texture rendering properties.
-                newTexture->SetFilterMode( rw::RWFILTER_LINEAR );
-                newTexture->SetUAddressing( rw::RWTEXADDRESS_WRAP );
-                newTexture->SetVAddressing( rw::RWTEXADDRESS_WRAP );
+                // We want to create a texture and put it into our TXD.
+                rw::TextureBase *newTexture = rw::CreateTexture( this->rwEngine, newRaster );
 
-                // Give it a name.
-                newTexture->SetName( params.texName.c_str() );
-                newTexture->SetMaskName( params.maskName.c_str() );
+                if ( newTexture )
+                {
+                    // We need to set default texture rendering properties.
+                    newTexture->SetFilterMode( rw::RWFILTER_LINEAR );
+                    newTexture->SetUAddressing( rw::RWTEXADDRESS_WRAP );
+                    newTexture->SetVAddressing( rw::RWTEXADDRESS_WRAP );
 
-                // Now put it into the TXD.
-                newTexture->AddToDictionary( currentTXD );
+                    // Give it a name.
+                    newTexture->SetName( params.add_raster.texName.c_str() );
+                    newTexture->SetMaskName( params.add_raster.maskName.c_str() );
 
-                // Update the texture list.
-                this->updateTextureList(true);
+                    // Now put it into the TXD.
+                    newTexture->AddToDictionary( currentTXD );
+
+                    // Update the texture list.
+                    this->updateTextureList(true);
+                }
+                else
+                {
+                    this->txdLog->showError( "failed to create texture" );
+                }
             }
-            else
+            catch( rw::RwException& except )
             {
-                this->txdLog->showError( "failed to create texture" );
-            }
-        }
-        catch( rw::RwException& except )
-        {
-            this->txdLog->showError( QString( "failed to add texture: " ) + QString::fromStdString( except.message ) );
+                this->txdLog->showError( QString( "failed to add texture: " ) + QString::fromStdString( except.message ) );
 
-            // Just continue.
+                // Just continue.
+            }
         }
     }
 }
@@ -1445,69 +1471,6 @@ QString MainWindow::requestValidImagePath( void )
     return imagePath;
 }
 
-static inline rw::TextureBase* RwTextureStreamRead( rw::Interface *engineInterface, QString filePath )
-{
-    // We want to temporarily disable warnings.
-    rw::AssignThreadedRuntimeConfig( engineInterface );
-
-    engineInterface->SetWarningManager( NULL );
-    engineInterface->SetWarningLevel( 0 );
-
-    rw::TextureBase *resultObj = NULL;
-
-    try
-    {
-        std::wstring wFilePath = filePath.toStdWString();
-
-        rw::streamConstructionFileParamW_t fileParam( wFilePath.c_str() );
-
-        rw::Stream *rwStream = engineInterface->CreateStream( rw::RWSTREAMTYPE_FILE_W, rw::RWSTREAMMODE_READONLY, &fileParam );
-
-        if ( rwStream )
-        {
-            try
-            {
-                rw::RwObject *rwObj = engineInterface->Deserialize( rwStream );
-
-                if ( rwObj )
-                {
-                    try
-                    {
-                        resultObj = rw::ToTexture( engineInterface, rwObj );
-                    }
-                    catch( ... )
-                    {
-                        engineInterface->DeleteRwObject( rwObj );
-
-                        throw;
-                    }
-
-                    if ( !resultObj )
-                    {
-                        engineInterface->DeleteRwObject( rwObj );
-                    }
-                }
-            }
-            catch( ... )
-            {
-                engineInterface->DeleteStream( rwStream );
-
-                throw;
-            }
-
-            engineInterface->DeleteStream( rwStream );
-        }
-    }
-    catch( rw::RwException& )
-    {
-        // Just continue.
-    }
-
-    rw::ReleaseThreadedRuntimeConfig( engineInterface );
-
-    return resultObj;
-}
-
 void MainWindow::onAddTexture( bool checked )
 {
     // Allow importing of a texture.
@@ -1519,32 +1482,20 @@ void MainWindow::onAddTexture( bool checked )
 
         if ( fileName.length() != 0 )
         {
-            // Try to load a native RW texture.
-            // If possible, then we add it directly.
-            if ( rw::TextureBase *texHandle = RwTextureStreamRead( this->rwEngine, fileName ) )
+            auto cb_lambda = [=] ( const TexAddDialog::texAddOperation& params )
             {
-                texHandle->AddToDictionary( currentTXD );
+                this->DoAddTexture( params );
+            };
 
-                // Update the texture list.
-                this->updateTextureList( true );
-            }
-            else
-            {
-                auto cb_lambda = [=] ( const TexAddDialog::texAddOperation& params )
-                {
-                    this->DoAddTexture( params );
-                };
+            TexAddDialog::dialogCreateParams params;
+            params.actionName = "Add";
+            params.type = TexAddDialog::CREATE_IMGPATH;
+            params.img_path.imgPath = fileName;
 
-                TexAddDialog::dialogCreateParams params;
-                params.actionName = "Add";
-                params.type = TexAddDialog::CREATE_IMGPATH;
-                params.img_path.imgPath = fileName;
+            TexAddDialog *texAddTask = new TexAddDialog( this, params, std::move( cb_lambda ) );
 
-                TexAddDialog *texAddTask = new TexAddDialog( this, params, std::move( cb_lambda ) );
-
-                //texAddTask->move( 200, 250 );
-                texAddTask->setVisible( true );
-            }
+            //texAddTask->move( 200, 250 );
+            texAddTask->setVisible( true );
         }
     }
 }
@@ -1562,57 +1513,65 @@ void MainWindow::onReplaceTexture( bool checked )
 
         if ( replaceImagePath.length() != 0 )
         {
-            // If we load a direct texture chunk, we want to replace the entire texture handle.
-            if ( rw::TextureBase *texHandle = RwTextureStreamRead( this->rwEngine, replaceImagePath ) )
+            auto cb_lambda = [=] ( const TexAddDialog::texAddOperation& params )
             {
-                if ( rw::TextureBase *prevTex = curSelTexItem->GetTextureHandle() )
-                {
-                    prevTex->RemoveFromDictionary();
+                rw::Interface *rwEngine = this->GetEngine();
 
-                    this->rwEngine->DeleteRwObject( prevTex );
+                // Replace stuff.
+                TexAddDialog::texAddOperation::eAdditionType add_type = params.add_type;
+
+                if ( add_type == TexAddDialog::texAddOperation::ADD_TEXCHUNK )
+                {
+                    // We just take the texture and replace our existing texture with it.
+                    if ( rw::TextureBase *curTex = curSelTexItem->GetTextureHandle() )
+                    {
+                        curSelTexItem->SetTextureHandle( NULL );
+
+                        rwEngine->DeleteRwObject( curTex );
+                    }
+
+                    rw::TextureBase *newTex = (rw::TextureBase*)rw::AcquireObject( params.add_texture.texHandle );
+
+                    if ( newTex )
+                    {
+                        curSelTexItem->SetTextureHandle( newTex );
+
+                        // Add the new texture to the dictionary.
+                        newTex->AddToDictionary( this->currentTXD );
+                    }
                 }
-
-                // Add the new texture.
-                texHandle->AddToDictionary( this->currentTXD );
-
-                // Update the texture list.
-                this->updateTextureList( true );
-            }
-            else
-            {
-                auto cb_lambda = [=] ( const TexAddDialog::texAddOperation& params )
+                else if ( add_type == TexAddDialog::texAddOperation::ADD_RASTER )
                 {
-                    // Replace stuff.
                     rw::TextureBase *tex = curSelTexItem->GetTextureHandle();
 
                     // We have to update names.
-                    tex->SetName( params.texName.c_str() );
-                    tex->SetMaskName( params.maskName.c_str() );
+                    tex->SetName( params.add_raster.texName.c_str() );
+                    tex->SetMaskName( params.add_raster.maskName.c_str() );
                 
                     // Update raster handle.
-                    tex->SetRaster( params.raster );
+                    tex->SetRaster( params.add_raster.raster );
+                }
 
-                    // Update info.
-                    this->updateTextureMetaInfo();
+                // Update info.
+                this->updateTextureMetaInfo();
 
-                    this->updateTextureView();
-                };
+                this->updateTextureView();
+            };
 
-                TexAddDialog::dialogCreateParams params;
-                params.actionName = "Replace";
-                params.type = TexAddDialog::CREATE_IMGPATH;
-                params.img_path.imgPath = replaceImagePath;
+            TexAddDialog::dialogCreateParams params;
+            params.actionName = "Replace";
+            params.type = TexAddDialog::CREATE_IMGPATH;
+            params.img_path.imgPath = replaceImagePath;
 
-                // Overwrite some properties.
-                QString overwriteTexName = QString::fromStdString( curSelTexItem->GetTextureHandle()->GetName() );
+            // Overwrite some properties.
+            QString overwriteTexName = QString::fromStdString( curSelTexItem->GetTextureHandle()->GetName() );
 
-                params.overwriteTexName = &overwriteTexName;
+            params.overwriteTexName = &overwriteTexName;
 
-                TexAddDialog *texAddTask = new TexAddDialog( this, params, std::move( cb_lambda ) );
+            TexAddDialog *texAddTask = new TexAddDialog( this, params, std::move( cb_lambda ) );
 
-                texAddTask->move( 200, 250 );
-                texAddTask->setVisible( true );
-            }
+            texAddTask->move( 200, 250 );
+            texAddTask->setVisible( true );
         }
     }
 }
@@ -1636,9 +1595,12 @@ void MainWindow::onRemoveTexture( bool checked )
         this->rwEngine->DeleteRwObject( tex );
 
         // If we have no more items in the list widget, we should hide our texture view page.
-        if ( this->textureListWidget->count() == 0 )
+        if ( this->textureListWidget->selectedItems().count() == 0 )
         {
             this->clearViewImage();
+
+            // We should also hide the friendly icons, since they only should show if a texture is selected.
+            this->hideFriendlyIcons();
         }
     }
 }
@@ -1686,15 +1648,17 @@ void MainWindow::onManipulateTexture( bool checked )
     {
         auto cb_lambda = [=] ( const TexAddDialog::texAddOperation& params )
         {
+            assert( params.add_type == TexAddDialog::texAddOperation::ADD_RASTER );
+
             // Update the stored raster.
             rw::TextureBase *tex = curSelTexItem->GetTextureHandle();
 
             // Update names.
-            tex->SetName( params.texName.c_str() );
-            tex->SetMaskName( params.maskName.c_str() );
+            tex->SetName( params.add_raster.texName.c_str() );
+            tex->SetMaskName( params.add_raster.maskName.c_str() );
 
             // Replace raster handle.
-            tex->SetRaster( params.raster );
+            tex->SetRaster( params.add_raster.raster );
 
             // Update info.
             this->updateTextureMetaInfo();

@@ -237,7 +237,7 @@ bool ConvertPixelDataDeferred( Interface *engineInterface, const pixelDataTraver
 // Internal warning dispatcher class.
 struct WarningHandler abstract
 {
-    virtual void OnWarningMessage( const std::string& theMessage ) = 0;
+    virtual void OnWarningMessage( std::string&& theMessage ) = 0;
 };
 
 void GlobalPushWarningHandler( EngineInterface *engineInterface, WarningHandler *theHandler );

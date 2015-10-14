@@ -42,7 +42,7 @@ struct windowingSystemWin32
             std::string windowTitle = GetRunningSoftwareInformation( engineInterface, true );
 
             // Create a real window rect.
-            RECT windowRect = { 0, 0, msgWnd->clientWidth, msgWnd->clientHeight };
+            RECT windowRect = { 0, 0, (LONG)msgWnd->clientWidth, (LONG)msgWnd->clientHeight };
             AdjustWindowRect( &windowRect, msgWnd->dwStyle, false );
 
             windowingSystemWin32 *windowSys = msgWnd->windowSys;

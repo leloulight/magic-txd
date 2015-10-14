@@ -14,6 +14,18 @@ inline QString calculateImageBaseName(QString fileName)
     return fileInfo.baseName();
 }
 
+void TexAddDialog::SetCurrentPlatform( QString name )
+{
+    if ( QLineEdit *editBox = dynamic_cast <QLineEdit*> ( this->platformSelectWidget ) )
+    {
+        editBox->setText( std::move( name ) );
+    }
+    else if ( QComboBox *comboBox = dynamic_cast <QComboBox*> ( this->platformSelectWidget ) ) 
+    {
+        comboBox->setCurrentText( std::move( name ) );
+    }
+}
+
 QString TexAddDialog::GetCurrentPlatform(void)
 {
     QString currentPlatform;
@@ -40,6 +52,356 @@ void TexAddDialog::releaseConvRaster(void)
     }
 }
 
+void TexAddDialog::clearTextureOriginal( void )
+{
+    // Remove any previous raster link.
+    if ( rw::Raster *prevOrig = this->platformOrigRaster )
+    {
+        rw::DeleteRaster( prevOrig );
+
+        this->platformOrigRaster = NULL;
+    }
+
+    // Delete any texture link.
+    if ( rw::TextureBase *texHandle = this->texHandle )
+    {
+        this->mainWnd->GetEngine()->DeleteRwObject( texHandle );
+
+        this->texHandle = NULL;
+    }
+}
+
+rw::Raster* TexAddDialog::MakeRaster( void )
+{
+    rw::Interface *rwEngine = this->mainWnd->GetEngine();
+
+    rw::Raster *platOrig = rw::CreateRaster( rwEngine );
+
+    if ( platOrig )
+    {
+        try
+        {
+            // Set the platform of our raster.
+            // If we have no platform, we fail.
+            bool hasPlatform = false;
+
+            QString currentPlatform = this->GetCurrentPlatform();
+
+            if (currentPlatform.isEmpty() == false)
+            {
+                std::string ansiNativeName = currentPlatform.toStdString();
+
+                // Set the platform.
+                platOrig->newNativeData( ansiNativeName.c_str() );
+
+                // We also want to set the version of our raster.
+                if (rw::TexDictionary *texDictionary = this->mainWnd->currentTXD)
+                {
+                    platOrig->SetEngineVersion( texDictionary->GetEngineVersion() );
+                }
+
+                hasPlatform = true;
+            }
+
+            if ( !hasPlatform )
+            {
+                rw::DeleteRaster( platOrig );
+
+                platOrig = NULL;
+            }
+        }
+        catch( ... )
+        {
+            rw::DeleteRaster( platOrig );
+
+            throw;
+        }
+    }
+
+    return platOrig;
+}
+
+void TexAddDialog::setPlatformOrigRaster( rw::Raster *raster )
+{
+    // Remove previous things.
+    this->clearTextureOriginal();
+
+    // Now the last thing that could fail is assigning the raster.
+    this->platformOrigRaster = rw::AcquireRaster( raster );
+}
+
+bool TexAddDialog::impMeth_loadImage( rw::Stream *imgStream )
+{
+    rw::Interface *rwEngine = this->mainWnd->GetEngine();
+
+    bool success = false;
+
+    rw::Raster *platOrig = this->MakeRaster();
+
+    if ( platOrig )
+    {
+        try
+        {
+            // Try to load the image data.
+            platOrig->readImage( imgStream );
+        
+            // This could fail.
+            this->setPlatformOrigRaster( platOrig );
+
+            success = true;
+        }
+        catch( ... )
+        {
+            rw::DeleteRaster( platOrig );
+
+            throw;
+        }
+
+        // We want to release our handle to the raster.
+        rw::DeleteRaster( platOrig );
+    }
+
+    // Do some security assertion.
+    if ( success )
+    {
+        assert( this->platformOrigRaster != NULL );
+        assert( this->texHandle == NULL );
+    }
+
+    return success;
+}
+
+bool TexAddDialog::impMeth_loadTexChunk( rw::Stream *chunkStream )
+{
+    // We take all properties from the original texture chunk.
+    bool success = false;
+
+    rw::Interface *rwEngine = this->mainWnd->GetEngine();
+
+    rw::RwObject *rwObj = rwEngine->Deserialize( chunkStream );
+
+    if ( rwObj )
+    {
+        try
+        {
+            // We could have gotten any kind of RW object.
+            // Tho we are only interrested in texture chunks.
+            rw::TextureBase *texHandle = rw::ToTexture( rwEngine, rwObj );
+
+            if ( texHandle )
+            {
+                // We have got a texture!
+                // That means we also should have a raster.
+                rw::Raster *texRaster = texHandle->GetRaster();
+
+                if ( texRaster )
+                {
+                    // Put the raster into the correct platform, if wanted.
+                    {
+                        bool wantsToAdjustRaster = true;
+
+                        if ( this->isConstructing )
+                        {
+                            // If we are constructing, we actually do not want to adjust the raster all the time.
+                            wantsToAdjustRaster = false;
+
+                            if ( this->hasConfidentPlatform && this->mainWnd->adjustTextureChunksOnImport )
+                            {
+                                wantsToAdjustRaster = true;
+                            }
+                        }
+
+                        if ( wantsToAdjustRaster )
+                        {
+                            std::string ansiPlatformName = this->GetCurrentPlatform().toStdString();
+
+                            rw::ConvertRasterTo( texRaster, ansiPlatformName.c_str() );
+                        }
+                        else
+                        {
+                            // We can update the platform here, without problems.
+                            this->SetCurrentPlatform( texRaster->getNativeDataTypeName() );
+                        }
+                    }
+
+                    // Also adjust the raster version.
+                    if ( this->mainWnd->adjustTextureChunksOnImport )
+                    {
+                        if ( rw::TexDictionary *currentTXD = this->mainWnd->currentTXD )
+                        {
+                            texHandle->SetEngineVersion( currentTXD->GetEngineVersion() );
+                        }
+                    }
+
+                    // Store this raster.
+                    this->setPlatformOrigRaster( texRaster );
+
+                    // Also should remember the texture itself, as it may contain unique properties.
+                    assert( this->texHandle == NULL );
+
+                    this->texHandle = texHandle;
+
+                    // Good to go!
+                    success = true;
+                }
+            }
+        }
+        catch( ... )
+        {
+            rwEngine->DeleteRwObject( rwObj );
+
+            throw;
+        }
+
+        if ( !success )
+        {
+            rwEngine->DeleteRwObject( rwObj );
+        }
+    }
+
+    // Do some security assertion.
+    if ( success )
+    {
+        assert( this->platformOrigRaster != NULL );
+        assert( this->texHandle != NULL );
+    }
+
+    return success;
+}
+
+bool TexAddDialog::imageImportMethods::LoadPlatformOriginal( rw::Stream *stream ) const
+{
+    eImportExpectation imp_exp = this->dialog->img_exp;
+
+    rw::Interface *rwEngine = stream->engineInterface;
+
+    // The idea of this logic is to provide the correct feedback in the correct moment
+    // depending on the actual data. This translates to matching the expected image data that
+    // was deduced from the image path type to the data that the file actually contains.
+    // - warn the user if the image contains unexpected data
+    // - print internal warnings only if the image data was expected
+
+    rw::utils::bufferedWarningManager exp_format_warnings;
+    std::string exp_format_error;
+    const char *exp_name = NULL;
+
+    bool foundExpectedFormat = false;
+
+    rw::int64 streamPos = stream->tell();
+
+    bool needsStreamReset = false;
+    
+    // First try the expected image data type, if available.
+    {
+        importMethod_t loader = NULL;
+
+        for ( const meth_reg& reg : this->methods )
+        {
+            if ( reg.img_exp == imp_exp )
+            {
+                loader = reg.cb;
+
+                exp_name = reg.name;
+                foundExpectedFormat = true;
+                break;
+            }
+        }
+
+        if ( loader )
+        {
+            // We have to collect the warnings in a buffer.
+            // If the data was loaded as expected, then we print the warnings.
+            // If the data failed to load and it turns out it was another, then we dont print the warnings.
+            // If the data failed to load and there was no another, then we print the warnings.
+            // I think this should suffice.
+
+            bool hasExpectedData = false;
+
+            try
+            {
+                rw::utils::stacked_warnman_scope warnman_scope( rwEngine, &exp_format_warnings );
+
+                needsStreamReset = true;
+
+                hasExpectedData = (this->dialog->*loader)( stream );
+            }
+            catch( rw::RwException& except )
+            {
+                // Things failed, so we store the error and continue.
+                exp_format_error = except.message;
+
+                hasExpectedData = false;
+            }
+
+            if ( hasExpectedData )
+            {
+                // We are done here.
+                exp_format_warnings.forward( rwEngine );
+
+                return true;
+            }
+        }
+    }
+
+    // Since we do not have the expected format, we need to check every other format.
+    // This time around we do not print any internal warnings.
+    bool hasUnexpectedFormat = false;
+    {
+        rw::utils::stacked_warnlevel_scope ignore_warnings( rwEngine, 0 );
+
+        for ( const meth_reg& reg : this->methods )
+        {
+            // Make sure we did not try this one before.
+            if ( reg.img_exp != imp_exp )
+            {
+                try
+                {
+                    if ( needsStreamReset )
+                    {
+                        stream->seek( streamPos, rw::RWSEEK_BEG );
+                    }
+
+                    needsStreamReset = true;
+
+                    bool hasFoundFormat = (this->dialog->*reg.cb)( stream );
+
+                    if ( hasFoundFormat )
+                    {
+                        if ( foundExpectedFormat )
+                        {
+                            this->dialog->mainWnd->txdLog->addLogMessage(
+                                QString( "tried parsing \"%1\" but found \"%2\"" ).arg( exp_name, reg.name ),
+                                LOGMSG_WARNING
+                            );
+                        }
+
+                        hasUnexpectedFormat = true;
+                        break;
+                    }
+                }
+                catch( rw::RwException& )
+                {
+                    // A format simply did not work out. Continue.
+                }
+            }
+        }
+    }
+
+    // If we had no different format, then we expect that the original format was broken.
+    // That is why we should output the warnings and errors of the expected format, if available.
+    if ( hasUnexpectedFormat == false )
+    {
+        exp_format_warnings.forward( rwEngine );
+
+        if ( exp_format_error.empty() == false )
+        {
+            this->dialog->mainWnd->txdLog->showError( QString( "error while loading image data: " ) + QString::fromStdString( exp_format_error ) );
+        }
+    }
+
+    return hasUnexpectedFormat;
+}
+
 void TexAddDialog::loadPlatformOriginal(void)
 {
     // If we have a converted raster, release it.
@@ -52,58 +414,30 @@ void TexAddDialog::loadPlatformOriginal(void)
         // Depends on what we have.
         if (this->dialog_type == CREATE_IMGPATH)
         {
-            // Set the platform of our raster.
-            // If we have no platform, we have no preview.
-            bool hasPlatform = false;
+            rw::Interface *rwEngine = this->mainWnd->GetEngine();
 
-            QString currentPlatform = this->GetCurrentPlatform();
+            // Open a stream to the image data.
+            std::wstring unicodePathToImage = this->imgPath.toStdWString();
 
-            if (currentPlatform.isEmpty() == false)
+            rw::streamConstructionFileParamW_t wparam(unicodePathToImage.c_str());
+
+            rw::Stream *imgStream = rwEngine->CreateStream(rw::RWSTREAMTYPE_FILE_W, rw::RWSTREAMMODE_READONLY, &wparam);
+
+            if (imgStream)
             {
-                std::string ansiNativeName = currentPlatform.toStdString();
-
-                // Delete any preview native data.
-                this->platformOrigRaster->clearNativeData();
-
-                this->platformOrigRaster->newNativeData(ansiNativeName.c_str());
-
-                // We have to set the version of the raster since it has reset.
-                if (rw::TexDictionary *texDictionary = this->mainWnd->currentTXD)
+                try
                 {
-                    this->platformOrigRaster->SetEngineVersion(texDictionary->GetEngineVersion());
+                    // Load it.
+                    hasPreview = this->impMeth.LoadPlatformOriginal( imgStream );
+                }
+                catch (...)
+                {
+                    rwEngine->DeleteStream(imgStream);
+
+                    throw;
                 }
 
-                hasPlatform = true;
-            }
-
-            if (hasPlatform)
-            {
-                // Open a stream to the image data.
-                std::wstring unicodePathToImage = this->imgPath.toStdWString();
-
-                rw::streamConstructionFileParamW_t wparam(unicodePathToImage.c_str());
-
-                rw::Stream *imgStream = mainWnd->rwEngine->CreateStream(rw::RWSTREAMTYPE_FILE_W, rw::RWSTREAMMODE_READONLY, &wparam);
-
-                if (imgStream)
-                {
-                    try
-                    {
-                        // Load it.
-                        this->platformOrigRaster->readImage(imgStream);
-
-                        // Success!
-                        hasPreview = true;
-                    }
-                    catch (...)
-                    {
-                        mainWnd->rwEngine->DeleteStream(imgStream);
-
-                        throw;
-                    }
-
-                    mainWnd->rwEngine->DeleteStream(imgStream);
-                }
+                rwEngine->DeleteStream(imgStream);
             }
         }
         else if (this->dialog_type == CREATE_RASTER)
@@ -258,9 +592,7 @@ void TexAddDialog::createRasterForConfiguration(void)
 
             this->convRaster = convRaster;
 
-            // If we have not created a direct platform raster through image loading, we
-            // should put it into the currect platform over here.
-            if (this->dialog_type != CREATE_IMGPATH)
+            // We must make sure that our raster is in the correct platform.
             {
                 std::string currentPlatform = this->GetCurrentPlatform().toStdString();
 
@@ -345,11 +677,23 @@ QComboBox* TexAddDialog::createPlatformSelectComboBox(MainWindow *mainWnd)
     return platformComboBox;
 }
 
+void TexAddDialog::imageImportMethods::RegisterImportMethod( const char *name, importMethod_t meth, eImportExpectation impExp )
+{
+    meth_reg reg;
+    reg.img_exp = impExp;
+    reg.cb = meth;
+    reg.name = name;
+
+    this->methods.push_back( std::move( reg ) );
+}
+
 #define LEFTPANELADDDIALOGWIDTH 230
 
-TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create_params, TexAddDialog::operationCallback_t cb) : QDialog(mainWnd)
+TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create_params, TexAddDialog::operationCallback_t cb) : QDialog(mainWnd), impMeth( this )
 {
     this->mainWnd = mainWnd;
+
+    this->isConstructing = true;
 
     this->dialog_type = create_params.type;
 
@@ -360,15 +704,47 @@ TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create
 
     this->setWindowFlags( this->windowFlags() & ~Qt::WindowContextHelpButtonHint );
 
+    // Register all import methods.
+    // Those represent the kind of texture data that is accepted by Magic.TXD!
+    this->impMeth.RegisterImportMethod( "image", &TexAddDialog::impMeth_loadImage, IMPORTE_IMAGE );
+    this->impMeth.RegisterImportMethod( "tex chunks", &TexAddDialog::impMeth_loadTexChunk, IMPORTE_TEXCHUNK );
+
     // Create a raster handle that will hold platform original data.
     this->platformOrigRaster = NULL;
+    this->texHandle = NULL;
     this->convRaster = NULL;
 
     if (this->dialog_type == CREATE_IMGPATH)
     {
-        this->platformOrigRaster = rw::CreateRaster(mainWnd->rwEngine);
+        QString imgPath = create_params.img_path.imgPath;
 
-        this->imgPath = create_params.img_path.imgPath;
+        // Determine what kind of path we have and deduce what the user expects it to be.
+        // This way we can determine what messages the user should receive and when.
+        {
+            std::wstring wImgPath = imgPath.toStdWString();
+
+            filePath extension;
+
+            FileSystem::GetFileNameItem( wImgPath.c_str(), true, NULL, &extension );
+
+            eImportExpectation expImp = IMPORTE_IMAGE;
+
+            if ( extension.equals( L"RWTEX", false ) )
+            {
+                expImp = IMPORTE_TEXCHUNK;
+            }
+            else
+            {
+                expImp = IMPORTE_IMAGE;
+            }
+
+            this->img_exp = expImp;
+        }
+
+        // We want to load the raster on demand.
+        this->platformOrigRaster = NULL;
+
+        this->imgPath = std::move( imgPath );
     }
     else if (this->dialog_type == CREATE_RASTER)
     {
@@ -381,7 +757,7 @@ TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create
     this->enablePaletteSelect = true;
     this->enablePixelFormatSelect = true;
 
-    this->isSystemResize = false;
+    this->hasConfidentPlatform = false;
 
     this->wantsGoodPlatformSetting = true;
 
@@ -452,6 +828,9 @@ TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create
                 bool lockdownPlatform = ( _lockdownPlatform && mainWnd->lockDownTXDPlatform );
 
                 const char *currentForcedPlatform = mainWnd->GetTXDPlatformString(mainWnd->currentTXD);
+
+                this->hasConfidentPlatform = ( currentForcedPlatform != NULL );
+
                 QWidget *platformDisplayWidget;
                 if (lockdownPlatform == false || currentForcedPlatform == NULL)
                 {
@@ -470,9 +849,15 @@ TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create
                 else
                 {
                     // We do not want to allow editing.
-                    QLineEdit *platformDisplayEdit = new QLineEdit(currentForcedPlatform);
+                    QLineEdit *platformDisplayEdit = new QLineEdit();
                     platformDisplayEdit->setFixedWidth(LEFTPANELADDDIALOGWIDTH);
                     platformDisplayEdit->setDisabled(true);
+
+                    if ( currentForcedPlatform != NULL )
+                    {
+                        platformDisplayEdit->setText( currentForcedPlatform );
+                    }
+
                     platformDisplayWidget = platformDisplayEdit;
                     curPlatformText = platformDisplayEdit->text();
                 }
@@ -665,13 +1050,15 @@ TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create
         // Set focus on the apply button, so users can quickly add textures.
         this->applyButton->setDefault( true );
     }
+
+    this->isConstructing = false;
 }
 
 TexAddDialog::~TexAddDialog(void)
 {
     // Remove the raster that we created.
     // Remember that it is reference counted.
-    rw::DeleteRaster(this->platformOrigRaster);
+    this->clearTextureOriginal();
 
     this->releaseConvRaster();
 
@@ -787,13 +1174,15 @@ void TexAddDialog::OnTexturePixelFormatSelect(const QString& newPixelFormat)
     this->createRasterForConfiguration();
 }
 
-void TexAddDialog::OnPlatformSelect(const QString& newText)
+void TexAddDialog::OnPlatformSelect(const QString& _)
 {
     // Update what options make sense to the user.
     this->UpdateAccessability();
 
     // Reload the preview image with what the platform wants us to see.
-    this->loadPlatformOriginal();
+    this->loadPlatformOriginal();   // ALLOWED TO CHANGE THE PLATFORM.
+
+    QString newText = this->GetCurrentPlatform();
 
     // We want to show the user properties based on what this platform supports.
     // So we fill the fields.
@@ -988,11 +1377,24 @@ void TexAddDialog::OnPlatformSelect(const QString& newText)
     {
         bool selectedToggle = false;
 
-        if (this->platformRawRasterToggle->isVisible())
+        if (!selectedToggle)
         {
-            this->platformRawRasterToggle->setChecked(true);
+            if ( this->platformOriginalToggle->isVisible() )
+            {
+                this->platformOriginalToggle->setChecked( true );
 
-            selectedToggle = true;
+                selectedToggle = true;
+            }
+        }
+
+        if (!selectedToggle)
+        {
+            if (this->platformRawRasterToggle->isVisible())
+            {
+                this->platformRawRasterToggle->setChecked(true);
+
+                selectedToggle = true;
+            }
         }
 
         if (!selectedToggle)
@@ -1157,11 +1559,39 @@ void TexAddDialog::OnTextureAddRequest(bool checked)
     if (displayRaster)
     {
         texAddOperation desc;
-        desc.texName = this->textureNameEdit->text().toStdString();
 
-        if (this->textureMaskNameEdit)
+        // We can either add a raster or a texture chunk.
+        rw::TextureBase *texHandle = this->texHandle;
+
+        std::string texName = this->textureNameEdit->text().toStdString();
+        std::string maskName;
+
+        if ( this->textureMaskNameEdit )
         {
-            desc.maskName = this->textureMaskNameEdit->text().toStdString();
+            maskName = this->textureMaskNameEdit->text().toStdString();
+        }
+
+        if ( texHandle != NULL )
+        {
+            // Replace the raster of the texture with our properly converted raster.
+            texHandle->SetRaster( displayRaster );
+
+            // Update texture properties.
+            texHandle->SetName( texName.c_str() );
+            texHandle->SetMaskName( maskName.c_str() );
+
+            desc.add_texture.texHandle = texHandle;
+
+            desc.add_type = texAddOperation::ADD_TEXCHUNK;
+        }
+        else
+        {
+            desc.add_raster.texName = std::move( texName );
+            desc.add_raster.maskName = std::move( maskName );
+
+            desc.add_raster.raster = displayRaster;
+
+            desc.add_type = texAddOperation::ADD_RASTER;
         }
 
         // Maybe generate mipmaps.
@@ -1169,8 +1599,6 @@ void TexAddDialog::OnTextureAddRequest(bool checked)
         {
             displayRaster->generateMipmaps(INFINITE, rw::MIPMAPGEN_DEFAULT);
         }
-
-        desc.raster = displayRaster;
 
         this->cb(desc);
     }

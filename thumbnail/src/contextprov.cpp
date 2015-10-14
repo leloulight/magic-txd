@@ -1033,42 +1033,47 @@ IFACEMETHODIMP RenderWareContextHandlerProvider::QueryContextMenu(
                         for ( const rw::registered_image_format& format : regFormats )
                         {
                             // Make a nice display string.
-                            std::wstring displayString = ansi_to_unicode( format.defaultExt );
-                            displayString += L" (";
-                            displayString += ansi_to_unicode( format.formatName );
-                            displayString += L")";
+                            const char *niceExt = rw::GetLongImagingFormatExtension( format.num_ext, format.ext_array );
 
-                            extractNode.AddCommandEntryW( displayString.c_str(), std::string( "extr_" ) + format.defaultExt,
-                                [=]( void )
+                            if ( niceExt )
                             {
-                                // TODO: actually use a good extention instead of the default.
-                                // We want to add support into RW to specify multiple image format extentions.
+                                std::wstring displayString = ansi_to_unicode( niceExt );
+                                displayString += L" (";
+                                displayString += ansi_to_unicode( format.formatName );
+                                displayString += L")";
 
-                                std::string extention( format.defaultExt );
-                                std::wstring wideExtention( extention.begin(), extention.end() );
-
-                                std::transform( wideExtention.begin(), wideExtention.end(), wideExtention.begin(), ::tolower );
-
-                                ShellGetTargetDirectory( this->getContextDirectory(),
-                                    [=]( const wchar_t *targetDir )
+                                extractNode.AddCommandEntryW( displayString.c_str(), std::string( "extr_" ) + niceExt,
+                                    [=]( void )
                                 {
-                                    this->forAllContextItems(
-                                        [=]( const wchar_t *fileName )
+                                    // TODO: actually use a good extention instead of the default.
+                                    // We want to add support into RW to specify multiple image format extentions.
+
+                                    std::string extention( niceExt );
+                                    std::wstring wideExtention( extention.begin(), extention.end() );
+
+                                    std::transform( wideExtention.begin(), wideExtention.end(), wideExtention.begin(), ::tolower );
+
+                                    ShellGetTargetDirectory( this->getContextDirectory(),
+                                        [=]( const wchar_t *targetDir )
                                     {
-                                        TexObj_exportAs( fileName, wideExtention.c_str(), targetDir,
-                                            [=]( rw::TextureBase *texHandle, rw::Stream *outStream )
+                                        this->forAllContextItems(
+                                            [=]( const wchar_t *fileName )
                                         {
-                                            // Only perform if we have a raster, which should be always anyway.
-                                            if ( rw::Raster *texRaster = texHandle->GetRaster() )
+                                            TexObj_exportAs( fileName, wideExtention.c_str(), targetDir,
+                                                [=]( rw::TextureBase *texHandle, rw::Stream *outStream )
                                             {
-                                                texRaster->writeImage( outStream, extention.c_str() );
-                                            }
+                                                // Only perform if we have a raster, which should be always anyway.
+                                                if ( rw::Raster *texRaster = texHandle->GetRaster() )
+                                                {
+                                                    texRaster->writeImage( outStream, extention.c_str() );
+                                                }
+                                            });
                                         });
                                     });
-                                });
                         
-                                return true;
-                            });
+                                    return true;
+                                });
+                            }
                         }
                     }
                     catch( rw::RwException& )

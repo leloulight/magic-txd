@@ -15,8 +15,14 @@
 
 class MainWindow;
 
-class TexAddDialog : public QDialog, public SystemEventHandlerWidget
+class TexAddDialog : public QDialog
 {
+    enum eImportExpectation
+    {
+        IMPORTE_IMAGE,
+        IMPORTE_TEXCHUNK
+    };
+
 public:
     enum eCreationType
     {
@@ -48,11 +54,25 @@ public:
 
     struct texAddOperation
     {
-        // Selected texture properties.
-        std::string texName;
-        std::string maskName;
+        enum eAdditionType
+        {
+            ADD_RASTER,
+            ADD_TEXCHUNK
+        };
+        eAdditionType add_type;
 
-        rw::Raster *raster;
+        struct
+        {
+            // Selected texture properties.
+            std::string texName;
+            std::string maskName;
+
+            rw::Raster *raster;
+        } add_raster;
+        struct
+        {
+            rw::TextureBase *texHandle;
+        } add_texture;
     };
 
     typedef std::function <void(const texAddOperation&)> operationCallback_t;
@@ -93,6 +113,7 @@ private:
 
     void UpdateAccessability(void);
 
+    void SetCurrentPlatform( QString name );
     QString GetCurrentPlatform(void);
 
 public slots:
@@ -111,35 +132,21 @@ public slots:
     void OnScalePreviewStateChanged(int state);
     void OnFillPreviewStateChanged(int state);
 
-    void beginSystemEvent(QEvent *evt)
-    {
-        if (evt->type() == QEvent::Resize)
-        {
-            if (evt->spontaneous())
-            {
-                this->isSystemResize = true;
-            }
-        }
-    }
-
-    void endSystemEvent(QEvent *evt)
-    {
-        if (isSystemResize)
-        {
-            this->isSystemResize = false;
-        }
-    }
-
 private:
     MainWindow *mainWnd;
 
+    bool isConstructing;        // we allow late-initialization of properties.
+
     eCreationType dialog_type;
+    eImportExpectation img_exp;
 
     rw::Raster *platformOrigRaster;
+    rw::TextureBase *texHandle;     // if not NULL, then this texture will be used for import.
     rw::Raster *convRaster;
     bool hasPlatformOriginal;
     QPixmap pixelsToAdd;
 
+    bool hasConfidentPlatform;
     bool wantsGoodPlatformSetting;
 
     QLineEdit *textureNameEdit;
@@ -158,8 +165,6 @@ private:
     bool enableCompressSelect;
     bool enablePaletteSelect;
     bool enablePixelFormatSelect;
-
-    bool isSystemResize;
 
     QRadioButton *platformOriginalToggle;
     QRadioButton *platformRawRasterToggle;
@@ -183,4 +188,43 @@ private:
     operationCallback_t cb;
 
     QString imgPath;
+
+    // Image import method manager.
+    struct imageImportMethods
+    {
+        inline imageImportMethods( TexAddDialog *wnd )
+        {
+            this->dialog = wnd;
+        }
+
+        bool LoadPlatformOriginal( rw::Stream *stream ) const;
+
+        typedef bool (TexAddDialog::* importMethod_t)( rw::Stream *stream );
+
+        void RegisterImportMethod( const char *name, importMethod_t meth, eImportExpectation expImp );
+
+        struct meth_reg
+        {
+            eImportExpectation img_exp;
+            importMethod_t cb;
+            const char *name;
+        };
+
+        TexAddDialog *dialog;
+
+        std::vector <meth_reg> methods;
+    };
+
+    imageImportMethods impMeth;
+
+    void clearTextureOriginal( void );
+
+    rw::Raster* MakeRaster( void );
+
+    // The methods use this function to set the platform original raster link.
+    void setPlatformOrigRaster( rw::Raster *raster );
+
+    // The methods to be used by imageImportMethods.
+    bool impMeth_loadImage( rw::Stream *stream );
+    bool impMeth_loadTexChunk( rw::Stream *stream );
 };

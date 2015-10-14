@@ -391,6 +391,7 @@
     <ClInclude Include="..\..\include\renderware.txd.d3d.h" />
     <ClInclude Include="..\..\include\renderware.txd.h" />
     <ClInclude Include="..\..\include\renderware.txd.pixelformat.h" />
+    <ClInclude Include="..\..\include\renderware.utils.h" />
     <ClInclude Include="..\..\include\renderware.windowing.h" />
     <ClInclude Include="..\..\include\StdInc.h" />
     <ClInclude Include="..\..\rwconf.h" />
@@ -498,6 +499,7 @@
     <ClCompile Include="..\..\src\rwserialize.cpp" />
     <ClCompile Include="..\..\src\rwstream.cpp" />
     <ClCompile Include="..\..\src\rwthreading.cpp" />
+    <ClCompile Include="..\..\src\rwutils.cpp" />
     <ClCompile Include="..\..\src\rwwindowing.cpp" />
     <ClCompile Include="..\..\src\txdread.atc.cpp" />
     <ClCompile Include="..\..\src\txdread.compress.cpp" />

@@ -161,6 +161,7 @@ struct mainWindowSerialization
         bool lockDownTXDPlatform;
         endian::little_endian <eSelectedTheme> selectedTheme;
         bool showLogOnWarning;
+        bool adjustTextureChunksOnImport;
     };
 
     struct txdgen_cfg_struct
@@ -278,6 +279,7 @@ struct mainWindowSerialization
                     }
 
                     mainwnd->showLogOnWarning = cfgStruct.showLogOnWarning;
+                    mainwnd->adjustTextureChunksOnImport = cfgStruct.adjustTextureChunksOnImport;
 
                     // TXD log settings.
                     {
@@ -452,6 +454,7 @@ struct mainWindowSerialization
 
                 cfgStruct.selectedTheme = themeOption;
                 cfgStruct.showLogOnWarning = mainwnd->showLogOnWarning;
+                cfgStruct.adjustTextureChunksOnImport = mainwnd->adjustTextureChunksOnImport;
 
                 mtxdConfig.writeStruct( cfgStruct );
 

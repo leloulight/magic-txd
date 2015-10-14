@@ -93,7 +93,7 @@ struct warningHandlerPlugin
 
 static PluginDependantStructRegister <warningHandlerPlugin, RwInterfaceFactory_t> warningHandlerPluginRegister;
 
-void Interface::PushWarning( const std::string& message )
+void Interface::PushWarning( std::string&& message )
 {
     EngineInterface *engineInterface = (EngineInterface*)this;
 
@@ -136,14 +136,14 @@ void Interface::PushWarning( const std::string& message )
         if ( currentWarningHandler )
         {
             // Give it the warning.
-            currentWarningHandler->OnWarningMessage( message );
+            currentWarningHandler->OnWarningMessage( std::move( message ) );
         }
         else
         {
             // Else we just post the warning to the runtime.
             if ( WarningManagerInterface *warningMan = cfgBlock.GetWarningManager() )
             {
-                warningMan->OnWarning( message );
+                warningMan->OnWarning( std::move( message ) );
             }
         }
     }

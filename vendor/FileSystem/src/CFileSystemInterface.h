@@ -1196,7 +1196,7 @@ namespace FileSystem
         {
             charType ichr = *name;
 
-            if ( !includeExtension && ichr == '.' )
+            if ( ichr == '.' )
             {
                 extStart = name + 1;
             }

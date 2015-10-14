@@ -195,6 +195,9 @@
     <ClInclude Include="..\..\src\rwthreading.hxx">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\renderware.utils.h">
+      <Filter>Include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\dffread.cpp" />
@@ -267,6 +270,7 @@
     <ClCompile Include="..\..\src\rwconf.dispatch.cpp" />
     <ClCompile Include="..\..\src\rwinterface.warnings.cpp" />
     <ClCompile Include="..\..\src\rwimaging.utils.cpp" />
+    <ClCompile Include="..\..\src\rwutils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="rwtools.natvis">

@@ -108,7 +108,7 @@ public:
             }
         }
 
-        virtual void OnWarning( const std::string& message )
+        virtual void OnWarning( std::string&& message ) override
         {
             if ( !buffer.empty() )
             {

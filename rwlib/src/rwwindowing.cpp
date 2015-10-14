@@ -86,7 +86,7 @@ void Window::SetClientSize( uint32 clientWidth, uint32 clientHeight )
     scoped_rwlock_writer <rwlock> wndLock( window->wndPropertyLock );
 
     // Transform it into a client rect.
-    RECT wndRect = { 0, 0, clientWidth, clientHeight };
+    RECT wndRect = { 0, 0, (LONG)clientWidth, (LONG)clientHeight };
     AdjustWindowRect( &wndRect, window->dwStyle, false );
 
     uint32 windowWidth = ( wndRect.right - wndRect.left );

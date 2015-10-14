@@ -98,16 +98,23 @@ public:
     inline void updateInfo( void )
     {
         // Construct some information about our texture item.
-        QString textureInfo;
-
-        if ( rw::Raster *rasterInfo = this->rwTextureHandle->GetRaster() )
+        if ( rw::TextureBase *texHandle = this->rwTextureHandle )
         {
-            textureInfo = getDefaultRasterInfoString( rasterInfo );
+            QString textureInfo;
+
+            if ( rw::Raster *rasterInfo = this->rwTextureHandle->GetRaster() )
+            {
+                textureInfo = getDefaultRasterInfoString( rasterInfo );
+            }
+
+            this->texNameLabel->setText( tr( this->rwTextureHandle->GetName().c_str() ) );
+            this->texInfoLabel->setText( textureInfo );
         }
-
-        this->texNameLabel->setText( tr( this->rwTextureHandle->GetName().c_str() ) );
-        this->texInfoLabel->setText( textureInfo );
-
+        else
+        {
+            this->texNameLabel->setText( "No Texture" );
+            this->texInfoLabel->setText( "invalid" );
+        }
     }
 
     inline void remove( void )

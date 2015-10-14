@@ -88,7 +88,7 @@ class RwVersionDialog : public QDialog
 
             unsigned int buildNum;
 
-            int matchCount = sscanf( ansiBuildNumber.c_str(), "%u", &buildNum );
+            int matchCount = sscanf( ansiBuildNumber.c_str(), "%x", &buildNum );
 
             if ( matchCount == 1 )
             {
@@ -199,7 +199,7 @@ public slots:
             return;
 
         // Set the version of the entire TXD.
-        // Also patch the platform is feasible.
+        // Also patch the platform if feasible.
         if ( rw::TexDictionary *currentTXD = this->mainWnd->currentTXD )
         {
             bool patchD3D8 = false;

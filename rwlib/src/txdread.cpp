@@ -754,7 +754,7 @@ struct nativeTextureStreamPlugin : public serializationProvider
 
     struct QueuedWarningHandler : public WarningHandler
     {
-        void OnWarningMessage( const std::string& theMessage )
+        void OnWarningMessage( std::string&& theMessage ) override
         {
             this->message_list.push_back( theMessage );
         }
@@ -957,7 +957,7 @@ struct nativeTextureStreamPlugin : public serializationProvider
                                         // We push this error as warning.
                                         if ( theError.message.size() != 0 )
                                         {
-                                            engineInterface->PushWarning( theError.message );
+                                            engineInterface->PushWarning( std::string( theError.message ) );
                                         }
                                     }
                                 }
@@ -1041,7 +1041,7 @@ struct nativeTextureStreamPlugin : public serializationProvider
                                     }
 
                                     typeWarnBuf += *iter;
-
+                                    
                                     if ( isFirstItem )
                                     {
                                         isFirstItem = false;
@@ -1049,7 +1049,7 @@ struct nativeTextureStreamPlugin : public serializationProvider
                                 }
                             }
 
-                            engineInterface->PushWarning( typeWarnBuf );
+                            engineInterface->PushWarning( std::move( typeWarnBuf ) );
                         }
 
                         // On failure, just bail.
@@ -1057,9 +1057,9 @@ struct nativeTextureStreamPlugin : public serializationProvider
                     else
                     {
                         // Just output the warnings of the successful provider.
-                        for ( QueuedWarningHandler::messages_t::const_iterator iter = successfulProvider->_warningQueue.message_list.begin(); iter != successfulProvider->_warningQueue.message_list.end(); iter++ )
+                        for ( std::string& msg : successfulProvider->_warningQueue.message_list )
                         {
-                            engineInterface->PushWarning( *iter );
+                            engineInterface->PushWarning( std::move( msg ) );
                         }
                     }
                 }

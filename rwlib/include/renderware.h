@@ -437,7 +437,7 @@ typedef SquareMatrix <float, 4> RwMatrix;
 // Warning manager interface.
 struct WarningManagerInterface abstract
 {
-    virtual void OnWarning( const std::string& message ) = 0;
+    virtual void OnWarning( std::string&& message ) = 0;
 };
 
 // Software meta information provider struct.
@@ -527,7 +527,7 @@ public:
     void                SetIgnoreSecureWarnings ( bool doIgnore );
     bool                GetIgnoreSecureWarnings ( void ) const;
 
-    void                PushWarning             ( const std::string& message );
+    void                PushWarning             ( std::string&& message );
 
     bool                SetPaletteRuntime       ( ePaletteRuntimeType palRunType );
     ePaletteRuntimeType GetPaletteRuntime       ( void ) const;
@@ -550,6 +550,8 @@ public:
     void                SetIgnoreSerializationBlockRegions  ( bool doIgnore );
     bool                GetIgnoreSerializationBlockRegions  ( void ) const;
 };
+
+#include "renderware.utils.h"
 
 // To create a RenderWare interface, you have to go through a constructor.
 Interface*  CreateEngine( LibraryVersion engine_version );

@@ -168,9 +168,9 @@ private:
             this->mainWnd = theWindow;
         }
 
-        void OnWarning( const std::string& msg ) override
+        void OnWarning( std::string&& msg ) override
         {
-			this->mainWnd->txdLog->addLogMessage(msg.c_str(), LOGMSG_WARNING);
+			this->mainWnd->txdLog->addLogMessage( QString::fromStdString( msg ), LOGMSG_WARNING);
         }
 
     private:
@@ -316,6 +316,7 @@ public:
 
     bool addImageGenMipmaps;
     bool lockDownTXDPlatform;
+    bool adjustTextureChunksOnImport;
     
     // Options.
     bool showLogOnWarning;
