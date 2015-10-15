@@ -251,6 +251,7 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
         connect( actionSetPixelFormat, &QAction::triggered, this, &MainWindow::onSelectPlatform );
 
 	    QAction *actionSetupMipLevels = new QAction("&Setup mip-levels", this);
+        actionSetupMipLevels->setShortcut( Qt::CTRL | Qt::Key_M );
 	    editMenu->addAction(actionSetupMipLevels);
 
         this->actionSetupMipmaps = actionSetupMipLevels;
@@ -258,6 +259,7 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
         connect( actionSetupMipLevels, &QAction::triggered, this, &MainWindow::onSetupMipmapLayers );
 
         QAction *actionClearMipLevels = new QAction("&Clear mip-levels", this);
+        actionClearMipLevels->setShortcut( Qt::CTRL | Qt::Key_C );
         editMenu->addAction(actionClearMipLevels);
 
         this->actionClearMipmaps = actionClearMipLevels;

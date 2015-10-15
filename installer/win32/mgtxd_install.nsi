@@ -115,7 +115,7 @@ Section "-Magic.TXD core"
     ${If} $3 == 0
     ${OrIf} $3 == ""
         # If required, install the Visual Studio 2015 redistributable.
-        GetTempFileName $1
+        StrCpy $1 "$TEMP\vc_redist_2015.exe"
         
         NSISdl::download $4 $1
         
