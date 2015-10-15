@@ -218,7 +218,7 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>glu32.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;imm32.lib;winmm.lib;Qt5PlatformSupport.lib;qwindows.lib;qtmain.lib;Ws2_32.lib;qtpcre.lib;qtfreetype.lib;Qt5Core.lib;Qt5Widgets.lib;Qt5Gui.lib;qtharfbuzzng.lib;rwtools_$(PlatformToolset).lib;libfs_$(PlatformToolset).lib;gtaconfig_$(PlatformToolset).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;shell32.lib;user32.lib;gdi32.lib;advapi32.lib;glu32.lib;opengl32.lib;imm32.lib;winmm.lib;Qt5PlatformSupport.lib;qwindows.lib;qtmain.lib;Ws2_32.lib;qtpcre.lib;qtfreetype.lib;Qt5Core.lib;Qt5Widgets.lib;Qt5Gui.lib;qtharfbuzzng.lib;rwtools_$(PlatformToolset).lib;libfs_$(PlatformToolset).lib;gtaconfig_$(PlatformToolset).lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\vendor\gtaconfig\lib;..\..\vendor\FileSystem\lib;..\..\vendor\Qt5.5\lib\vs2015\x86\plugins\platforms;..\..\vendor\Qt5.5\lib\vs2015\x86\;..\..\rwlib\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>"/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' publicKeyToken='6595b64144ccf1df' language='*' processorArchitecture='*'" %(AdditionalOptions)</AdditionalOptions>
       <DataExecutionPrevention>true</DataExecutionPrevention>
@@ -276,7 +276,7 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>glu32.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;imm32.lib;winmm.lib;Qt5PlatformSupport.lib;qwindows.lib;qtmain.lib;Ws2_32.lib;qtpcre.lib;qtfreetype.lib;Qt5Core.lib;Qt5Widgets.lib;Qt5Gui.lib;qtharfbuzzng.lib;rwtools_$(PlatformToolset)_x64.lib;libfs_$(PlatformToolset)_x64.lib;gtaconfig_$(PlatformToolset)_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;shell32.lib;user32.lib;gdi32.lib;advapi32.lib;glu32.lib;opengl32.lib;imm32.lib;winmm.lib;Qt5PlatformSupport.lib;qwindows.lib;qtmain.lib;Ws2_32.lib;qtpcre.lib;qtfreetype.lib;Qt5Core.lib;Qt5Widgets.lib;Qt5Gui.lib;qtharfbuzzng.lib;rwtools_$(PlatformToolset)_x64.lib;libfs_$(PlatformToolset)_x64.lib;gtaconfig_$(PlatformToolset)_x64.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\vendor\gtaconfig\lib;..\..\vendor\FileSystem\lib;..\..\vendor\Qt5.5\lib\vs2015\x64\plugins\platforms;..\..\vendor\Qt5.5\lib\vs2015\x64\;..\..\rwlib\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>"/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' publicKeyToken='6595b64144ccf1df' language='*' processorArchitecture='*'" %(AdditionalOptions)</AdditionalOptions>
       <DataExecutionPrevention>true</DataExecutionPrevention>
@@ -334,7 +334,7 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>glu32.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;imm32.lib;winmm.lib;Qt5PlatformSupport.lib;qwindows.lib;qtmain.lib;Ws2_32.lib;qtpcre.lib;qtfreetype.lib;Qt5Core.lib;Qt5Widgets.lib;Qt5Gui.lib;qtharfbuzzng.lib;rwtools_$(PlatformToolset).lib;libfs_$(PlatformToolset).lib;gtaconfig_$(PlatformToolset).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;shell32.lib;user32.lib;gdi32.lib;advapi32.lib;glu32.lib;opengl32.lib;imm32.lib;winmm.lib;Qt5PlatformSupport.lib;qwindows.lib;qtmain.lib;Ws2_32.lib;qtpcre.lib;qtfreetype.lib;Qt5Core.lib;Qt5Widgets.lib;Qt5Gui.lib;qtharfbuzzng.lib;rwtools_$(PlatformToolset).lib;libfs_$(PlatformToolset).lib;gtaconfig_$(PlatformToolset).lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\vendor\gtaconfig\lib;..\..\vendor\FileSystem\lib;..\..\vendor\Qt5.5\lib\vs2013\x86\plugins\platforms;..\..\vendor\Qt5.5\lib\vs2013\x86\;..\..\rwlib\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>"/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' publicKeyToken='6595b64144ccf1df' language='*' processorArchitecture='*'" %(AdditionalOptions)</AdditionalOptions>
       <DataExecutionPrevention>true</DataExecutionPrevention>
@@ -392,7 +392,7 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>glu32.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;imm32.lib;winmm.lib;Qt5PlatformSupport.lib;qwindows.lib;qtmain.lib;Ws2_32.lib;qtpcre.lib;qtfreetype.lib;Qt5Core.lib;Qt5Widgets.lib;Qt5Gui.lib;qtharfbuzzng.lib;rwtools_$(PlatformToolset)_x64.lib;libfs_$(PlatformToolset)_x64.lib;gtaconfig_$(PlatformToolset)_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;shell32.lib;user32.lib;gdi32.lib;advapi32.lib;glu32.lib;opengl32.lib;imm32.lib;winmm.lib;Qt5PlatformSupport.lib;qwindows.lib;qtmain.lib;Ws2_32.lib;qtpcre.lib;qtfreetype.lib;Qt5Core.lib;Qt5Widgets.lib;Qt5Gui.lib;qtharfbuzzng.lib;rwtools_$(PlatformToolset)_x64.lib;libfs_$(PlatformToolset)_x64.lib;gtaconfig_$(PlatformToolset)_x64.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\vendor\gtaconfig\lib;..\..\vendor\FileSystem\lib;..\..\vendor\Qt5.5\lib\vs2013\x64\plugins\platforms;..\..\vendor\Qt5.5\lib\vs2013\x64\;..\..\rwlib\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>"/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' publicKeyToken='6595b64144ccf1df' language='*' processorArchitecture='*'" %(AdditionalOptions)</AdditionalOptions>
       <DataExecutionPrevention>true</DataExecutionPrevention>
@@ -445,7 +445,7 @@
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>glu32.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;imm32.lib;winmm.lib;Qt5PlatformSupportd.lib;qwindowsd.lib;qtmaind.lib;Ws2_32.lib;qtpcred.lib;qtfreetyped.lib;Qt5Cored.lib;Qt5Widgetsd.lib;Qt5Guid.lib;qtharfbuzzngd.lib;rwtools_d_$(PlatformToolset).lib;libfs_d_$(PlatformToolset).lib;gtaconfig_d_$(PlatformToolset).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;shell32.lib;user32.lib;gdi32.lib;advapi32.lib;glu32.lib;opengl32.lib;imm32.lib;winmm.lib;Qt5PlatformSupportd.lib;qwindowsd.lib;qtmaind.lib;Ws2_32.lib;qtpcred.lib;qtfreetyped.lib;Qt5Cored.lib;Qt5Widgetsd.lib;Qt5Guid.lib;qtharfbuzzngd.lib;rwtools_d_$(PlatformToolset).lib;libfs_d_$(PlatformToolset).lib;gtaconfig_d_$(PlatformToolset).lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\vendor\gtaconfig\lib;..\..\vendor\FileSystem\lib;..\..\vendor\Qt5.5\lib\vs2015\x86\plugins\platforms;..\..\vendor\Qt5.5\lib\vs2015\x86\;..\..\rwlib\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>"/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' publicKeyToken='6595b64144ccf1df' language='*' processorArchitecture='*'" %(AdditionalOptions)</AdditionalOptions>
       <DataExecutionPrevention>true</DataExecutionPrevention>
@@ -496,7 +496,7 @@
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>glu32.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;imm32.lib;winmm.lib;Qt5PlatformSupportd.lib;qwindowsd.lib;qtmaind.lib;Ws2_32.lib;qtpcred.lib;qtfreetyped.lib;Qt5Cored.lib;Qt5Widgetsd.lib;Qt5Guid.lib;qtharfbuzzngd.lib;rwtools_d_$(PlatformToolset)_x64.lib;libfs_d_$(PlatformToolset)_x64.lib;gtaconfig_d_$(PlatformToolset)_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;shell32.lib;user32.lib;gdi32.lib;advapi32.lib;glu32.lib;opengl32.lib;imm32.lib;winmm.lib;Qt5PlatformSupportd.lib;qwindowsd.lib;qtmaind.lib;Ws2_32.lib;qtpcred.lib;qtfreetyped.lib;Qt5Cored.lib;Qt5Widgetsd.lib;Qt5Guid.lib;qtharfbuzzngd.lib;rwtools_d_$(PlatformToolset)_x64.lib;libfs_d_$(PlatformToolset)_x64.lib;gtaconfig_d_$(PlatformToolset)_x64.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\vendor\gtaconfig\lib;..\..\vendor\FileSystem\lib;..\..\vendor\Qt5.5\lib\vs2015\x64\plugins\platforms;..\..\vendor\Qt5.5\lib\vs2015\x64\;..\..\rwlib\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>"/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' publicKeyToken='6595b64144ccf1df' language='*' processorArchitecture='*'" %(AdditionalOptions)</AdditionalOptions>
       <DataExecutionPrevention>true</DataExecutionPrevention>
@@ -547,7 +547,7 @@
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>glu32.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;imm32.lib;winmm.lib;Qt5PlatformSupportd.lib;qwindowsd.lib;qtmaind.lib;Ws2_32.lib;qtpcred.lib;qtfreetyped.lib;Qt5Cored.lib;Qt5Widgetsd.lib;Qt5Guid.lib;qtharfbuzzngd.lib;rwtools_d_$(PlatformToolset).lib;libfs_d_$(PlatformToolset).lib;gtaconfig_d_$(PlatformToolset).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;shell32.lib;user32.lib;gdi32.lib;advapi32.lib;glu32.lib;opengl32.lib;imm32.lib;winmm.lib;Qt5PlatformSupportd.lib;qwindowsd.lib;qtmaind.lib;Ws2_32.lib;qtpcred.lib;qtfreetyped.lib;Qt5Cored.lib;Qt5Widgetsd.lib;Qt5Guid.lib;qtharfbuzzngd.lib;rwtools_d_$(PlatformToolset).lib;libfs_d_$(PlatformToolset).lib;gtaconfig_d_$(PlatformToolset).lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\vendor\gtaconfig\lib;..\..\vendor\FileSystem\lib;..\..\vendor\Qt5.5\lib\vs2013\x86\plugins\platforms;..\..\vendor\Qt5.5\lib\vs2013\x86\;..\..\rwlib\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>"/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' publicKeyToken='6595b64144ccf1df' language='*' processorArchitecture='*'" %(AdditionalOptions)</AdditionalOptions>
       <DataExecutionPrevention>true</DataExecutionPrevention>
@@ -598,7 +598,7 @@
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>glu32.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;imm32.lib;winmm.lib;Qt5PlatformSupportd.lib;qwindowsd.lib;qtmaind.lib;Ws2_32.lib;qtpcred.lib;qtfreetyped.lib;Qt5Cored.lib;Qt5Widgetsd.lib;Qt5Guid.lib;qtharfbuzzngd.lib;rwtools_d_$(PlatformToolset)_x64.lib;libfs_d_$(PlatformToolset)_x64.lib;gtaconfig_d_$(PlatformToolset)_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;shell32.lib;user32.lib;gdi32.lib;advapi32.lib;glu32.lib;opengl32.lib;imm32.lib;winmm.lib;Qt5PlatformSupportd.lib;qwindowsd.lib;qtmaind.lib;Ws2_32.lib;qtpcred.lib;qtfreetyped.lib;Qt5Cored.lib;Qt5Widgetsd.lib;Qt5Guid.lib;qtharfbuzzngd.lib;rwtools_d_$(PlatformToolset)_x64.lib;libfs_d_$(PlatformToolset)_x64.lib;gtaconfig_d_$(PlatformToolset)_x64.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\vendor\gtaconfig\lib;..\..\vendor\FileSystem\lib;..\..\vendor\Qt5.5\lib\vs2013\x64\plugins\platforms;..\..\vendor\Qt5.5\lib\vs2013\x64\;..\..\rwlib\output\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>"/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' publicKeyToken='6595b64144ccf1df' language='*' processorArchitecture='*'" %(AdditionalOptions)</AdditionalOptions>
       <DataExecutionPrevention>true</DataExecutionPrevention>

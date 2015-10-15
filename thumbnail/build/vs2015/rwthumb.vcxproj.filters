@@ -6,6 +6,7 @@
     <ClCompile Include="..\..\src\thumbprov.cpp" />
     <ClCompile Include="..\..\src\rwwin32streamwrap.cpp" />
     <ClCompile Include="..\..\src\contextprov.cpp" />
+    <ClCompile Include="..\..\src\shell_minlink.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">
@@ -36,6 +37,9 @@
     </ClInclude>
     <ClInclude Include="..\..\resources\rcdesc.h">
       <Filter>resources</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\shell_minlink.h">
+      <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

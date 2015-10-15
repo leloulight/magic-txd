@@ -107,102 +107,108 @@ IFACEMETHODIMP RenderWareContextHandlerProvider::Initialize( LPCITEMIDLIST idLis
 
     HRESULT res = E_FAIL;
 
-    try
+    if ( auto DragQueryFileW = shell32min.DragQueryFileW )
     {
-        FORMATETC fe = { CF_HDROP, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
-        STGMEDIUM stm;
-
-        HRESULT getHandleSuccess = dataObj->GetData( &fe, &stm );
-
-        if ( SUCCEEDED(getHandleSuccess) )
+        if ( auto ReleaseStgMedium = ole32min.ReleaseStgMedium )
         {
             try
             {
-                HDROP drop = (HDROP)GlobalLock( stm.hGlobal );
+                FORMATETC fe = { CF_HDROP, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
+                STGMEDIUM stm;
 
-                if ( drop )
+                HRESULT getHandleSuccess = dataObj->GetData( &fe, &stm );
+
+                if ( SUCCEEDED(getHandleSuccess) )
                 {
                     try
                     {
-                        UINT numFiles = DragQueryFileW( drop, 0xFFFFFFFF, NULL, 0 );
+                        HDROP drop = (HDROP)GlobalLock( stm.hGlobal );
 
-                        // For now we want to only support operation on one file.
-                        for ( UINT n = 0; n < numFiles; n++ )
+                        if ( drop )
                         {
-                            // Check what kind of file we got.
-                            std::wstring fileName;
-
-                            UINT fileNameCharCount = DragQueryFileW( drop, n, NULL, 0 );
-
-                            fileName.resize( (size_t)fileNameCharCount );
-
-                            DragQueryFileW( drop, n, (LPWSTR)fileName.data(), fileNameCharCount + 1 );
-
-                            // We want to extract the extension, because everything depends on it.
-                            const wchar_t *extPtr = NULL;
-
-                            HRESULT resGotExt = PathCchFindExtension( fileName.c_str(), fileName.size() + 1, &extPtr );
-
-                            if ( SUCCEEDED(resGotExt) )
+                            try
                             {
-                                // Check for a known extension.
-                                bool hasKnownExt = false;
-                                eContextMenuOptionType optionType;
+                                UINT numFiles = DragQueryFileW( drop, 0xFFFFFFFF, NULL, 0 );
 
-                                if ( wcsicmp( extPtr, L".TXD" ) == 0 )
+                                // For now we want to only support operation on one file.
+                                for ( UINT n = 0; n < numFiles; n++ )
                                 {
-                                    optionType = CONTEXTOPT_TXD;
+                                    // Check what kind of file we got.
+                                    std::wstring fileName;
 
-                                    hasKnownExt = true;
+                                    UINT fileNameCharCount = DragQueryFileW( drop, n, NULL, 0 );
+
+                                    fileName.resize( (size_t)fileNameCharCount );
+
+                                    DragQueryFileW( drop, n, (LPWSTR)fileName.data(), fileNameCharCount + 1 );
+
+                                    // We want to extract the extension, because everything depends on it.
+                                    const wchar_t *extPtr = NULL;
+
+                                    HRESULT resGotExt = PathCchFindExtension( fileName.c_str(), fileName.size() + 1, &extPtr );
+
+                                    if ( SUCCEEDED(resGotExt) )
+                                    {
+                                        // Check for a known extension.
+                                        bool hasKnownExt = false;
+                                        eContextMenuOptionType optionType;
+
+                                        if ( wcsicmp( extPtr, L".TXD" ) == 0 )
+                                        {
+                                            optionType = CONTEXTOPT_TXD;
+
+                                            hasKnownExt = true;
+                                        }
+                                        else if ( wcsicmp( extPtr, L".RWTEX" ) == 0 )
+                                        {
+                                            optionType = CONTEXTOPT_TEXTURE;
+
+                                            hasKnownExt = true;
+                                        }
+
+                                        if ( hasKnownExt )
+                                        {
+                                            // Add this context option.
+                                            contextOption_t opt;
+                                            opt.fileName = std::move( fileName );
+                                            opt.optionType = optionType;
+
+                                            this->contextOptions.push_back( std::move( opt ) );
+                                        }
+                                    }
                                 }
-                                else if ( wcsicmp( extPtr, L".RWTEX" ) == 0 )
+
+                                // As long as we processed one valid item, we can show the context menu.
+                                if ( this->contextOptions.empty() == false )
                                 {
-                                    optionType = CONTEXTOPT_TEXTURE;
-
-                                    hasKnownExt = true;
-                                }
-
-                                if ( hasKnownExt )
-                                {
-                                    // Add this context option.
-                                    contextOption_t opt;
-                                    opt.fileName = std::move( fileName );
-                                    opt.optionType = optionType;
-
-                                    this->contextOptions.push_back( std::move( opt ) );
+                                    res = S_OK;
                                 }
                             }
-                        }
+                            catch( ... )
+                            {
+                                GlobalUnlock( stm.hGlobal );
 
-                        // As long as we processed one valid item, we can show the context menu.
-                        if ( this->contextOptions.empty() == false )
-                        {
-                            res = S_OK;
+                                throw;
+                            }
+
+                            GlobalUnlock( stm.hGlobal );
                         }
                     }
                     catch( ... )
                     {
-                        GlobalUnlock( stm.hGlobal );
+                        ReleaseStgMedium( &stm );
 
                         throw;
                     }
 
-                    GlobalUnlock( stm.hGlobal );
+                    ReleaseStgMedium( &stm );
                 }
             }
             catch( ... )
             {
-                ReleaseStgMedium( &stm );
-
-                throw;
+                // Ignore errors.
             }
-
-            ReleaseStgMedium( &stm );
         }
-    }
-    catch( ... )
-    {
-        // Ignore errors.
     }
 
     this->isInitialized = true;
@@ -234,23 +240,26 @@ inline std::wstring RenderWareContextHandlerProvider::getContextDirectory( void 
 template <typename resultFunc>
 AINLINE void ShellCallWithResultPath( IFileDialog *resDlg, resultFunc cb )
 {
-    ComPtr <IShellItem> resultItem;
-
-    HRESULT resFetchResult = resDlg->GetResult( &resultItem );
-
-    if ( SUCCEEDED(resFetchResult) )
+    if ( auto CoTaskMemFree = ole32min.CoTaskMemFree )
     {
-        // We call back the handler with the result.
-        // Since we expect a fs result, we convert to a real path.
-        LPWSTR strFSPath = NULL;
+        ComPtr <IShellItem> resultItem;
 
-        HRESULT getFSPath = resultItem->GetDisplayName( SIGDN_FILESYSPATH, &strFSPath );
+        HRESULT resFetchResult = resDlg->GetResult( &resultItem );
 
-        if ( SUCCEEDED( getFSPath ) )
+        if ( SUCCEEDED(resFetchResult) )
         {
-            cb( strFSPath );
+            // We call back the handler with the result.
+            // Since we expect a fs result, we convert to a real path.
+            LPWSTR strFSPath = NULL;
 
-            CoTaskMemFree( strFSPath );
+            HRESULT getFSPath = resultItem->GetDisplayName( SIGDN_FILESYSPATH, &strFSPath );
+
+            if ( SUCCEEDED( getFSPath ) )
+            {
+                cb( strFSPath );
+
+                CoTaskMemFree( strFSPath );
+            }
         }
     }
 }
@@ -258,38 +267,44 @@ AINLINE void ShellCallWithResultPath( IFileDialog *resDlg, resultFunc cb )
 template <typename resultFunc>
 static void ShellGetTargetDirectory( const std::wstring& startPath, resultFunc cb )
 {
-    ComPtr <IFileOpenDialog> dlg;
-
-    HRESULT getDialogSuc = CoCreateInstance( CLSID_FileOpenDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS( &dlg ) );
-
-    if ( SUCCEEDED(getDialogSuc) )
+    if ( auto CoCreateInstance = ole32min.CoCreateInstance )
     {
-        dlg->SetOptions( FOS_OVERWRITEPROMPT | FOS_NOCHANGEDIR | FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST | FOS_FILEMUSTEXIST );
+        ComPtr <IFileOpenDialog> dlg;
 
-        // Set some friendly attributes. :)
-        dlg->SetTitle( L"Browse Folder..." );
-        dlg->SetOkButtonLabel( L"Select" );
-        dlg->SetFileNameLabel( L"Target:" );
+        HRESULT getDialogSuc = CoCreateInstance( CLSID_FileOpenDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS( &dlg ) );
 
-        if ( startPath.empty() == false )
+        if ( SUCCEEDED(getDialogSuc) )
         {
-            ComPtr <IShellItem> dirPathItem;
+            dlg->SetOptions( FOS_OVERWRITEPROMPT | FOS_NOCHANGEDIR | FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST | FOS_FILEMUSTEXIST );
 
-            HRESULT resParsePath = SHCreateItemFromParsingName( startPath.c_str(), NULL, IID_PPV_ARGS( &dirPathItem ) );
+            // Set some friendly attributes. :)
+            dlg->SetTitle( L"Browse Folder..." );
+            dlg->SetOkButtonLabel( L"Select" );
+            dlg->SetFileNameLabel( L"Target:" );
 
-            if ( SUCCEEDED(resParsePath) )
+            if ( startPath.empty() == false )
             {
-                dlg->SetFolder( dirPathItem.Get() );
+                if ( auto SHCreateItemFromParsingName = shell32min.SHCreateItemFromParsingName )
+                {
+                    ComPtr <IShellItem> dirPathItem;
+
+                    HRESULT resParsePath = SHCreateItemFromParsingName( startPath.c_str(), NULL, IID_PPV_ARGS( &dirPathItem ) );
+
+                    if ( SUCCEEDED(resParsePath) )
+                    {
+                        dlg->SetFolder( dirPathItem.Get() );
+                    }
+                }
             }
-        }
 
-        // Alrite. Show ourselves.
-        HRESULT resShow = dlg->Show( NULL );
+            // Alrite. Show ourselves.
+            HRESULT resShow = dlg->Show( NULL );
 
-        if ( SUCCEEDED(resShow) )
-        {
-            // Wait for the result.
-            ShellCallWithResultPath( dlg.Get(), cb );
+            if ( SUCCEEDED(resShow) )
+            {
+                // Wait for the result.
+                ShellCallWithResultPath( dlg.Get(), cb );
+            }
         }
     }
 }
@@ -302,50 +317,56 @@ AINLINE void ShellGetFileTargetPath(
     callbackType cb
 )
 {
-    ComPtr <IFileDialog> dlg;
-
-    HRESULT resCreateDialog = CoCreateInstance( CLSID_FileSaveDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS( &dlg ) );
-
-    if ( SUCCEEDED(resCreateDialog) )
+    if ( auto CoCreateInstance = ole32min.CoCreateInstance )
     {
-        // Before showing the dialog, we set it up.
-        dlg->SetOptions(
-            FOS_OVERWRITEPROMPT | FOS_NOCHANGEDIR | FOS_FORCEFILESYSTEM |
-            FOS_PATHMUSTEXIST | FOS_NOREADONLYRETURN 
-        );
+        ComPtr <IFileDialog> dlg;
 
-        // Friendly stuff.
-        dlg->SetTitle( L"Select Target..." );
-        dlg->SetFileTypes( numAvailTypes, availTypes );
-        dlg->SetFileTypeIndex( 1 );
-        dlg->SetOkButtonLabel( L"Save" );
+        HRESULT resCreateDialog = CoCreateInstance( CLSID_FileSaveDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS( &dlg ) );
 
-        // Default extension.
-        if ( defaultExt )
+        if ( SUCCEEDED(resCreateDialog) )
         {
-            dlg->SetDefaultExtension( defaultExt );
-        }
+            // Before showing the dialog, we set it up.
+            dlg->SetOptions(
+                FOS_OVERWRITEPROMPT | FOS_NOCHANGEDIR | FOS_FORCEFILESYSTEM |
+                FOS_PATHMUSTEXIST | FOS_NOREADONLYRETURN 
+            );
 
-        if ( curDirectoryPath.empty() == false )
-        {
-            ComPtr <IShellItem> dirPathItem;
+            // Friendly stuff.
+            dlg->SetTitle( L"Select Target..." );
+            dlg->SetFileTypes( numAvailTypes, availTypes );
+            dlg->SetFileTypeIndex( 1 );
+            dlg->SetOkButtonLabel( L"Save" );
 
-            HRESULT resParsePath = SHCreateItemFromParsingName( curDirectoryPath.c_str(), NULL, IID_PPV_ARGS( &dirPathItem ) );
-
-            if ( SUCCEEDED(resParsePath) )
+            // Default extension.
+            if ( defaultExt )
             {
-                dlg->SetFolder( dirPathItem.Get() );
+                dlg->SetDefaultExtension( defaultExt );
             }
-        }
 
-        // OK. Let do this.
-        HRESULT resShowDialog = dlg->Show( NULL );
+            if ( curDirectoryPath.empty() == false )
+            {
+                if ( auto SHCreateItemFromParsingName = shell32min.SHCreateItemFromParsingName )
+                {
+                    ComPtr <IShellItem> dirPathItem;
 
-        if ( SUCCEEDED(resShowDialog) )
-        {
-            // Get the result. There can be only one result.
-            // We want it in FS path format.
-            ShellCallWithResultPath( dlg.Get(), cb );
+                    HRESULT resParsePath = SHCreateItemFromParsingName( curDirectoryPath.c_str(), NULL, IID_PPV_ARGS( &dirPathItem ) );
+
+                    if ( SUCCEEDED(resParsePath) )
+                    {
+                        dlg->SetFolder( dirPathItem.Get() );
+                    }
+                }
+            }
+
+            // OK. Let do this.
+            HRESULT resShowDialog = dlg->Show( NULL );
+
+            if ( SUCCEEDED(resShowDialog) )
+            {
+                // Get the result. There can be only one result.
+                // We want it in FS path format.
+                ShellCallWithResultPath( dlg.Get(), cb );
+            }
         }
     }
 }

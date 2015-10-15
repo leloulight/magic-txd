@@ -174,7 +174,7 @@ SectionEnd
 
 Section "Associate .txd files" ASSOC_TXD_ID
     # Write some registry settings for .TXD files.
-    WriteRegStr HKCR "${TXD_ASSOC_KEY}" "" "Magic.TXD"
+    WriteRegStr HKCR "${TXD_ASSOC_KEY}" "" "${MGTXD_TXD_ASSOC}"
     WriteRegStr HKCR "${TXD_ASSOC_KEY}" "Content Type" "image/dict"
     WriteRegStr HKCR "${TXD_ASSOC_KEY}" "PerceivedType" "image"
     WriteRegStr HKCR "${TXD_ASSOC_KEY}\OpenWithProgids" "${MGTXD_TXD_ASSOC}" ""
@@ -240,7 +240,6 @@ Section un.defUninst
     ; Unregister file association if present.
     DeleteRegKey HKCR "${MGTXD_TXD_ASSOC}"
     DeleteRegValue HKCR "${TXD_ASSOC_KEY}\OpenWithProgids" "${MGTXD_TXD_ASSOC}"
-    DeleteRegKey /ifempty HKCR "${TXD_ASSOC_KEY}"
     
     IfFileExists $INSTDIR\rwshell.dll 0 uninstmain
     
@@ -266,6 +265,9 @@ uninstmain:
         Delete "${SM_PATH}\Remove Magic.TXD.lnk"
         RMDIR "${SM_PATH}"
     ${EndIf}
+    
+    # Remove the registry key that is responsible for shell stuff.
+    DeleteRegKey /ifempty HKCR "${TXD_ASSOC_KEY}"
         
     DeleteRegKey HKLM ${INST_REG_KEY}
     DeleteRegKey HKLM ${COMPONENT_REG_PATH}

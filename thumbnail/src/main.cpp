@@ -282,10 +282,13 @@ STDAPI DllRegisterServer(void)
 
             if ( SUCCEEDED(hr) )
             {
-                // This tells the shell to invalidate the thumbnail cache. It is 
-                // important because any files viewed before registering 
-                // this handler would otherwise show cached blank thumbnails.
-                SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, NULL, NULL);
+                if ( auto SHChangeNotify = shell32min.SHChangeNotify )
+                {
+                    // This tells the shell to invalidate the thumbnail cache. It is 
+                    // important because any files viewed before registering 
+                    // this handler would otherwise show cached blank thumbnails.
+                    SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, NULL, NULL);
+                }
             }
         }
     }

@@ -150,34 +150,37 @@ HRESULT RegisterInprocServer(PCWSTR pszModule, const CLSID& clsid,
         return E_INVALIDARG;
     }
 
-    HRESULT hr;
+    HRESULT hr = E_FAIL;
 
-    wchar_t szCLSID[MAX_PATH];
-    StringFromGUID2(clsid, szCLSID, ARRAYSIZE(szCLSID));
-
-    wchar_t szSubkey[MAX_PATH];
-
-    // Create the HKCR\CLSID\{<CLSID>} key.
-    hr = StringCchPrintfW(szSubkey, ARRAYSIZE(szSubkey), L"CLSID\\%s", szCLSID);
-    if (SUCCEEDED(hr))
+    if ( auto StringFromGUID2 = ole32min.StringFromGUID2 )
     {
-        hr = SetHKCRRegistryKeyAndValue(szSubkey, NULL, pszFriendlyName);
+        wchar_t szCLSID[MAX_PATH];
+        StringFromGUID2(clsid, szCLSID, ARRAYSIZE(szCLSID));
 
-        // Create the HKCR\CLSID\{<CLSID>}\InprocServer32 key.
+        wchar_t szSubkey[MAX_PATH];
+
+        // Create the HKCR\CLSID\{<CLSID>} key.
+        hr = StringCchPrintfW(szSubkey, ARRAYSIZE(szSubkey), L"CLSID\\%s", szCLSID);
         if (SUCCEEDED(hr))
         {
-            hr = StringCchPrintfW(szSubkey, ARRAYSIZE(szSubkey), 
-                L"CLSID\\%s\\InprocServer32", szCLSID);
+            hr = SetHKCRRegistryKeyAndValue(szSubkey, NULL, pszFriendlyName);
+
+            // Create the HKCR\CLSID\{<CLSID>}\InprocServer32 key.
             if (SUCCEEDED(hr))
             {
-                // Set the default value of the InprocServer32 key to the 
-                // path of the COM module.
-                hr = SetHKCRRegistryKeyAndValue(szSubkey, NULL, pszModule);
+                hr = StringCchPrintfW(szSubkey, ARRAYSIZE(szSubkey), 
+                    L"CLSID\\%s\\InprocServer32", szCLSID);
                 if (SUCCEEDED(hr))
                 {
-                    // Set the threading model of the component.
-                    hr = SetHKCRRegistryKeyAndValue(szSubkey, 
-                        L"ThreadingModel", pszThreadModel);
+                    // Set the default value of the InprocServer32 key to the 
+                    // path of the COM module.
+                    hr = SetHKCRRegistryKeyAndValue(szSubkey, NULL, pszModule);
+                    if (SUCCEEDED(hr))
+                    {
+                        // Set the threading model of the component.
+                        hr = SetHKCRRegistryKeyAndValue(szSubkey, 
+                            L"ThreadingModel", pszThreadModel);
+                    }
                 }
             }
         }
@@ -199,18 +202,21 @@ HRESULT RegisterInprocServer(PCWSTR pszModule, const CLSID& clsid,
 //
 HRESULT UnregisterInprocServer(const CLSID& clsid)
 {
-    HRESULT hr = S_OK;
+    HRESULT hr = E_FAIL;
 
-    wchar_t szCLSID[MAX_PATH];
-    StringFromGUID2(clsid, szCLSID, ARRAYSIZE(szCLSID));
-
-    wchar_t szSubkey[MAX_PATH];
-
-    // Delete the HKCR\CLSID\{<CLSID>} key.
-    hr = StringCchPrintfW(szSubkey, ARRAYSIZE(szSubkey), L"CLSID\\%s", szCLSID);
-    if (SUCCEEDED(hr))
+    if ( auto StringFromGUID2 = ole32min.StringFromGUID2 )
     {
-        hr = HRESULT_FROM_WIN32(RegDeleteTreeW(HKEY_CLASSES_ROOT, szSubkey));
+        wchar_t szCLSID[MAX_PATH];
+        StringFromGUID2(clsid, szCLSID, ARRAYSIZE(szCLSID));
+
+        wchar_t szSubkey[MAX_PATH];
+
+        // Delete the HKCR\CLSID\{<CLSID>} key.
+        hr = StringCchPrintfW(szSubkey, ARRAYSIZE(szSubkey), L"CLSID\\%s", szCLSID);
+        if (SUCCEEDED(hr))
+        {
+            hr = HRESULT_FROM_WIN32(RegDeleteTreeW(HKEY_CLASSES_ROOT, szSubkey));
+        }
     }
 
     return hr;
@@ -248,38 +254,41 @@ HRESULT RegisterShellExtThumbnailHandler(PCWSTR pszFileType, const CLSID& clsid)
         return E_INVALIDARG;
     }
 
-    HRESULT hr;
+    HRESULT hr = E_FAIL;
 
-    wchar_t szCLSID[MAX_PATH];
-    StringFromGUID2(clsid, szCLSID, ARRAYSIZE(szCLSID));
-
-    wchar_t szSubkey[MAX_PATH];
-
-    // If pszFileType starts with '.', try to read the default value of the 
-    // HKCR\<File Type> key which contains the ProgID to which the file type 
-    // is linked.
-    if (*pszFileType == L'.')
+    if ( auto StringFromGUID2 = ole32min.StringFromGUID2 )
     {
-        wchar_t szDefaultVal[260];
-        hr = GetHKCRRegistryKeyAndValue(pszFileType, NULL, szDefaultVal, 
-            sizeof(szDefaultVal));
+        wchar_t szCLSID[MAX_PATH];
+        StringFromGUID2(clsid, szCLSID, ARRAYSIZE(szCLSID));
 
-        // If the key exists and its default value is not empty, use the 
-        // ProgID as the file type.
-        if (SUCCEEDED(hr) && szDefaultVal[0] != L'\0')
+        wchar_t szSubkey[MAX_PATH];
+
+        // If pszFileType starts with '.', try to read the default value of the 
+        // HKCR\<File Type> key which contains the ProgID to which the file type 
+        // is linked.
+        if (*pszFileType == L'.')
         {
-            pszFileType = szDefaultVal;
-        }
-    }
+            wchar_t szDefaultVal[260];
+            hr = GetHKCRRegistryKeyAndValue(pszFileType, NULL, szDefaultVal, 
+                sizeof(szDefaultVal));
 
-    // Create the registry key 
-    // HKCR\<File Type>\shellex\{e357fccd-a995-4576-b01f-234630154e96}
-    hr = StringCchPrintfW(szSubkey, ARRAYSIZE(szSubkey), 
-        L"%s\\shellex\\{e357fccd-a995-4576-b01f-234630154e96}", pszFileType);
-    if (SUCCEEDED(hr))
-    {
-        // Set the default value of the key.
-        hr = SetHKCRRegistryKeyAndValue(szSubkey, NULL, szCLSID);
+            // If the key exists and its default value is not empty, use the 
+            // ProgID as the file type.
+            if (SUCCEEDED(hr) && szDefaultVal[0] != L'\0')
+            {
+                pszFileType = szDefaultVal;
+            }
+        }
+
+        // Create the registry key 
+        // HKCR\<File Type>\shellex\{e357fccd-a995-4576-b01f-234630154e96}
+        hr = StringCchPrintfW(szSubkey, ARRAYSIZE(szSubkey), 
+            L"%s\\shellex\\{e357fccd-a995-4576-b01f-234630154e96}", pszFileType);
+        if (SUCCEEDED(hr))
+        {
+            // Set the default value of the key.
+            hr = SetHKCRRegistryKeyAndValue(szSubkey, NULL, szCLSID);
+        }
     }
 
     return hr;
@@ -306,7 +315,7 @@ HRESULT UnregisterShellExtThumbnailHandler(PCWSTR pszFileType)
         return E_INVALIDARG;
     }
 
-    HRESULT hr;
+    HRESULT hr = E_FAIL;
 
     wchar_t szSubkey[MAX_PATH];
 
@@ -375,37 +384,40 @@ HRESULT RegisterShellExtContextMenuHandler(
         return E_INVALIDARG;
     }
 
-    HRESULT hr;
+    HRESULT hr = E_FAIL;
 
-    wchar_t szCLSID[MAX_PATH];
-    StringFromGUID2(clsid, szCLSID, ARRAYSIZE(szCLSID));
-
-    wchar_t szSubkey[MAX_PATH];
-
-    // If pszFileType starts with '.', try to read the default value of the 
-    // HKCR\<File Type> key which contains the ProgID to which the file type 
-    // is linked.
-    if (*pszFileType == L'.')
+    if ( auto StringFromGUID2 = ole32min.StringFromGUID2 )
     {
-        wchar_t szDefaultVal[260];
-        hr = GetHKCRRegistryKeyAndValue(pszFileType, NULL, szDefaultVal, 
-            sizeof(szDefaultVal));
+        wchar_t szCLSID[MAX_PATH];
+        StringFromGUID2(clsid, szCLSID, ARRAYSIZE(szCLSID));
 
-        // If the key exists and its default value is not empty, use the 
-        // ProgID as the file type.
-        if (SUCCEEDED(hr) && szDefaultVal[0] != L'\0')
+        wchar_t szSubkey[MAX_PATH];
+
+        // If pszFileType starts with '.', try to read the default value of the 
+        // HKCR\<File Type> key which contains the ProgID to which the file type 
+        // is linked.
+        if (*pszFileType == L'.')
         {
-            pszFileType = szDefaultVal;
-        }
-    }
+            wchar_t szDefaultVal[260];
+            hr = GetHKCRRegistryKeyAndValue(pszFileType, NULL, szDefaultVal, 
+                sizeof(szDefaultVal));
 
-    // Create the key HKCR\<File Type>\shellex\ContextMenuHandlers\{<CLSID>}
-    hr = StringCchPrintfW(szSubkey, ARRAYSIZE(szSubkey), 
-        L"%s\\shellex\\ContextMenuHandlers\\%s", pszFileType, szCLSID);
-    if (SUCCEEDED(hr))
-    {
-        // Set the default value of the key.
-        hr = SetHKCRRegistryKeyAndValue(szSubkey, NULL, pszFriendlyName);
+            // If the key exists and its default value is not empty, use the 
+            // ProgID as the file type.
+            if (SUCCEEDED(hr) && szDefaultVal[0] != L'\0')
+            {
+                pszFileType = szDefaultVal;
+            }
+        }
+
+        // Create the key HKCR\<File Type>\shellex\ContextMenuHandlers\{<CLSID>}
+        hr = StringCchPrintfW(szSubkey, ARRAYSIZE(szSubkey), 
+            L"%s\\shellex\\ContextMenuHandlers\\%s", pszFileType, szCLSID);
+        if (SUCCEEDED(hr))
+        {
+            // Set the default value of the key.
+            hr = SetHKCRRegistryKeyAndValue(szSubkey, NULL, pszFriendlyName);
+        }
     }
 
     return hr;
@@ -434,36 +446,39 @@ HRESULT UnregisterShellExtContextMenuHandler(
         return E_INVALIDARG;
     }
 
-    HRESULT hr;
+    HRESULT hr = E_FAIL;
 
-    wchar_t szCLSID[MAX_PATH];
-    StringFromGUID2(clsid, szCLSID, ARRAYSIZE(szCLSID));
-
-    wchar_t szSubkey[MAX_PATH];
-
-    // If pszFileType starts with '.', try to read the default value of the 
-    // HKCR\<File Type> key which contains the ProgID to which the file type 
-    // is linked.
-    if (*pszFileType == L'.')
+    if ( auto StringFromGUID2 = ole32min.StringFromGUID2 )
     {
-        wchar_t szDefaultVal[260];
-        hr = GetHKCRRegistryKeyAndValue(pszFileType, NULL, szDefaultVal, 
-            sizeof(szDefaultVal));
+        wchar_t szCLSID[MAX_PATH];
+        StringFromGUID2(clsid, szCLSID, ARRAYSIZE(szCLSID));
 
-        // If the key exists and its default value is not empty, use the 
-        // ProgID as the file type.
-        if (SUCCEEDED(hr) && szDefaultVal[0] != L'\0')
+        wchar_t szSubkey[MAX_PATH];
+
+        // If pszFileType starts with '.', try to read the default value of the 
+        // HKCR\<File Type> key which contains the ProgID to which the file type 
+        // is linked.
+        if (*pszFileType == L'.')
         {
-            pszFileType = szDefaultVal;
-        }
-    }
+            wchar_t szDefaultVal[260];
+            hr = GetHKCRRegistryKeyAndValue(pszFileType, NULL, szDefaultVal, 
+                sizeof(szDefaultVal));
 
-    // Remove the HKCR\<File Type>\shellex\ContextMenuHandlers\{<CLSID>} key.
-    hr = StringCchPrintfW(szSubkey, ARRAYSIZE(szSubkey), 
-        L"%s\\shellex\\ContextMenuHandlers\\%s", pszFileType, szCLSID);
-    if (SUCCEEDED(hr))
-    {
-        hr = HRESULT_FROM_WIN32(RegDeleteTreeW(HKEY_CLASSES_ROOT, szSubkey));
+            // If the key exists and its default value is not empty, use the 
+            // ProgID as the file type.
+            if (SUCCEEDED(hr) && szDefaultVal[0] != L'\0')
+            {
+                pszFileType = szDefaultVal;
+            }
+        }
+
+        // Remove the HKCR\<File Type>\shellex\ContextMenuHandlers\{<CLSID>} key.
+        hr = StringCchPrintfW(szSubkey, ARRAYSIZE(szSubkey), 
+            L"%s\\shellex\\ContextMenuHandlers\\%s", pszFileType, szCLSID);
+        if (SUCCEEDED(hr))
+        {
+            hr = HRESULT_FROM_WIN32(RegDeleteTreeW(HKEY_CLASSES_ROOT, szSubkey));
+        }
     }
 
     return hr;
@@ -506,37 +521,40 @@ HRESULT RegisterShellExtInfotipHandler(
         return E_INVALIDARG;
     }
 
-    HRESULT hr;
+    HRESULT hr = E_FAIL;
 
-    wchar_t szCLSID[MAX_PATH];
-    StringFromGUID2(clsid, szCLSID, ARRAYSIZE(szCLSID));
-
-    wchar_t szSubkey[MAX_PATH];
-
-    // If pszFileType starts with '.', try to read the default value of the 
-    // HKCR\<File Type> key which contains the ProgID to which the file type 
-    // is linked.
-    if (*pszFileType == L'.')
+    if ( auto StringFromGUID2 = ole32min.StringFromGUID2 )
     {
-        wchar_t szDefaultVal[260];
-        hr = GetHKCRRegistryKeyAndValue(pszFileType, NULL, szDefaultVal, 
-            sizeof(szDefaultVal));
+        wchar_t szCLSID[MAX_PATH];
+        StringFromGUID2(clsid, szCLSID, ARRAYSIZE(szCLSID));
 
-        // If the key exists and its default value is not empty, use the 
-        // ProgID as the file type.
-        if (SUCCEEDED(hr) && szDefaultVal[0] != L'\0')
+        wchar_t szSubkey[MAX_PATH];
+
+        // If pszFileType starts with '.', try to read the default value of the 
+        // HKCR\<File Type> key which contains the ProgID to which the file type 
+        // is linked.
+        if (*pszFileType == L'.')
         {
-            pszFileType = szDefaultVal;
-        }
-    }
+            wchar_t szDefaultVal[260];
+            hr = GetHKCRRegistryKeyAndValue(pszFileType, NULL, szDefaultVal, 
+                sizeof(szDefaultVal));
 
-    // Create the key HKCR\<File Type>\shellex\{00021500-0000-0000-C000-000000000046}\{<CLSID>}
-    hr = StringCchPrintfW(szSubkey, ARRAYSIZE(szSubkey), 
-        L"%s\\shellex\\{00021500-0000-0000-C000-000000000046}\\%s", pszFileType, szCLSID);
-    if (SUCCEEDED(hr))
-    {
-        // Set the default value of the key.
-        hr = SetHKCRRegistryKeyAndValue(szSubkey, NULL, pszFriendlyName);
+            // If the key exists and its default value is not empty, use the 
+            // ProgID as the file type.
+            if (SUCCEEDED(hr) && szDefaultVal[0] != L'\0')
+            {
+                pszFileType = szDefaultVal;
+            }
+        }
+
+        // Create the key HKCR\<File Type>\shellex\{00021500-0000-0000-C000-000000000046}\{<CLSID>}
+        hr = StringCchPrintfW(szSubkey, ARRAYSIZE(szSubkey), 
+            L"%s\\shellex\\{00021500-0000-0000-C000-000000000046}\\%s", pszFileType, szCLSID);
+        if (SUCCEEDED(hr))
+        {
+            // Set the default value of the key.
+            hr = SetHKCRRegistryKeyAndValue(szSubkey, NULL, pszFriendlyName);
+        }
     }
 
     return hr;
@@ -565,36 +583,39 @@ HRESULT UnregisterShellExtInfotipHandler(
         return E_INVALIDARG;
     }
 
-    HRESULT hr;
+    HRESULT hr = E_FAIL;
 
-    wchar_t szCLSID[MAX_PATH];
-    StringFromGUID2(clsid, szCLSID, ARRAYSIZE(szCLSID));
-
-    wchar_t szSubkey[MAX_PATH];
-
-    // If pszFileType starts with '.', try to read the default value of the 
-    // HKCR\<File Type> key which contains the ProgID to which the file type 
-    // is linked.
-    if (*pszFileType == L'.')
+    if ( auto StringFromGUID2 = ole32min.StringFromGUID2 )
     {
-        wchar_t szDefaultVal[260];
-        hr = GetHKCRRegistryKeyAndValue(pszFileType, NULL, szDefaultVal, 
-            sizeof(szDefaultVal));
+        wchar_t szCLSID[MAX_PATH];
+        StringFromGUID2(clsid, szCLSID, ARRAYSIZE(szCLSID));
 
-        // If the key exists and its default value is not empty, use the 
-        // ProgID as the file type.
-        if (SUCCEEDED(hr) && szDefaultVal[0] != L'\0')
+        wchar_t szSubkey[MAX_PATH];
+
+        // If pszFileType starts with '.', try to read the default value of the 
+        // HKCR\<File Type> key which contains the ProgID to which the file type 
+        // is linked.
+        if (*pszFileType == L'.')
         {
-            pszFileType = szDefaultVal;
-        }
-    }
+            wchar_t szDefaultVal[260];
+            hr = GetHKCRRegistryKeyAndValue(pszFileType, NULL, szDefaultVal, 
+                sizeof(szDefaultVal));
 
-    // Remove the HKCR\<File Type>\shellex\{00021500-0000-0000-C000-000000000046}\{<CLSID>} key.
-    hr = StringCchPrintfW(szSubkey, ARRAYSIZE(szSubkey), 
-        L"%s\\shellex\\{00021500-0000-0000-C000-000000000046}\\%s", pszFileType, szCLSID);
-    if (SUCCEEDED(hr))
-    {
-        hr = HRESULT_FROM_WIN32(RegDeleteTreeW(HKEY_CLASSES_ROOT, szSubkey));
+            // If the key exists and its default value is not empty, use the 
+            // ProgID as the file type.
+            if (SUCCEEDED(hr) && szDefaultVal[0] != L'\0')
+            {
+                pszFileType = szDefaultVal;
+            }
+        }
+
+        // Remove the HKCR\<File Type>\shellex\{00021500-0000-0000-C000-000000000046}\{<CLSID>} key.
+        hr = StringCchPrintfW(szSubkey, ARRAYSIZE(szSubkey), 
+            L"%s\\shellex\\{00021500-0000-0000-C000-000000000046}\\%s", pszFileType, szCLSID);
+        if (SUCCEEDED(hr))
+        {
+            hr = HRESULT_FROM_WIN32(RegDeleteTreeW(HKEY_CLASSES_ROOT, szSubkey));
+        }
     }
 
     return hr;

@@ -13,6 +13,8 @@
 
 #include <renderware.h>
 
+#include "shell_minlink.h"
+
 #include "thumbprov.h"
 #include "contextprov.h"
 

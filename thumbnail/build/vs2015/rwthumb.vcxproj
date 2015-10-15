@@ -177,7 +177,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>../../../rwlib/output/</AdditionalLibraryDirectories>
-      <AdditionalDependencies>rwtools_d_$(PlatformToolset).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;advapi32.lib;gdi32.lib;user32.lib;rwtools_d_$(PlatformToolset).lib</AdditionalDependencies>
       <ModuleDefinitionFile>GlobalExportFunctions.def</ModuleDefinitionFile>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
@@ -197,7 +197,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <AdditionalLibraryDirectories>../../../rwlib/output/</AdditionalLibraryDirectories>
-      <AdditionalDependencies>rwtools_d_$(PlatformToolset).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;advapi32.lib;gdi32.lib;user32.lib;rwtools_d_$(PlatformToolset).lib</AdditionalDependencies>
       <ModuleDefinitionFile>GlobalExportFunctions.def</ModuleDefinitionFile>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
@@ -216,7 +216,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>../../../rwlib/output/</AdditionalLibraryDirectories>
-      <AdditionalDependencies>rwtools_d_$(PlatformToolset)_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;advapi32.lib;gdi32.lib;user32.lib;rwtools_d_$(PlatformToolset)_x64.lib</AdditionalDependencies>
       <ModuleDefinitionFile>GlobalExportFunctions.def</ModuleDefinitionFile>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
@@ -236,7 +236,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <AdditionalLibraryDirectories>../../../rwlib/output/</AdditionalLibraryDirectories>
-      <AdditionalDependencies>rwtools_d_$(PlatformToolset)_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;advapi32.lib;gdi32.lib;user32.lib;rwtools_d_$(PlatformToolset)_x64.lib</AdditionalDependencies>
       <ModuleDefinitionFile>GlobalExportFunctions.def</ModuleDefinitionFile>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
@@ -259,7 +259,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>../../../rwlib/output/</AdditionalLibraryDirectories>
-      <AdditionalDependencies>rwtools_$(PlatformToolset).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;advapi32.lib;gdi32.lib;user32.lib;rwtools_$(PlatformToolset).lib</AdditionalDependencies>
       <ModuleDefinitionFile>GlobalExportFunctions.def</ModuleDefinitionFile>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
@@ -283,7 +283,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Windows</SubSystem>
       <AdditionalLibraryDirectories>../../../rwlib/output/</AdditionalLibraryDirectories>
-      <AdditionalDependencies>rwtools_$(PlatformToolset).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;advapi32.lib;gdi32.lib;user32.lib;rwtools_$(PlatformToolset).lib</AdditionalDependencies>
       <ModuleDefinitionFile>GlobalExportFunctions.def</ModuleDefinitionFile>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
@@ -306,7 +306,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>../../../rwlib/output/</AdditionalLibraryDirectories>
-      <AdditionalDependencies>rwtools_$(PlatformToolset)_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;advapi32.lib;gdi32.lib;user32.lib;rwtools_$(PlatformToolset)_x64.lib</AdditionalDependencies>
       <ModuleDefinitionFile>GlobalExportFunctions.def</ModuleDefinitionFile>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
@@ -330,7 +330,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Windows</SubSystem>
       <AdditionalLibraryDirectories>../../../rwlib/output/</AdditionalLibraryDirectories>
-      <AdditionalDependencies>rwtools_$(PlatformToolset)_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;advapi32.lib;gdi32.lib;user32.lib;rwtools_$(PlatformToolset)_x64.lib</AdditionalDependencies>
       <ModuleDefinitionFile>GlobalExportFunctions.def</ModuleDefinitionFile>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
@@ -349,6 +349,7 @@
     </ClCompile>
     <ClCompile Include="..\..\src\Reg.cpp" />
     <ClCompile Include="..\..\src\rwwin32streamwrap.cpp" />
+    <ClCompile Include="..\..\src\shell_minlink.cpp" />
     <ClCompile Include="..\..\src\thumbprov.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -357,6 +358,7 @@
     <ClInclude Include="..\..\src\Reg.h" />
     <ClInclude Include="..\..\src\rwutils.hxx" />
     <ClInclude Include="..\..\src\rwwin32streamwrap.h" />
+    <ClInclude Include="..\..\src\shell_minlink.h" />
     <ClInclude Include="..\..\src\StdInc.h" />
     <ClInclude Include="..\..\src\thumbprov.h" />
   </ItemGroup>
