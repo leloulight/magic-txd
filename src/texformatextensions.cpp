@@ -20,7 +20,8 @@
 #endif
 #endif
 
-typedef MagicFormat *(__cdecl* LPFNDLLFUNC1)(unsigned int&);
+typedef void (__cdecl* LPFNSETINTERFACE)( const MagicFormatPluginInterface *intf );
+typedef MagicFormat* (__cdecl* LPFNDLLFUNC1)(unsigned int&);
 
 struct MagicFormat_Ver1handler : public rw::d3dpublic::nativeTextureFormatHandler
 {
@@ -90,6 +91,8 @@ private:
     MagicFormat *libHandler;
 };
 
+static MagicFormatPluginExports _funcExportIntf;
+
 void MainWindow::initializeNativeFormats( void )
 {
     // Register a basic format that we want to test things on.
@@ -117,7 +120,8 @@ void MainWindow::initializeNativeFormats( void )
                         bool success = false;
 
 						LPFNDLLFUNC1 func = (LPFNDLLFUNC1)GetProcAddress(hDLL, "GetFormatInstance");
-						if (func)
+                        LPFNSETINTERFACE intfFunc = (LPFNSETINTERFACE)GetProcAddress( hDLL, "SetInterface" );
+						if (func && intfFunc)
 						{
                             unsigned int magf_version = 0;
 
@@ -126,6 +130,9 @@ void MainWindow::initializeNativeFormats( void )
                             // We must have correct ABI version to load.
                             if ( magf_version == MagicFormatAPIVersion() )
                             {
+                                // Give it our module interface.
+                                intfFunc( &_funcExportIntf );
+
                                 MagicFormat_Ver1handler *vhandler = new MagicFormat_Ver1handler( handler );
 
 							    bool hasRegistered = driverIntf->RegisterFormatHandler(handler->GetD3DFormat(), vhandler);
@@ -175,8 +182,10 @@ void MainWindow::initializeNativeFormats( void )
 					}
 					else
 					{
+                        DWORD lastError = GetLastError();
+
                         QString message =
-                            QString( "Failed to load texture format plugin (" ) + QString::fromStdWString( wPluginName ) + QString( ")" );
+                            QString( "Failed to load texture format plugin (" ) + QString::fromStdWString( wPluginName ) + QString( ", " ) + QString::fromStdString( std::to_string( lastError ) ) + QString( ")" );
 
 						this->txdLog->showError(message);
 					}

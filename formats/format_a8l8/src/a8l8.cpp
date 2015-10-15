@@ -2,6 +2,13 @@
 
 #include <magfapi.h>
 
+static const MagicFormatPluginInterface *_moduleIntf = NULL;
+
+MAGICAPI void __MAGICCALL SetInterface( const MagicFormatPluginInterface *intf )
+{
+    _moduleIntf = intf;
+}
+
 inline unsigned char rgbToLuminance(unsigned char r, unsigned char g, unsigned char b)
 {
 	unsigned int colorSumm = (r + g + b);
@@ -61,7 +68,7 @@ class FormatA8L8 : public MagicFormat
 			    // We are simply a pixel_t.
 			    const pixel_t *theTexel = srcRow + col;
 
-			    MagicPutTexelRGBA(dstRow, col, rasterFormat, depth, colorOrder, theTexel->lum, theTexel->lum, theTexel->lum, theTexel->alpha);
+			    _moduleIntf->PutTexelRGBA(dstRow, col, rasterFormat, depth, colorOrder, theTexel->lum, theTexel->lum, theTexel->lum, theTexel->alpha);
             }
 		}
 
@@ -87,7 +94,7 @@ class FormatA8L8 : public MagicFormat
 			    // Get the color as RGBA and convert to closely matching luminance value.
 			    unsigned char r, g, b, a;
 
-			    MagicBrowseTexelRGBA(
+			    _moduleIntf->BrowseTexelRGBA(
 				    srcRowData, col,
 				    rasterFormat, depth, colorOrder, paletteType, paletteData, paletteSize,
 				    r, g, b, a

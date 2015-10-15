@@ -9,9 +9,10 @@
 
 inline unsigned int MagicFormatAPIVersion( void )
 {
-    // We are currently version 1 API.
+    // We are currently version 2 API.
     // Update this whenever the ABI of the magf API changed!
-    return 1;
+    // * Rev2: added dynamic loading from any .exe
+    return 2;
 }
 
 enum MAGIC_RASTER_FORMAT
@@ -77,13 +78,18 @@ struct MagicFormat abstract
 		) const = 0;
 };
 
-#ifndef MAGIC_CORE
+// In Revision 2 we added dynamic loading of the format plugins.
+// The format DLLs are no longer bound to a certain EXE in the Windows memory space.
+struct MagicFormatPluginInterface abstract
+{
+    virtual bool PutTexelRGBA(
+        void *texelSource, unsigned int texelIndex, MAGIC_RASTER_FORMAT rasterFormat, unsigned int depth,
+	    MAGIC_COLOR_ORDERING colorOrder, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha
+    ) const = 0;
 
-__declspec(dllimport) bool __stdcall MagicPutTexelRGBA(void *texelSource, unsigned int texelIndex, MAGIC_RASTER_FORMAT rasterFormat, unsigned int depth,
-	MAGIC_COLOR_ORDERING colorOrder, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha);
-
-__declspec(dllimport) bool __stdcall MagicBrowseTexelRGBA(const void *texelSource, unsigned int texelIndex, MAGIC_RASTER_FORMAT rasterFormat,
-	unsigned int depth, MAGIC_COLOR_ORDERING colorOrder, MAGIC_PALETTE_TYPE paletteType, const void *paletteData, unsigned int paletteSize,
-	unsigned char& redOut, unsigned char& greenOut, unsigned char& blueOut, unsigned char& alphaOut);
-
-#endif //MAGIC_CORE
+    virtual bool BrowseTexelRGBA(
+        const void *texelSource, unsigned int texelIndex, MAGIC_RASTER_FORMAT rasterFormat,
+	    unsigned int depth, MAGIC_COLOR_ORDERING colorOrder, MAGIC_PALETTE_TYPE paletteType, const void *paletteData, unsigned int paletteSize,
+	    unsigned char& redOut, unsigned char& greenOut, unsigned char& blueOut, unsigned char& alphaOut
+    ) const = 0;
+};

@@ -47,6 +47,14 @@ ${If} $0 != "admin"
 ${EndIf}
 !macroend
 
+!macro UPDATE_INSTDIR
+${If} ${RunningX64}
+    StrCpy $INSTDIR $PROGRAMFILES64\${APPNAME}
+${Else}
+    StrCpy $INSTDIR $PROGRAMFILES\${APPNAME}
+${EndIf}
+!macroend
+
 !macro INCLUDE_FORMATS dir
 File "${dir}\a8.magf"
 File "${dir}\v8u8.magf"
@@ -128,12 +136,14 @@ LangString DESC_ShellInt ${LANG_ENGLISH} "Provides thumbnails and context menu e
 
 Function .onInit
     !insertmacro CHECK_ADMIN
+    !insertmacro UPDATE_INSTDIR
     
     StrCpy $DoStartMenu "false"
 FunctionEnd
 
 Function un.onInit
     !insertmacro CHECK_ADMIN
+    !insertmacro UPDATE_INSTDIR
 FunctionEnd
 
 Section un.defUninst

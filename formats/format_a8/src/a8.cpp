@@ -2,6 +2,13 @@
 
 #include <magfapi.h>
 
+static const MagicFormatPluginInterface *_moduleIntf = NULL;
+
+MAGICAPI void __MAGICCALL SetInterface( const MagicFormatPluginInterface *intf )
+{
+    _moduleIntf = intf;
+}
+
 class FormatA8 : public MagicFormat
 {
 	D3DFORMAT GetD3DFormat(void) const override
@@ -36,7 +43,7 @@ class FormatA8 : public MagicFormat
 
             for ( unsigned int col = 0; col < texMipWidth; col++ )
             {
-			    MagicPutTexelRGBA(dstRowData, col, RASTER_8888, 32, COLOR_BGRA, 0, 0, 0, rowData[col]);
+			    _moduleIntf->PutTexelRGBA(dstRowData, col, RASTER_8888, 32, COLOR_BGRA, 0, 0, 0, rowData[col]);
             }
         }
 	}
@@ -54,7 +61,7 @@ class FormatA8 : public MagicFormat
             for (unsigned int col = 0; col < texMipWidth; col++)
             {
 			    unsigned char r, g, b, a;
-			    MagicBrowseTexelRGBA(srcRowData, col, rasterFormat, depth, colorOrder, paletteType, paletteData, paletteSize, r, g, b, a);
+			    _moduleIntf->BrowseTexelRGBA(srcRowData, col, rasterFormat, depth, colorOrder, paletteType, paletteData, paletteSize, r, g, b, a);
 			    dstRowData[col] = a;
             }
 		}

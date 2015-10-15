@@ -2,9 +2,11 @@
 
 #include "texformathelper.hxx"
 
-MAGICAPI bool __stdcall MagicPutTexelRGBA(void *texelSource, unsigned int texelIndex,
+bool MagicFormatPluginExports::PutTexelRGBA(
+    void *texelSource, unsigned int texelIndex,
 	MAGIC_RASTER_FORMAT rasterFormat, unsigned int depth, MAGIC_COLOR_ORDERING colorOrder,
-	unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha)
+	unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha
+) const
 {
     rw::eRasterFormat internal_rasterFormat;
     rw::eColorOrdering internal_colorOrder;
@@ -15,9 +17,11 @@ MAGICAPI bool __stdcall MagicPutTexelRGBA(void *texelSource, unsigned int texelI
 	return rw::PutTexelRGBA(texelSource, texelIndex, internal_rasterFormat, depth, internal_colorOrder, red, green, blue, alpha);
 }
 
-MAGICAPI bool __stdcall MagicBrowseTexelRGBA(const void *texelSource, unsigned int texelIndex, MAGIC_RASTER_FORMAT rasterFormat, unsigned int depth,
+bool MagicFormatPluginExports::BrowseTexelRGBA(
+    const void *texelSource, unsigned int texelIndex, MAGIC_RASTER_FORMAT rasterFormat, unsigned int depth,
 	MAGIC_COLOR_ORDERING colorOrder, MAGIC_PALETTE_TYPE paletteType, const void *paletteData, unsigned int paletteSize,
-	unsigned char& redOut, unsigned char& greenOut, unsigned char& blueOut, unsigned char& alphaOut)
+	unsigned char& redOut, unsigned char& greenOut, unsigned char& blueOut, unsigned char& alphaOut
+) const
 {
     rw::eRasterFormat internal_rasterFormat;
     rw::eColorOrdering internal_colorOrder;

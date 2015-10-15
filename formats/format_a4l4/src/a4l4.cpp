@@ -2,6 +2,13 @@
 
 #include <magfapi.h>
 
+static const MagicFormatPluginInterface *_moduleIntf = NULL;
+
+MAGICAPI void __MAGICCALL SetInterface( const MagicFormatPluginInterface *intf )
+{
+    _moduleIntf = intf;
+}
+
 inline unsigned char rgbToLuminance(unsigned char r, unsigned char g, unsigned char b)
 {
 	unsigned int colorSumm = (r + g + b);
@@ -51,7 +58,7 @@ class FormatA4L4 : public MagicFormat
             {
 			    const pixel_t *theTexel = rowData + col;
 			    unsigned char lum = theTexel->lum * 17;
-			    MagicPutTexelRGBA(dstRow, col, RASTER_8888, 32, COLOR_BGRA, lum, lum, lum, theTexel->alpha * 17);
+			    _moduleIntf->PutTexelRGBA(dstRow, col, RASTER_8888, 32, COLOR_BGRA, lum, lum, lum, theTexel->alpha * 17);
             }
 		}
 	}
@@ -69,7 +76,7 @@ class FormatA4L4 : public MagicFormat
             for (unsigned int col = 0; col < texMipWidth; col++)
             {
 			    unsigned char r, g, b, a;
-			    MagicBrowseTexelRGBA(srcRow, col, rasterFormat, depth, colorOrder, paletteType, paletteData, paletteSize, r, g, b, a);
+			    _moduleIntf->BrowseTexelRGBA(srcRow, col, rasterFormat, depth, colorOrder, paletteType, paletteData, paletteSize, r, g, b, a);
 			    unsigned char lumVal = rgbToLuminance(r, g, b);
 			    pixel_t *theTexel = (dstRow + col);
 			    theTexel->lum = lumVal / 17;
