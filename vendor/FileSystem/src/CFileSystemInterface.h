@@ -29,7 +29,8 @@ enum eFileOpenFlags : unsigned int
 enum eDirOpenFlags : unsigned int
 {
     DIR_FLAG_NONE =             0x00000000,
-    DIR_FLAG_EXCLUSIVE =        0x00000001
+    DIR_FLAG_EXCLUSIVE =        0x00000001,
+    DIR_FLAG_WRITABLE =         0x00000002
 };
 
 /*===================================================

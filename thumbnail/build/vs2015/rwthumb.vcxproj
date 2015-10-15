@@ -144,22 +144,22 @@
     <IntDir>$(ProjectDir)..\..\obj\$(Platform)_$(Configuration)_$(PlatformToolset)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2015|x64'">
-    <TargetName>rwshell_d</TargetName>
+    <TargetName>rwshell_d_x64</TargetName>
     <OutDir>$(ProjectDir)..\..\bin\</OutDir>
     <IntDir>$(ProjectDir)..\..\obj\$(Platform)_$(Configuration)_$(PlatformToolset)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2013|x64'">
-    <TargetName>rwshell_d</TargetName>
+    <TargetName>rwshell_d_x64</TargetName>
     <OutDir>$(ProjectDir)..\..\bin\</OutDir>
     <IntDir>$(ProjectDir)..\..\obj\$(Platform)_$(Configuration)_$(PlatformToolset)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'">
-    <TargetName>rwshell</TargetName>
+    <TargetName>rwshell_x64</TargetName>
     <OutDir>$(ProjectDir)..\..\bin\</OutDir>
     <IntDir>$(ProjectDir)..\..\obj\$(Platform)_$(Configuration)_$(PlatformToolset)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release 2013|x64'">
-    <TargetName>rwshell</TargetName>
+    <TargetName>rwshell_x64</TargetName>
     <OutDir>$(ProjectDir)..\..\bin\</OutDir>
     <IntDir>$(ProjectDir)..\..\obj\$(Platform)_$(Configuration)_$(PlatformToolset)\</IntDir>
   </PropertyGroup>
@@ -179,6 +179,7 @@
       <AdditionalLibraryDirectories>../../../rwlib/output/</AdditionalLibraryDirectories>
       <AdditionalDependencies>rwtools_d_$(PlatformToolset).lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>GlobalExportFunctions.def</ModuleDefinitionFile>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2013|Win32'">
@@ -198,6 +199,7 @@
       <AdditionalLibraryDirectories>../../../rwlib/output/</AdditionalLibraryDirectories>
       <AdditionalDependencies>rwtools_d_$(PlatformToolset).lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>GlobalExportFunctions.def</ModuleDefinitionFile>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2015|x64'">
@@ -216,6 +218,7 @@
       <AdditionalLibraryDirectories>../../../rwlib/output/</AdditionalLibraryDirectories>
       <AdditionalDependencies>rwtools_d_$(PlatformToolset)_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>GlobalExportFunctions.def</ModuleDefinitionFile>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2013|x64'">
@@ -235,6 +238,7 @@
       <AdditionalLibraryDirectories>../../../rwlib/output/</AdditionalLibraryDirectories>
       <AdditionalDependencies>rwtools_d_$(PlatformToolset)_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>GlobalExportFunctions.def</ModuleDefinitionFile>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release 2015|Win32'">
@@ -257,6 +261,7 @@
       <AdditionalLibraryDirectories>../../../rwlib/output/</AdditionalLibraryDirectories>
       <AdditionalDependencies>rwtools_$(PlatformToolset).lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>GlobalExportFunctions.def</ModuleDefinitionFile>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release 2013|Win32'">
@@ -280,6 +285,7 @@
       <AdditionalLibraryDirectories>../../../rwlib/output/</AdditionalLibraryDirectories>
       <AdditionalDependencies>rwtools_$(PlatformToolset).lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>GlobalExportFunctions.def</ModuleDefinitionFile>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'">
@@ -302,6 +308,7 @@
       <AdditionalLibraryDirectories>../../../rwlib/output/</AdditionalLibraryDirectories>
       <AdditionalDependencies>rwtools_$(PlatformToolset)_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>GlobalExportFunctions.def</ModuleDefinitionFile>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release 2013|x64'">
@@ -325,6 +332,7 @@
       <AdditionalLibraryDirectories>../../../rwlib/output/</AdditionalLibraryDirectories>
       <AdditionalDependencies>rwtools_$(PlatformToolset)_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>GlobalExportFunctions.def</ModuleDefinitionFile>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

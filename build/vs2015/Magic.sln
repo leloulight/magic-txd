@@ -60,7 +60,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FileSystem", "..\..\vendor\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gtaconfig", "..\..\vendor\gtaconfig\build\vs2015\gtaconfig.vcxproj", "{8A99E697-80DE-4F63-81ED-86DB648A3F6B}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rwthumb", "..\..\thumbnail\build\vs2015\rwthumb.vcxproj", "{4D925CF6-B64D-4AD7-8614-D8872CFE3F90}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rwshell", "..\..\thumbnail\build\vs2015\rwthumb.vcxproj", "{4D925CF6-B64D-4AD7-8614-D8872CFE3F90}"
 	ProjectSection(ProjectDependencies) = postProject
 		{3D409405-B557-4BB6-B9E1-43215019E381} = {3D409405-B557-4BB6-B9E1-43215019E381}
 	EndProjectSection

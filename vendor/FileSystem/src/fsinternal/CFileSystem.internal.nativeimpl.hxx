@@ -26,13 +26,20 @@ inline HANDLE _FileWin32_OpenDirectoryHandle( const filePath& absPath, eDirOpenF
         dwShareMode |= ( FILE_SHARE_READ | FILE_SHARE_WRITE );
     }
 
+    DWORD accessMode = GENERIC_READ;
+
+    if ( ( flags & DIR_FLAG_WRITABLE ) != 0 )
+    {
+        accessMode |= GENERIC_WRITE;
+    }
+
     if ( const char *sysPath = absPath.c_str() )
     {
-        dir = CreateFileA( sysPath, GENERIC_READ, dwShareMode, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL );
+        dir = CreateFileA( sysPath, accessMode, dwShareMode, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL );
     }
     else if ( const wchar_t *sysPath = absPath.w_str() )
     {
-        dir = CreateFileW( sysPath, GENERIC_READ, dwShareMode, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL );
+        dir = CreateFileW( sysPath, accessMode, dwShareMode, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL );
     }
 
     return dir;

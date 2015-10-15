@@ -5,6 +5,8 @@
 
 #include <QByteArray>
 
+#include <ShlObj.h>
+
 #define MAGICTXD_UNICODE_STRING_ID      0xBABE0001
 #define MAGICTXD_CONFIG_BLOCK           0xBABE0002
 #define MAGICTXD_ANSI_STRING_ID         0xBABE0003
@@ -148,6 +150,7 @@ struct mainWindowSerialization
     // Serialization things.
     CFileTranslator *appRoot;       // directory the application module is in.
     CFileTranslator *toolRoot;      // the current directory we launched in
+    CFileTranslator *configRoot;    // writ-able root for configuration files.
 
     enum eSelectedTheme
     {
@@ -580,67 +583,107 @@ struct mainWindowSerialization
         // Now create the root to the current directory.
         this->toolRoot = fileRoot;
 
+        // We want a handle to a writable configuration directory.
+        // If we have no such handle, we might aswell not write any configuration.
+        {
+            CFileTranslator *configRoot = NULL;
+
+            configRoot = mainwnd->fileSystem->CreateTranslator( pathBuffer, DIR_FLAG_WRITABLE );
+
+            if ( configRoot == NULL )
+            {
+                // We try getting a directory in the local user application data folder.
+                PWSTR localAppDataPath = NULL;
+
+                HRESULT resGetPath = SHGetKnownFolderPath( FOLDERID_LocalAppData, 0, NULL, &localAppDataPath );
+
+                if ( SUCCEEDED(resGetPath) )
+                {
+                    // Maybe this one will work.
+                    filePath dirPath( localAppDataPath );
+                    dirPath += "/Magic.TXD config/";
+
+                    CoTaskMemFree( localAppDataPath );
+
+                    // We should create a folder there.
+                    BOOL createFolderSuccess = CreateDirectoryW( dirPath.w_str(), NULL );
+
+                    DWORD lastError = GetLastError();
+
+                    if ( createFolderSuccess == TRUE || lastError == ERROR_ALREADY_EXISTS )
+                    {
+                        configRoot = mainwnd->fileSystem->CreateTranslator( dirPath, DIR_FLAG_WRITABLE );
+                    }
+                }
+            }
+
+            this->configRoot = configRoot;
+        }
+
         // Load the serialization.
         rw::Interface *rwEngine = mainwnd->GetEngine();
 
-        try
+        if ( CFileTranslator *configRoot = this->configRoot )
         {
-            CFile *configFile = this->appRoot->Open( L"app.bin", L"rb" );
-
-            if ( configFile )
+            try
             {
-                try
+                CFile *configFile = this->configRoot->Open( L"app.bin", L"rb" );
+
+                if ( configFile )
                 {
-                    rw::Stream *rwStream = RwStreamCreateTranslated( rwEngine, configFile );
-
-                    if ( rwStream )
+                    try
                     {
-                        try
+                        rw::Stream *rwStream = RwStreamCreateTranslated( rwEngine, configFile );
+
+                        if ( rwStream )
                         {
-                            rw::BlockProvider mainCfgBlock( rwStream, rw::RWBLOCKMODE_READ );
-
-                            mainCfgBlock.EnterContext();
-
                             try
                             {
-                                // Read stuff.
-                                if ( mainCfgBlock.getBlockID() == MAGICTXD_CONFIG_BLOCK )
+                                rw::BlockProvider mainCfgBlock( rwStream, rw::RWBLOCKMODE_READ );
+
+                                mainCfgBlock.EnterContext();
+
+                                try
                                 {
-                                    loadSerialization( mainCfgBlock, mainwnd );
+                                    // Read stuff.
+                                    if ( mainCfgBlock.getBlockID() == MAGICTXD_CONFIG_BLOCK )
+                                    {
+                                        loadSerialization( mainCfgBlock, mainwnd );
+                                    }
                                 }
+                                catch( ... )
+                                {
+                                    mainCfgBlock.LeaveContext();
+
+                                    throw;
+                                }
+
+                                mainCfgBlock.LeaveContext();
                             }
                             catch( ... )
                             {
-                                mainCfgBlock.LeaveContext();
+                                rwEngine->DeleteStream( rwStream );
 
                                 throw;
                             }
 
-                            mainCfgBlock.LeaveContext();
-                        }
-                        catch( ... )
-                        {
                             rwEngine->DeleteStream( rwStream );
-
-                            throw;
                         }
-
-                        rwEngine->DeleteStream( rwStream );
                     }
-                }
-                catch( ... )
-                {
+                    catch( ... )
+                    {
+                        delete configFile;
+
+                        throw;
+                    }
+
                     delete configFile;
-
-                    throw;
                 }
-
-                delete configFile;
             }
-        }
-        catch( rw::RwException& )
-        {
-            // Also ignore this error.
+            catch( rw::RwException& )
+            {
+                // Also ignore this error.
+            }
         }
     }
 
@@ -649,69 +692,80 @@ struct mainWindowSerialization
         // Write the status of the main window.
         rw::Interface *rwEngine = mainwnd->GetEngine();
 
-        try
+        if ( CFileTranslator *configRoot = this->configRoot )
         {
-            CFile *configFile = this->appRoot->Open( L"app.bin", L"wb" );
-
-            if ( configFile )
+            try
             {
-                try
+                CFile *configFile = configRoot->Open( L"app.bin", L"wb" );
+
+                if ( configFile )
                 {
-                    rw::Stream *rwStream = RwStreamCreateTranslated( rwEngine, configFile );
-
-                    if ( rwStream )
+                    try
                     {
-                        try
+                        rw::Stream *rwStream = RwStreamCreateTranslated( rwEngine, configFile );
+
+                        if ( rwStream )
                         {
-                            // Write the serialization in RenderWare blocks.
-                            rw::BlockProvider mainCfgBlock( rwStream, rw::RWBLOCKMODE_WRITE );
-
-                            mainCfgBlock.EnterContext();
-
                             try
                             {
-                                mainCfgBlock.setBlockID( MAGICTXD_CONFIG_BLOCK );
+                                // Write the serialization in RenderWare blocks.
+                                rw::BlockProvider mainCfgBlock( rwStream, rw::RWBLOCKMODE_WRITE );
 
-                                // Write shit.
-                                saveSerialization( mainCfgBlock, mainwnd );
+                                mainCfgBlock.EnterContext();
+
+                                try
+                                {
+                                    mainCfgBlock.setBlockID( MAGICTXD_CONFIG_BLOCK );
+
+                                    // Write shit.
+                                    saveSerialization( mainCfgBlock, mainwnd );
+                                }
+                                catch( ... )
+                                {
+                                    mainCfgBlock.LeaveContext();
+
+                                    throw;
+                                }
+
+                                mainCfgBlock.LeaveContext();
                             }
                             catch( ... )
                             {
-                                mainCfgBlock.LeaveContext();
+                                rwEngine->DeleteStream( rwStream );
 
                                 throw;
                             }
 
-                            mainCfgBlock.LeaveContext();
-                        }
-                        catch( ... )
-                        {
                             rwEngine->DeleteStream( rwStream );
-
-                            throw;
                         }
-
-                        rwEngine->DeleteStream( rwStream );
                     }
-                }
-                catch( ... )
-                {
+                    catch( ... )
+                    {
+                        delete configFile;
+
+                        throw;
+                    }
+
                     delete configFile;
-
-                    throw;
                 }
-
-                delete configFile;
             }
-        }
-        catch( rw::RwException& )
-        {
-            // Ignore those errors.
-            // Maybe log it somewhere.
+            catch( rw::RwException& )
+            {
+                // Ignore those errors.
+                // Maybe log it somewhere.
+            }
         }
 
         // Destroy all root handles.
-        delete this->appRoot;
+        if ( CFileTranslator *appRoot = this->appRoot )
+        {
+            delete appRoot;
+        }
+        
+        if ( CFileTranslator *configRoot = this->configRoot )
+        {
+            delete configRoot;
+        }
 
         // Since we take the tool root from the CFileSystem module, we do not delete it.
     }

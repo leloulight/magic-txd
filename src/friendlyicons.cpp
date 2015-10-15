@@ -100,7 +100,7 @@ void MainWindow::updateFriendlyIcons( void )
 
                     hasKnownConfiguration = true;
                 }
-                else if ( rasterVersion.rwLibMajor == 7 )
+                else if ( rasterVersion.rwLibMinor == 7 )
                 {
                     knownGame = GAME_BULLY;
 
