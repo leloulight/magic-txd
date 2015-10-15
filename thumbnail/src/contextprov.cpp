@@ -1206,16 +1206,19 @@ IFACEMETHODIMP RenderWareContextHandlerProvider::QueryContextMenu(
                 }
             }
 
-            // For texture dictionaries, we allow opening with Magic.TXD.
-            if ( hasTXDOptions && this->contextOptions.size() < 4 )
+            // TODO: detect whether Magic.TXD has been installed into a location.
+            if ( false )
             {
-                // TODO: detect whether Magic.TXD has been installed into a location.
-                optionsNode.AddCommandEntryW( L"Open with Magic.TXD", "open_with_mgtxd",
-                    [=]( void )
+                // For texture dictionaries, we allow opening with Magic.TXD.
+                if ( hasTXDOptions && this->contextOptions.size() < 4 )
                 {
-                    //__debugbreak();
-                    return true;
-                });
+                    optionsNode.AddCommandEntryW( L"Open with Magic.TXD", "open_with_mgtxd",
+                        [=]( void )
+                    {
+                        //__debugbreak();
+                        return true;
+                    });
+                }
             }
         }
         catch( ... )

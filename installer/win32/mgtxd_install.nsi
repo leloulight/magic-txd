@@ -165,8 +165,23 @@ Section /o "Startmenu Shortcuts" STARTMEN_SEC_ID
     !insertmacro MUI_STARTMENU_WRITE_BEGIN SM_PAGE_ID
         createDirectory "${SM_PATH}"
         createShortcut "${SM_PATH}\Magic.TXD.lnk" "$INSTDIR\magictxd.exe"
-        createShortcut "${SM_PATH}\Uninstall.lnk" "$INSTDIR\uinst.exe"
+        createShortcut "${SM_PATH}\Remove Magic.TXD.lnk" "$INSTDIR\uinst.exe"
     !insertmacro MUI_STARTMENU_WRITE_END
+SectionEnd
+
+!define TXD_ASSOC_KEY ".txd"
+!define MGTXD_TXD_ASSOC "${APPNAME}.txd"
+
+Section "Associate .txd files" ASSOC_TXD_ID
+    # Write some registry settings for .TXD files.
+    WriteRegStr HKCR "${TXD_ASSOC_KEY}" "" "Magic.TXD"
+    WriteRegStr HKCR "${TXD_ASSOC_KEY}" "Content Type" "image/dict"
+    WriteRegStr HKCR "${TXD_ASSOC_KEY}" "PerceivedType" "image"
+    WriteRegStr HKCR "${TXD_ASSOC_KEY}\OpenWithProgids" "${MGTXD_TXD_ASSOC}" ""
+    
+    # Now write Magic.TXD association information.
+    WriteRegStr HKCR "${MGTXD_TXD_ASSOC}\DefaultIcon" "" "$INSTDIR\magictxd.exe"
+    WriteRegStr HKCR "${MGTXD_TXD_ASSOC}\shell\open\command" "" "$\"$INSTDIR\magictxd.exe$\" $\"%1$\""
 SectionEnd
 
 Section "Shell Integration" SHELL_INT_ID
@@ -181,10 +196,12 @@ Section "Shell Integration" SHELL_INT_ID
 SectionEnd
 
 LangString DESC_SMShortcut ${LANG_ENGLISH} "Creates shortcuts to Magic.TXD in the startmenu."
+LangString DESC_TXDAssoc ${LANG_ENGLISH} "Associates .txd files in Windows Explorer with Magic.TXD."
 LangString DESC_ShellInt ${LANG_ENGLISH} "Provides thumbnails and context menu extensions for TXD files."
 
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
     !insertmacro MUI_DESCRIPTION_TEXT ${STARTMEN_SEC_ID} $(DESC_SMShortcut)
+    !insertmacro MUI_DESCRIPTION_TEXT ${ASSOC_TXD_ID} $(DESC_TXDAssoc)
     !insertmacro MUI_DESCRIPTION_TEXT ${SHELL_INT_ID} $(DESC_ShellInt)
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
@@ -193,17 +210,37 @@ Function .onInit
     !insertmacro REG_INIT
     !insertmacro UPDATE_INSTDIR
     
+    # Check through the registry whether Magic.TXD is installed already.
+    # We do not want to install twice.
+    StrCpy $0 ""
+    ReadRegStr $0 HKLM ${COMPONENT_REG_PATH} "InstallDir"
+    
+    ${If} $0 != ""
+        MessageBox MB_ICONINFORMATION|MB_OK "Setup has detected through the registry that Magic.TXD has already been installed at $\"$0$\".$\n$\n Please uninstall Magic.TXD before installing it again."
+        Quit
+    ${EndIf}
+    
     StrCpy $DoStartMenu "false"
 FunctionEnd
 
 Function un.onInit
     !insertmacro CHECK_ADMIN
     !insertmacro REG_INIT
-    !insertmacro UPDATE_INSTDIR
+
+    # Try to fetch installation directory.
+    StrCpy $0 ""
+    ReadRegStr $0 HKLM ${COMPONENT_REG_PATH} "InstallDir"
+    
+    ${If} $0 != ""
+        StrCpy $INSTDIR $0
+    ${EndIf}
 FunctionEnd
 
 Section un.defUninst
-    ; TODO: startmenu shortcuts
+    ; Unregister file association if present.
+    DeleteRegKey HKCR "${MGTXD_TXD_ASSOC}"
+    DeleteRegValue HKCR "${TXD_ASSOC_KEY}\OpenWithProgids" "${MGTXD_TXD_ASSOC}"
+    DeleteRegKey /ifempty HKCR "${TXD_ASSOC_KEY}"
     
     IfFileExists $INSTDIR\rwshell.dll 0 uninstmain
     
@@ -226,7 +263,7 @@ uninstmain:
     ${If} $StartMenuFolder != ""
         ; Delete shortcut stuff.
         Delete "${SM_PATH}\Magic.TXD.lnk"
-        Delete "${SM_PATH}\Uninstall.lnk"
+        Delete "${SM_PATH}\Remove Magic.TXD.lnk"
         RMDIR "${SM_PATH}"
     ${EndIf}
         
