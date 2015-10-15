@@ -667,7 +667,7 @@ static const gameVerList_t gameVerMap =
     { L"GTA 3", rw::KnownVersions::GTA3 },
     { L"GTA Vice City", rw::KnownVersions::VC_PC },
     { L"GTA San Andreas", rw::KnownVersions::SA },
-    { L"Manhunt", rw::KnownVersions::MANHUNT }
+    { L"Manhunt", rw::KnownVersions::MANHUNT_PC }
 };
 
 AINLINE std::wstring ansi_to_unicode( const char *ansiStr )

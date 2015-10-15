@@ -17,6 +17,15 @@ public:
         PLATFORM_ATC,
         PLATFORM_UNC_MOBILE
     };
+
+    enum eTargetGame
+    {
+        GAME_GTA3,
+        GAME_GTAVC,
+        GAME_GTASA,
+        GAME_MANHUNT,
+        GAME_BULLY
+    };
     
     inline TxdGenModule( rw::Interface *rwEngine )
     {
@@ -27,7 +36,7 @@ public:
     struct run_config
     {
         // By default, we create San Andreas files.
-        rw::KnownVersions::eGameVersion c_gameVersion = rw::KnownVersions::SA;
+        eTargetGame c_gameType = GAME_GTASA;
 
         std::wstring c_outputRoot = L"txdgen_out/";
         std::wstring c_gameRoot = L"txdgen/";
@@ -73,13 +82,13 @@ public:
     bool ApplicationMain( const run_config& cfg );
 
     bool ProcessTXDArchive(
-        CFileTranslator *srcRoot, CFile *srcStream, CFile *targetStream, eTargetPlatform targetPlatform,
+        CFileTranslator *srcRoot, CFile *srcStream, CFile *targetStream, eTargetPlatform targetPlatform, eTargetGame targetGame,
         bool clearMipmaps,
         bool generateMipmaps, rw::eMipmapGenerationMode mipGenMode, rw::uint32 mipGenMaxLevel,
         bool improveFiltering,
         bool doCompress, float compressionQuality,
         bool outputDebug, CFileTranslator *debugRoot,
-        rw::KnownVersions::eGameVersion gameVersion,
+        const rw::LibraryVersion& gameVersion,
         std::string& errMsg
     ) const;
 
@@ -234,7 +243,7 @@ private:
         return shouldBeforehand;
     }
 
-    static inline void ConvertRasterToPlatform( rw::TextureBase *theTexture, rw::Raster *texRaster, eTargetPlatform targetPlatform, rw::KnownVersions::eGameVersion gameVersion )
+    static inline void ConvertRasterToPlatform( rw::TextureBase *theTexture, rw::Raster *texRaster, eTargetPlatform targetPlatform, eTargetGame targetGame, const rw::LibraryVersion& gameVersion )
     {
         bool hasConversionSucceeded = false;
 
@@ -249,7 +258,7 @@ private:
         else if ( targetPlatform == PLATFORM_PC )
         {
             // Depends on the game.
-            if (gameVersion == rw::KnownVersions::SA)
+            if (targetGame == GAME_GTASA)
             {
                 hasConversionSucceeded = rw::ConvertRasterTo( texRaster, "Direct3D9" );
             }

@@ -32,10 +32,21 @@ LibraryVersion KnownVersions::getGameVersion( KnownVersions::eGameVersion gameVe
         outVer.rwRevMinor = 3;
     }
     else if ( gameVer == SA ||
-              gameVer == MANHUNT )
+              gameVer == MANHUNT_PC )
     {
         outVer.rwLibMinor = 6;
         outVer.rwRevMinor = 3;
+    }
+    else if ( gameVer == MANHUNT_PS2 )
+    {
+        outVer.rwLibMinor = 4;
+        outVer.rwRevMinor = 5;
+    }
+    else if ( gameVer == BULLY )
+    {
+        outVer.rwLibMinor = 7;
+        outVer.rwRevMinor = 2;
+        outVer.buildNumber = 10;
     }
 
     return outVer;

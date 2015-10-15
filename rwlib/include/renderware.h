@@ -279,7 +279,9 @@ namespace KnownVersions
         VC_PS2,
         VC_PC,
         SA,
-        MANHUNT
+        MANHUNT_PC,
+        MANHUNT_PS2,
+        BULLY
     };
 
     LibraryVersion  getGameVersion( eGameVersion gameVer );

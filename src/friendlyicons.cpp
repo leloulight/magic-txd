@@ -88,9 +88,15 @@ void MainWindow::updateFriendlyIcons( void )
 
                     hasKnownConfiguration = true;
                 }
-                else if ( rasterVersion.rwLibMinor <= 4 )
+                else if ( rasterVersion.rwLibMinor <= 3 )
                 {
                     knownGame = GAME_GTAVC;
+
+                    hasKnownConfiguration = true;
+                }
+                else if ( rasterVersion.rwLibMinor <= 4 )
+                {
+                    knownGame = GAME_MANHUNT;
 
                     hasKnownConfiguration = true;
                 }

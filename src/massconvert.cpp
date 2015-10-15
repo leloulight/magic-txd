@@ -57,7 +57,7 @@ static platformToNaturalList_t platformToNaturalList =
 
 struct gameToNatural
 {
-    rw::KnownVersions::eGameVersion mode;
+    TxdGenModule::eTargetGame mode;
     QString natural;
 
     inline bool operator == ( const decltype( mode )& right ) const
@@ -75,10 +75,11 @@ typedef naturalModeList <gameToNatural> gameToNaturalList_t;
 
 static gameToNaturalList_t gameToNaturalList =
 {
-    { rw::KnownVersions::GTA3, "GTA III" },
-    { rw::KnownVersions::VC_PC, "GTA VC" },
-    { rw::KnownVersions::SA, "GTA SA" },
-    { rw::KnownVersions::MANHUNT, "Manhunt" }
+    { TxdGenModule::GAME_GTA3, "GTA III" },
+    { TxdGenModule::GAME_GTAVC, "GTA VC" },
+    { TxdGenModule::GAME_GTASA, "GTA SA" },
+    { TxdGenModule::GAME_MANHUNT, "Manhunt" },
+    { TxdGenModule::GAME_BULLY, "Bully" }
 };
 
 MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
@@ -147,7 +148,7 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
 
     this->selGameBox = gameSelBox;
 
-    gameToNaturalList.selectCurrent( gameSelBox, massconv->txdgenConfig.c_gameVersion );
+    gameToNaturalList.selectCurrent( gameSelBox, massconv->txdgenConfig.c_gameType );
 
     gameGroup->addWidget( gameSelBox );
 
@@ -311,7 +312,7 @@ void MassConvertWindow::serialize( void )
     massconvEnv *massconv = massconvEnvRegister.GetPluginStruct( this->mainwnd );
 
     // game version.
-    gameToNaturalList.getCurrent( this->selGameBox, massconv->txdgenConfig.c_gameVersion );
+    gameToNaturalList.getCurrent( this->selGameBox, massconv->txdgenConfig.c_gameType );
 
     massconv->txdgenConfig.c_outputRoot = this->editOutputRoot->text().toStdWString();
     massconv->txdgenConfig.c_gameRoot = this->editGameRoot->text().toStdWString();

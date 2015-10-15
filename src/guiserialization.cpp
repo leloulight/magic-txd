@@ -169,7 +169,7 @@ struct mainWindowSerialization
 
     struct txdgen_cfg_struct
     {
-        endian::little_endian <rw::KnownVersions::eGameVersion> c_gameVersion;
+        endian::little_endian <TxdGenModule::eTargetGame> c_gameType;
         endian::little_endian <TxdGenModule::eTargetPlatform> c_targetPlatform;
         
         bool c_clearMipmaps;
@@ -342,7 +342,7 @@ struct mainWindowSerialization
                     txdgen_cfg_struct cfgStruct;
                     massconvBlock.readStruct( cfgStruct );
 
-                    massconv->txdgenConfig.c_gameVersion = cfgStruct.c_gameVersion;
+                    massconv->txdgenConfig.c_gameType = cfgStruct.c_gameType;
                     massconv->txdgenConfig.c_targetPlatform = cfgStruct.c_targetPlatform;
                     massconv->txdgenConfig.c_clearMipmaps = cfgStruct.c_clearMipmaps;
                     massconv->txdgenConfig.c_generateMipmaps = cfgStruct.c_generateMipmaps;
@@ -508,7 +508,7 @@ struct mainWindowSerialization
                 RwWriteUnicodeString( massconvBlock, massconv->txdgenConfig.c_outputRoot );
 
                 txdgen_cfg_struct cfgStruct;
-                cfgStruct.c_gameVersion = massconv->txdgenConfig.c_gameVersion;
+                cfgStruct.c_gameType = massconv->txdgenConfig.c_gameType;
                 cfgStruct.c_targetPlatform = massconv->txdgenConfig.c_targetPlatform;
                 cfgStruct.c_clearMipmaps = massconv->txdgenConfig.c_clearMipmaps;
                 cfgStruct.c_generateMipmaps = massconv->txdgenConfig.c_generateMipmaps;

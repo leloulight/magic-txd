@@ -10,13 +10,13 @@
 
 
 bool TxdGenModule::ProcessTXDArchive(
-    CFileTranslator *srcRoot, CFile *srcStream, CFile *targetStream, eTargetPlatform targetPlatform,
+    CFileTranslator *srcRoot, CFile *srcStream, CFile *targetStream, eTargetPlatform targetPlatform, eTargetGame targetGame,
     bool clearMipmaps,
     bool generateMipmaps, rw::eMipmapGenerationMode mipGenMode, rw::uint32 mipGenMaxLevel,
     bool improveFiltering,
     bool doCompress, float compressionQuality,
     bool outputDebug, CFileTranslator *debugRoot,
-    rw::KnownVersions::eGameVersion gameVersion,
+    const rw::LibraryVersion& gameVersion,
     std::string& errMsg
 ) const
 {
@@ -65,10 +65,8 @@ bool TxdGenModule::ProcessTXDArchive(
 
         if ( txd )
         {
-            rw::LibraryVersion reqVer = rw::KnownVersions::getGameVersion( gameVersion );
-
             // Update the version of this texture dictionary.
-            txd->SetEngineVersion( reqVer );
+            txd->SetEngineVersion( gameVersion );
 
             try
             {
@@ -82,7 +80,7 @@ bool TxdGenModule::ProcessTXDArchive(
                         rw::TextureBase *theTexture = iter.Resolve();
 
                         // Update the version of this texture.
-                        theTexture->SetEngineVersion( reqVer );
+                        theTexture->SetEngineVersion( gameVersion );
 
                         // We need to modify the raster.
                         rw::Raster *texRaster = theTexture->GetRaster();
@@ -96,7 +94,7 @@ bool TxdGenModule::ProcessTXDArchive(
 
                             if ( shouldConvertBeforehand == true )
                             {
-                                ConvertRasterToPlatform( theTexture, texRaster, targetPlatform, gameVersion );
+                                ConvertRasterToPlatform( theTexture, texRaster, targetPlatform, targetGame, gameVersion );
 
                                 hasConvertedToTargetArchitecture = true;
                             }
@@ -214,7 +212,7 @@ bool TxdGenModule::ProcessTXDArchive(
                                 // If we are not target architecture already, make sure we are.
                                 if ( hasConvertedToTargetArchitecture == false )
                                 {
-                                    ConvertRasterToPlatform( theTexture, texRaster, targetPlatform, gameVersion );
+                                    ConvertRasterToPlatform( theTexture, texRaster, targetPlatform, targetGame, gameVersion );
 
                                     hasConvertedToTargetArchitecture = true;
                                 }
@@ -241,7 +239,7 @@ bool TxdGenModule::ProcessTXDArchive(
                             {
                                 if ( hasConvertedToTargetArchitecture == false )
                                 {
-                                    ConvertRasterToPlatform( theTexture, texRaster, targetPlatform, gameVersion );
+                                    ConvertRasterToPlatform( theTexture, texRaster, targetPlatform, targetGame, gameVersion );
 
                                     hasConvertedToTargetArchitecture = true;
                                 }
@@ -345,6 +343,7 @@ struct _discFileSentry_txdgen
 {
     TxdGenModule *module;
     TxdGenModule::eTargetPlatform targetPlatform;
+    TxdGenModule::eTargetGame targetGame;
     bool clearMipmaps;
     bool generateMipmaps;
     rw::eMipmapGenerationMode mipGenMode;
@@ -352,7 +351,7 @@ struct _discFileSentry_txdgen
     bool improveFiltering;
     bool doCompress;
     float compressionQuality;
-    rw::KnownVersions::eGameVersion gameVersion;
+    rw::LibraryVersion gameVersion;
     bool outputDebug;
     CFileTranslator *debugTranslator;
 
@@ -395,7 +394,7 @@ struct _discFileSentry_txdgen
                     std::string errorMessage;
 
                     bool couldProcessTXD = this->module->ProcessTXDArchive(
-                        sourceRoot, sourceStream, targetStream, this->targetPlatform,
+                        sourceRoot, sourceStream, targetStream, this->targetPlatform, this->targetGame,
                         this->clearMipmaps,
                         this->generateMipmaps, this->mipGenMode, this->mipGenMaxLevel,
                         this->improveFiltering,
@@ -547,8 +546,8 @@ TxdGenModule::run_config TxdGenModule::ParseConfig( CFileTranslator *root, const
                 // Target game version.
                 if ( const char *targetVersion = mainEntry->Get( "targetVersion" ) )
                 {
-                    rw::KnownVersions::eGameVersion gameVer;
-                    bool hasGameVer = false;
+                    TxdGenModule::eTargetGame gameType;
+                    bool hasGameType = false;
                             
                     if ( stricmp( targetVersion, "SA" ) == 0 ||
                             stricmp( targetVersion, "SanAndreas" ) == 0 ||
@@ -556,9 +555,9 @@ TxdGenModule::run_config TxdGenModule::ParseConfig( CFileTranslator *root, const
                             stricmp( targetVersion, "GTA SA" ) == 0 ||
                             stricmp( targetVersion, "GTASA" ) == 0 )
                     {
-                        gameVer = rw::KnownVersions::SA;
+                        gameType = GAME_GTASA;
 
-                        hasGameVer = true;
+                        hasGameType = true;
                     }
                     else if ( stricmp( targetVersion, "VC" ) == 0 ||
                                 stricmp( targetVersion, "ViceCity" ) == 0 ||
@@ -566,38 +565,37 @@ TxdGenModule::run_config TxdGenModule::ParseConfig( CFileTranslator *root, const
                                 stricmp( targetVersion, "GTA VC" ) == 0 ||
                                 stricmp( targetVersion, "GTAVC" ) == 0 )
                     {
-                        if ( cfg.c_targetPlatform == PLATFORM_PS2 )
-                        {
-                            gameVer = rw::KnownVersions::VC_PS2;
-                        }
-                        else
-                        {
-                            gameVer = rw::KnownVersions::VC_PC;
-                        }
+                        gameType = GAME_GTAVC;
 
-                        hasGameVer = true;
+                        hasGameType = true;
                     }
                     else if ( stricmp( targetVersion, "GTAIII" ) == 0 ||
                                 stricmp( targetVersion, "III" ) == 0 ||
                                 stricmp( targetVersion, "GTA3" ) == 0 ||
                                 stricmp( targetVersion, "GTA 3" ) == 0 )
                     {
-                        gameVer = rw::KnownVersions::GTA3;
+                        gameType = GAME_GTA3;
 
-                        hasGameVer = true;
+                        hasGameType = true;
                     }
                     else if ( stricmp( targetVersion, "MANHUNT" ) == 0 ||
                                 stricmp( targetVersion, "MHUNT" ) == 0 ||
                                 stricmp( targetVersion, "MH" ) == 0 )
                     {
-                        gameVer = rw::KnownVersions::MANHUNT;
+                        gameType = GAME_MANHUNT;
 
-                        hasGameVer = true;
+                        hasGameType = true;
+                    }
+                    else if ( stricmp( targetVersion, "BULLY" ) == 0 )
+                    {
+                        gameType = GAME_BULLY;
+
+                        hasGameType = true;
                     }
                         
-                    if ( hasGameVer )
+                    if ( hasGameType )
                     {
-                        cfg.c_gameVersion = gameVer;
+                        cfg.c_gameType = gameType;
                     }
                 }
 
@@ -793,28 +791,61 @@ bool TxdGenModule::ApplicationMain( const run_config& cfg )
             L"* gameRoot: " + cfg.c_gameRoot + L"\n"
         );
 
-        rw::LibraryVersion targetVersion = rw::KnownVersions::getGameVersion( cfg.c_gameVersion );
+        eTargetGame targetGame = cfg.c_gameType;
 
         const char *strTargetVersion = "unknown";
 
-        if ( targetVersion.rwLibMajor == 3 && targetVersion.rwLibMinor == 6 )
+        rw::LibraryVersion targetVersion;
         {
-            if ( cfg.c_gameVersion == rw::KnownVersions::SA )
+            // Determine the real target version.
+            if ( targetGame == GAME_GTA3 )
             {
+                targetVersion = rw::KnownVersions::getGameVersion( rw::KnownVersions::GTA3 );
+
+                strTargetVersion = "GTA 3";
+            }
+            else if ( targetGame == GAME_GTAVC )
+            {
+                if ( cfg.c_targetPlatform == PLATFORM_PS2 )
+                {
+                    targetVersion = rw::KnownVersions::getGameVersion( rw::KnownVersions::VC_PS2 );
+                }
+                else
+                {
+                    targetVersion = rw::KnownVersions::getGameVersion( rw::KnownVersions::VC_PC );
+                }
+
+                strTargetVersion = "Vice City";
+            }
+            else if ( targetGame == GAME_GTASA )
+            {
+                targetVersion = rw::KnownVersions::getGameVersion( rw::KnownVersions::SA );
+
                 strTargetVersion = "San Andreas";
             }
-            else if ( cfg.c_gameVersion == rw::KnownVersions::MANHUNT )
+            else if ( targetGame == GAME_MANHUNT )
             {
+                if ( cfg.c_targetPlatform == PLATFORM_PS2 )
+                {
+                    targetVersion = rw::KnownVersions::getGameVersion( rw::KnownVersions::MANHUNT_PS2 );
+                }
+                else
+                {
+                    targetVersion = rw::KnownVersions::getGameVersion( rw::KnownVersions::MANHUNT_PC );
+                }
+
                 strTargetVersion = "Manhunt";
             }
-        }
-        else if ( targetVersion.rwLibMajor == 3 && ( targetVersion.rwLibMinor == 3 || targetVersion.rwLibMinor == 4 ) )
-        {
-            strTargetVersion = "Vice City";
-        }
-        else if ( targetVersion.rwLibMajor == 3 && ( targetVersion.rwLibMinor == 0 || targetVersion.rwLibMinor == 1 ) )
-        {
-            strTargetVersion = "GTA 3";
+            else if ( targetGame == GAME_BULLY )
+            {
+                targetVersion = rw::KnownVersions::getGameVersion( rw::KnownVersions::BULLY );
+
+                strTargetVersion = "Bully";
+            }
+            else
+            {
+                targetVersion = rw::KnownVersions::getGameVersion( rw::KnownVersions::SA );
+            }
         }
 
         this->OnMessage(
@@ -845,7 +876,7 @@ bool TxdGenModule::ApplicationMain( const run_config& cfg )
         }
         else if ( cfg.c_targetPlatform == PLATFORM_ATC )
         {
-            strTargetPlatform = "ATI [mobile]";
+            strTargetPlatform = "AMD [mobile]";
         }
         else if ( cfg.c_targetPlatform == PLATFORM_UNC_MOBILE )
         {
@@ -1001,6 +1032,7 @@ bool TxdGenModule::ApplicationMain( const run_config& cfg )
                     _discFileSentry_txdgen sentry;
                     sentry.module = this;
                     sentry.targetPlatform = cfg.c_targetPlatform;
+                    sentry.targetGame = cfg.c_gameType;
                     sentry.clearMipmaps = cfg.c_clearMipmaps;
                     sentry.generateMipmaps = cfg.c_generateMipmaps;
                     sentry.mipGenMode = cfg.c_mipGenMode;
@@ -1008,7 +1040,7 @@ bool TxdGenModule::ApplicationMain( const run_config& cfg )
                     sentry.improveFiltering = cfg.c_improveFiltering;
                     sentry.doCompress = cfg.compressTextures;
                     sentry.compressionQuality = cfg.c_compressionQuality;
-                    sentry.gameVersion = cfg.c_gameVersion;
+                    sentry.gameVersion = targetVersion;
                     sentry.outputDebug = cfg.c_outputDebug;
                     sentry.debugTranslator = absDebugOutputTranslator;
 

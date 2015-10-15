@@ -140,13 +140,27 @@ public slots:
         rw::LibraryVersion libVer;
         bool hasGameVer = true;
         
+        const char *currentPlatform = NULL;
+
+        if ( rw::TexDictionary *currentTXD = this->mainWnd->currentTXD )
+        {
+            currentPlatform = MainWindow::GetTXDPlatformString( currentTXD );
+        }
+
         if ( newItem == "GTA San Andreas" )
         {
             libVer = rw::KnownVersions::getGameVersion( rw::KnownVersions::SA );
         }
         else if ( newItem == "GTA Vice City" )
         {
-            libVer = rw::KnownVersions::getGameVersion( rw::KnownVersions::VC_PC );
+            if ( currentPlatform && stricmp( currentPlatform, "PlayStation2" ) == 0 )
+            {
+                libVer = rw::KnownVersions::getGameVersion( rw::KnownVersions::VC_PS2 );
+            }
+            else
+            {
+                libVer = rw::KnownVersions::getGameVersion( rw::KnownVersions::VC_PC );
+            }
         }
         else if ( newItem == "GTA III" )
         {
@@ -154,7 +168,18 @@ public slots:
         }
         else if ( newItem == "Manhunt" )
         {
-            libVer = rw::KnownVersions::getGameVersion( rw::KnownVersions::MANHUNT );
+            if ( currentPlatform && stricmp( currentPlatform, "PlayStation2" ) == 0 )
+            {
+                libVer = rw::KnownVersions::getGameVersion( rw::KnownVersions::MANHUNT_PS2 );
+            }
+            else
+            {
+                libVer = rw::KnownVersions::getGameVersion( rw::KnownVersions::MANHUNT_PC );
+            }
+        }
+        else if ( newItem == "Bully" )
+        {
+            libVer = rw::KnownVersions::getGameVersion( rw::KnownVersions::BULLY );
         }
         else
         {
@@ -300,6 +325,9 @@ public slots:
         // Update the MainWindow stuff.
         this->mainWnd->updateWindowTitle();
 
+        // Since the version has changed, the friendly icons should have changed.
+        this->mainWnd->updateFriendlyIcons();
+
         this->close();
     }
 
@@ -330,11 +358,12 @@ public:
 		gameLabel->setObjectName("label25px");
 		gameLabel->setFixedWidth(70);
 		QComboBox *gameComboBox = new QComboBox;
-		gameComboBox->addItem(tr("GTA San Andreas"));
-		gameComboBox->addItem(tr("GTA Vice City"));
-		gameComboBox->addItem(tr("GTA III"));
-		gameComboBox->addItem(tr("Manhunt"));
-		gameComboBox->addItem(tr("Custom"));
+		gameComboBox->addItem("GTA San Andreas");
+		gameComboBox->addItem("GTA Vice City");
+		gameComboBox->addItem("GTA III");
+		gameComboBox->addItem("Manhunt");
+        gameComboBox->addItem("Bully");
+		gameComboBox->addItem("Custom");
 
         this->gameSelectBox = gameComboBox;
 
