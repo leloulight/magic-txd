@@ -150,13 +150,13 @@ IFACEMETHODIMP RenderWareContextHandlerProvider::Initialize( LPCITEMIDLIST idLis
                                         bool hasKnownExt = false;
                                         eContextMenuOptionType optionType;
 
-                                        if ( wcsicmp( extStart, L".TXD" ) == 0 )
+                                        if ( wcsicmp( extStart, L"TXD" ) == 0 )
                                         {
                                             optionType = CONTEXTOPT_TXD;
 
                                             hasKnownExt = true;
                                         }
-                                        else if ( wcsicmp( extStart, L".RWTEX" ) == 0 )
+                                        else if ( wcsicmp( extStart, L"RWTEX" ) == 0 )
                                         {
                                             optionType = CONTEXTOPT_TEXTURE;
 
@@ -688,7 +688,8 @@ static const gameVerList_t gameVerMap =
     { L"GTA 3", rw::KnownVersions::GTA3 },
     { L"GTA Vice City", rw::KnownVersions::VC_PC },
     { L"GTA San Andreas", rw::KnownVersions::SA },
-    { L"Manhunt", rw::KnownVersions::MANHUNT_PC }
+    { L"Manhunt", rw::KnownVersions::MANHUNT_PC },
+    { L"Bully", rw::KnownVersions::BULLY }
 };
 
 AINLINE std::wstring ansi_to_unicode( const char *ansiStr )
