@@ -61,14 +61,14 @@ struct TexResizeWindow : public QDialog
         // We only want to accept unsigned integers.
         QIntValidator *dimensionValidator = new QIntValidator( 1, ( rasterRules.maximum ? rasterRules.maxVal : 4096 ), this );
 
-        QLineEdit *widthEdit = new QLineEdit( QString::fromStdString( std::to_string( curWidth ) ) );
+        QLineEdit *widthEdit = new QLineEdit( ansi_to_qt( std::to_string( curWidth ) ) );
         widthEdit->setValidator( dimensionValidator );
 
         this->widthEdit = widthEdit;
 
         connect( widthEdit, &QLineEdit::textChanged, this, &TexResizeWindow::OnChangeDimensionProperty );
 
-        QLineEdit *heightEdit = new QLineEdit( QString::fromStdString( std::to_string( curHeight ) ) );
+        QLineEdit *heightEdit = new QLineEdit( ansi_to_qt( std::to_string( curHeight ) ) );
         heightEdit->setValidator( dimensionValidator );
 
         this->heightEdit = heightEdit;
@@ -156,7 +156,7 @@ public slots:
                         }
                         catch( rw::RwException& except )
                         {
-                            this->mainWnd->txdLog->showError( QString( "failed to resize raster: " ) + QString::fromStdString( except.message ) );
+                            this->mainWnd->txdLog->showError( QString( "failed to resize raster: " ) + ansi_to_qt( except.message ) );
 
                             // We should not close the dialog.
                             shouldClose = false;

@@ -36,7 +36,7 @@ class RwVersionDialog : public QDialog
     {
         QString currentVersionString = this->versionLineEdit->text();
 
-        std::string ansiCurrentVersionString = currentVersionString.toStdString();
+        std::string ansiCurrentVersionString = qt_to_ansi( currentVersionString );
 
         rw::LibraryVersion theVersion;
 
@@ -84,7 +84,7 @@ class RwVersionDialog : public QDialog
             // Also set the build number, if valid.
             QString buildNumber = this->buildLineEdit->text();
 
-            std::string ansiBuildNumber = buildNumber.toStdString();
+            std::string ansiBuildNumber = qt_to_ansi( buildNumber );
 
             unsigned int buildNum;
 
@@ -205,8 +205,8 @@ public slots:
                 buildString = hex_stream.str();
             }
 
-            this->versionLineEdit->setText( QString::fromStdString( verString ) );
-            this->buildLineEdit->setText( QString::fromStdString( buildString ) );
+            this->versionLineEdit->setText( ansi_to_qt( verString ) );
+            this->buildLineEdit->setText( ansi_to_qt( buildString ) );
         }
         
         // We want to update the accessibility.
@@ -296,7 +296,7 @@ public slots:
                             {
                                 // We output a warning.
                                 this->mainWnd->txdLog->addLogMessage(
-                                    QString( "failed to adjust texture platform of " ) + QString::fromStdString( texHandle->GetName() ) + QString( ": " ) + QString::fromStdString( except.message ),
+                                    QString( "failed to adjust texture platform of " ) + ansi_to_qt( texHandle->GetName() ) + QString( ": " ) + QString::fromStdString( except.message ),
                                     LOGMSG_WARNING
                                 );
 

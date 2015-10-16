@@ -1161,56 +1161,84 @@ namespace FileSystem
         return successful;
     }
 
-    // Useful utility to get the file name out of a path.
     template <typename charType>
-    inline filePath GetFileNameItem( const charType *name, bool includeExtension = false, filePath *outDirectory = NULL, filePath *outExtention = NULL )
+    AINLINE const charType* GetFileNameItemStart( const charType *name )
     {
-        const charType *fileStartFrom = NULL;
+        typedef character_env <charType> char_env;
+
         const charType *origName = name;
+
+        char_env::const_iterator nameIter( name );
+
+        const charType *fileStartFrom = NULL;
 
         while ( true )
         {
-            charType ichr = *name;
+            char_env::ucp_t ichr = nameIter.Resolve();
 
             if ( ichr == '\0' )
             {
                 if ( !fileStartFrom )
+                {
                     fileStartFrom = origName;
+                }
 
                 break;
             }
+
+            nameIter.Increment();
 
             if ( ichr == '\\' || ichr == '/' )
             {
-                fileStartFrom = name + 1;
+                fileStartFrom = nameIter.GetPointer();
             }
-
-            name++;
         }
 
-        const charType *extStart = NULL;
-        const charType *strEnd = NULL;
+        return fileStartFrom;
+    }
 
-        name = fileStartFrom;
+    template <typename charType>
+    AINLINE const charType* GetFileNameItemEndWithExtension( const charType *name, const charType*& extOut )
+    {
+        typedef character_env <charType> char_env;
+        
+        char_env::const_iterator nameIter( name );
+
+        const charType *strEnd = NULL;
+        const charType *extStart = NULL;
 
         while ( true )
         {
-            charType ichr = *name;
-
-            if ( ichr == '.' )
-            {
-                extStart = name + 1;
-            }
+            char_env::ucp_t ichr = nameIter.Resolve();
 
             if ( ichr == '\0' )
             {
-                strEnd = name;
+                strEnd = nameIter.GetPointer();
                 break;
             }
 
-            name++;
+            nameIter.Increment();
+
+            if ( ichr == '.' )
+            {
+                extStart = nameIter.GetPointer();
+            }
         }
 
+        extOut = extStart;
+        return strEnd;
+    }
+
+    // Useful utility to get the file name out of a path.
+    template <typename charType>
+    inline filePath GetFileNameItem( const charType *name, bool includeExtension = false, filePath *outDirectory = NULL, filePath *outExtention = NULL )
+    {
+        const charType *fileStartFrom = GetFileNameItemStart( name );
+
+        const charType *extStart = NULL;
+        const charType *strEnd = GetFileNameItemEndWithExtension( fileStartFrom, extStart );
+
+        // Dispatch the results.
         const charType *fileEnd = NULL;
 
         if ( !includeExtension && extStart != NULL )
@@ -1231,9 +1259,9 @@ namespace FileSystem
         if ( outDirectory )
         {
             // Only create directory path if it is applicable.
-            if ( origName != fileStartFrom )
+            if ( name != fileStartFrom )
             {
-                *outDirectory = filePath( origName, fileStartFrom - origName );
+                *outDirectory = filePath( name, fileStartFrom - name );
             }
             else
             {
@@ -1246,7 +1274,41 @@ namespace FileSystem
 
     AINLINE filePath GetFileNameItem( const filePath& name, bool includeExtension = false, filePath *outDirectory = NULL, filePath *outExtention = NULL )
     {
-        return filePath_dispatch( name, [=]( auto name ) { return GetFileNameItem( name, includeExtension, outDirectory, outExtention ); } );
+        return filePath_dispatch( name, [&]( auto name ) { return GetFileNameItem( name, includeExtension, outDirectory, outExtention ); } );
+    }
+
+    // Useful function to get just the extension of a filename.
+    template <typename charType>
+    inline const charType* FindFileNameExtension( const charType *name )
+    {
+        const charType *fileStartFrom = GetFileNameItemStart( name );
+
+        const charType *extStart = NULL;
+        const charType *strEnd = GetFileNameItemEndWithExtension( fileStartFrom, extStart );
+
+        return extStart;
+    }
+
+    // Useful function to get just the directory of a filename, if available.
+    template <typename charType>
+    inline bool GetFileNameDirectory( const charType *name, filePath& dirOut )
+    {
+        const charType *fileStartFrom = GetFileNameItemStart( name );
+
+        const charType *extStart = NULL;
+        const charType *strEnd = GetFileNameItemEndWithExtension( fileStartFrom, extStart );
+
+        // Check if we have no directory.
+        if ( name == fileStartFrom )
+            return false;
+
+        dirOut = filePath( name, fileStartFrom - name );
+        return true;
+    }
+
+    AINLINE bool GetFileNameDirectory( const filePath& name, filePath& dirOut )
+    {
+        return filePath_dispatch( name, [&]( auto name ) { return GetFileNameDirectory( name, dirOut ); } );
     }
 
     // Returns whether a path is a directory.

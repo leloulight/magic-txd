@@ -3,6 +3,7 @@ Unicode true
 RequestExecutionLevel admin
 
 !define APPNAME "Magic.TXD"
+!define APPNAME_FRIENDLY "Magic TXD"
 
 !define MUI_ICON "..\inst.ico"
 
@@ -10,7 +11,7 @@ RequestExecutionLevel admin
 !include "Sections.nsh"
 !include "x64.nsh"
 
-InstallDir $PROGRAMFILES\${APPNAME}
+InstallDir "$PROGRAMFILES\${APPNAME_FRIENDLY}"
 Name "${APPNAME}"
 
 var StartMenuFolder
@@ -49,9 +50,9 @@ ${EndIf}
 
 !macro UPDATE_INSTDIR
 ${If} ${RunningX64}
-    StrCpy $INSTDIR $PROGRAMFILES64\${APPNAME}
+    StrCpy $INSTDIR "$PROGRAMFILES64\${APPNAME_FRIENDLY}"
 ${Else}
-    StrCpy $INSTDIR $PROGRAMFILES\${APPNAME}
+    StrCpy $INSTDIR "$PROGRAMFILES\${APPNAME_FRIENDLY}"
 ${EndIf}
 !macroend
 
@@ -93,35 +94,41 @@ VAR DoStartMenu
 !define INST_REG_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\Magic.TXD"
 !define SM_PATH "$SMPROGRAMS\$StartMenuFolder"
 
-!define REDIST32 "https://download.microsoft.com/download/9/3/F/93FCF1E7-E6A4-478B-96E7-D4B285925B00/vc_redist.x86.exe"
-!define REDIST64 "https://download.microsoft.com/download/9/3/F/93FCF1E7-E6A4-478B-96E7-D4B285925B00/vc_redist.x64.exe"
+!define REDIST32_120 "https://download.microsoft.com/download/2/E/6/2E61CFA4-993B-4DD4-91DA-3737CD5CD6E3/vcredist_x86.exe"
+!define REDIST64_120 "https://download.microsoft.com/download/2/E/6/2E61CFA4-993B-4DD4-91DA-3737CD5CD6E3/vcredist_x64.exe"
 
-!define REDIST32_KEY "SOFTWARE\Wow6432Node\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum"
-!define REDIST64_KEY "SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum"
+!define REDIST32_120_KEY "SOFTWARE\Wow6432Node\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum"
+!define REDIST64_120_KEY "SOFTWARE\Microsoft\DevDiv\vc\Servicing\12.0\RuntimeMinimum"
 
-Section "-Magic.TXD core"
+!define REDIST32_140 "https://download.microsoft.com/download/9/3/F/93FCF1E7-E6A4-478B-96E7-D4B285925B00/vc_redist.x86.exe"
+!define REDIST64_140 "https://download.microsoft.com/download/9/3/F/93FCF1E7-E6A4-478B-96E7-D4B285925B00/vc_redist.x64.exe"
+
+!define REDIST32_140_KEY "SOFTWARE\Wow6432Node\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum"
+!define REDIST64_140_KEY "SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum"
+
+!macro INSTALL_REDIST name friendlyname url32 url64 key32 key64
     # Check whether the user has to install a redistributable and which.
     StrCpy $3 0
     StrCpy $4 "HTTP://REDIST.PATH/"
     
     ${If} ${RunningX64}
-        ReadRegDWORD $3 HKLM "${REDIST64_KEY}" "Install"
-        StrCpy $4 ${REDIST64}
+        ReadRegDWORD $3 HKLM "${key64}" "Install"
+        StrCpy $4 ${url64}
     ${Else}
-        ReadRegDWORD $3 HKLM "${REDIST32_KEY}" "Install"
-        StrCpy $4 ${REDIST32}
+        ReadRegDWORD $3 HKLM "${key32}" "Install"
+        StrCpy $4 ${url32}
     ${EndIf}
     
     ${If} $3 == 0
     ${OrIf} $3 == ""
-        # If required, install the Visual Studio 2015 redistributable.
-        StrCpy $1 "$TEMP\vc_redist_2015.exe"
+        # If required, install the redistributable.
+        StrCpy $1 "$TEMP\${name}"
         
         NSISdl::download $4 $1
         
         pop $0
         ${If} $0 != "success"
-            MessageBox mb_iconstop "Failed to download the VS2015 redistributable. Please verify connection to the Internet and try again."
+            MessageBox mb_iconstop "Failed to download the ${friendlyname} redistributable. Please verify connection to the Internet and try again."
             SetErrorLevel 2
             Quit
         ${EndIf}
@@ -133,10 +140,16 @@ Section "-Magic.TXD core"
         Delete $1
         
         ${If} $0 != 0
-            MessageBox mb_iconstop "Installation of the VS2015 redistributable was not successful. Please try installing again."
+            MessageBox mb_iconstop "Installation of the ${friendlyname} redistributable was not successful. Please try installing again."
             Quit
         ${EndIf}
     ${EndIf}
+!macroend
+
+Section "-Magic.TXD core"
+    # Install all required redistributables.
+    !insertmacro INSTALL_REDIST "vcredist_2013.exe" "VS2013" ${REDIST32_120} ${REDIST64_120} ${REDIST32_120_KEY} ${REDIST64_120_KEY}
+    !insertmacro INSTALL_REDIST "vcredist_2015.exe" "VS2015" ${REDIST32_140} ${REDIST64_140} ${REDIST32_140_KEY} ${REDIST64_140_KEY}
 
     # Install the main program.
     setOutPath $INSTDIR

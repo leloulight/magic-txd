@@ -110,7 +110,7 @@ private:
 			str += "info\"]: ";
 		}
 		QString message = itemWidget->textLabel->text();
-		std::string ansiMessage = message.toStdString();
+		std::string ansiMessage = qt_to_ansi( message );
 		str_replace(ansiMessage, "\n", spacing);
 		str += ansiMessage;
 		str += "\n";

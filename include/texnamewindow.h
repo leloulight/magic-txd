@@ -21,7 +21,7 @@ struct TexNameWindow : public QDialog
 
             if ( texHandle )
             {
-                curTexName = QString::fromStdString( texHandle->GetName() );
+                curTexName = ansi_to_qt( texHandle->GetName() );
             }
         }
 
@@ -92,7 +92,7 @@ public slots:
 
         // TODO: verify if all ANSI.
 
-        std::string ansiTexName = texName.toStdString();
+        std::string ansiTexName = qt_to_ansi( texName );
 
         // Set it.
         if ( TexInfoWidget *texInfo = this->texInfo )
@@ -132,7 +132,7 @@ private:
                 if ( rw::TextureBase *texHandle = texInfo->GetTextureHandle() )
                 {
                     // Setting an already set texture name makes no sense.
-                    std::string ansiCurTexName = curTexName.toStdString();
+                    std::string ansiCurTexName = qt_to_ansi( curTexName );
 
                     if ( ansiCurTexName == texHandle->GetName() )
                     {

@@ -362,7 +362,7 @@ struct MassConvertTxdGenModule : public TxdGenModule
 
     void OnMessage( const std::string& msg ) override
     {
-        massconvWnd->postLogMessage( QString::fromStdString( msg ) );
+        massconvWnd->postLogMessage( ansi_to_qt( msg ) );
     }
 
     void OnMessage( const std::wstring& msg ) override

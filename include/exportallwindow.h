@@ -126,13 +126,13 @@ public:
 
             for ( const std::string& format : formatsSupported )
             {
-                formatSelBox->addItem( QString::fromStdString( format ) );
+                formatSelBox->addItem( ansi_to_qt( format ) );
             }
         }
 
         // Select the last used format, if it exists.
         {
-            int foundLastUsed = formatSelBox->findText( QString::fromStdString( mainWnd->lastUsedAllExportFormat ), Qt::MatchExactly );
+            int foundLastUsed = formatSelBox->findText( ansi_to_qt( mainWnd->lastUsedAllExportFormat ), Qt::MatchExactly );
 
             if ( foundLastUsed != -1 )
             {
@@ -182,7 +182,7 @@ public slots:
 
         if ( formatTarget.isEmpty() == false )
         {
-            std::string ansiFormatTarget = formatTarget.toStdString();
+            std::string ansiFormatTarget = qt_to_ansi( formatTarget );
 
             // We need a directory to export to, so ask the user.
             QString folderExportTarget = QFileDialog::getExistingDirectory(
@@ -219,7 +219,7 @@ public slots:
                             if ( texRaster )
                             {
                                 // Create a path to put the image at.
-                                std::string imgExportPath = texture->GetName() + '.' + formatTarget.toLower().toStdString();
+                                std::string imgExportPath = texture->GetName() + '.' + qt_to_ansi( formatTarget.toLower() );
 
                                 CFile *targetStream = dstTranslator->Open( imgExportPath.c_str(), "wb" );
 
@@ -251,7 +251,7 @@ public slots:
                                                 {
                                                     // Nope.
                                                     this->mainWnd->txdLog->addLogMessage(
-                                                        QString::fromStdString(
+                                                        ansi_to_qt(
                                                             std::string( "failed to export texture '" ) + texture->GetName() + "': " + except.message
                                                         ), LOGMSG_WARNING
                                                     );
@@ -269,7 +269,7 @@ public slots:
                                         else
                                         {
                                             this->mainWnd->txdLog->addLogMessage(
-                                                QString::fromStdString(
+                                                ansi_to_qt(
                                                     std::string( "failed to create RW translation stream for texture " ) + texture->GetName()
                                                 ), LOGMSG_WARNING
                                             );
@@ -287,7 +287,7 @@ public slots:
                                 else
                                 {
                                     this->mainWnd->txdLog->addLogMessage(
-                                        QString::fromStdString(
+                                        ansi_to_qt(
                                             std::string( "failed to create export stream for texture " ) + texture->GetName()
                                         ), LOGMSG_WARNING
                                     );

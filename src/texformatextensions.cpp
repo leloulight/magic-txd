@@ -185,7 +185,7 @@ void MainWindow::initializeNativeFormats( void )
                         DWORD lastError = GetLastError();
 
                         QString message =
-                            QString( "Failed to load texture format plugin (" ) + QString::fromStdWString( wPluginName ) + QString( ", " ) + QString::fromStdString( std::to_string( lastError ) ) + QString( ")" );
+                            QString( "Failed to load texture format plugin (" ) + QString::fromStdWString( wPluginName ) + QString( ", " ) + ansi_to_qt( std::to_string( lastError ) ) + QString( ")" );
 
 						this->txdLog->showError(message);
 					}

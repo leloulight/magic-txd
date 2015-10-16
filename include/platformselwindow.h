@@ -95,7 +95,7 @@ public slots:
         {
             QString selPlatform = this->platformComboBox->currentText();
 
-            std::string ansiSelPlatform = selPlatform.toStdString();
+            std::string ansiSelPlatform = qt_to_ansi( selPlatform );
 
             // Use a helper.
             this->mainWnd->SetTXDPlatformString( currentTXD, ansiSelPlatform.c_str() );

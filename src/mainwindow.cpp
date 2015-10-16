@@ -652,7 +652,7 @@ void MainWindow::UpdateExportAccessibility( void )
                 {
                     if ( rw::Raster *texRaster = curSelTex->GetTextureHandle()->GetRaster() )
                     {
-                        std::string ansiMethodName = exportAction->displayName.toStdString();
+                        std::string ansiMethodName = qt_to_ansi( exportAction->displayName );
 
                         if ( stricmp( ansiMethodName.c_str(), "RWTEX" ) == 0 )
                         {
@@ -890,7 +890,7 @@ void MainWindow::onCreateNewTXD( bool checked )
     }
     catch( rw::RwException& except )
     {
-        this->txdLog->showError( QString( "failed to create TXD: " ) + QString::fromStdString( except.message ) );
+        this->txdLog->showError( QString( "failed to create TXD: " ) + ansi_to_qt( except.message ) );
 
         // We failed.
         return;
@@ -961,7 +961,7 @@ void MainWindow::openTxdFile(QString fileName) {
                     }
                     catch (rw::RwException& except)
                     {
-                        this->txdLog->showError(QString("failed to load the TXD archive: %1").arg(QString::fromStdString(except.message)));
+                        this->txdLog->showError(QString("failed to load the TXD archive: %1").arg(ansi_to_qt(except.message)));
                     }
 
                     if (parsedObject)
@@ -1353,7 +1353,7 @@ void MainWindow::DoAddTexture( const TexAddDialog::texAddOperation& params )
             }
             catch( rw::RwException& except )
             {
-                this->txdLog->showError( QString( "failed to add texture: " ) + QString::fromStdString( except.message ) );
+                this->txdLog->showError( QString( "failed to add texture: " ) + ansi_to_qt( except.message ) );
 
                 // Just continue.
             }
@@ -1399,7 +1399,7 @@ QString MainWindow::requestValidImagePath( void )
                 imgExtensionSelect += ";";
             }
 
-            imgExtensionSelect += QString( "*." ) + QString::fromStdString( extName ).toLower();
+            imgExtensionSelect += QString( "*." ) + ansi_to_qt( extName ).toLower();
 
             needsExtSep = true;
         }
@@ -1430,7 +1430,7 @@ QString MainWindow::requestValidImagePath( void )
 
         const registered_image_format& entry = *iter;
 
-        imgExtensionSelect += QString::fromStdString( entry.formatName ) + QString( " (" );
+        imgExtensionSelect += ansi_to_qt( entry.formatName ) + QString( " (" );
         
         bool needsExtSep = false;
 
@@ -1442,7 +1442,7 @@ QString MainWindow::requestValidImagePath( void )
             }
 
             imgExtensionSelect +=
-                QString( "*." ) + QString::fromStdString( extName ).toLower();
+                QString( "*." ) + ansi_to_qt( extName ).toLower();
 
             needsExtSep = true;
         }
@@ -1566,7 +1566,7 @@ void MainWindow::onReplaceTexture( bool checked )
             params.img_path.imgPath = replaceImagePath;
 
             // Overwrite some properties.
-            QString overwriteTexName = QString::fromStdString( curSelTexItem->GetTextureHandle()->GetName() );
+            QString overwriteTexName = ansi_to_qt( curSelTexItem->GetTextureHandle()->GetName() );
 
             params.overwriteTexName = &overwriteTexName;
 
@@ -1701,7 +1701,7 @@ void MainWindow::onExportTexture( bool checked )
                 const QString& exportFunction = senderAction->displayName;
                 const QString& formatName = senderAction->formatName;
 
-                std::string ansiExportFunction = exportFunction.toStdString();
+                std::string ansiExportFunction = qt_to_ansi( exportFunction );
 
                 const QString actualExt = defaultExt.toLower();
             
@@ -1823,7 +1823,7 @@ void MainWindow::SetTXDPlatformString( rw::TexDictionary *txd, const char *platf
             }
             catch( rw::RwException& except )
             {
-                this->txdLog->showError( QString::fromStdString( std::string( "failed to change platform of texture '" ) + texHandle->GetName() + "': " + except.message ) );
+                this->txdLog->showError( ansi_to_qt( std::string( "failed to change platform of texture '" ) + texHandle->GetName() + "': " + except.message ) );
 
                 // Continue changing platform.
             }

@@ -30,6 +30,19 @@ struct SystemEventHandlerWidget abstract
     virtual void endSystemEvent( QEvent *evt ) = 0;
 };
 
+// Global conversion from QString to c-str and other way round.
+inline std::string qt_to_ansi( const QString& str )
+{
+    QByteArray charBuf = str.toLatin1();
+
+    return std::string( charBuf.data(), charBuf.size() );
+}
+
+inline QString ansi_to_qt( const std::string& str )
+{
+    return QString::fromLatin1( str.c_str(), str.size() );
+}
+
 #include "texinfoitem.h"
 #include "txdlog.h"
 #include "txdadddialog.h"
@@ -170,7 +183,7 @@ private:
 
         void OnWarning( std::string&& msg ) override
         {
-			this->mainWnd->txdLog->addLogMessage( QString::fromStdString( msg ), LOGMSG_WARNING);
+			this->mainWnd->txdLog->addLogMessage( ansi_to_qt( msg ), LOGMSG_WARNING);
         }
 
     private:

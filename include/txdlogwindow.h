@@ -327,7 +327,7 @@ public:
                 // If we have a string, it is worth printing it.
                 const QString message = msgItem->text();
 
-                const std::string ansiMessage = message.toStdString();
+                const std::string ansiMessage = qt_to_ansi( message );
                 
                 // Do it.
                 outStream << "*** [" << msgTypeString << "]: " << ansiMessage << std::endl;

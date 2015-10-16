@@ -2,8 +2,7 @@
 
 #include <wrl/client.h>
 
-#include <PathCch.h>
-#pragma comment(lib, "Pathcch.lib")
+#include <CFileSystemInterface.h>
 
 #include "rwutils.hxx"
 
@@ -143,23 +142,21 @@ IFACEMETHODIMP RenderWareContextHandlerProvider::Initialize( LPCITEMIDLIST idLis
                                     DragQueryFileW( drop, n, (LPWSTR)fileName.data(), fileNameCharCount + 1 );
 
                                     // We want to extract the extension, because everything depends on it.
-                                    const wchar_t *extPtr = NULL;
+                                    const wchar_t *extStart = FileSystem::FindFileNameExtension( fileName.c_str() );
 
-                                    HRESULT resGotExt = PathCchFindExtension( fileName.c_str(), fileName.size() + 1, &extPtr );
-
-                                    if ( SUCCEEDED(resGotExt) )
+                                    if ( extStart != NULL )
                                     {
                                         // Check for a known extension.
                                         bool hasKnownExt = false;
                                         eContextMenuOptionType optionType;
 
-                                        if ( wcsicmp( extPtr, L".TXD" ) == 0 )
+                                        if ( wcsicmp( extStart, L".TXD" ) == 0 )
                                         {
                                             optionType = CONTEXTOPT_TXD;
 
                                             hasKnownExt = true;
                                         }
-                                        else if ( wcsicmp( extPtr, L".RWTEX" ) == 0 )
+                                        else if ( wcsicmp( extStart, L".RWTEX" ) == 0 )
                                         {
                                             optionType = CONTEXTOPT_TEXTURE;
 
@@ -227,11 +224,14 @@ inline std::wstring RenderWareContextHandlerProvider::getContextDirectory( void 
 
     if ( !dirPath.empty() )
     {
-        std::vector <wchar_t> pathBuf( dirPath.data(), dirPath.data() + dirPath.size() + 1 );
+        filePath dirOut;
 
-        PathCchRemoveFileSpec( pathBuf.data(), pathBuf.size() );
+        bool hasDirectory = FileSystem::GetFileNameDirectory( dirPath.c_str(), dirOut );
 
-        dirPath = std::wstring( pathBuf.data() );
+        if ( hasDirectory )
+        {
+            dirPath = dirOut.convert_unicode();
+        }
     }
 
     return dirPath;

@@ -89,7 +89,7 @@ rw::Raster* TexAddDialog::MakeRaster( void )
 
             if (currentPlatform.isEmpty() == false)
             {
-                std::string ansiNativeName = currentPlatform.toStdString();
+                std::string ansiNativeName = qt_to_ansi( currentPlatform );
 
                 // Set the platform.
                 platOrig->newNativeData( ansiNativeName.c_str() );
@@ -213,7 +213,7 @@ bool TexAddDialog::impMeth_loadTexChunk( rw::Stream *chunkStream )
 
                         if ( wantsToAdjustRaster )
                         {
-                            std::string ansiPlatformName = this->GetCurrentPlatform().toStdString();
+                            std::string ansiPlatformName = qt_to_ansi( this->GetCurrentPlatform() );
 
                             rw::ConvertRasterTo( texRaster, ansiPlatformName.c_str() );
                         }
@@ -395,7 +395,7 @@ bool TexAddDialog::imageImportMethods::LoadPlatformOriginal( rw::Stream *stream 
 
         if ( exp_format_error.empty() == false )
         {
-            this->dialog->mainWnd->txdLog->showError( QString( "error while loading image data: " ) + QString::fromStdString( exp_format_error ) );
+            this->dialog->mainWnd->txdLog->showError( QString( "error while loading image data: " ) + ansi_to_qt( exp_format_error ) );
         }
     }
 
@@ -453,7 +453,7 @@ void TexAddDialog::loadPlatformOriginal(void)
         hasPreview = false;
 
         // Probably should tell the user about this error, so we can fix it.
-        mainWnd->txdLog->showError(QString("error while building preview: ") + QString::fromStdString(err.message));
+        mainWnd->txdLog->showError(QString("error while building preview: ") + ansi_to_qt(err.message));
     }
 
     this->hasPlatformOriginal = hasPreview;
@@ -543,7 +543,7 @@ void TexAddDialog::createRasterForConfiguration(void)
                 {
                     QString formatName = this->platformPixelFormatSelectProp->currentText();
 
-                    std::string ansiFormatName = formatName.toStdString();
+                    std::string ansiFormatName = qt_to_ansi( formatName );
 
                     rasterFormat = rw::FindRasterFormatByName(ansiFormatName.c_str());
 
@@ -594,7 +594,7 @@ void TexAddDialog::createRasterForConfiguration(void)
 
             // We must make sure that our raster is in the correct platform.
             {
-                std::string currentPlatform = this->GetCurrentPlatform().toStdString();
+                std::string currentPlatform = qt_to_ansi( this->GetCurrentPlatform() );
 
                 rw::ConvertRasterTo(convRaster, currentPlatform.c_str());
             }
@@ -639,7 +639,7 @@ void TexAddDialog::createRasterForConfiguration(void)
         }
         catch (rw::RwException& except)
         {
-            this->mainWnd->txdLog->showError(QString("failed to create raster: ") + QString::fromStdString(except.message));
+            this->mainWnd->txdLog->showError(QString("failed to create raster: ") + ansi_to_qt(except.message));
         }
     }
     catch (std::exception& except)
@@ -688,6 +688,87 @@ void TexAddDialog::imageImportMethods::RegisterImportMethod( const char *name, i
 }
 
 #define LEFTPANELADDDIALOGWIDTH 230
+
+struct texture_name_validator : public QValidator
+{
+    inline texture_name_validator( QObject *parent ) : QValidator( parent )
+    {
+        return;
+    }
+
+private:
+    typedef character_env <wchar_t> wideEnv;
+
+    static inline bool is_char_valid( wideEnv::ucp_t char_code )
+    {
+        return ( char_code >= 0x20 && char_code < 0x7F );
+    }
+
+public:
+    void fixup( QString& input ) const override
+    {
+        // We only accept ANSI characters.
+        std::wstring wideInput = input.toStdWString();
+
+        // Make a new valid string.
+        std::wstring validOut;
+
+        wideEnv::const_iterator iter( wideInput.c_str() );
+
+        while ( !iter.IsEnd() )
+        {
+            wideEnv::ucp_t charCode = iter.ResolveAndIncrement();
+
+            // Make sure we are valid ANSI.
+            if ( !is_char_valid( charCode ) )
+            {
+                charCode = '?';
+            }
+
+            // Encode it into the wide string.
+            wideEnv::encoding_iterator enc_iter( &charCode, 1 );
+
+            wideEnv::enc_result wide_enc;
+            enc_iter.Resolve( wide_enc );
+
+            for ( size_t n = 0; n < wide_enc.numData; n++ )
+            {
+                validOut += wide_enc.data[ n ];
+            }
+        }
+
+        // Return the valid thing.
+        input = QString::fromStdWString( validOut );
+    }
+
+    State validate( QString& str, int& cursor ) const override
+    {
+        // We validate this thing.
+        std::wstring wideStr = str.toStdWString();
+
+        wideEnv::const_iterator iter( wideStr.c_str() );
+        
+        bool needs_fixup = false;
+
+        while ( !iter.IsEnd() )
+        {
+            wideEnv::ucp_t charCode = iter.ResolveAndIncrement();
+
+            if ( !is_char_valid( charCode ) )
+            {
+                needs_fixup = true;
+                break;
+            }
+        }
+
+        if ( needs_fixup )
+        {
+            fixup( str );
+        }
+
+        return Acceptable;
+    }
+};
 
 TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create_params, TexAddDialog::operationCallback_t cb) : QDialog(mainWnd), impMeth( this )
 {
@@ -773,8 +854,8 @@ TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create
     }
     else if (this->dialog_type == CREATE_RASTER)
     {
-        textureBaseName = QString::fromStdString(create_params.orig_raster.tex->GetName());
-        textureMaskName = QString::fromStdString(create_params.orig_raster.tex->GetMaskName());
+        textureBaseName = ansi_to_qt(create_params.orig_raster.tex->GetName());
+        textureMaskName = ansi_to_qt(create_params.orig_raster.tex->GetMaskName());
     }
 
     if (const QString *overwriteTexName = create_params.overwriteTexName)
@@ -804,11 +885,14 @@ TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create
         { // Top Left (platform options)
           //QWidget *leftTopWidget = new QWidget();
             { // Names and Platform
+                texture_name_validator *texNameValid = new texture_name_validator( this );
+
                 QFormLayout *leftTopLayout = new QFormLayout();
                 QLineEdit *texNameEdit = new QLineEdit(textureBaseName);
                 texNameEdit->setMaxLength(_recommendedPlatformMaxName);
                 texNameEdit->setFixedWidth(LEFTPANELADDDIALOGWIDTH);
                 texNameEdit->setFixedHeight(texNameEdit->sizeHint().height());
+                texNameEdit->setValidator( texNameValid );
                 this->textureNameEdit = texNameEdit;
                 leftTopLayout->addRow(new QLabel("Texture Name:"), texNameEdit);
                 if (_enableMaskName)
@@ -817,6 +901,7 @@ TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create
                     texMaskNameEdit->setFixedWidth(LEFTPANELADDDIALOGWIDTH);
                     texMaskNameEdit->setFixedHeight(texMaskNameEdit->sizeHint().height());
                     texMaskNameEdit->setMaxLength(_recommendedPlatformMaxName);
+                    texMaskNameEdit->setValidator( texNameValid );
                     leftTopLayout->addRow(new QLabel("Mask Name:"), texMaskNameEdit);
                     this->textureMaskNameEdit = texMaskNameEdit;
                 }
@@ -1095,7 +1180,7 @@ void TexAddDialog::UpdatePreview() {
             this->previewLabel->setFixedSize(w, h);
         }
         catch (rw::RwException& except) {
-            this->mainWnd->txdLog->showError(QString("failed to create preview: ") + QString::fromStdString(except.message));
+            this->mainWnd->txdLog->showError(QString("failed to create preview: ") + ansi_to_qt(except.message));
             this->ClearPreview();
             // Continue normal execution.
         }
@@ -1189,7 +1274,7 @@ void TexAddDialog::OnPlatformSelect(const QString& _)
 
     bool hasPreview = this->hasPlatformOriginal;
 
-    std::string ansiNativeName = newText.toStdString();
+    std::string ansiNativeName = qt_to_ansi( newText );
 
     rw::nativeRasterFormatInfo formatInfo;
 
@@ -1575,12 +1660,12 @@ void TexAddDialog::OnTextureAddRequest(bool checked)
         // We can either add a raster or a texture chunk.
         rw::TextureBase *texHandle = this->texHandle;
 
-        std::string texName = this->textureNameEdit->text().toStdString();
+        std::string texName = qt_to_ansi( this->textureNameEdit->text() );
         std::string maskName;
 
         if ( this->textureMaskNameEdit )
         {
-            maskName = this->textureMaskNameEdit->text().toStdString();
+            maskName = qt_to_ansi( this->textureMaskNameEdit->text() );
         }
 
         if ( texHandle != NULL )

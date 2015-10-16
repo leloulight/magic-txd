@@ -91,7 +91,7 @@ MassExportWindow::MassExportWindow( MainWindow *mainWnd ) : QDialog( mainWnd )
 
     // If the remembered format exists in our combo box, select it.
     {
-        int existFormatIndex = boxRecomImageFormat->findText( QString::fromStdString( env->config.recImgFormat ), Qt::MatchExactly );
+        int existFormatIndex = boxRecomImageFormat->findText( ansi_to_qt( env->config.recImgFormat ), Qt::MatchExactly );
 
         if ( existFormatIndex != -1 )
         {
@@ -274,7 +274,7 @@ void MassExportWindow::serialize( void )
 
     env->config.gameRoot = this->editGameRoot->text().toStdWString();
     env->config.outputRoot = this->editOutputRoot->text().toStdWString();
-    env->config.recImgFormat = this->boxRecomImageFormat->currentText().toStdString();
+    env->config.recImgFormat = qt_to_ansi( this->boxRecomImageFormat->currentText() );
     
     MassExportModule::eOutputType outputType = MassExportModule::OUTPUT_TXDNAME;
 
