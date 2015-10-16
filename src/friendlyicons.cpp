@@ -129,7 +129,7 @@ void MainWindow::updateFriendlyIcons( void )
 
                     hasKnownConfiguration = true;
                 }
-                else if ( rasterVersion.rwLibMajor <= 6 )
+                else if ( rasterVersion.rwLibMinor <= 6 )
                 {
                     knownGame = GAME_MANHUNT;
 
@@ -156,7 +156,7 @@ void MainWindow::updateFriendlyIcons( void )
 
                     hasKnownConfiguration = true;
                 }
-                else if ( rasterVersion.rwLibMajor >= 6 )
+                else if ( rasterVersion.rwLibMinor >= 6 )
                 {
                     knownGame = GAME_GTASA;
 
