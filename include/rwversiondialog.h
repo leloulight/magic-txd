@@ -157,6 +157,10 @@ public slots:
             {
                 libVer = rw::KnownVersions::getGameVersion( rw::KnownVersions::VC_PS2 );
             }
+            else if ( currentPlatform && stricmp( currentPlatform, "XBOX" ) == 0 )
+            {
+                libVer = rw::KnownVersions::getGameVersion( rw::KnownVersions::VC_XBOX );
+            }
             else
             {
                 libVer = rw::KnownVersions::getGameVersion( rw::KnownVersions::VC_PC );
@@ -164,7 +168,14 @@ public slots:
         }
         else if ( newItem == "GTA III" )
         {
-            libVer = rw::KnownVersions::getGameVersion( rw::KnownVersions::GTA3 );
+            if ( currentPlatform && stricmp( currentPlatform, "XBOX" ) == 0 )
+            {
+                libVer = rw::KnownVersions::getGameVersion( rw::KnownVersions::GTA3_XBOX );
+            }
+            else
+            {
+                libVer = rw::KnownVersions::getGameVersion( rw::KnownVersions::GTA3_PC );
+            }
         }
         else if ( newItem == "Manhunt" )
         {

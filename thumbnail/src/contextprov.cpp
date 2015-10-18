@@ -685,10 +685,14 @@ typedef std::list <std::pair <std::wstring, rw::KnownVersions::eGameVersion>> ga
 
 static const gameVerList_t gameVerMap =
 {
-    { L"GTA 3", rw::KnownVersions::GTA3 },
-    { L"GTA Vice City", rw::KnownVersions::VC_PC },
+    { L"GTA 3 (PC)", rw::KnownVersions::GTA3_PC },
+    { L"GTA 3 (XBOX)", rw::KnownVersions::GTA3_XBOX },
+    { L"GTA Vice City (PC)", rw::KnownVersions::VC_PC },
+    { L"GTA Vice City (PS2)", rw::KnownVersions::VC_PS2 },
+    { L"GTA Vice City (XBOX)", rw::KnownVersions::VC_XBOX },
     { L"GTA San Andreas", rw::KnownVersions::SA },
-    { L"Manhunt", rw::KnownVersions::MANHUNT_PC },
+    { L"Manhunt (PC)", rw::KnownVersions::MANHUNT_PC },
+    { L"Manhunt (PS2)", rw::KnownVersions::MANHUNT_PS2 },
     { L"Bully", rw::KnownVersions::BULLY }
 };
 

@@ -16,10 +16,14 @@ LibraryVersion KnownVersions::getGameVersion( KnownVersions::eGameVersion gameVe
     outVer.rwRevMinor = 0;
 
     // Modify it for game engines we know.
-    if ( gameVer == GTA3 )
+    if ( gameVer == GTA3_PC )
     {
         outVer.rwLibMinor = 1;
         outVer.rwRevMinor = 1;
+    }
+    else if ( gameVer == GTA3_XBOX )
+    {
+        outVer.rwLibMinor = 5;
     }
     else if ( gameVer == VC_PS2 )
     {
@@ -30,6 +34,10 @@ LibraryVersion KnownVersions::getGameVersion( KnownVersions::eGameVersion gameVe
     {
         outVer.rwLibMinor = 4;
         outVer.rwRevMinor = 3;
+    }
+    else if ( gameVer == VC_XBOX )
+    {
+        outVer.rwLibMinor = 5;
     }
     else if ( gameVer == SA ||
               gameVer == MANHUNT_PC )

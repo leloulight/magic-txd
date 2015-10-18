@@ -275,9 +275,11 @@ namespace KnownVersions
 {
     enum eGameVersion
     {
-        GTA3,
+        GTA3_PC,
+        GTA3_XBOX,
         VC_PS2,
         VC_PC,
+        VC_XBOX,
         SA,
         MANHUNT_PC,
         MANHUNT_PS2,

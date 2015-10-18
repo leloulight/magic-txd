@@ -812,7 +812,14 @@ bool TxdGenModule::ApplicationMain( const run_config& cfg )
             // Determine the real target version.
             if ( targetGame == GAME_GTA3 )
             {
-                targetVersion = rw::KnownVersions::getGameVersion( rw::KnownVersions::GTA3 );
+                if ( cfg.c_targetPlatform == PLATFORM_XBOX )
+                {
+                    targetVersion = rw::KnownVersions::getGameVersion( rw::KnownVersions::GTA3_XBOX );
+                }
+                else
+                {
+                    targetVersion = rw::KnownVersions::getGameVersion( rw::KnownVersions::GTA3_PC );
+                }
 
                 strTargetVersion = "GTA 3";
             }
@@ -821,6 +828,10 @@ bool TxdGenModule::ApplicationMain( const run_config& cfg )
                 if ( cfg.c_targetPlatform == PLATFORM_PS2 )
                 {
                     targetVersion = rw::KnownVersions::getGameVersion( rw::KnownVersions::VC_PS2 );
+                }
+                else if ( cfg.c_targetPlatform == PLATFORM_XBOX )
+                {
+                    targetVersion = rw::KnownVersions::getGameVersion( rw::KnownVersions::VC_XBOX );
                 }
                 else
                 {
