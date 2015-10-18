@@ -122,8 +122,13 @@ struct defaultMemAlloc
 
 // Main window plugin entry points.
 extern void InitializeRWFileSystemWrap(void);
+extern void InitializeTaskCompletionWindowEnv( void );
+extern void InitializeSerializationStorageEnv( void );
+extern void InitializeMainWindowSerializationBlock( void );
+extern void InitializeExportAllWindowSerialization( void );
 extern void InitializeMassconvToolEnvironment(void);
 extern void InitializeMassExportToolEnvironment( void );
+extern void InitializeMassBuildEnvironment( void );
 extern void InitializeGUISerialization(void);
 extern void InitializeStreamCompressionEnvironment( void );
 
@@ -133,8 +138,13 @@ int main(int argc, char *argv[])
 {
     // Initialize all main window plugins.
     InitializeRWFileSystemWrap();
+    InitializeTaskCompletionWindowEnv();
+    InitializeSerializationStorageEnv();
+    InitializeMainWindowSerializationBlock();
+    InitializeExportAllWindowSerialization();
     InitializeMassconvToolEnvironment();
     InitializeMassExportToolEnvironment();
+    InitializeMassBuildEnvironment();
     InitializeGUISerialization();
     InitializeStreamCompressionEnvironment();
 

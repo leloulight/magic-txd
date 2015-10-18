@@ -816,16 +816,192 @@ public:
                                 pathCallback_t fileCallback,
                                 void *userdata ) const
     {
-        filePath_dispatch( directory,
-            [&] ( auto directory )
+        filePath_dispatchTrailing( directory, wildcard,
+            [&] ( auto directory, auto wildcard )
             {
-                typedef typename resolve_type <decltype(directory)>::type charType;
-
-                filePathLink <charType> wildcardLink( wildcard );
-
-                ScanDirectory( directory, wildcardLink.to_char(), recurse, dirCallback, fileCallback, userdata );
+                ScanDirectory( directory, wildcard, recurse, dirCallback, fileCallback, userdata );
             }
         );
+    }
+
+    // Helpers with lambdas, because lambdas are really, really good.
+private:
+    template <typename dirCallbackType, typename fileCallbackType>
+    struct ScanDirectory_lambdaHelper
+    {
+        struct combined_userdata
+        {
+            inline combined_userdata( dirCallbackType&& dir_cb, fileCallbackType& file_cb ) : dir_cb( std::move( dir_cb ) ), file_cb( std::move( file_cb ) )
+            {
+                return;
+            }
+
+            dirCallbackType dir_cb;
+            fileCallbackType file_cb;
+        };
+
+        AINLINE static void fileCallback( const filePath& path, void *ud )
+        {
+            combined_userdata *comb_cb = (combined_userdata*)ud;
+            
+            comb_cb->file_cb( path );
+        }
+
+        AINLINE static void dirCallback( const filePath& path, void *ud )
+        {
+            combined_userdata *comb_cb = (combined_userdata*)ud;
+
+            comb_cb->dir_cb( path );
+        }
+    };
+
+    template <typename callable_obj>
+    struct is_lambda_trait
+    {
+    private:
+        template <typename A>
+        struct specializer
+        {
+            specializer( const A& a )
+            {}
+        };
+
+        template <typename C, typename = decltype( &callable_obj::operator () )>
+        static int myfunc( C a );
+
+        template <typename C>
+        static void myfunc( specializer <C> a );
+
+    public:
+        static const bool value = ( std::is_same <int, decltype( myfunc <int> ( (int)0 ) )>::value );
+    };
+
+    template <typename T>
+    using is_lambda = std::enable_if <is_lambda_trait <T>::value>;
+
+public:
+    template <typename charType, typename dirCallbackType, typename fileCallbackType, typename = is_lambda <dirCallbackType>::type, typename = is_lambda <fileCallbackType>::type>
+    AINLINE void            ScanDirectory( const charType *directory, const charType *wildcard, bool recurse,
+                                dirCallbackType dirCallback,
+                                fileCallbackType fileCallback ) const
+    {
+        typedef ScanDirectory_lambdaHelper <dirCallbackType, fileCallbackType> lambdaHelper;
+
+        lambdaHelper::combined_userdata comb_ud( dirCallback, fileCallback );
+
+        ScanDirectory(
+            directory, wildcard, recurse,
+            lambdaHelper::dirCallback,
+            lambdaHelper::fileCallback,
+            &comb_ud
+        );
+    }
+
+    template <typename dirCallbackType, typename fileCallbackType, typename = is_lambda <dirCallbackType>::type, typename = is_lambda <fileCallbackType>::type>
+    AINLINE void            ScanDirectory( const filePath& directory, const filePath& wildcard, bool recurse,
+                                dirCallbackType dirCallback,
+                                fileCallbackType fileCallback ) const
+    {
+        filePath_dispatchTrailing( directory, wildcard,
+            [&] ( auto directory, auto wildcard )
+            {
+                ScanDirectory( directory, wildcard, recurse, std::move( dirCallback ), std::move( fileCallback ) );
+            }
+        );
+    }
+
+private:
+    template <typename callbackType>
+    struct ScanDirectory_singleLambdaCallbackHelper
+    {
+        struct meta_object
+        {
+            inline meta_object( pathCallback_t path_cb, void *path_ud, callbackType&& cb ) : path_cb( path_cb ), path_ud( path_ud ), cb( std::move( cb ) )
+            {
+                return;
+            }
+
+            pathCallback_t path_cb;
+            callbackType cb;
+            void *path_ud;
+        };
+
+        AINLINE static void lambda_callback( const filePath& path, void *ud )
+        {
+            meta_object *meta = (meta_object*)ud;
+
+            meta->cb( path );
+        }
+
+        AINLINE static void reg_callback( const filePath& path, void *ud )
+        {
+            meta_object *meta = (meta_object*)ud;
+
+            meta->path_cb( path, meta->path_ud );
+        }
+    };
+
+public:
+    template <typename charType, typename dirCallbackType, typename = is_lambda <dirCallbackType>::type>
+    AINLINE void            ScanDirectory( const charType *directory, const charType *wildcard, bool recurse,
+                                dirCallbackType dirCallback,
+                                pathCallback_t fileCallback,
+                                void *file_ud ) const
+    {
+        typedef ScanDirectory_singleLambdaCallbackHelper <dirCallbackType> lambdaHelper;
+
+        lambdaHelper::meta_object meta( fileCallback, file_ud, std::move( dirCallback ) );
+
+        ScanDirectory(
+            directory, wildcard, recurse,
+            lambdaHelper::lambda_callback,
+            ( fileCallback ? lambdaHelper::reg_callback : NULL ),
+            &meta
+        );
+    }
+
+    template <typename dirCallbackType, typename = is_lambda <dirCallbackType>::type>
+    AINLINE void            ScanDirectory( const filePath& directory, const filePath& wildcard, bool recurse,
+                                dirCallbackType dirCallback,
+                                pathCallback_t fileCallback,
+                                void *file_ud ) const
+    {
+        filePath_dispatchTrailing( directory, wildcard,
+            [&]( auto directory, auto wildcard )
+        {
+            ScanDirectory( directory, wildcard, recurse, std::move( dirCallback ), fileCallback, file_ud );
+        });
+    }
+
+    template <typename charType, typename fileCallbackType, typename = is_lambda <fileCallbackType>::type>
+    AINLINE void            ScanDirectory( const charType *directory, const charType *wildcard, bool recurse,
+                                pathCallback_t dirCallback,
+                                fileCallbackType fileCallback,
+                                void *dir_ud ) const
+    {
+        typedef ScanDirectory_singleLambdaCallbackHelper <fileCallbackType> lambdaHelper;
+
+        lambdaHelper::meta_object meta( dirCallback, dir_ud, std::move( fileCallback ) );
+
+        ScanDirectory(
+            directory, wildcard, recurse,
+            ( dirCallback ? lambdaHelper::reg_callback : NULL ),
+            lambdaHelper::lambda_callback,
+            &meta
+        );
+    }
+
+    template <typename fileCallbackType, typename = is_lambda <fileCallbackType>::type>
+    AINLINE void            ScanDirectory( const filePath& directory, const filePath& wildcard, bool recurse,
+                                pathCallback_t dirCallback,
+                                fileCallbackType fileCallback,
+                                void *dir_ud ) const
+    {
+        filePath_dispatchTrailing( directory, wildcard,
+            [&]( auto directory, auto wildcard )
+        {
+            ScanDirectory( directory, wildcard, recurse, dirCallback, std::move( fileCallback ), dir_ud );
+        });
     }
 
     // These functions are easy helpers for ScanDirectory.
@@ -835,14 +1011,10 @@ public:
 #endif
     AINLINE void            GetDirectories( const filePath& path, const filePath& wildcard, bool recurse, std::vector <filePath>& output ) const
     {
-        filePath_dispatch( path,
-            [&] ( auto path )
+        filePath_dispatchTrailing( path, wildcard,
+            [&] ( auto path, auto wildcard )
             {
-                typedef typename resolve_type <decltype(path)>::type charType;
-
-                filePathLink <charType> wildcardLink( wildcard );
-
-                GetDirectories( path, wildcardLink.to_char(), recurse, output );
+                GetDirectories( path, wildcard, recurse, output );
             }
         );
     }
@@ -853,14 +1025,10 @@ public:
 #endif
     AINLINE void            GetFiles( const filePath& path, const filePath& wildcard, bool recurse, std::vector <filePath>& output ) const
     {
-        filePath_dispatch( path,
-            [&] ( auto path )
+        filePath_dispatchTrailing( path, wildcard,
+            [&] ( auto path, auto wildcard )
             {
-                typedef typename resolve_type <decltype(path)>::type charType;
-
-                filePathLink <charType> wildcardLink( wildcard );
-
-                GetDirectories( path, wildcardLink.to_char(), recurse, output );
+                GetDirectories( path, wildcard, recurse, output );
             }
         );
     }

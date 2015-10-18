@@ -24,6 +24,14 @@
     <ClCompile Include="..\..\src\streamcompress.lzo.cpp" />
     <ClCompile Include="..\..\src\friendlyicons.cpp" />
     <ClCompile Include="..\..\src\streamcompress.mh2z.cpp" />
+    <ClCompile Include="..\..\src\guiserialization.store.cpp" />
+    <ClCompile Include="..\..\src\mainwindow.serialize.cpp" />
+    <ClCompile Include="..\..\src\exportallwindow.cpp" />
+    <ClCompile Include="..\..\src\massbuild.cpp" />
+    <ClCompile Include="..\..\src\tools\txdbuild.cpp">
+      <Filter>tools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\taskcompletionwindow.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="../../include/styles.h">
@@ -124,6 +132,18 @@
     </ClInclude>
     <ClInclude Include="..\..\include\streamcompress.h">
       <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\guiserialization.hxx">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\massbuild.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\toolshared.hxx">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\tools\txdbuild.h">
+      <Filter>tools</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -24,6 +24,7 @@
 #include "massconvert.h"
 #include "exportallwindow.h"
 #include "massexport.h"
+#include "massbuild.h"
 #include "optionsdialog.h"
 
 #include "tools/txdgen.h"
@@ -322,6 +323,11 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
         toolsMenu->addAction(actionMassExport);
 
         connect( actionMassExport, &QAction::triggered, this, &MainWindow::onRequestMassExport );
+
+        QAction *actionMassBuild = new QAction("&Mass build", this);
+        toolsMenu->addAction(actionMassBuild);
+
+        connect( actionMassBuild, &QAction::triggered, this, &MainWindow::onRequestMassBuild );
 
 	    QMenu *exportMenu = menu->addMenu(tr("&Export"));
 
@@ -1893,6 +1899,13 @@ void MainWindow::onRequestMassExport(bool checked)
     MassExportWindow *massexport = new MassExportWindow( this );
 
     massexport->setVisible( true );
+}
+
+void MainWindow::onRequestMassBuild(bool checked)
+{
+    MassBuildWindow *massbuild = new MassBuildWindow( this );
+
+    massbuild->setVisible( true );
 }
 
 void MainWindow::onRequestOpenWebsite(bool checked)

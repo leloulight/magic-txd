@@ -66,7 +66,7 @@ class MainWindow : public QMainWindow
     friend class ExportAllWindow;
     friend class AboutDialog;
     friend class OptionsDialog;
-    friend class mainWindowSerialization;
+    friend class mainWindowSerializationEnv;
 
 public:
     MainWindow(QString appPath, rw::Interface *rwEngine, CFileSystem *fsHandle, QWidget *parent = 0);
@@ -149,6 +149,7 @@ public slots:
 
     void onRequestMassConvert(bool checked);
     void onRequestMassExport(bool checked);
+    void onRequestMassBuild(bool checked);
 
     void onToogleDarkTheme(bool checked);
     void onToogleLightTheme(bool checked);

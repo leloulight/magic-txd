@@ -8,6 +8,18 @@
 
 #include "dirtools.h"
 
+using namespace rwkind;
+
+
+static inline void ConvertRasterToPlatformEx( rw::TextureBase *theTexture, rw::Raster *texRaster, rwkind::eTargetPlatform targetPlatform, rwkind::eTargetGame targetGame )
+{
+    bool hasConversionSucceeded = rwkind::ConvertRasterToPlatform( texRaster, targetPlatform, targetGame );
+
+    if ( hasConversionSucceeded == false )
+    {
+        theTexture->GetEngine()->PushWarning( "TxdGen: failed to convert texture " + theTexture->GetName() );
+    }
+}
 
 bool TxdGenModule::ProcessTXDArchive(
     CFileTranslator *srcRoot, CFile *srcStream, CFile *targetStream, eTargetPlatform targetPlatform, eTargetGame targetGame,
@@ -94,7 +106,7 @@ bool TxdGenModule::ProcessTXDArchive(
 
                             if ( shouldConvertBeforehand == true )
                             {
-                                ConvertRasterToPlatform( theTexture, texRaster, targetPlatform, targetGame, gameVersion );
+                                ConvertRasterToPlatformEx( theTexture, texRaster, targetPlatform, targetGame );
 
                                 hasConvertedToTargetArchitecture = true;
                             }
@@ -212,7 +224,7 @@ bool TxdGenModule::ProcessTXDArchive(
                                 // If we are not target architecture already, make sure we are.
                                 if ( hasConvertedToTargetArchitecture == false )
                                 {
-                                    ConvertRasterToPlatform( theTexture, texRaster, targetPlatform, targetGame, gameVersion );
+                                    ConvertRasterToPlatformEx( theTexture, texRaster, targetPlatform, targetGame );
 
                                     hasConvertedToTargetArchitecture = true;
                                 }
@@ -239,7 +251,7 @@ bool TxdGenModule::ProcessTXDArchive(
                             {
                                 if ( hasConvertedToTargetArchitecture == false )
                                 {
-                                    ConvertRasterToPlatform( theTexture, texRaster, targetPlatform, targetGame, gameVersion );
+                                    ConvertRasterToPlatformEx( theTexture, texRaster, targetPlatform, targetGame );
 
                                     hasConvertedToTargetArchitecture = true;
                                 }
@@ -342,8 +354,8 @@ bool TxdGenModule::ProcessTXDArchive(
 struct _discFileSentry_txdgen
 {
     TxdGenModule *module;
-    TxdGenModule::eTargetPlatform targetPlatform;
-    TxdGenModule::eTargetGame targetGame;
+    rwkind::eTargetPlatform targetPlatform;
+    rwkind::eTargetGame targetGame;
     bool clearMipmaps;
     bool generateMipmaps;
     rw::eMipmapGenerationMode mipGenMode;
@@ -546,7 +558,7 @@ TxdGenModule::run_config TxdGenModule::ParseConfig( CFileTranslator *root, const
                 // Target game version.
                 if ( const char *targetVersion = mainEntry->Get( "targetVersion" ) )
                 {
-                    TxdGenModule::eTargetGame gameType;
+                    rwkind::eTargetGame gameType;
                     bool hasGameType = false;
                             
                     if ( stricmp( targetVersion, "SA" ) == 0 ||

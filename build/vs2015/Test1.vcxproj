@@ -146,12 +146,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2015|Win32'">$(ProjectDir)../../output/</OutDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2013|Win32'">$(ProjectDir)../../output/</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release 2015|Win32'">$(ProjectDir)../../obj/magictxd/$(Platform)_$(Configuration)_$(PlatformToolset)/</IntDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'">$(ProjectDir)../../obj/magictxd/$(Platform)_$(Configuration)_$(PlatformToolset)/</IntDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release 2013|Win32'">$(ProjectDir)../../obj/magictxd/$(Platform)_$(Configuration)_$(PlatformToolset)/</IntDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release 2013|x64'">$(ProjectDir)../../obj/magictxd/$(Platform)_$(Configuration)_$(PlatformToolset)/</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2015|Win32'">$(ProjectDir)..\..\output\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release 2013|Win32'">$(ProjectDir)..\..\output\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release 2015|Win32'">$(ProjectDir)..\..\obj\magictxd\$(Platform)_$(Configuration)_$(PlatformToolset)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'">$(ProjectDir)..\..\obj\magictxd\$(Platform)_$(Configuration)_$(PlatformToolset)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release 2013|Win32'">$(ProjectDir)..\..\obj\magictxd\$(Platform)_$(Configuration)_$(PlatformToolset)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release 2013|x64'">$(ProjectDir)..\..\obj\magictxd\$(Platform)_$(Configuration)_$(PlatformToolset)\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release 2015|Win32'">magictxd</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'">magictxd_x64</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release 2013|Win32'">magictxd</TargetName>
@@ -164,12 +164,12 @@
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'">false</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release 2013|Win32'">false</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release 2013|x64'">false</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug 2015|Win32'">$(ProjectDir)../../output/</OutDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug 2013|Win32'">$(ProjectDir)../../output/</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug 2015|Win32'">$(ProjectDir)../../obj/magictxd/$(Platform)_$(Configuration)_$(PlatformToolset)/</IntDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug 2015|x64'">$(ProjectDir)../../obj/magictxd/$(Platform)_$(Configuration)_$(PlatformToolset)/</IntDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug 2013|Win32'">$(ProjectDir)../../obj/magictxd/$(Platform)_$(Configuration)_$(PlatformToolset)/</IntDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug 2013|x64'">$(ProjectDir)../../obj/magictxd/$(Platform)_$(Configuration)_$(PlatformToolset)/</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug 2015|Win32'">$(ProjectDir)..\..\output\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug 2013|Win32'">$(ProjectDir)..\..\output\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug 2015|Win32'">$(ProjectDir)..\..\obj\magictxd\$(Platform)_$(Configuration)_$(PlatformToolset)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug 2015|x64'">$(ProjectDir)..\..\obj\magictxd\$(Platform)_$(Configuration)_$(PlatformToolset)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug 2013|Win32'">$(ProjectDir)..\..\obj\magictxd\$(Platform)_$(Configuration)_$(PlatformToolset)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug 2013|x64'">$(ProjectDir)..\..\obj\magictxd\$(Platform)_$(Configuration)_$(PlatformToolset)\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug 2015|Win32'">magictxd_d</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug 2015|x64'">magictxd_d_x64</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug 2013|Win32'">magictxd_d</TargetName>
@@ -180,16 +180,16 @@
     <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Debug 2013|x64'">true</IgnoreImportLibrary>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release 2013|x64'">
-    <OutDir>$(ProjectDir)../../output/</OutDir>
+    <OutDir>$(ProjectDir)..\..\output\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'">
-    <OutDir>$(ProjectDir)../../output/</OutDir>
+    <OutDir>$(ProjectDir)..\..\output\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2013|x64'">
-    <OutDir>$(ProjectDir)../../output/</OutDir>
+    <OutDir>$(ProjectDir)..\..\output\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug 2015|x64'">
-    <OutDir>$(ProjectDir)../../output/</OutDir>
+    <OutDir>$(ProjectDir)..\..\output\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release 2015|Win32'">
     <ClCompile>
@@ -216,6 +216,8 @@
       <OmitFramePointers>true</OmitFramePointers>
       <WholeProgramOptimization>true</WholeProgramOptimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>mainwindow.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <AdditionalDependencies>kernel32.lib;shell32.lib;user32.lib;gdi32.lib;advapi32.lib;glu32.lib;opengl32.lib;imm32.lib;winmm.lib;Qt5PlatformSupport.lib;qwindows.lib;qtmain.lib;Ws2_32.lib;qtpcre.lib;qtfreetype.lib;Qt5Core.lib;Qt5Widgets.lib;Qt5Gui.lib;qtharfbuzzng.lib;rwtools_$(PlatformToolset).lib;libfs_$(PlatformToolset).lib;gtaconfig_$(PlatformToolset).lib</AdditionalDependencies>
@@ -274,6 +276,8 @@
       <OmitFramePointers>true</OmitFramePointers>
       <WholeProgramOptimization>true</WholeProgramOptimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>mainwindow.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <AdditionalDependencies>kernel32.lib;shell32.lib;user32.lib;gdi32.lib;advapi32.lib;glu32.lib;opengl32.lib;imm32.lib;winmm.lib;Qt5PlatformSupport.lib;qwindows.lib;qtmain.lib;Ws2_32.lib;qtpcre.lib;qtfreetype.lib;Qt5Core.lib;Qt5Widgets.lib;Qt5Gui.lib;qtharfbuzzng.lib;rwtools_$(PlatformToolset)_x64.lib;libfs_$(PlatformToolset)_x64.lib;gtaconfig_$(PlatformToolset)_x64.lib</AdditionalDependencies>
@@ -332,6 +336,8 @@
       <OmitFramePointers>true</OmitFramePointers>
       <WholeProgramOptimization>true</WholeProgramOptimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>mainwindow.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <AdditionalDependencies>kernel32.lib;shell32.lib;user32.lib;gdi32.lib;advapi32.lib;glu32.lib;opengl32.lib;imm32.lib;winmm.lib;Qt5PlatformSupport.lib;qwindows.lib;qtmain.lib;Ws2_32.lib;qtpcre.lib;qtfreetype.lib;Qt5Core.lib;Qt5Widgets.lib;Qt5Gui.lib;qtharfbuzzng.lib;rwtools_$(PlatformToolset).lib;libfs_$(PlatformToolset).lib;gtaconfig_$(PlatformToolset).lib</AdditionalDependencies>
@@ -390,6 +396,8 @@
       <OmitFramePointers>true</OmitFramePointers>
       <WholeProgramOptimization>true</WholeProgramOptimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>mainwindow.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <AdditionalDependencies>kernel32.lib;shell32.lib;user32.lib;gdi32.lib;advapi32.lib;glu32.lib;opengl32.lib;imm32.lib;winmm.lib;Qt5PlatformSupport.lib;qwindows.lib;qtmain.lib;Ws2_32.lib;qtpcre.lib;qtfreetype.lib;Qt5Core.lib;Qt5Widgets.lib;Qt5Gui.lib;qtharfbuzzng.lib;rwtools_$(PlatformToolset)_x64.lib;libfs_$(PlatformToolset)_x64.lib;gtaconfig_$(PlatformToolset)_x64.lib</AdditionalDependencies>
@@ -443,6 +451,8 @@
       <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
       <AdditionalIncludeDirectories>../../include/;../../vendor/FileSystem/src/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;../../vendor/gtaconfig/include/;../../rwlib/vendor/NativeExecutive/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>mainwindow.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <AdditionalDependencies>kernel32.lib;shell32.lib;user32.lib;gdi32.lib;advapi32.lib;glu32.lib;opengl32.lib;imm32.lib;winmm.lib;Qt5PlatformSupportd.lib;qwindowsd.lib;qtmaind.lib;Ws2_32.lib;qtpcred.lib;qtfreetyped.lib;Qt5Cored.lib;Qt5Widgetsd.lib;Qt5Guid.lib;qtharfbuzzngd.lib;rwtools_d_$(PlatformToolset).lib;libfs_d_$(PlatformToolset).lib;gtaconfig_d_$(PlatformToolset).lib</AdditionalDependencies>
@@ -494,6 +504,8 @@
       <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
       <AdditionalIncludeDirectories>../../include/;../../vendor/FileSystem/src/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;../../vendor/gtaconfig/include/;../../rwlib/vendor/NativeExecutive/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>mainwindow.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <AdditionalDependencies>kernel32.lib;shell32.lib;user32.lib;gdi32.lib;advapi32.lib;glu32.lib;opengl32.lib;imm32.lib;winmm.lib;Qt5PlatformSupportd.lib;qwindowsd.lib;qtmaind.lib;Ws2_32.lib;qtpcred.lib;qtfreetyped.lib;Qt5Cored.lib;Qt5Widgetsd.lib;Qt5Guid.lib;qtharfbuzzngd.lib;rwtools_d_$(PlatformToolset)_x64.lib;libfs_d_$(PlatformToolset)_x64.lib;gtaconfig_d_$(PlatformToolset)_x64.lib</AdditionalDependencies>
@@ -545,6 +557,8 @@
       <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
       <AdditionalIncludeDirectories>../../include/;../../vendor/FileSystem/src/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;../../vendor/gtaconfig/include/;../../rwlib/vendor/NativeExecutive/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>mainwindow.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <AdditionalDependencies>kernel32.lib;shell32.lib;user32.lib;gdi32.lib;advapi32.lib;glu32.lib;opengl32.lib;imm32.lib;winmm.lib;Qt5PlatformSupportd.lib;qwindowsd.lib;qtmaind.lib;Ws2_32.lib;qtpcred.lib;qtfreetyped.lib;Qt5Cored.lib;Qt5Widgetsd.lib;Qt5Guid.lib;qtharfbuzzngd.lib;rwtools_d_$(PlatformToolset).lib;libfs_d_$(PlatformToolset).lib;gtaconfig_d_$(PlatformToolset).lib</AdditionalDependencies>
@@ -596,6 +610,8 @@
       <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
       <AdditionalIncludeDirectories>../../include/;../../vendor/FileSystem/src/;../../vendor/Qt5.5/include/QtWidgets/;../../vendor/Qt5.5/include/;../../vendor/Qt5.5/include/QtCore/;../../vendor/Qt5.5/include/QtGUI/;../../rwlib/include/;../../rwlib/vendor/eirrepo/;../../magic_api/;../../vendor/gtaconfig/include/;../../rwlib/vendor/NativeExecutive/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>mainwindow.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <AdditionalDependencies>kernel32.lib;shell32.lib;user32.lib;gdi32.lib;advapi32.lib;glu32.lib;opengl32.lib;imm32.lib;winmm.lib;Qt5PlatformSupportd.lib;qwindowsd.lib;qtmaind.lib;Ws2_32.lib;qtpcred.lib;qtfreetyped.lib;Qt5Cored.lib;Qt5Widgetsd.lib;Qt5Guid.lib;qtharfbuzzngd.lib;rwtools_d_$(PlatformToolset)_x64.lib;libfs_d_$(PlatformToolset)_x64.lib;gtaconfig_d_$(PlatformToolset)_x64.lib</AdditionalDependencies>
@@ -629,10 +645,32 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\aboutdialog.cpp" />
+    <ClCompile Include="..\..\src\exportallwindow.cpp" />
     <ClCompile Include="..\..\src\friendlyicons.cpp" />
     <ClCompile Include="..\..\src\guiserialization.cpp" />
-    <ClCompile Include="..\..\src\MagicExport.cpp" />
-    <ClCompile Include="..\..\src\main.cpp" />
+    <ClCompile Include="..\..\src\guiserialization.store.cpp" />
+    <ClCompile Include="..\..\src\MagicExport.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release 2015|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug 2013|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug 2015|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release 2013|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug 2013|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug 2015|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release 2013|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\..\src\main.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release 2015|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug 2013|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug 2015|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release 2013|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release 2015|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug 2013|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug 2015|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release 2013|x64'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\..\src\mainwindow.serialize.cpp" />
+    <ClCompile Include="..\..\src\massbuild.cpp" />
     <ClCompile Include="..\..\src\massconvert.cpp" />
     <ClCompile Include="..\..\src\massexport.cpp" />
     <ClCompile Include="..\..\src\optionsdialog.cpp" />
@@ -641,9 +679,11 @@
     <ClCompile Include="..\..\src\streamcompress.cpp" />
     <ClCompile Include="..\..\src\streamcompress.lzo.cpp" />
     <ClCompile Include="..\..\src\streamcompress.mh2z.cpp" />
+    <ClCompile Include="..\..\src\taskcompletionwindow.cpp" />
     <ClCompile Include="..\..\src\texadddialog.cpp" />
     <ClCompile Include="..\..\src\texformatextensions.cpp" />
     <ClCompile Include="../../src/mainwindow.cpp" />
+    <ClCompile Include="..\..\src\tools\txdbuild.cpp" />
     <ClCompile Include="..\..\src\tools\txdexport.cpp" />
     <ClCompile Include="..\..\src\tools\txdgen.cpp" />
     <ClCompile Include="..\..\src\txdlog.cpp" />
@@ -654,6 +694,7 @@
     <ClInclude Include="..\..\include\exportallwindow.h" />
     <ClInclude Include="..\..\include\guiserialization.h" />
     <ClInclude Include="..\..\include\MagicExport.h" />
+    <ClInclude Include="..\..\include\massbuild.h" />
     <ClInclude Include="..\..\include\massconvert.h" />
     <ClInclude Include="..\..\include\massexport.h" />
     <ClInclude Include="..\..\include\optionsdialog.h" />
@@ -672,14 +713,17 @@
     <ClInclude Include="..\..\include\txdlogwindow.h" />
     <ClInclude Include="..\..\magic_api\magfapi.h" />
     <ClInclude Include="..\..\magic_api\MagicFormats.h" />
+    <ClInclude Include="..\..\src\guiserialization.hxx" />
     <ClInclude Include="..\..\src\qtinteroputils.hxx" />
     <ClInclude Include="..\..\src\qtrwutils.hxx" />
     <ClInclude Include="..\..\src\texformathelper.hxx" />
     <ClInclude Include="..\..\include\mainwindow.h" />
     <ClInclude Include="../../include/texinfoitem.h" />
     <ClInclude Include="../../include/styles.h" />
+    <ClInclude Include="..\..\src\toolshared.hxx" />
     <ClInclude Include="..\..\src\tools\dirtools.h" />
     <ClInclude Include="..\..\src\tools\shared.h" />
+    <ClInclude Include="..\..\src\tools\txdbuild.h" />
     <ClInclude Include="..\..\src\tools\txdexport.h" />
     <ClInclude Include="..\..\src\tools\txdgen.h" />
   </ItemGroup>

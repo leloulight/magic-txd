@@ -21,6 +21,7 @@ struct BlockProvider
     typedef sliceOfData <int64> streamMemSlice_t;
 
     BlockProvider( Stream *contextStream, rw::eBlockMode blockMode );
+    BlockProvider( Stream *contextStream, rw::eBlockMode blockMode, bool ignoreBlockRegions );
 
     inline BlockProvider( BlockProvider *parentProvider )
     {

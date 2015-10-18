@@ -1,148 +1,14 @@
 #include "mainwindow.h"
 
-#include "massconvert.h"
 #include "massexport.h"
 
 #include <QByteArray>
 
 #include <ShlObj.h>
 
-#define MAGICTXD_UNICODE_STRING_ID      0xBABE0001
-#define MAGICTXD_CONFIG_BLOCK           0xBABE0002
-#define MAGICTXD_ANSI_STRING_ID         0xBABE0003
+#include "guiserialization.hxx"
 
-// Our string blocks.
-void RwWriteUnicodeString( rw::BlockProvider& prov, const std::wstring& in )
-{
-    rw::BlockProvider stringBlock( &prov, false );
-
-    stringBlock.EnterContext();
-    
-    // NOTE: this function is not cross-platform, because wchar_t is platform dependant.
-
-    try
-    {
-        stringBlock.setBlockID( MAGICTXD_UNICODE_STRING_ID );
-
-        // Simply write stuff, without zero termination.
-        stringBlock.write( in.c_str(), in.length() * sizeof( wchar_t ) );
-
-        // Done.
-    }
-    catch( ... )
-    {
-        stringBlock.LeaveContext();
-
-        throw;
-    }
-
-    stringBlock.LeaveContext();
-}
-
-bool RwReadUnicodeString( rw::BlockProvider& prov, std::wstring& out )
-{
-    bool gotString = false;
-
-    rw::BlockProvider stringBlock( &prov, false );
-
-    stringBlock.EnterContext();
-
-    try
-    {
-        if ( stringBlock.getBlockID() == MAGICTXD_UNICODE_STRING_ID )
-        {
-            // Simply read stuff.
-            rw::int64 blockLength = stringBlock.getBlockLength();
-
-            // We need to get a valid unicode string length.
-            size_t unicodeLength = ( blockLength / sizeof( wchar_t ) );
-
-            rw::int64 unicodeDataLength = ( unicodeLength * sizeof( wchar_t ) );
-
-            out.resize( unicodeLength );
-
-            // Read into the unicode string implementation.
-            stringBlock.read( (wchar_t*)out.data(), unicodeDataLength );
-
-            // Skip the remainder.
-            stringBlock.skip( blockLength - unicodeDataLength );
-
-            gotString = true;
-        }
-    }
-    catch( ... )
-    {
-        stringBlock.LeaveContext();
-
-        throw;
-    }
-
-    stringBlock.LeaveContext();
-
-    return gotString;
-}
-
-// ANSI string stuff.
-void RwWriteANSIString( rw::BlockProvider& parentBlock, const std::string& str )
-{
-    rw::BlockProvider stringBlock( &parentBlock );
-
-    stringBlock.EnterContext();
-
-    try
-    {
-        stringBlock.setBlockID( MAGICTXD_ANSI_STRING_ID );
-
-        stringBlock.write( str.c_str(), str.size() );
-    }
-    catch( ... )
-    {
-        stringBlock.LeaveContext();
-
-        throw;
-    }
-
-    stringBlock.LeaveContext();
-}
-
-bool RwReadANSIString( rw::BlockProvider& parentBlock, std::string& stringOut )
-{
-    bool gotString = false;
-
-    rw::BlockProvider stringBlock( &parentBlock );
-
-    stringBlock.EnterContext();
-
-    try
-    {
-        if ( stringBlock.getBlockID() == MAGICTXD_ANSI_STRING_ID )
-        {
-            // We read as much as we can into a memory buffer.
-            rw::int64 blockSize = stringBlock.getBlockLength();
-
-            size_t ansiStringLength = (size_t)blockSize;
-
-            stringOut.resize( ansiStringLength );
-
-            stringBlock.read( (void*)stringOut.data(), ansiStringLength );
-
-            // Skip the rest.
-            stringBlock.skip( blockSize - ansiStringLength );
-
-            gotString = true;
-        }
-    }
-    catch( ... )
-    {
-        stringBlock.LeaveContext();
-
-        throw;
-    }
-
-    stringBlock.LeaveContext();
-
-    return gotString;
-}
+#define SERIALIZE_SECTOR        0x5158
 
 // Utilities for connecting the GUI to a filesystem repository.
 struct mainWindowSerialization
@@ -152,421 +18,86 @@ struct mainWindowSerialization
     CFileTranslator *toolRoot;      // the current directory we launched in
     CFileTranslator *configRoot;    // writ-able root for configuration files.
 
-    enum eSelectedTheme
-    {
-        THEME_DARK,
-        THEME_LIGHT
-    };
-
-    struct mtxd_cfg_struct
-    {
-        bool addImageGenMipmaps;
-        bool lockDownTXDPlatform;
-        endian::little_endian <eSelectedTheme> selectedTheme;
-        bool showLogOnWarning;
-        bool adjustTextureChunksOnImport;
-    };
-
-    struct txdgen_cfg_struct
-    {
-        endian::little_endian <TxdGenModule::eTargetGame> c_gameType;
-        endian::little_endian <TxdGenModule::eTargetPlatform> c_targetPlatform;
-        
-        bool c_clearMipmaps;
-        bool c_generateMipmaps;
-        
-        endian::little_endian <rw::eMipmapGenerationMode> c_mipGenMode;
-        endian::little_endian <rw::uint32> c_mipGenMaxLevel;
-
-        bool c_improveFiltering;
-        bool compressTextures;
-
-        endian::little_endian <rw::ePaletteRuntimeType> c_palRuntimeType;
-        endian::little_endian <rw::eDXTCompressionMethod> c_dxtRuntimeType;
-
-        bool c_reconstructIMGArchives;
-        bool c_fixIncompatibleRasters;
-        bool c_dxtPackedDecompression;
-        bool c_imgArchivesCompressed;
-        bool c_ignoreSerializationRegions;
-        
-        endian::little_endian <rw::float32> c_compressionQuality;
-
-        bool c_outputDebug;
-
-        endian::little_endian <rw::int32> c_warningLevel;
-
-        bool c_ignoreSecureWarnings;
-    };
-
-    struct massexp_cfg_struct
-    {
-        endian::little_endian <MassExportModule::eOutputType> outputType;
-    };
-
     inline void loadSerialization( rw::BlockProvider& mainBlock, MainWindow *mainwnd )
     {
-        // last directory we were in to save TXD file.
+        rw::uint32 blockCount = mainBlock.readUInt32();
+
+        for ( rw::uint32 n = 0; n < blockCount; n++ )
         {
-            std::wstring lastTXDSaveDir;
-
-            bool gotDir = RwReadUnicodeString( mainBlock, lastTXDSaveDir );
-
-            if ( gotDir )
-            {
-                mainwnd->lastTXDSaveDir = QString::fromStdWString( lastTXDSaveDir );
-            }
-        }
-
-        // last directory we were in to add an image file.
-        {
-            std::wstring lastImageFileOpenDir;
-
-            bool gotDir = RwReadUnicodeString( mainBlock, lastImageFileOpenDir );
-
-            if ( gotDir )
-            {
-                mainwnd->lastImageFileOpenDir = QString::fromStdWString( lastImageFileOpenDir );
-            }
-        }
-
-        // Export all window stuff.
-        {
-            rw::BlockProvider exportAllBlock( &mainBlock );
-
-            exportAllBlock.EnterContext();
+            rw::BlockProvider cfgBlock( &mainBlock );
             
-            try
-            {
-                RwReadANSIString( exportAllBlock, mainwnd->lastUsedAllExportFormat );
-                RwReadUnicodeString( exportAllBlock, mainwnd->lastAllExportTarget );
-            }
-            catch( ... )
-            {
-                exportAllBlock.LeaveContext();
-
-                throw;
-            }
-
-            exportAllBlock.LeaveContext();
-        }
-
-        // MTXD configuration block.
-        {
-            rw::BlockProvider mtxdConfig( &mainBlock );
-
-            mtxdConfig.EnterContext();
+            cfgBlock.EnterContext();
 
             try
             {
-                if ( mtxdConfig.getBlockID() == rw::CHUNK_STRUCT )
+                try
                 {
-                    mtxd_cfg_struct cfgStruct;
-                    mtxdConfig.readStruct( cfgStruct );
+                    rw::uint32 block_id = cfgBlock.getBlockID();
 
-                    mainwnd->addImageGenMipmaps = cfgStruct.addImageGenMipmaps;
-                    mainwnd->lockDownTXDPlatform = cfgStruct.lockDownTXDPlatform;
+                    unsigned short cfg_id = (unsigned short)( block_id & 0xFFFF );
+                    unsigned short checksum = (unsigned short)( ( block_id >> 16 ) & 0xFFFF );
 
-                    // Select the appropriate theme.
-                    eSelectedTheme themeOption = cfgStruct.selectedTheme;
-
-                    if ( themeOption == THEME_DARK )
+                    if ( checksum == SERIALIZE_SECTOR )
                     {
-                        mainwnd->onToogleDarkTheme( true );
-                        mainwnd->actionThemeDark->setChecked( true );
-                    }
-                    else if ( themeOption == THEME_LIGHT )
-                    {
-                        mainwnd->onToogleLightTheme( true );
-                        mainwnd->actionThemeLight->setChecked( true );
-                    }
+                        magicSerializationProvider *prov = FindMainWindowSerializer( mainwnd, cfg_id );
 
-                    mainwnd->showLogOnWarning = cfgStruct.showLogOnWarning;
-                    mainwnd->adjustTextureChunksOnImport = cfgStruct.adjustTextureChunksOnImport;
-
-                    // TXD log settings.
-                    {
-                        rw::BlockProvider logGeomBlock( &mtxdConfig );
-
-                        logGeomBlock.EnterContext();
-
-                        try
+                        if ( prov )
                         {
-                            if ( logGeomBlock.getBlockID() == rw::CHUNK_STRUCT )
-                            {
-                                int geomSize = (int)logGeomBlock.getBlockLength();
-
-                                QByteArray tmpArr( geomSize, 0 );
-
-                                logGeomBlock.read( tmpArr.data(), geomSize );
-
-                                // Restore geometry.
-                                mainwnd->txdLog->restoreGeometry( tmpArr );
-                            }
+                            prov->Load( mainwnd, cfgBlock );
                         }
-                        catch( ... )
-                        {
-                            logGeomBlock.LeaveContext();
-
-                            throw;
-                        }
-
-                        logGeomBlock.LeaveContext();
                     }
                 }
-            }
-            catch( ... )
-            {
-                mtxdConfig.LeaveContext();
-
-                throw;
-            }
-
-            mtxdConfig.LeaveContext();
-        }
-
-        // TxdGen configuration block.
-        if ( massconvEnv *massconv = massconvEnvRegister.GetPluginStruct( mainwnd ) )
-        {
-            rw::BlockProvider massconvBlock( &mainBlock );
-
-            massconvBlock.EnterContext();
-
-            try
-            {
-                if ( massconvBlock.getBlockID() == rw::CHUNK_STRUCT )
+                catch( ... )
                 {
-                    RwReadUnicodeString( massconvBlock, massconv->txdgenConfig.c_gameRoot );
-                    RwReadUnicodeString( massconvBlock, massconv->txdgenConfig.c_outputRoot );
+                    cfgBlock.LeaveContext();
 
-                    txdgen_cfg_struct cfgStruct;
-                    massconvBlock.readStruct( cfgStruct );
-
-                    massconv->txdgenConfig.c_gameType = cfgStruct.c_gameType;
-                    massconv->txdgenConfig.c_targetPlatform = cfgStruct.c_targetPlatform;
-                    massconv->txdgenConfig.c_clearMipmaps = cfgStruct.c_clearMipmaps;
-                    massconv->txdgenConfig.c_generateMipmaps = cfgStruct.c_generateMipmaps;
-                    massconv->txdgenConfig.c_mipGenMode = cfgStruct.c_mipGenMode;
-                    massconv->txdgenConfig.c_mipGenMaxLevel = cfgStruct.c_mipGenMaxLevel;
-                    massconv->txdgenConfig.c_improveFiltering = cfgStruct.c_improveFiltering;
-                    massconv->txdgenConfig.compressTextures = cfgStruct.compressTextures;
-                    massconv->txdgenConfig.c_palRuntimeType = cfgStruct.c_palRuntimeType;
-                    massconv->txdgenConfig.c_dxtRuntimeType = cfgStruct.c_dxtRuntimeType;
-                    massconv->txdgenConfig.c_reconstructIMGArchives = cfgStruct.c_reconstructIMGArchives;
-                    massconv->txdgenConfig.c_fixIncompatibleRasters = cfgStruct.c_fixIncompatibleRasters;
-                    massconv->txdgenConfig.c_dxtPackedDecompression = cfgStruct.c_dxtPackedDecompression;
-                    massconv->txdgenConfig.c_imgArchivesCompressed = cfgStruct.c_imgArchivesCompressed;
-                    massconv->txdgenConfig.c_ignoreSerializationRegions = cfgStruct.c_ignoreSerializationRegions;
-                    massconv->txdgenConfig.c_compressionQuality = cfgStruct.c_compressionQuality;
-                    massconv->txdgenConfig.c_outputDebug = cfgStruct.c_outputDebug;
-                    massconv->txdgenConfig.c_warningLevel = cfgStruct.c_warningLevel;
-                    massconv->txdgenConfig.c_ignoreSecureWarnings = cfgStruct.c_ignoreSecureWarnings;
+                    throw;
                 }
+
+                cfgBlock.LeaveContext();
             }
-            catch( ... )
+            catch( rw::RwException& )
             {
-                massconvBlock.LeaveContext();
-
-                throw;
+                // Some module failed to load.
+                // Try to load all the other modules anyway.
             }
-
-            massconvBlock.LeaveContext();
-        }
-
-        // Mass Export configuration block.
-        if ( massexportEnv *massexport = massexportEnvRegister.GetPluginStruct( mainwnd ) )
-        {
-            rw::BlockProvider massexportBlock( &mainBlock );
-
-            massexportBlock.EnterContext();
-
-            try
-            {
-                if ( massexportBlock.getBlockID() == rw::CHUNK_STRUCT )
-                {
-                    RwReadUnicodeString( massexportBlock, massexport->config.gameRoot );
-                    RwReadUnicodeString( massexportBlock, massexport->config.outputRoot );
-                    RwReadANSIString( massexportBlock, massexport->config.recImgFormat );
-
-                    massexp_cfg_struct cfgStruct;
-                    massexportBlock.readStruct( cfgStruct );
-
-                    massexport->config.outputType = cfgStruct.outputType;
-                }
-            }
-            catch( ... )
-            {
-                massexportBlock.LeaveContext();
-
-                throw;
-            }
-
-            massexportBlock.LeaveContext();
         }
     }
 
     inline void saveSerialization( rw::BlockProvider& mainBlock, const MainWindow *mainwnd )
     {
-        RwWriteUnicodeString( mainBlock, mainwnd->lastTXDSaveDir.toStdWString() );
-        RwWriteUnicodeString( mainBlock, mainwnd->lastImageFileOpenDir.toStdWString() );
+        mainBlock.writeUInt32( GetAmountOfMainWindowSerializers( mainwnd ) );
 
-        // Export all window.
+        ForAllMainWindowSerializers( mainwnd,
+            [&]( magicSerializationProvider *prov, unsigned short id )
         {
-            rw::BlockProvider exportAllBlock( &mainBlock );
+            rw::BlockProvider cfgBlock( &mainBlock );
 
-            exportAllBlock.EnterContext();
+            cfgBlock.EnterContext();
 
             try
             {
-                RwWriteANSIString( exportAllBlock, mainwnd->lastUsedAllExportFormat );
-                RwWriteUnicodeString( exportAllBlock, mainwnd->lastAllExportTarget );
-            }
-            catch( ... )
-            {
-                exportAllBlock.LeaveContext();
-
-                throw;
-            }
-
-            exportAllBlock.LeaveContext();
-        }
-
-        // MTXD config block.
-        {
-            rw::BlockProvider mtxdConfig( &mainBlock );
-
-            mtxdConfig.EnterContext();
-
-            try
-            {
-                mtxd_cfg_struct cfgStruct;
-                cfgStruct.addImageGenMipmaps = mainwnd->addImageGenMipmaps;
-                cfgStruct.lockDownTXDPlatform = mainwnd->lockDownTXDPlatform;
-
-                // Write theme.
-                eSelectedTheme themeOption = THEME_DARK;
-
-                if ( mainwnd->actionThemeDark->isChecked() )
+                try
                 {
-                    themeOption = THEME_DARK;
+                    cfgBlock.setBlockID( (rw::uint32)SERIALIZE_SECTOR << 16 | id );
+
+                    prov->Save( mainwnd, cfgBlock );
                 }
-                else if ( mainwnd->actionThemeLight->isChecked() )
+                catch( ... )
                 {
-                    themeOption = THEME_LIGHT;
+                    cfgBlock.LeaveContext();
+
+                    throw;
                 }
 
-                cfgStruct.selectedTheme = themeOption;
-                cfgStruct.showLogOnWarning = mainwnd->showLogOnWarning;
-                cfgStruct.adjustTextureChunksOnImport = mainwnd->adjustTextureChunksOnImport;
-
-                mtxdConfig.writeStruct( cfgStruct );
-
-                // TXD log properties.
-                {
-                    QByteArray logGeom = mainwnd->txdLog->saveGeometry();
-
-                    rw::BlockProvider logGeomBlock( &mtxdConfig );
-
-                    logGeomBlock.EnterContext();
-
-                    try
-                    {
-                        int geomSize = logGeom.size();
-
-                        logGeomBlock.write( logGeom.constData(), geomSize );
-                    }
-                    catch( ... )
-                    {
-                        logGeomBlock.LeaveContext();
-
-                        throw;
-                    }
-
-                    logGeomBlock.LeaveContext();
-                }
+                cfgBlock.LeaveContext();
             }
-            catch( ... )
+            catch( rw::RwException& )
             {
-                mtxdConfig.LeaveContext();
-
-                throw;
+                // If one component failed to serialize, it doesnt mean that everything else should fail to serialize aswell.
+                // Continue here.
             }
-
-            mtxdConfig.LeaveContext();
-        }
-
-        // TxdGen config block.
-        if ( const massconvEnv *massconv = massconvEnvRegister.GetConstPluginStruct( mainwnd ) )
-        {
-            rw::BlockProvider massconvBlock( &mainBlock );
-
-            massconvBlock.EnterContext();
-
-            try
-            {
-                RwWriteUnicodeString( massconvBlock, massconv->txdgenConfig.c_gameRoot );
-                RwWriteUnicodeString( massconvBlock, massconv->txdgenConfig.c_outputRoot );
-
-                txdgen_cfg_struct cfgStruct;
-                cfgStruct.c_gameType = massconv->txdgenConfig.c_gameType;
-                cfgStruct.c_targetPlatform = massconv->txdgenConfig.c_targetPlatform;
-                cfgStruct.c_clearMipmaps = massconv->txdgenConfig.c_clearMipmaps;
-                cfgStruct.c_generateMipmaps = massconv->txdgenConfig.c_generateMipmaps;
-                cfgStruct.c_mipGenMode = massconv->txdgenConfig.c_mipGenMode;
-                cfgStruct.c_mipGenMaxLevel = massconv->txdgenConfig.c_mipGenMaxLevel;
-                cfgStruct.c_improveFiltering = massconv->txdgenConfig.c_improveFiltering;
-                cfgStruct.compressTextures = massconv->txdgenConfig.compressTextures;
-                cfgStruct.c_palRuntimeType = massconv->txdgenConfig.c_palRuntimeType;
-                cfgStruct.c_dxtRuntimeType = massconv->txdgenConfig.c_dxtRuntimeType;
-                cfgStruct.c_reconstructIMGArchives = massconv->txdgenConfig.c_reconstructIMGArchives;
-                cfgStruct.c_fixIncompatibleRasters = massconv->txdgenConfig.c_fixIncompatibleRasters;
-                cfgStruct.c_dxtPackedDecompression = massconv->txdgenConfig.c_dxtPackedDecompression;
-                cfgStruct.c_imgArchivesCompressed = massconv->txdgenConfig.c_imgArchivesCompressed;
-                cfgStruct.c_ignoreSerializationRegions = massconv->txdgenConfig.c_ignoreSerializationRegions;
-                cfgStruct.c_compressionQuality = massconv->txdgenConfig.c_compressionQuality;
-                cfgStruct.c_outputDebug = massconv->txdgenConfig.c_outputDebug;
-                cfgStruct.c_warningLevel = massconv->txdgenConfig.c_warningLevel;
-                cfgStruct.c_ignoreSecureWarnings = massconv->txdgenConfig.c_ignoreSecureWarnings;
-
-                massconvBlock.writeStruct( cfgStruct );
-            }
-            catch( ... )
-            {
-                massconvBlock.LeaveContext();
-
-                throw;
-            }
-
-            massconvBlock.LeaveContext();
-        }
-
-        // Mass Export config block.
-        if ( const massexportEnv *massexport = massexportEnvRegister.GetConstPluginStruct( mainwnd ) )
-        {
-            rw::BlockProvider massexportBlock( &mainBlock );
-
-            massexportBlock.EnterContext();
-
-            try
-            {
-                RwWriteUnicodeString( massexportBlock, massexport->config.gameRoot );
-                RwWriteUnicodeString( massexportBlock, massexport->config.outputRoot );
-                RwWriteANSIString( massexportBlock, massexport->config.recImgFormat );
-
-                massexp_cfg_struct cfgStruct;
-                cfgStruct.outputType = massexport->config.outputType;
-
-                massexportBlock.writeStruct( cfgStruct );
-            }
-            catch( ... )
-            {
-                massexportBlock.LeaveContext();
-
-                throw;
-            }
-
-            massexportBlock.LeaveContext();
-        }
+        });
     }
 
     inline void Initialize( MainWindow *mainwnd )
@@ -639,7 +170,7 @@ struct mainWindowSerialization
                         {
                             try
                             {
-                                rw::BlockProvider mainCfgBlock( rwStream, rw::RWBLOCKMODE_READ );
+                                rw::BlockProvider mainCfgBlock( rwStream, rw::RWBLOCKMODE_READ, false );    // We expect properly written blocks, always.
 
                                 mainCfgBlock.EnterContext();
 

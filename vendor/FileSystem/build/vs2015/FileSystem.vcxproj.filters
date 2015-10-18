@@ -133,4 +133,7 @@
     <ClCompile Include="..\..\src\fsinternal\CFileSystem.config.cpp" />
     <ClCompile Include="..\..\src\fsinternal\CFileSystem.random.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="fstypes.natvis" />
+  </ItemGroup>
 </Project>

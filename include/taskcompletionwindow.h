@@ -10,6 +10,7 @@
 
 struct TaskCompletionWindow : public QDialog
 {
+    friend struct taskCompletionWindowEnv;
     friend class MagicMassExportModule;
 private:
     struct status_msg_update : public QEvent
@@ -46,69 +47,8 @@ private:
     }
 
 public:
-    inline TaskCompletionWindow( MainWindow *mainWnd, rw::thread_t taskHandle, QString title, QString statusMsg ) : QDialog( mainWnd )
-    {
-        rw::Interface *rwEngine = mainWnd->GetEngine();
-
-        this->setWindowTitle( title );
-        this->setWindowFlags( this->windowFlags() & ( ~Qt::WindowContextHelpButtonHint & ~Qt::WindowCloseButtonHint ) );
-
-        this->setAttribute( Qt::WA_DeleteOnClose );
-
-        this->mainWnd = mainWnd;
-
-        this->taskThreadHandle = taskHandle;
-
-        // We need a waiter thread that will notify us of the task completion.
-        this->waitThreadHandle = rw::MakeThread( rwEngine, waiterThread_runtime, this );
-
-        rw::ResumeThread( rwEngine, this->waitThreadHandle );
-
-        // This dialog should consist of a status message and a cancel button.
-        QVBoxLayout *rootLayout = new QVBoxLayout();
-
-        QLabel *statusMessageLabel = new QLabel( statusMsg );
-
-        statusMessageLabel->setAlignment( Qt::AlignCenter );
-
-        this->statusMessageLabel = statusMessageLabel;
-
-        rootLayout->addWidget( statusMessageLabel );
-
-        QHBoxLayout *buttonRow = new QHBoxLayout();
-
-        buttonRow->setAlignment( Qt::AlignCenter );
-
-        QPushButton *buttonCancel = new QPushButton( "Cancel" );
-
-        buttonCancel->setMaximumWidth( 90 );
-
-        connect( buttonCancel, &QPushButton::clicked, this, &TaskCompletionWindow::OnRequestCancel );
-
-        buttonRow->addWidget( buttonCancel );
-
-        rootLayout->addLayout( buttonRow );
-
-        this->setLayout( rootLayout );
-
-        this->setMinimumWidth( 350 );
-    }
-
-    inline ~TaskCompletionWindow( void )
-    {
-        rw::Interface *rwEngine = this->mainWnd->GetEngine();
-
-        // Terminate the task.
-        rw::TerminateThread( rwEngine, this->taskThreadHandle );
-
-        // We cannot close the window until the task has finished.
-        rw::JoinThread( rwEngine, this->waitThreadHandle );
-
-        rw::CloseThread( rwEngine, this->waitThreadHandle );
-        
-        // We can safely get rid of the task thread handle.
-        rw::CloseThread( rwEngine, this->taskThreadHandle );
-    }
+    TaskCompletionWindow( MainWindow *mainWnd, rw::thread_t taskHandle, QString title, QString statusMsg );
+    ~TaskCompletionWindow( void );
 
     inline void updateStatusMessage( QString newMessage )
     {
@@ -155,4 +95,6 @@ private:
     rw::thread_t waitThreadHandle;
 
     QLabel *statusMessageLabel;
+
+    RwListEntry <TaskCompletionWindow> node;
 };

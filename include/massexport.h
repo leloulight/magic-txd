@@ -9,30 +9,6 @@
 #include <QLineEdit>
 #include <QRadioButton>
 
-#include <sdk/PluginHelpers.h>
-
-#include "../src/tools/txdexport.h"
-
-struct MassExportWindow;
-
-struct massexportEnv
-{
-    inline void Initialize( MainWindow *mainWnd )
-    {
-        LIST_CLEAR( this->openDialogs.root );
-    }
-
-    void Shutdown( MainWindow *mainWnd );
-
-    MassExportModule::run_config config;
-
-    RwList <MassExportWindow> openDialogs;
-};
-
-typedef PluginDependantStructRegister <massexportEnv, mainWindowFactory_t> massexportEnvRegister_t;
-
-extern massexportEnvRegister_t massexportEnvRegister;
-
 // The mass export window is a simple dialog that extracts the contents of multiple TXD files into a directory.
 // It is a convenient way of dumping all image files, even from IMG containers.
 struct MassExportWindow : public QDialog

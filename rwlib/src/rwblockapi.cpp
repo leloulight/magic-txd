@@ -167,6 +167,15 @@ BlockProvider::BlockProvider( Stream *contextStream, eBlockMode blockMode )
     this->ignoreBlockRegions = contextStream->engineInterface->GetIgnoreSerializationBlockRegions();
 }
 
+BlockProvider::BlockProvider( Stream *contextStream, eBlockMode blockMode, bool ignoreBlockRegions )
+{
+    this->parent = NULL;
+    this->blockMode = blockMode;
+    this->isInContext = false;
+    this->contextStream = contextStream;
+    this->ignoreBlockRegions = ignoreBlockRegions;
+}
+
 void BlockProvider::EnterContext( void ) throw( ... )
 {
     assert( this->isInContext == false );

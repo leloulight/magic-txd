@@ -1834,7 +1834,7 @@ struct filePathLink : public filePath
 #if _MSC_VER >= 1900
 
 template <typename funcType>
-AINLINE decltype( auto ) filePath_dispatch( const filePath& path, funcType b )
+AINLINE decltype( auto ) filePath_dispatch( const filePath& path, funcType& b )
 {
     if ( const char *sysPath = path.c_str() )
     {
@@ -1861,6 +1861,21 @@ template <typename charType>
 struct resolve_type <const charType*>
     : public resolve_type <charType>
 {};
+
+template <typename funcType>
+AINLINE decltype( auto ) filePath_dispatchTrailing( const filePath& leading, const filePath& trailing, funcType& cb )
+{
+    return filePath_dispatch( leading,
+        [&] ( auto leading )
+        {
+            typedef typename resolve_type <decltype(leading)>::type charType;
+
+            filePathLink <charType> trailingLink( trailing );
+
+            cb( leading, trailingLink.to_char() );
+        }
+    );
+}
 
 #endif //VS 2015+
 

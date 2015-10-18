@@ -145,7 +145,9 @@ inline bool canRasterFormatHaveAlpha(eRasterFormat rasterFormat)
 {
     if (rasterFormat == RASTER_1555 ||
         rasterFormat == RASTER_4444 ||
-        rasterFormat == RASTER_8888 )
+        rasterFormat == RASTER_8888 ||
+        // NEW FORMATS.
+        rasterFormat == RASTER_LUM_ALPHA )
     {
         return true;
     }

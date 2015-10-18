@@ -338,7 +338,7 @@ struct pngImagingExtension : public imagingFormatExtension
                         depth = 16;
                         itemDepth = 16;
 
-                        // Sadly, we cannot directly acquire this format.
+                        directAcquireByPixelFormat = true;
 
                         if ( png_depth == 16 )
                         {
@@ -749,12 +749,25 @@ struct pngImagingExtension : public imagingFormatExtension
                     }
                     else if ( colorModel == COLORMODEL_LUMINANCE )
                     {
+                        // We always write 8bit grayscale samples.
                         png_depth = 8;
-                        color_type = 0;
 
-                        wantedRasterFormat = RASTER_LUM;
-                        wantedItemDepth = 8;
-                        wantedDepth = 8;
+                        if ( canRasterHaveAlpha )
+                        {
+                            color_type = 4;     // LUM with ALPHA
+
+                            wantedRasterFormat = RASTER_LUM_ALPHA;
+                            wantedItemDepth = 16;
+                            wantedDepth = 16;
+                        }
+                        else
+                        {
+                            color_type = 0;     // just LUM
+
+                            wantedRasterFormat = RASTER_LUM;
+                            wantedItemDepth = 8;
+                            wantedDepth = 8;
+                        }
                     }
                     else
                     {

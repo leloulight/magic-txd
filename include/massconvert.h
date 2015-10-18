@@ -10,29 +10,7 @@
 #include <QCheckBox>
 #include <QPlainTextEdit>
 
-#include <sdk/PluginHelpers.h>
-
-#include "../src/tools/txdgen.h"
-
 struct MassConvertWindow;
-
-struct massconvEnv
-{
-    inline void Initialize( MainWindow *mainwnd )
-    {
-        LIST_CLEAR( this->openDialogs.root );
-    }
-
-    void Shutdown( MainWindow *mainwnd );
-
-    TxdGenModule::run_config txdgenConfig;
-
-    RwList <MassConvertWindow> openDialogs;
-};
-
-typedef PluginDependantStructRegister <massconvEnv, mainWindowFactory_t> massconvEnvRegister_t;
-
-extern massconvEnvRegister_t massconvEnvRegister;
 
 struct MassConvertWindow : public QDialog
 {

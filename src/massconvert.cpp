@@ -8,79 +8,141 @@
 
 #include "qtsharedlogic.h"
 
-massconvEnvRegister_t massconvEnvRegister;
+#include "guiserialization.hxx"
+
+#include <sdk/PluginHelpers.h>
+
+#include "toolshared.hxx"
+
+#include "tools/txdgen.h"
+
+using namespace toolshare;
+
+struct massconvEnv : public magicSerializationProvider
+{
+    inline void Initialize( MainWindow *mainwnd )
+    {
+        LIST_CLEAR( this->openDialogs.root );
+
+        RegisterMainWindowSerialization( mainwnd, MAGICSERIALIZE_MASSCONV, this );
+    }
+
+    void Shutdown( MainWindow *mainwnd )
+    {
+        UnregisterMainWindowSerialization( mainwnd, MAGICSERIALIZE_MASSCONV );
+
+        // Make sure all open dialogs are closed.
+        while ( !LIST_EMPTY( openDialogs.root ) )
+        {
+            MassConvertWindow *wnd = LIST_GETITEM( MassConvertWindow, openDialogs.root.next, node );
+
+            delete wnd;
+        }
+    }
+
+    struct txdgen_cfg_struct
+    {
+        endian::little_endian <rwkind::eTargetGame> c_gameType;
+        endian::little_endian <rwkind::eTargetPlatform> c_targetPlatform;
+        
+        bool c_clearMipmaps;
+        bool c_generateMipmaps;
+        
+        endian::little_endian <rw::eMipmapGenerationMode> c_mipGenMode;
+        endian::little_endian <rw::uint32> c_mipGenMaxLevel;
+
+        bool c_improveFiltering;
+        bool compressTextures;
+
+        endian::little_endian <rw::ePaletteRuntimeType> c_palRuntimeType;
+        endian::little_endian <rw::eDXTCompressionMethod> c_dxtRuntimeType;
+
+        bool c_reconstructIMGArchives;
+        bool c_fixIncompatibleRasters;
+        bool c_dxtPackedDecompression;
+        bool c_imgArchivesCompressed;
+        bool c_ignoreSerializationRegions;
+        
+        endian::little_endian <rw::float32> c_compressionQuality;
+
+        bool c_outputDebug;
+
+        endian::little_endian <rw::int32> c_warningLevel;
+
+        bool c_ignoreSecureWarnings;
+    };
+
+    void Load( MainWindow *mainWnd, rw::BlockProvider& massconvBlock ) override
+    {
+        RwReadUnicodeString( massconvBlock, this->txdgenConfig.c_gameRoot );
+        RwReadUnicodeString( massconvBlock, this->txdgenConfig.c_outputRoot );
+
+        txdgen_cfg_struct cfgStruct;
+        massconvBlock.readStruct( cfgStruct );
+
+        txdgenConfig.c_gameType = cfgStruct.c_gameType;
+        txdgenConfig.c_targetPlatform = cfgStruct.c_targetPlatform;
+        txdgenConfig.c_clearMipmaps = cfgStruct.c_clearMipmaps;
+        txdgenConfig.c_generateMipmaps = cfgStruct.c_generateMipmaps;
+        txdgenConfig.c_mipGenMode = cfgStruct.c_mipGenMode;
+        txdgenConfig.c_mipGenMaxLevel = cfgStruct.c_mipGenMaxLevel;
+        txdgenConfig.c_improveFiltering = cfgStruct.c_improveFiltering;
+        txdgenConfig.compressTextures = cfgStruct.compressTextures;
+        txdgenConfig.c_palRuntimeType = cfgStruct.c_palRuntimeType;
+        txdgenConfig.c_dxtRuntimeType = cfgStruct.c_dxtRuntimeType;
+        txdgenConfig.c_reconstructIMGArchives = cfgStruct.c_reconstructIMGArchives;
+        txdgenConfig.c_fixIncompatibleRasters = cfgStruct.c_fixIncompatibleRasters;
+        txdgenConfig.c_dxtPackedDecompression = cfgStruct.c_dxtPackedDecompression;
+        txdgenConfig.c_imgArchivesCompressed = cfgStruct.c_imgArchivesCompressed;
+        txdgenConfig.c_ignoreSerializationRegions = cfgStruct.c_ignoreSerializationRegions;
+        txdgenConfig.c_compressionQuality = cfgStruct.c_compressionQuality;
+        txdgenConfig.c_outputDebug = cfgStruct.c_outputDebug;
+        txdgenConfig.c_warningLevel = cfgStruct.c_warningLevel;
+        txdgenConfig.c_ignoreSecureWarnings = cfgStruct.c_ignoreSecureWarnings;
+    }
+
+    void Save( const MainWindow *mainWnd, rw::BlockProvider& massconvEnvBlock ) const override
+    {
+        RwWriteUnicodeString( massconvEnvBlock, this->txdgenConfig.c_gameRoot );
+        RwWriteUnicodeString( massconvEnvBlock, this->txdgenConfig.c_outputRoot );
+
+        txdgen_cfg_struct cfgStruct;
+        cfgStruct.c_gameType = this->txdgenConfig.c_gameType;
+        cfgStruct.c_targetPlatform = this->txdgenConfig.c_targetPlatform;
+        cfgStruct.c_clearMipmaps = this->txdgenConfig.c_clearMipmaps;
+        cfgStruct.c_generateMipmaps = this->txdgenConfig.c_generateMipmaps;
+        cfgStruct.c_mipGenMode = this->txdgenConfig.c_mipGenMode;
+        cfgStruct.c_mipGenMaxLevel = this->txdgenConfig.c_mipGenMaxLevel;
+        cfgStruct.c_improveFiltering = this->txdgenConfig.c_improveFiltering;
+        cfgStruct.compressTextures = this->txdgenConfig.compressTextures;
+        cfgStruct.c_palRuntimeType = this->txdgenConfig.c_palRuntimeType;
+        cfgStruct.c_dxtRuntimeType = this->txdgenConfig.c_dxtRuntimeType;
+        cfgStruct.c_reconstructIMGArchives = this->txdgenConfig.c_reconstructIMGArchives;
+        cfgStruct.c_fixIncompatibleRasters = this->txdgenConfig.c_fixIncompatibleRasters;
+        cfgStruct.c_dxtPackedDecompression = this->txdgenConfig.c_dxtPackedDecompression;
+        cfgStruct.c_imgArchivesCompressed = this->txdgenConfig.c_imgArchivesCompressed;
+        cfgStruct.c_ignoreSerializationRegions = this->txdgenConfig.c_ignoreSerializationRegions;
+        cfgStruct.c_compressionQuality = this->txdgenConfig.c_compressionQuality;
+        cfgStruct.c_outputDebug = this->txdgenConfig.c_outputDebug;
+        cfgStruct.c_warningLevel = this->txdgenConfig.c_warningLevel;
+        cfgStruct.c_ignoreSecureWarnings = this->txdgenConfig.c_ignoreSecureWarnings;
+
+        massconvEnvBlock.writeStruct( cfgStruct );
+    }
+
+    TxdGenModule::run_config txdgenConfig;
+
+    RwList <MassConvertWindow> openDialogs;
+};
+
+typedef PluginDependantStructRegister <massconvEnv, mainWindowFactory_t> massconvEnvRegister_t;
+
+static massconvEnvRegister_t massconvEnvRegister;
 
 void InitializeMassconvToolEnvironment( void )
 {
     massconvEnvRegister.RegisterPlugin( mainWindowFactory );
 }
-
-void massconvEnv::Shutdown( MainWindow *mainWnd )
-{
-    // Make sure all open dialogs are closed.
-    while ( !LIST_EMPTY( openDialogs.root ) )
-    {
-        MassConvertWindow *wnd = LIST_GETITEM( MassConvertWindow, openDialogs.root.next, node );
-
-        delete wnd;
-    }
-}
-
-struct platformToNatural
-{
-    TxdGenModule::eTargetPlatform mode;
-    QString natural;
-
-    inline bool operator == ( const decltype( mode )& right ) const
-    {
-        return ( right == this->mode );
-    }
-
-    inline bool operator == ( const QString& right ) const
-    {
-        return ( right == this->natural );
-    }
-};
-
-typedef naturalModeList <platformToNatural> platformToNaturalList_t;
-
-static platformToNaturalList_t platformToNaturalList =
-{
-    { TxdGenModule::PLATFORM_PC, "PC" },
-    { TxdGenModule::PLATFORM_PS2, "PS2" },
-    { TxdGenModule::PLATFORM_XBOX, "XBOX" },
-    { TxdGenModule::PLATFORM_DXT_MOBILE, "S3TC mobile" },
-    { TxdGenModule::PLATFORM_PVR, "PowerVR" },
-    { TxdGenModule::PLATFORM_ATC, "AMD TC" },
-    { TxdGenModule::PLATFORM_UNC_MOBILE, "uncomp. mobile" }
-};
-
-struct gameToNatural
-{
-    TxdGenModule::eTargetGame mode;
-    QString natural;
-
-    inline bool operator == ( const decltype( mode )& right ) const
-    {
-        return ( right == this->mode );
-    }
-
-    inline bool operator == ( const QString& right ) const
-    {
-        return ( right == this->natural );
-    }
-};
-
-typedef naturalModeList <gameToNatural> gameToNaturalList_t;
-
-static gameToNaturalList_t gameToNaturalList =
-{
-    { TxdGenModule::GAME_GTA3, "GTA III" },
-    { TxdGenModule::GAME_GTAVC, "GTA VC" },
-    { TxdGenModule::GAME_GTASA, "GTA SA" },
-    { TxdGenModule::GAME_MANHUNT, "Manhunt" },
-    { TxdGenModule::GAME_BULLY, "Bully" }
-};
 
 MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
 {
@@ -102,57 +164,22 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
 
     mainLayout->addLayout( rootLayout );
 
-    QFormLayout *basicPathForm = new QFormLayout();
+    rootLayout->addLayout(
+        qtshared::createGameRootInputOutputForm(
+            massconv->txdgenConfig.c_gameRoot,
+            massconv->txdgenConfig.c_outputRoot,
+            this->editGameRoot,
+            this->editOutputRoot
+        )
+    );
 
-    QLayout *gameRootLayout = qtshared::createPathSelectGroup( QString::fromStdWString( massconv->txdgenConfig.c_gameRoot ), this->editGameRoot );
-    QLayout *outputRootLayout = qtshared::createPathSelectGroup( QString::fromStdWString( massconv->txdgenConfig.c_outputRoot ), this->editOutputRoot );
-
-    basicPathForm->addRow( new QLabel( "Game root:" ), gameRootLayout );
-    basicPathForm->addRow( new QLabel( "Output root: " ), outputRootLayout );
-
-    rootLayout->addLayout( basicPathForm );
-
-    // Now a target format selection group.
-    QHBoxLayout *platformGroup = new QHBoxLayout();
-
-    platformGroup->addWidget( new QLabel( "Platform:" ) );
-
-    QComboBox *platformSelBox = new QComboBox();
-
-    // We have a fixed list of platforms here.
-    for ( const platformToNatural& nat : platformToNaturalList )
-    {
-        platformSelBox->addItem( nat.natural );
-    }
-
-    this->selPlatformBox = platformSelBox;
-
-    // Select current.
-    platformToNaturalList.selectCurrent( platformSelBox, massconv->txdgenConfig.c_targetPlatform );
-
-    platformGroup->addWidget( platformSelBox );
-
-    rootLayout->addLayout( platformGroup );
-
-    QHBoxLayout *gameGroup = new QHBoxLayout();
-
-    gameGroup->addWidget( new QLabel( "Game:" ) );
-
-    QComboBox *gameSelBox = new QComboBox();
-
-    // Add a fixed list of known games.
-    for ( const gameToNatural& nat : gameToNaturalList )
-    {
-        gameSelBox->addItem( nat.natural );
-    }
-
-    this->selGameBox = gameSelBox;
-
-    gameToNaturalList.selectCurrent( gameSelBox, massconv->txdgenConfig.c_gameType );
-
-    gameGroup->addWidget( gameSelBox );
-
-    rootLayout->addLayout( gameGroup );
+    createTargetConfigurationComponents(
+        rootLayout,
+        massconv->txdgenConfig.c_targetPlatform,
+        massconv->txdgenConfig.c_gameType,
+        this->selGameBox,
+        this->selPlatformBox
+    );
 
     // INVASION OF CHECKBOXES.
     QCheckBox *propClearMipmaps = new QCheckBox( "Clear mipmaps" );
@@ -163,37 +190,15 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
 
     rootLayout->addWidget( propClearMipmaps );
 
-    QHBoxLayout *genMipGroup = new QHBoxLayout();
-
-    QCheckBox *propGenMipmaps = new QCheckBox( "Generate mipmaps" );
-
-    propGenMipmaps->setChecked( massconv->txdgenConfig.c_generateMipmaps );
-
-    this->propGenMipmaps = propGenMipmaps;
-
-    genMipGroup->addWidget( propGenMipmaps );
-
-    QHBoxLayout *mipMaxLevelGroup = new QHBoxLayout();
-
-    mipMaxLevelGroup->setAlignment( Qt::AlignRight );
-
-    mipMaxLevelGroup->addWidget( new QLabel( "Max:" ), 0, Qt::AlignRight );
-
-    QLineEdit *maxMipLevelEdit = new QLineEdit( QString( "%1" ).arg( massconv->txdgenConfig.c_mipGenMaxLevel ) );
-
-    QIntValidator *maxMipLevelVal = new QIntValidator( 0, 32, this );
-
-    maxMipLevelEdit->setValidator( maxMipLevelVal );
-
-    this->propGenMipmapsMax = maxMipLevelEdit;
-
-    maxMipLevelEdit->setMaximumWidth( 40 );
-
-    mipMaxLevelGroup->addWidget( maxMipLevelEdit );
-
-    genMipGroup->addLayout( mipMaxLevelGroup );
-
-    rootLayout->addLayout( genMipGroup );
+    rootLayout->addLayout(
+        qtshared::createMipmapGenerationGroup(
+            this,
+            massconv->txdgenConfig.c_generateMipmaps,
+            massconv->txdgenConfig.c_mipGenMaxLevel,
+            this->propGenMipmaps,
+            this->propGenMipmapsMax
+        )
+    );
 
     QCheckBox *propImproveFiltering = new QCheckBox( "Improve filtering" );
 

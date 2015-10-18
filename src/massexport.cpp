@@ -5,18 +5,71 @@
 
 #include "taskcompletionwindow.h"
 
-massexportEnvRegister_t massexportEnvRegister;
+#include "guiserialization.hxx"
 
-void massexportEnv::Shutdown( MainWindow *mainWnd )
+#include <sdk/PluginHelpers.h>
+
+#include "../src/tools/txdexport.h"
+
+struct massexportEnv : public magicSerializationProvider
 {
-    // Make sure all open dialogs are closed.
-    while ( !LIST_EMPTY( openDialogs.root ) )
+    inline void Initialize( MainWindow *mainWnd )
     {
-        MassExportWindow *wnd = LIST_GETITEM( MassExportWindow, openDialogs.root.next, node );
+        LIST_CLEAR( this->openDialogs.root );
 
-        delete wnd;
+        RegisterMainWindowSerialization( mainWnd, MAGICSERIALIZE_MASSEXPORT, this );
     }
-}
+
+    void Shutdown( MainWindow *mainWnd )
+    {
+        UnregisterMainWindowSerialization( mainWnd, MAGICSERIALIZE_MASSEXPORT );
+
+        // Make sure all open dialogs are closed.
+        while ( !LIST_EMPTY( openDialogs.root ) )
+        {
+            MassExportWindow *wnd = LIST_GETITEM( MassExportWindow, openDialogs.root.next, node );
+
+            delete wnd;
+        }
+    }
+
+    struct massexp_cfg_struct
+    {
+        endian::little_endian <MassExportModule::eOutputType> outputType;
+    };
+
+    void Load( MainWindow *mainWnd, rw::BlockProvider& massexportBlock ) override
+    {
+        RwReadUnicodeString( massexportBlock, this->config.gameRoot );
+        RwReadUnicodeString( massexportBlock, this->config.outputRoot );
+        RwReadANSIString( massexportBlock, this->config.recImgFormat );
+
+        massexp_cfg_struct cfgStruct;
+        massexportBlock.readStruct( cfgStruct );
+
+        this->config.outputType = cfgStruct.outputType;
+    }
+
+    void Save( const MainWindow *mainWnd, rw::BlockProvider& massexportBlock ) const override
+    {
+        RwWriteUnicodeString( massexportBlock, this->config.gameRoot );
+        RwWriteUnicodeString( massexportBlock, this->config.outputRoot );
+        RwWriteANSIString( massexportBlock, this->config.recImgFormat );
+
+        massexp_cfg_struct cfgStruct;
+        cfgStruct.outputType = this->config.outputType;
+
+        massexportBlock.writeStruct( cfgStruct );
+    }
+
+    MassExportModule::run_config config;
+
+    RwList <MassExportWindow> openDialogs;
+};
+
+typedef PluginDependantStructRegister <massexportEnv, mainWindowFactory_t> massexportEnvRegister_t;
+
+static massexportEnvRegister_t massexportEnvRegister;
 
 MassExportWindow::MassExportWindow( MainWindow *mainWnd ) : QDialog( mainWnd )
 {

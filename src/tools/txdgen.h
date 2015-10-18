@@ -6,27 +6,6 @@
 class TxdGenModule : public MessageReceiver
 {
 public:
-    enum eTargetPlatform
-    {
-        PLATFORM_UNKNOWN,
-        PLATFORM_PC,
-        PLATFORM_PS2,
-        PLATFORM_XBOX,
-        PLATFORM_DXT_MOBILE,
-        PLATFORM_PVR,
-        PLATFORM_ATC,
-        PLATFORM_UNC_MOBILE
-    };
-
-    enum eTargetGame
-    {
-        GAME_GTA3,
-        GAME_GTAVC,
-        GAME_GTASA,
-        GAME_MANHUNT,
-        GAME_BULLY
-    };
-    
     inline TxdGenModule( rw::Interface *rwEngine )
     {
         this->rwEngine = rwEngine;
@@ -36,12 +15,12 @@ public:
     struct run_config
     {
         // By default, we create San Andreas files.
-        eTargetGame c_gameType = GAME_GTASA;
+        rwkind::eTargetGame c_gameType = rwkind::GAME_GTASA;
 
         std::wstring c_outputRoot = L"txdgen_out/";
         std::wstring c_gameRoot = L"txdgen/";
 
-        eTargetPlatform c_targetPlatform = PLATFORM_PC;
+        rwkind::eTargetPlatform c_targetPlatform = rwkind::PLATFORM_PC;
 
         bool c_clearMipmaps = false;
 
@@ -82,7 +61,7 @@ public:
     bool ApplicationMain( const run_config& cfg );
 
     bool ProcessTXDArchive(
-        CFileTranslator *srcRoot, CFile *srcStream, CFile *targetStream, eTargetPlatform targetPlatform, eTargetGame targetGame,
+        CFileTranslator *srcRoot, CFile *srcStream, CFile *targetStream, rwkind::eTargetPlatform targetPlatform, rwkind::eTargetGame targetGame,
         bool clearMipmaps,
         bool generateMipmaps, rw::eMipmapGenerationMode mipGenMode, rw::uint32 mipGenMaxLevel,
         bool improveFiltering,
@@ -131,169 +110,6 @@ public:
     RwWarningBuffer _warningMan;
 
 private:
-    static inline eTargetPlatform GetRasterPlatform( rw::Raster *texRaster )
-    {
-        eTargetPlatform thePlatform = PLATFORM_UNKNOWN;
-
-        if ( texRaster->hasNativeDataOfType( "Direct3D8" ) || texRaster->hasNativeDataOfType( "Direct3D9" ) )
-        {
-            thePlatform = PLATFORM_PC;
-        }
-        else if ( texRaster->hasNativeDataOfType( "XBOX" ) )
-        {
-            thePlatform = PLATFORM_XBOX;
-        }
-        else if ( texRaster->hasNativeDataOfType( "PlayStation2" ) )
-        {
-            thePlatform = PLATFORM_PS2;
-        }
-        else if ( texRaster->hasNativeDataOfType( "s3tc_mobile" ) )
-        {
-            thePlatform = PLATFORM_DXT_MOBILE;
-        }
-        else if ( texRaster->hasNativeDataOfType( "PowerVR" ) )
-        {
-            thePlatform = PLATFORM_PVR;
-        }
-        else if ( texRaster->hasNativeDataOfType( "AMDCompress" ) )
-        {
-            thePlatform = PLATFORM_ATC;
-        }
-        else if ( texRaster->hasNativeDataOfType( "uncompressed_mobile" ) )
-        {
-            thePlatform = PLATFORM_UNC_MOBILE;
-        }
-
-        return thePlatform;
-    }
-
-    static inline double GetPlatformQualityGrade( eTargetPlatform platform )
-    {
-        double quality = 0.0;
-
-        if ( platform == PLATFORM_PC )
-        {
-            quality = 1.0;
-        }
-        else if ( platform == PLATFORM_XBOX )
-        {
-            quality = 1.0;
-        }
-        else if ( platform == PLATFORM_PS2 )
-        {
-            quality = 1.0;
-        }
-        else if ( platform == PLATFORM_DXT_MOBILE )
-        {
-            quality = 0.7;
-        }
-        else if ( platform == PLATFORM_PVR )
-        {
-            quality = 0.4;
-        }
-        else if ( platform == PLATFORM_ATC )
-        {
-            quality = 0.8;
-        }
-        else if ( platform == PLATFORM_UNC_MOBILE )
-        {
-            quality = 0.9;
-        }
-
-        return quality;
-    }
-
-    static inline bool ShouldRasterConvertBeforehand( rw::Raster *texRaster, eTargetPlatform targetPlatform )
-    {
-        bool shouldBeforehand = false;
-
-        if ( targetPlatform != PLATFORM_UNKNOWN )
-        {
-            eTargetPlatform rasterPlatform = GetRasterPlatform( texRaster );
-
-            if ( rasterPlatform != PLATFORM_UNKNOWN )
-            {
-                if ( targetPlatform != rasterPlatform )
-                {
-                    // Decide based on the raster and target platform.
-                    // Basically, we want to improve the quality and the conversion speed.
-                    // We want to convert beforehand if we convert from a lower quality texture to a higher quality.
-                    double sourceQuality = GetPlatformQualityGrade( rasterPlatform );
-                    double targetQuality = GetPlatformQualityGrade( targetPlatform );
-
-                    if ( sourceQuality == targetQuality )
-                    {
-                        // If the quality of the platforms does not change, we do not care.
-                        shouldBeforehand = false;
-                    }
-                    else if ( sourceQuality < targetQuality )
-                    {
-                        // If the quality of the current raster is worse than the target, we should.
-                        shouldBeforehand = true;
-                    }
-                    else if ( sourceQuality > targetQuality )
-                    {
-                        // If the quality of the current raster is better than the target, we should not.
-                        shouldBeforehand = false;
-                    }
-                }
-            }
-        }
-
-        return shouldBeforehand;
-    }
-
-    static inline void ConvertRasterToPlatform( rw::TextureBase *theTexture, rw::Raster *texRaster, eTargetPlatform targetPlatform, eTargetGame targetGame, const rw::LibraryVersion& gameVersion )
-    {
-        bool hasConversionSucceeded = false;
-
-        if ( targetPlatform == PLATFORM_PS2 )
-        {
-            hasConversionSucceeded = rw::ConvertRasterTo( texRaster, "PlayStation2" );
-        }
-        else if ( targetPlatform == PLATFORM_XBOX )
-        {
-            hasConversionSucceeded = rw::ConvertRasterTo( texRaster, "XBOX" );
-        }
-        else if ( targetPlatform == PLATFORM_PC )
-        {
-            // Depends on the game.
-            if (targetGame == GAME_GTASA)
-            {
-                hasConversionSucceeded = rw::ConvertRasterTo( texRaster, "Direct3D9" );
-            }
-            else
-            {
-                hasConversionSucceeded = rw::ConvertRasterTo( texRaster, "Direct3D8" );
-            }
-        }
-        else if ( targetPlatform == PLATFORM_DXT_MOBILE )
-        {
-            hasConversionSucceeded = rw::ConvertRasterTo( texRaster, "s3tc_mobile" );
-        }
-        else if ( targetPlatform == PLATFORM_PVR )
-        {
-            hasConversionSucceeded = rw::ConvertRasterTo( texRaster, "PowerVR" );
-        }
-        else if ( targetPlatform == PLATFORM_ATC )
-        {
-            hasConversionSucceeded = rw::ConvertRasterTo( texRaster, "AMDCompress" );
-        }
-        else if ( targetPlatform == PLATFORM_UNC_MOBILE )
-        {
-            hasConversionSucceeded = rw::ConvertRasterTo( texRaster, "uncompressed_mobile" );
-        }
-        else
-        {
-            assert( 0 );
-        }
-
-        if ( hasConversionSucceeded == false )
-        {
-            theTexture->GetEngine()->PushWarning( "TxdGen: failed to convert texture " + theTexture->GetName() );
-        }
-    }
-
     rw::Interface *rwEngine;
 };
 

@@ -49,6 +49,14 @@ struct naturalModeList : public std::list <modeType>
 
         getModeFromNatural( currentText, modeOut );
     }
+
+    inline void putDown( QComboBox *box ) const
+    {
+        for ( const modeType& item : *this )
+        {
+            box->addItem( item.natural );
+        }
+    }
 };
 
 #endif //_QT_INTEROP_UTILS_INTERNAL_
