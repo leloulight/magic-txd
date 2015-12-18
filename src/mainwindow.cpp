@@ -85,8 +85,8 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
     {
 	    /* --- Window --- */
         updateWindowTitle();
-        setMinimumSize(560, 300);
-	    resize(900, 680);
+        setMinimumSize(620, 300);
+	    resize(800, 600);
 
 	    /* --- Log --- */
 	    this->txdLog = new TxdLog(this, this->m_appPath, this);

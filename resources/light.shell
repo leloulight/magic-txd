@@ -111,6 +111,16 @@ QScrollBar::handle:horizontal
     min-width: 20px;
 }
 
+QScrollBar::handle:hover
+{
+    background: #a6a6a6;
+}
+
+QScrollBar::handle:pressed
+{
+    background: #606060;
+}
+
 QScrollBar::add-line:horizontal
 {
     background: #080025;
