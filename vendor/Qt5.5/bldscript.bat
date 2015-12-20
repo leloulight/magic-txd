@@ -9,7 +9,7 @@ SET _ROOT=
 git checkout 5.5
 perl init-repository ^
     --module-subset=qtbase,qtimageformats
-call ../configure_repo.bat
+call "../configure_repo.bat"
 nmake
 nmake install
 cd ..
