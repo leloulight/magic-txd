@@ -546,6 +546,7 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
         this->friendlyIconRow = friendlyIconRow;
 
         QLabel *friendlyIconGame = new QLabel();
+        friendlyIconGame->setObjectName("label25px_dim");
         friendlyIconGame->setVisible( false );
 
         this->friendlyIconGame = friendlyIconGame;
@@ -562,6 +563,7 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
         friendlyIconRow->addWidget( friendlyIconSeparator );
 
         QLabel *friendlyIconPlatform = new QLabel();
+        friendlyIconPlatform->setObjectName("label25px_dim");
         friendlyIconPlatform->setVisible( false );
 
         this->friendlyIconPlatform = friendlyIconPlatform;

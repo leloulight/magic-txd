@@ -185,61 +185,118 @@ void MainWindow::updateFriendlyIcons( void )
 
     if ( hasKnownConfiguration )
     {
-        QString iconPath = makeAppPath( "resources\\icons\\" );
+        if (this->showGameIcon) {
+            QString iconPath = makeAppPath("resources\\icons\\");
 
-        QString gameIconPath( iconPath );
+            QString gameIconPath(iconPath);
 
-        if ( knownGame == GAME_GTA3 )
-        {
-            gameIconPath += "G_III.png";
-        }
-        else if ( knownGame == GAME_GTAVC )
-        {
-            gameIconPath += "G_VC.png";
-        }
-        else if ( knownGame == GAME_GTASA )
-        {
-            gameIconPath += "G_SA.png";
-        }
-        else if ( knownGame == GAME_MANHUNT )
-        {
-            gameIconPath += "G_MH1.png";
-        }
-        else if ( knownGame == GAME_BULLY )
-        {
-            gameIconPath += "G_BULLY.png";
-        }
-        else
-        {
-            gameIconPath += "NOGAME.png";
-        }
+            if (knownGame == GAME_GTA3)
+            {
+                gameIconPath += "gta3.png";
+            }
+            else if (knownGame == GAME_GTAVC)
+            {
+                gameIconPath += "vc.png";
+            }
+            else if (knownGame == GAME_GTASA)
+            {
+                gameIconPath += "sa.png";
+            }
+            else if (knownGame == GAME_MANHUNT)
+            {
+                gameIconPath += "mh.png";
+            }
+            else if (knownGame == GAME_BULLY)
+            {
+                gameIconPath += "bully.png";
+            }
+            else
+            {
+                gameIconPath += "nogame.png";
+            }
 
-        this->friendlyIconGame->setPixmap( QPixmap( gameIconPath ).scaled( 40, 40 ) );
+            this->friendlyIconGame->setPixmap(QPixmap(gameIconPath));
 
-        QString platIconPath( std::move( iconPath ) );
+            QString platIconPath(std::move(iconPath));
 
-        if ( knownPlatform == PLATFORM_PC )
-        {
-            platIconPath += "PLAT_PC.png";
-        }
-        else if ( knownPlatform == PLATFORM_PS2 )
-        {
-            platIconPath += "PLAT_PS.png";
-        }
-        else if ( knownPlatform == PLATFORM_XBOX )
-        {
-            platIconPath += "PLAT_XB.png";
-        }
-        else if ( knownPlatform == PLATFORM_MOBILE )
-        {
-            platIconPath += "PLAT_MB.png";
-        }
-        else
-        {
-            platIconPath += "NOPLAT.png";
-        }
+            if (knownPlatform == PLATFORM_PC)
+            {
+                platIconPath += "pc.png";
+            }
+            else if (knownPlatform == PLATFORM_PS2)
+            {
+                platIconPath += "ps2.png";
+            }
+            else if (knownPlatform == PLATFORM_XBOX)
+            {
+                platIconPath += "xbox.png";
+            }
+            else if (knownPlatform == PLATFORM_MOBILE)
+            {
+                platIconPath += "mobile.png";
+            }
+            else
+            {
+                platIconPath += "noplat.png";
+            }
 
-        this->friendlyIconPlatform->setPixmap( QPixmap( platIconPath ).scaled( 40, 40 ) );
+            this->friendlyIconPlatform->setPixmap(QPixmap(platIconPath));
+        }
+        else {
+            QString gameName;
+
+            if (knownGame == GAME_GTA3)
+            {
+                gameName = "GTA 3";
+            }
+            else if (knownGame == GAME_GTAVC)
+            {
+                gameName = "Vice City";
+            }
+            else if (knownGame == GAME_GTASA)
+            {
+                gameName = "San Andreas";
+            }
+            else if (knownGame == GAME_MANHUNT)
+            {
+                gameName = "Manhunt";
+            }
+            else if (knownGame == GAME_BULLY)
+            {
+                gameName = "Bully";
+            }
+            else
+            {
+                gameName = "";
+            }
+
+            this->friendlyIconGame->setText(gameName);
+
+            QString platName;
+
+            if (knownPlatform == PLATFORM_PC)
+            {
+                platName = "PC";
+            }
+            else if (knownPlatform == PLATFORM_PS2)
+            {
+                platName = "PS2";
+            }
+            else if (knownPlatform == PLATFORM_XBOX)
+            {
+                platName = "XBOX";
+            }
+            else if (knownPlatform == PLATFORM_MOBILE)
+            {
+                platName = "Mobile";
+            }
+            else
+            {
+                platName = "";
+            }
+
+            this->friendlyIconPlatform->setText(platName);
+        }
     }
 
     this->shouldShowFriendlyIcons = hasKnownConfiguration;

@@ -12,27 +12,38 @@ OptionsDialog::OptionsDialog( MainWindow *mainWnd ) : QDialog( mainWnd )
 
     // This will be a fairly complicated dialog.
     QVBoxLayout *mainVertical = new QVBoxLayout();
+    mainVertical->setContentsMargins(0, 0, 0, 0);
+    mainVertical->setSpacing(0);
 
     // Pretty much options over options.
     QVBoxLayout *optionsLayout = new QVBoxLayout();
+    optionsLayout->setContentsMargins(12, 12, 12, 12);
+    optionsLayout->setSpacing(12);
 
-    optionsLayout->setAlignment( Qt::AlignTop );
+    //optionsLayout->setAlignment( Qt::AlignTop );
     
     QCheckBox *optionShowLogOnWarning = new QCheckBox( "show TXD log on warning" );
     optionShowLogOnWarning->setChecked( mainWnd->showLogOnWarning );
 
     this->optionShowLogOnWarning = optionShowLogOnWarning;
 
+    QCheckBox *optionShowGameIcon = new QCheckBox("show game icon");
+    optionShowGameIcon->setChecked(mainWnd->showGameIcon);
+
+    this->optionShowGameIcon = optionShowGameIcon;
+
     optionsLayout->addWidget( optionShowLogOnWarning );
+    optionsLayout->addWidget( optionShowGameIcon );
 
     mainVertical->addLayout( optionsLayout );
 
     // After everything we want to add our button row.
     QHBoxLayout *buttonRow = new QHBoxLayout();
 
-    buttonRow->setContentsMargins( 0, 20, 0, 0 );
-
     buttonRow->setAlignment( Qt::AlignBottom | Qt::AlignRight );
+
+    buttonRow->setContentsMargins(12, 12, 12, 12);
+    buttonRow->setSpacing(12);
 
     QPushButton *buttonAccept = new QPushButton( "Accept" );
     buttonAccept->setMaximumWidth( 100 );
@@ -48,11 +59,25 @@ OptionsDialog::OptionsDialog( MainWindow *mainWnd ) : QDialog( mainWnd )
 
     buttonRow->addWidget( buttonCancel );
 
-    mainVertical->addLayout( buttonRow );
+    QWidget *line = new QWidget();
+    line->setFixedHeight(1);
+    line->setObjectName("hLineBackground");
+
+    mainVertical->addWidget(line);
+
+    QWidget *bottomWidget = new QWidget();
+    bottomWidget->setObjectName("background_0");
+    bottomWidget->setLayout(buttonRow);
+
+    mainVertical->addWidget( bottomWidget );
+
+    mainVertical->setSizeConstraint(QLayout::SetFixedSize);
 
     this->setLayout( mainVertical );
 
-    this->setMinimumWidth( 420 );   // blaze it.
+    //this->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    
+    //this->setFixedSize( 420, 200 );   // blaze it.
 
     mainWnd->optionsDlg = this;
 }
@@ -80,4 +105,9 @@ void OptionsDialog::serialize( void )
     MainWindow *mainWnd = this->mainWnd;
 
     mainWnd->showLogOnWarning = this->optionShowLogOnWarning->isChecked();
+
+    if (mainWnd->showGameIcon != this->optionShowGameIcon->isChecked()) {
+        mainWnd->showGameIcon = this->optionShowGameIcon->isChecked();
+        mainWnd->updateFriendlyIcons();
+    }
 }

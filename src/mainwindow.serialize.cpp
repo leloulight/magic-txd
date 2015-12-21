@@ -26,6 +26,7 @@ struct mainWindowSerializationEnv : public magicSerializationProvider
         bool lockDownTXDPlatform;
         endian::little_endian <eSelectedTheme> selectedTheme;
         bool showLogOnWarning;
+        bool showGameIcon;
         bool adjustTextureChunksOnImport;
     };
 
@@ -76,6 +77,7 @@ struct mainWindowSerializationEnv : public magicSerializationProvider
         }
 
         mainwnd->showLogOnWarning = cfgStruct.showLogOnWarning;
+        mainwnd->showGameIcon = cfgStruct.showGameIcon;
         mainwnd->adjustTextureChunksOnImport = cfgStruct.adjustTextureChunksOnImport;
 
         // TXD log settings.
@@ -132,6 +134,7 @@ struct mainWindowSerializationEnv : public magicSerializationProvider
 
         cfgStruct.selectedTheme = themeOption;
         cfgStruct.showLogOnWarning = mainwnd->showLogOnWarning;
+        cfgStruct.showGameIcon = mainwnd->showGameIcon;
         cfgStruct.adjustTextureChunksOnImport = mainwnd->adjustTextureChunksOnImport;
 
         mtxdConfig.writeStruct( cfgStruct );

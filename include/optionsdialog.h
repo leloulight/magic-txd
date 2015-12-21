@@ -18,4 +18,5 @@ private:
     MainWindow *mainWnd;
 
     QCheckBox *optionShowLogOnWarning;
+    QCheckBox *optionShowGameIcon;
 };

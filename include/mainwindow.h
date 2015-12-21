@@ -334,6 +334,7 @@ public:
     
     // Options.
     bool showLogOnWarning;
+    bool showGameIcon;
 
     // ExportAllWindow
     std::string lastUsedAllExportFormat;

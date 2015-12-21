@@ -226,6 +226,12 @@ QLabel#label19px
     font-size: 19px;
 }
 
+QLabel#label25px_dim
+{
+    color: #666178;
+    font-size: 25px;
+}
+
 QLabel#texInfo
 {
     font-size: 16px;
@@ -460,5 +466,5 @@ QToolTip {
 
 QWidget#friendlyIconSeparator
 {
-    background: #000000;
+    background: #666178;
 }
