@@ -1858,14 +1858,16 @@ void MainWindow::onSetupTxdVersion(bool checked) {
         if (this->currentTXD) {
             rw::LibraryVersion version = currentTXD->GetEngineVersion();
             const char *platformName = this->GetTXDPlatformString(this->currentTXD);
-            RwVersionSets::eDataType platformDataTypeId = RwVersionSets::dataIdFromEnginePlatformName(platformName);
-            if (platformDataTypeId != RwVersionSets::RWVS_DT_NOT_DEFINED) {
-                int setIndex, platformIndex, dataTypeIndex;
-                if (this->versionSets.matchSet(version, platformDataTypeId, setIndex, platformIndex, dataTypeIndex)) {
-                    this->verDlg->gameSelectBox->setCurrentIndex(setIndex + 1);
-                    this->verDlg->platSelectBox->setCurrentIndex(platformIndex);
-                    this->verDlg->dataTypeSelectBox->setCurrentIndex(dataTypeIndex);
-                    setFound = true;
+            if (platformName) {
+                RwVersionSets::eDataType platformDataTypeId = RwVersionSets::dataIdFromEnginePlatformName(platformName);
+                if (platformDataTypeId != RwVersionSets::RWVS_DT_NOT_DEFINED) {
+                    int setIndex, platformIndex, dataTypeIndex;
+                    if (this->versionSets.matchSet(version, platformDataTypeId, setIndex, platformIndex, dataTypeIndex)) {
+                        this->verDlg->gameSelectBox->setCurrentIndex(setIndex + 1);
+                        this->verDlg->platSelectBox->setCurrentIndex(platformIndex);
+                        this->verDlg->dataTypeSelectBox->setCurrentIndex(dataTypeIndex);
+                        setFound = true;
+                    }
                 }
             }
         }
@@ -1875,6 +1877,22 @@ void MainWindow::onSetupTxdVersion(bool checked) {
                 this->verDlg->gameSelectBox->setCurrentIndex(0);
             else
                 this->verDlg->OnChangeSelectedGame(0);
+            if (this->currentTXD) {
+                std::string verString =
+                    std::to_string(this->currentTXD->GetEngineVersion().rwLibMajor) + "." +
+                    std::to_string(this->currentTXD->GetEngineVersion().rwLibMinor) + "." +
+                    std::to_string(this->currentTXD->GetEngineVersion().rwRevMajor) + "." +
+                    std::to_string(this->currentTXD->GetEngineVersion().rwRevMinor);
+                std::string buildString;
+                if (this->currentTXD->GetEngineVersion().buildNumber != 0xFFFF)
+                {
+                    std::stringstream hex_stream;
+                    hex_stream << std::hex << this->currentTXD->GetEngineVersion().buildNumber;
+                    buildString = hex_stream.str();
+                }
+                this->verDlg->versionLineEdit->setText(ansi_to_qt(verString));
+                this->verDlg->buildLineEdit->setText(ansi_to_qt(buildString));
+            }
         }
     }
 }

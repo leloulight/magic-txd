@@ -18,12 +18,12 @@ class RwVersionDialog : public QDialog
 {
 	MainWindow *mainWnd;
 
-    QLineEdit *versionLineEdit;
-    QLineEdit *buildLineEdit;
-
     QPushButton *applyButton;
 
 public:
+    QLineEdit *versionLineEdit;
+    QLineEdit *buildLineEdit;
+
     QComboBox *gameSelectBox;
     QComboBox *platSelectBox;
     QComboBox *dataTypeSelectBox;
@@ -137,9 +137,14 @@ public slots:
             if (newIndex == 0) { // Custom
                 this->platSelectBox->setCurrentIndex(-1);
                 this->platSelectBox->setDisabled(true);
+                QString lastDataTypeName = this->dataTypeSelectBox->currentText();
                 this->dataTypeSelectBox->clear();
-                for (int i = 1; i <= RwVersionSets::RWVS_DT_NUM_OF_TYPES; i++)
-                    this->dataTypeSelectBox->addItem(RwVersionSets::dataNameFromId((RwVersionSets::eDataType)i));
+                for (int i = 1; i <= RwVersionSets::RWVS_DT_NUM_OF_TYPES; i++) {
+                    const char *dataName = RwVersionSets::dataNameFromId((RwVersionSets::eDataType)i);
+                    this->dataTypeSelectBox->addItem(dataName);
+                    if (lastDataTypeName == dataName)
+                        this->dataTypeSelectBox->setCurrentIndex(i - 1);
+                }
                 this->dataTypeSelectBox->setDisabled(false);
             }
             else {
