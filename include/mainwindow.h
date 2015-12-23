@@ -24,6 +24,7 @@
 #include "defs.h"
 
 #include "versionsets.h"
+#include "textureviewport.h"
 
 struct SystemEventHandlerWidget abstract
 {
@@ -101,6 +102,8 @@ public:
 
     void updateTextureView( void );
 
+    void updateTextureViewport(void);
+
     void saveCurrentTXDAt( QString location );
 
 	void clearViewImage( void );
@@ -136,6 +139,7 @@ public slots:
 
 	void onTextureItemChanged(QListWidgetItem *texInfoItem, QListWidgetItem *prevTexInfoItem);
 
+    void onToggleShowFullImage(bool checked);
     void onToggleShowMipmapLayers( bool checked );
 	void onToggleShowBackground(bool checked);
     void onToggleShowLog( bool checked );
@@ -207,7 +211,7 @@ private:
 
     QListWidget *textureListWidget;
 
-	QScrollArea *imageView; // we handle full 2d-viewport as a scroll-area
+    TexViewportWidget *imageView; // we handle full 2d-viewport as a scroll-area
 	QLabel *imageWidget;    // we use label to put image on it
 
     QLabel *txdNameLabel;
@@ -218,6 +222,7 @@ private:
 
     QSplitter *mainSplitter;
 
+    bool showFullImage;
     bool drawMipmapLayers;
 	bool showBackground;
 

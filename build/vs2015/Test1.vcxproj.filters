@@ -32,6 +32,7 @@
       <Filter>tools</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\taskcompletionwindow.cpp" />
+    <ClCompile Include="..\..\src\textureviewport.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="../../include/styles.h">
@@ -146,6 +147,9 @@
       <Filter>tools</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\versionsets.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\textureviewport.h">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>

@@ -683,6 +683,7 @@
     <ClCompile Include="..\..\src\texadddialog.cpp" />
     <ClCompile Include="..\..\src\texformatextensions.cpp" />
     <ClCompile Include="../../src/mainwindow.cpp" />
+    <ClCompile Include="..\..\src\textureviewport.cpp" />
     <ClCompile Include="..\..\src\tools\txdbuild.cpp" />
     <ClCompile Include="..\..\src\tools\txdexport.cpp" />
     <ClCompile Include="..\..\src\tools\txdgen.cpp" />
@@ -708,6 +709,7 @@
     <ClInclude Include="..\..\include\streamcompress.h" />
     <ClInclude Include="..\..\include\taskcompletionwindow.h" />
     <ClInclude Include="..\..\include\texnamewindow.h" />
+    <ClInclude Include="..\..\include\textureviewport.h" />
     <ClInclude Include="..\..\include\txdadddialog.h" />
     <ClInclude Include="..\..\include\txdlog.h" />
     <ClInclude Include="..\..\include\txdlogwindow.h" />

@@ -15,7 +15,6 @@
 #include <QDesktopServices>
 
 #include "styles.h"
-#include "textureViewport.h"
 #include "rwversiondialog.h"
 #include "texnamewindow.h"
 #include "renderpropwindow.h"
@@ -68,6 +67,7 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
         this->lastAllExportTarget = this->makeAppPath( "" ).toStdWString();
     }
 
+    this->showFullImage = false;
     this->drawMipmapLayers = false;
 	this->showBackground = false;
 
@@ -103,7 +103,7 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
         this->textureListWidget = listWidget;
 
 	    /* --- Viewport --- */
-		imageView = new QScrollArea;
+		imageView = new TexViewportWidget(this);
 		imageView->setFrameShape(QFrame::NoFrame);
 		imageView->setObjectName("textureViewBackground");
 		imageWidget = new QLabel;
@@ -426,6 +426,14 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
         connect( actionExportAll, &QAction::triggered, this, &MainWindow::onExportAllTextures );
 
 	    QMenu *viewMenu = menu->addMenu(tr("&View"));
+
+        QAction *actionShowFullImage = new QAction("&Show full image", this);
+        // actionBackground->setShortcut(Qt::Key_F4);
+        actionShowFullImage->setCheckable(true);
+        viewMenu->addAction(actionShowFullImage);
+
+        connect(actionShowFullImage, &QAction::triggered, this, &MainWindow::onToggleShowFullImage);
+
 	    QAction *actionBackground = new QAction("&Background", this);
         actionBackground->setShortcut( Qt::Key_F5 );
 		actionBackground->setCheckable(true);
@@ -1098,7 +1106,7 @@ void MainWindow::updateTextureView( void )
 			    QImage texImage = convertRWBitmapToQImage( rasterBitmap );
 
 			    imageWidget->setPixmap(QPixmap::fromImage(texImage));
-			    imageWidget->setFixedSize(QSize(texImage.width(), texImage.height()));
+                this->updateTextureViewport();
 			    imageWidget->show();
             }
             catch( rw::RwException& except )
@@ -1110,6 +1118,34 @@ void MainWindow::updateTextureView( void )
             }
 		}
     }
+}
+
+void MainWindow::updateTextureViewport() {
+    if (this->imageWidget->pixmap()){
+        if (this->showFullImage) {
+            float w, h, border_w, border_h;
+            w = this->imageWidget->pixmap()->width(); h = this->imageWidget->pixmap()->height();
+            border_w = this->imageView->width();
+            border_h = this->imageView->height();
+            float scaleFactor = std::min(border_w / w, border_h / h);
+            if (scaleFactor < 1.0f) {
+                this->imageWidget->setFixedSize(scaleFactor * w, scaleFactor * h);
+            }
+            else {
+                this->imageWidget->setFixedSize(this->imageWidget->pixmap()->width(), this->imageWidget->pixmap()->height());
+            }
+        }
+        else {
+            this->imageWidget->setFixedSize(this->imageWidget->pixmap()->width(), this->imageWidget->pixmap()->height());
+        }
+    }
+}
+
+void MainWindow::onToggleShowFullImage(bool checked)
+{
+    this->showFullImage = !(this->showFullImage);
+    this->imageWidget->setScaledContents(this->showFullImage);
+    this->updateTextureViewport();
 }
 
 void MainWindow::onToggleShowMipmapLayers( bool checked )
