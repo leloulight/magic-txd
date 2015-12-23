@@ -10,6 +10,7 @@
 #include <QScrollArea>
 #include <QSplitter>
 #include <QAction>
+#include <QMessageBox>
 
 #include <renderware.h>
 
@@ -21,6 +22,8 @@
 #define NUMELMS(x)      ( sizeof(x) / sizeof(*x) )
 
 #include "defs.h"
+
+#include "versionsets.h"
 
 struct SystemEventHandlerWidget abstract
 {
@@ -136,7 +139,6 @@ public slots:
     void onToggleShowMipmapLayers( bool checked );
 	void onToggleShowBackground(bool checked);
     void onToggleShowLog( bool checked );
-    void onSelectPlatform( bool checked );
     void onSetupMipmapLayers( bool checked );
     void onClearMipmapLayers( bool checked );
 
@@ -198,6 +200,8 @@ private:
 
     TexInfoWidget *currentSelectedTexture;
 
+    RwVersionSets versionSets;
+
     QFileInfo openedTXDFileInfo;
     bool hasOpenedTXDFileInfo;
 
@@ -232,7 +236,6 @@ private:
     QAction *actionRenameTexture;
     QAction *actionResizeTexture;
     QAction *actionManipulateTexture;
-    QAction *actionPlatformSelect;
     QAction *actionSetupMipmaps;
     QAction *actionClearMipmaps;
     QAction *actionRenderProps;

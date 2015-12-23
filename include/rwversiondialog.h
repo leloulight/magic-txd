@@ -12,26 +12,23 @@
 #include <string>
 #include <sstream>
 
-struct RwVersionTemplate {
-	std::string name;
-
-};
-
-
+#include <vector>
 
 class RwVersionDialog : public QDialog
 {
-	//Q_OBJECT why would we need this?
-
-    MainWindow *mainWnd;
+	MainWindow *mainWnd;
 
     QLineEdit *versionLineEdit;
     QLineEdit *buildLineEdit;
 
     QPushButton *applyButton;
 
+public:
     QComboBox *gameSelectBox;
+    QComboBox *platSelectBox;
+    QComboBox *dataTypeSelectBox;
 
+private:
     bool GetSelectedVersion( rw::LibraryVersion& verOut ) const
     {
         QString currentVersionString = this->versionLineEdit->text();
@@ -134,94 +131,68 @@ public slots:
         this->UpdateAccessibility();
     }
 
-    void OnChangeSelectedGame( const QString& newItem )
+    void OnChangeSelectedGame(int newIndex)
     {
-        // If we selected a game that we know, then set the version into the edits.
-        rw::LibraryVersion libVer;
-        bool hasGameVer = true;
-        
-        const char *currentPlatform = NULL;
-
-        if ( rw::TexDictionary *currentTXD = this->mainWnd->currentTXD )
-        {
-            currentPlatform = MainWindow::GetTXDPlatformString( currentTXD );
-        }
-
-        if ( newItem == "GTA San Andreas" )
-        {
-            libVer = rw::KnownVersions::getGameVersion( rw::KnownVersions::SA );
-        }
-        else if ( newItem == "GTA Vice City" )
-        {
-            if ( currentPlatform && stricmp( currentPlatform, "PlayStation2" ) == 0 )
-            {
-                libVer = rw::KnownVersions::getGameVersion( rw::KnownVersions::VC_PS2 );
+        if (newIndex >= 0) {
+            if (newIndex == 0) { // Custom
+                this->platSelectBox->setCurrentIndex(-1);
+                this->platSelectBox->setDisabled(true);
+                this->dataTypeSelectBox->clear();
+                for (int i = 1; i <= RwVersionSets::RWVS_DT_NUM_OF_TYPES; i++)
+                    this->dataTypeSelectBox->addItem(RwVersionSets::dataNameFromId((RwVersionSets::eDataType)i));
+                this->dataTypeSelectBox->setDisabled(false);
             }
-            else if ( currentPlatform && stricmp( currentPlatform, "XBOX" ) == 0 )
-            {
-                libVer = rw::KnownVersions::getGameVersion( rw::KnownVersions::VC_XBOX );
+            else {
+                this->platSelectBox->clear();
+                for (unsigned int i = 0; i < this->mainWnd->versionSets.sets[newIndex - 1].availablePlatforms.size(); i++) {
+                    this->platSelectBox->addItem(RwVersionSets::platformNameFromId(
+                        this->mainWnd->versionSets.sets[newIndex - 1].availablePlatforms[i].platformType));
+                }
+                if(this->mainWnd->versionSets.sets[newIndex - 1].availablePlatforms.size() < 2)
+                    this->platSelectBox->setDisabled(true);
+                else
+                    this->platSelectBox->setDisabled(false);
+                //this->OnChangeSelecteedPlatform( 0 );
             }
-            else
-            {
-                libVer = rw::KnownVersions::getGameVersion( rw::KnownVersions::VC_PC );
-            }
-        }
-        else if ( newItem == "GTA III" )
-        {
-            if ( currentPlatform && stricmp( currentPlatform, "XBOX" ) == 0 )
-            {
-                libVer = rw::KnownVersions::getGameVersion( rw::KnownVersions::GTA3_XBOX );
-            }
-            else
-            {
-                libVer = rw::KnownVersions::getGameVersion( rw::KnownVersions::GTA3_PC );
-            }
-        }
-        else if ( newItem == "Manhunt" )
-        {
-            if ( currentPlatform && stricmp( currentPlatform, "PlayStation2" ) == 0 )
-            {
-                libVer = rw::KnownVersions::getGameVersion( rw::KnownVersions::MANHUNT_PS2 );
-            }
-            else
-            {
-                libVer = rw::KnownVersions::getGameVersion( rw::KnownVersions::MANHUNT_PC );
-            }
-        }
-        else if ( newItem == "Bully" )
-        {
-            libVer = rw::KnownVersions::getGameVersion( rw::KnownVersions::BULLY );
-        }
-        else
-        {
-            hasGameVer = false;
-        }
-
-        if ( hasGameVer )
-        {
-            std::string verString =
-                std::to_string( libVer.rwLibMajor ) + "." +
-                std::to_string( libVer.rwLibMinor ) + "." +
-                std::to_string( libVer.rwRevMajor ) + "." +
-                std::to_string( libVer.rwRevMinor );
-
-            std::string buildString;
-
-            if ( libVer.buildNumber != 0xFFFF )
-            {
-                std::stringstream hex_stream;
-
-                hex_stream << std::hex << libVer.buildNumber;
-
-                buildString = hex_stream.str();
-            }
-
-            this->versionLineEdit->setText( ansi_to_qt( verString ) );
-            this->buildLineEdit->setText( ansi_to_qt( buildString ) );
         }
         
         // We want to update the accessibility.
         this->UpdateAccessibility();
+    }
+
+    void OnChangeSelecteedPlatform(int newIndex) {
+        if (newIndex >= 0) {
+            this->dataTypeSelectBox->clear();
+            unsigned int set = this->gameSelectBox->currentIndex();
+            for (unsigned int i = 0; i < this->mainWnd->versionSets.sets[set - 1].availablePlatforms[newIndex].availableDataTypes.size(); i++) {
+                this->dataTypeSelectBox->addItem(RwVersionSets::dataNameFromId(
+                    this->mainWnd->versionSets.sets[set - 1].availablePlatforms[newIndex].availableDataTypes[i]));
+            }
+            if (this->mainWnd->versionSets.sets[set - 1].availablePlatforms[newIndex].availableDataTypes.size() < 2)
+                this->dataTypeSelectBox->setDisabled(true);
+            else
+                this->dataTypeSelectBox->setDisabled(false);
+
+            std::string verString =
+                std::to_string(this->mainWnd->versionSets.sets[set - 1].availablePlatforms[newIndex].version.rwLibMajor) + "." +
+                std::to_string(this->mainWnd->versionSets.sets[set - 1].availablePlatforms[newIndex].version.rwLibMinor) + "." +
+                std::to_string(this->mainWnd->versionSets.sets[set - 1].availablePlatforms[newIndex].version.rwRevMajor) + "." +
+                std::to_string(this->mainWnd->versionSets.sets[set - 1].availablePlatforms[newIndex].version.rwRevMinor);
+
+            std::string buildString;
+
+            if (this->mainWnd->versionSets.sets[set - 1].availablePlatforms[newIndex].version.buildNumber != 0xFFFF)
+            {
+                std::stringstream hex_stream;
+
+                hex_stream << std::hex << this->mainWnd->versionSets.sets[set - 1].availablePlatforms[newIndex].version.buildNumber;
+
+                buildString = hex_stream.str();
+            }
+
+            this->versionLineEdit->setText(ansi_to_qt(verString));
+            this->buildLineEdit->setText(ansi_to_qt(buildString));
+        }
     }
 
     void OnRequestAccept( bool clicked )
@@ -238,90 +209,33 @@ public slots:
         // Also patch the platform if feasible.
         if ( rw::TexDictionary *currentTXD = this->mainWnd->currentTXD )
         {
-            bool patchD3D8 = false;
-            bool patchD3D9 = false;
-            bool shouldPatch = true;
+            int set = this->gameSelectBox->currentIndex();
+            int platform = this->platSelectBox->currentIndex();
+            int dataType = this->dataTypeSelectBox->currentIndex();
 
-            // TODO: maybe make this "fix" optional.
+            RwVersionSets::eDataType dataTypeId;
 
-            QString currentGame = this->gameSelectBox->currentText();
-
-            if ( currentGame == "GTA San Andreas" )
-            {
-                patchD3D8 = true;
-            }
-            else if ( currentGame == "GTA Vice City" ||
-                      currentGame == "GTA III" ||
-                      currentGame == "Manhunt" )
-            {
-                patchD3D9 = true;
-            }
+            if (set == 0) // Custom
+                dataTypeId = (RwVersionSets::eDataType)(dataType + 1);
             else
-            {
-                shouldPatch = false;
-            }
+                dataTypeId = this->mainWnd->versionSets.sets[set - 1].availablePlatforms[platform].availableDataTypes[dataType];
 
-            currentTXD->SetEngineVersion( libVer );
+            currentTXD->SetEngineVersion(libVer);
 
-            bool didPatchPlatform = false;
+            // Maybe make SetEngineVersion sets the version for all children objects?
+            for (rw::TexDictionary::texIter_t iter(currentTXD->GetTextureIterator()); !iter.IsEnd(); iter.Increment())
+                iter.Resolve()->SetEngineVersion(libVer);
 
-            // Also have to set the version of each texture.
-            for ( rw::TexDictionary::texIter_t iter( currentTXD->GetTextureIterator() ); !iter.IsEnd(); iter.Increment() )
-            {
-                rw::TextureBase *texHandle = iter.Resolve();
+            char const *previousPlatform = this->mainWnd->GetTXDPlatformString(currentTXD);
+            char const *currentPlatform = RwVersionSets::dataNameFromId(dataTypeId);
 
-                texHandle->SetEngineVersion( libVer );
+            // If platform was changed
+            if (strcmp(previousPlatform, currentPlatform)) {
+                this->mainWnd->SetTXDPlatformString(currentTXD, currentPlatform);
 
-                // Maybe change platform.
-                if ( shouldPatch )
-                {
-                    rw::Raster *texRaster = texHandle->GetRaster();
-                    
-                    if ( texRaster )
-                    {
-                        const char *texPlatform = texRaster->getNativeDataTypeName();
-
-                        const char *newTarget = NULL;
-
-                        if ( patchD3D8 && strcmp( texPlatform, "Direct3D8" ) == 0 )
-                        {
-                            newTarget = "Direct3D9";
-                        }
-                        else if ( patchD3D9 && strcmp( texPlatform, "Direct3D9" ) == 0 )
-                        {
-                            newTarget = "Direct3D8";
-                        }
-
-                        if ( newTarget )
-                        {
-                            try
-                            {
-                                bool hasChanged = rw::ConvertRasterTo( texRaster, newTarget );
-
-                                if ( hasChanged )
-                                {
-                                    didPatchPlatform = true;
-                                }
-                            }
-                            catch( rw::RwException& except )
-                            {
-                                // We output a warning.
-                                this->mainWnd->txdLog->addLogMessage(
-                                    QString( "failed to adjust texture platform of " ) + ansi_to_qt( texHandle->GetName() ) + QString( ": " ) + QString::fromStdString( except.message ),
-                                    LOGMSG_WARNING
-                                );
-
-                                // Continue anyway.
-                            }
-                        }
-                    }
-                }
-            }
-
-            // The user might want to be notified of the platform change.
-            if ( didPatchPlatform )
-            {
-                this->mainWnd->txdLog->addLogMessage( "changed the TXD platform to match version", LOGMSG_INFO );
+                // The user might want to be notified of the platform change.
+                this->mainWnd->txdLog->addLogMessage(QString("changed the TXD platform to match version (") + previousPlatform + 
+                    QString(">") + currentPlatform + QString(")"), LOGMSG_INFO);
 
                 // Also update texture item info, because it may have changed.
                 this->mainWnd->updateAllTextureMetaInfo();
@@ -364,56 +278,61 @@ public:
 		topLayout->setSpacing(6);
 		topLayout->setMargin(10);
 
+        /************* Set ****************/
 		QHBoxLayout *selectGameLayout = new QHBoxLayout;
-		QLabel *gameLabel = new QLabel(tr("Game"));
+		QLabel *gameLabel = new QLabel(tr("Set"));
 		gameLabel->setObjectName("label25px");
-		gameLabel->setFixedWidth(70);
 		QComboBox *gameComboBox = new QComboBox;
-		gameComboBox->addItem("GTA San Andreas");
-		gameComboBox->addItem("GTA Vice City");
-		gameComboBox->addItem("GTA III");
-		gameComboBox->addItem("Manhunt");
-        gameComboBox->addItem("Bully");
+        gameComboBox->setFixedWidth(300);
 		gameComboBox->addItem("Custom");
-
+        for (unsigned int i = 0; i < this->mainWnd->versionSets.sets.size(); i++)
+            gameComboBox->addItem(this->mainWnd->versionSets.sets[i].name);
         this->gameSelectBox = gameComboBox;
 
-        connect( gameComboBox, (void (QComboBox::*)( const QString& ))&QComboBox::activated, this, &RwVersionDialog::OnChangeSelectedGame );
+        connect( gameComboBox, static_cast<void (QComboBox::*)(int index)>(&QComboBox::currentIndexChanged), this, &RwVersionDialog::OnChangeSelectedGame );
 
 		selectGameLayout->addWidget(gameLabel);
 		selectGameLayout->addWidget(gameComboBox);
 
+        /************* Platform ****************/
+        QHBoxLayout *selectPlatformLayout = new QHBoxLayout;
+        QLabel *platLabel = new QLabel(tr("Platform"));
+        platLabel->setObjectName("label25px");
+        QComboBox *platComboBox = new QComboBox;
+        platComboBox->setFixedWidth(300);
+        this->platSelectBox = platComboBox;
+
+        connect(platComboBox, static_cast<void (QComboBox::*)(int index)>(&QComboBox::currentIndexChanged), this, &RwVersionDialog::OnChangeSelecteedPlatform);
+
+        selectPlatformLayout->addWidget(platLabel);
+        selectPlatformLayout->addWidget(platComboBox);
+
+        /************* Data type ****************/
+        QHBoxLayout *selectDataTypeLayout = new QHBoxLayout;
+        QLabel *dataTypeLabel = new QLabel(tr("Data type"));
+        dataTypeLabel->setObjectName("label25px");
+        QComboBox *dataTypeComboBox = new QComboBox;
+        dataTypeComboBox->setFixedWidth(300);
+        this->dataTypeSelectBox = dataTypeComboBox;
+
+        //connect(dataTypeComboBox, (void (QComboBox::*)(const QString&))&QComboBox::activated, this, &RwVersionDialog::OnChangeSelectedGame);
+
+        selectDataTypeLayout->addWidget(dataTypeLabel);
+        selectDataTypeLayout->addWidget(dataTypeComboBox);
+
 		QHBoxLayout *versionLayout = new QHBoxLayout;
 		QLabel *versionLabel = new QLabel(tr("Version"));
 		versionLabel->setObjectName("label25px");
+        versionLabel->setFixedWidth(80);
 
 		QHBoxLayout *versionNumbersLayout = new QHBoxLayout;
 		QLineEdit *versionLine1 = new QLineEdit;
-		//versionLine1->setValidator(new QIntValidator(3, 6, this));
+
 		versionLine1->setInputMask("0.00.00.00");
-		//versionLine1->setFixedWidth(24);
-		//versionLine1->setAlignment(Qt::AlignCenter);
-		//QLineEdit *versionLine2 = new QLineEdit;
-		//versionLine2->setInputMask("00");
-		//versionLine2->setValidator(new QIntValidator(0, 15, this));
-		//versionLine2->setFixedWidth(24);
-		//versionLine2->setAlignment(Qt::AlignCenter);
-		//QLineEdit *versionLine3 = new QLineEdit;
-		//versionLine3->setInputMask("00");
-		//versionLine3->setValidator(new QIntValidator(0, 15, this));
-		//versionLine3->setFixedWidth(24);
-		//versionLine3->setAlignment(Qt::AlignCenter);
-		//QLineEdit *versionLine4 = new QLineEdit;
-		//versionLine4->setInputMask("00");
-		//versionLine4->setValidator(new QIntValidator(0, 63, this));
-		//versionLine4->setFixedWidth(24);
-		//versionLine4->setAlignment(Qt::AlignCenter);
+        versionLine1->setFixedWidth(80);
 
 		versionNumbersLayout->addWidget(versionLine1);
-		//versionNumbersLayout->addWidget(versionLine2);
-		//versionNumbersLayout->addWidget(versionLine3);
-		//versionNumbersLayout->addWidget(versionLine4);
-		//versionNumbersLayout->setSpacing(2);
+
 		versionNumbersLayout->setMargin(0);
 
         this->versionLineEdit = versionLine1;
@@ -422,10 +341,11 @@ public:
 
 		QLabel *buildLabel = new QLabel(tr("Build"));
 		buildLabel->setObjectName("label25px");
+        buildLabel->setFixedWidth(55);
 		QLineEdit *buildLine = new QLineEdit;
-		buildLine->setInputMask("HHHH");
+		buildLine->setInputMask(">HHHH");
         buildLine->clear();
-		buildLine->setFixedWidth(50);
+		buildLine->setFixedWidth(60);
 
         this->buildLineEdit = buildLine;
 
@@ -434,7 +354,11 @@ public:
 		versionLayout->addWidget(buildLabel);
 		versionLayout->addWidget(buildLine);
 
+        versionLayout->setAlignment(Qt::AlignRight);
+
 		topLayout->addLayout(selectGameLayout);
+        topLayout->addLayout(selectPlatformLayout);
+        topLayout->addLayout(selectDataTypeLayout);
 		topLayout->addSpacing(8);
 		topLayout->addLayout(versionLayout);
 
@@ -467,12 +391,16 @@ public:
 		verticalLayout->setSizeConstraint(QLayout::SetFixedSize);
 
         // Initiate the ready dialog.
-        this->OnChangeSelectedGame( gameComboBox->currentText() );
+        this->OnChangeSelectedGame( 0 );
 	}
 
     ~RwVersionDialog( void )
     {
         // There can only be one version dialog.
         this->mainWnd->verDlg = NULL;
+    }
+
+    void SelectGame(unsigned int gameId) {
+        this->gameSelectBox->setCurrentIndex(gameId);
     }
 };

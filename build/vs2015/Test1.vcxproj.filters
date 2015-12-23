@@ -145,6 +145,9 @@
     <ClInclude Include="..\..\src\tools\txdbuild.h">
       <Filter>tools</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\versionsets.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">

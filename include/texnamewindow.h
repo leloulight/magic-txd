@@ -28,13 +28,15 @@ struct TexNameWindow : public QDialog
         // Fill things.
         QVBoxLayout *rootLayout = new QVBoxLayout( this );
 
-        rootLayout->setContentsMargins( QMargins( 25, 15, 25, 10 ) );
+        rootLayout->setContentsMargins( 0, 0, 0, 0 );
+        rootLayout->setSpacing(0);
         rootLayout->setSizeConstraint( QLayout::SetFixedSize );
 
         // We want a line with the texture name.
         QHBoxLayout *texNameLayout = new QHBoxLayout();
 
-        texNameLayout->setContentsMargins( QMargins( 0, 0, 0, 10 ) );
+        texNameLayout->setContentsMargins( QMargins( 12, 12, 12, 12 ) );
+        texNameLayout->setSpacing(10);
 
         texNameLayout->addWidget( new QLabel( "Name:" ) );
 
@@ -43,15 +45,27 @@ struct TexNameWindow : public QDialog
 
         texNameEdit->setMaxLength( 32 );
 
+        texNameEdit->setMinimumWidth(350);
+
         this->texNameEdit = texNameEdit;
 
         connect( texNameEdit, &QLineEdit::textChanged, this, &TexNameWindow::OnUpdateTexName );
 
+        QWidget *line = new QWidget();
+        line->setFixedHeight(1);
+        line->setObjectName("hLineBackground");
+
         // Now we want a line with buttons.
         QHBoxLayout *buttonLayout = new QHBoxLayout();
+        buttonLayout->setContentsMargins(QMargins(12, 12, 12, 12));
+        buttonLayout->setAlignment(Qt::AlignBottom | Qt::AlignRight);
+        buttonLayout->setSpacing(10);
 
         QPushButton *buttonSet = new QPushButton( "Set" );
+        buttonSet->setMinimumWidth(90);
+
         QPushButton *buttonCancel = new QPushButton( "Cancel" );
+        buttonCancel->setMinimumWidth(90);
 
         this->buttonSet = buttonSet;
 
@@ -61,8 +75,13 @@ struct TexNameWindow : public QDialog
         buttonLayout->addWidget( buttonSet );
         buttonLayout->addWidget( buttonCancel );
 
+        QWidget *bottomWidget = new QWidget();
+        bottomWidget->setObjectName("background_0");
+        bottomWidget->setLayout(buttonLayout);
+
         rootLayout->addLayout( texNameLayout );
-        rootLayout->addLayout( buttonLayout );
+        rootLayout->addWidget( line );
+        rootLayout->addWidget( bottomWidget );
         
         this->mainWnd->texNameDlg = this;
 

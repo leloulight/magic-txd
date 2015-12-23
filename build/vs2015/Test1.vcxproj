@@ -711,6 +711,7 @@
     <ClInclude Include="..\..\include\txdadddialog.h" />
     <ClInclude Include="..\..\include\txdlog.h" />
     <ClInclude Include="..\..\include\txdlogwindow.h" />
+    <ClInclude Include="..\..\include\versionsets.h" />
     <ClInclude Include="..\..\magic_api\magfapi.h" />
     <ClInclude Include="..\..\magic_api\MagicFormats.h" />
     <ClInclude Include="..\..\src\guiserialization.hxx" />

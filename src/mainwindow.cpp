@@ -20,7 +20,6 @@
 #include "texnamewindow.h"
 #include "renderpropwindow.h"
 #include "resizewindow.h"
-#include "platformselwindow.h"
 #include "massconvert.h"
 #include "exportallwindow.h"
 #include "massexport.h"
@@ -242,14 +241,6 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
         this->actionManipulateTexture = actionManipulate;
 
         connect( actionManipulate, &QAction::triggered, this, &MainWindow::onManipulateTexture );
-
-	    QAction *actionSetPixelFormat = new QAction("&Platform", this);
-        actionSetPixelFormat->setShortcut( Qt::Key_P );
-	    editMenu->addAction(actionSetPixelFormat);
-
-        this->actionPlatformSelect = actionSetPixelFormat;
-
-        connect( actionSetPixelFormat, &QAction::triggered, this, &MainWindow::onSelectPlatform );
 
 	    QAction *actionSetupMipLevels = new QAction("&Setup mip-levels", this);
         actionSetupMipLevels->setShortcut( Qt::CTRL | Qt::Key_M );
@@ -596,6 +587,12 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
 
 		imageWidget->hide();
 
+        // Read data files
+
+        this->versionSets.readSetsFile(this->makeAppPath("data\\versionsets.dat").toStdWString().c_str());
+
+        //
+
 		// Initialize our native formats.
 		this->initializeNativeFormats();
 
@@ -701,7 +698,6 @@ void MainWindow::UpdateAccessibility( void )
     this->actionRenameTexture->setDisabled( !has_txd );
     this->actionResizeTexture->setDisabled( !has_txd );
     this->actionManipulateTexture->setDisabled( !has_txd );
-    this->actionPlatformSelect->setDisabled( !has_txd );
     this->actionSetupMipmaps->setDisabled( !has_txd );
     this->actionClearMipmaps->setDisabled( !has_txd );
     this->actionRenderProps->setDisabled( !has_txd );
@@ -837,7 +833,10 @@ void MainWindow::updateWindowTitle( void )
     {
         if (rw::TexDictionary *txd = this->currentTXD)
         {
-            this->rwVersionButton->setText(QString(txd->GetEngineVersion().toString().c_str()));
+            QString text;
+            text.sprintf("%u.%u.%u.%u", txd->GetEngineVersion().rwLibMajor, txd->GetEngineVersion().rwLibMinor,
+                txd->GetEngineVersion().rwRevMajor, txd->GetEngineVersion().rwRevMinor);
+            this->rwVersionButton->setText(text);
             this->rwVersionButton->show();
         }
         else
@@ -1163,28 +1162,6 @@ void MainWindow::onToogleLightTheme(bool checked) {
         this->recheckingThemeItem = true;
         this->actionThemeLight->setChecked(true);
         this->recheckingThemeItem = false;
-    }
-}
-
-void MainWindow::onSelectPlatform( bool checked )
-{
-    // Show the window with a combo box of all available platforms.
-
-    if ( this->currentTXD == NULL )
-        return;
-
-    // No point in setting a platform if there are no textures.
-    if ( this->currentTXD->GetTextureCount() == 0 )
-        return;
-
-    if ( PlatformSelWindow *curDlg = this->platformDlg )
-    {
-        curDlg->setFocus();
-    }
-    else
-    {
-        PlatformSelWindow *dialog = new PlatformSelWindow( this );
-        dialog->setVisible( true );
     }
 }
 
@@ -1869,9 +1846,36 @@ void MainWindow::onSetupTxdVersion(bool checked) {
     else
     {
 	    RwVersionDialog *dialog = new RwVersionDialog( this );
-	    dialog->setVisible( true );
+        
+        dialog->setVisible( true );
 
         this->verDlg = dialog;
+    }
+
+    if (this->verDlg) {
+        // Try to find a set for current txd version
+        bool setFound = false;
+        if (this->currentTXD) {
+            rw::LibraryVersion version = currentTXD->GetEngineVersion();
+            const char *platformName = this->GetTXDPlatformString(this->currentTXD);
+            RwVersionSets::eDataType platformDataTypeId = RwVersionSets::dataIdFromEnginePlatformName(platformName);
+            if (platformDataTypeId != RwVersionSets::RWVS_DT_NOT_DEFINED) {
+                int setIndex, platformIndex, dataTypeIndex;
+                if (this->versionSets.matchSet(version, platformDataTypeId, setIndex, platformIndex, dataTypeIndex)) {
+                    this->verDlg->gameSelectBox->setCurrentIndex(setIndex + 1);
+                    this->verDlg->platSelectBox->setCurrentIndex(platformIndex);
+                    this->verDlg->dataTypeSelectBox->setCurrentIndex(dataTypeIndex);
+                    setFound = true;
+                }
+            }
+        }
+
+        if (!setFound) {
+            if (this->verDlg->gameSelectBox->currentIndex() != 0)
+                this->verDlg->gameSelectBox->setCurrentIndex(0);
+            else
+                this->verDlg->OnChangeSelectedGame(0);
+        }
     }
 }
 
