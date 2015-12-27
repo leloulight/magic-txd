@@ -199,6 +199,8 @@ inline uint32 getPaletteItemCount( ePaletteType paletteType )
 #include "renderware.bmp.h"
 
 // Texture container per platform for specialized color data.
+// You must not make any assumptions backed by nothing
+// about the data that is pointed at by this.
 typedef void* PlatformTexture;
 
 // Native GTA:SA feature map:
@@ -230,7 +232,7 @@ inline uint32 generateRasterFormatFlags( eRasterFormat rasterFormat, ePaletteTyp
     // bits 0..3 can be (alternatively) used for the raster type
     // bits 4..8 are stored in the raster private flags.
 
-    // Map the raster format or RenderWare3.
+    // Map the raster format for RenderWare3.
     rwSerializedRasterFormat_3 serFormat = RWFORMAT3_UNKNOWN;
 
     if ( rasterFormat != RASTER_DEFAULT )

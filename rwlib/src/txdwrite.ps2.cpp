@@ -15,40 +15,6 @@
 namespace rw
 {
 
-inline void writeStringSection( Interface *engineInterface, BlockProvider& outputProvider, const char *string, size_t strLen )
-{
-    BlockProvider stringChunk( &outputProvider );
-
-    stringChunk.EnterContext();
-
-    try
-    {
-        // We are writing a string.
-        stringChunk.setBlockID( CHUNK_STRING );
-
-        // Write the string.
-        stringChunk.write(string, strLen);
-
-        // Pad to multiples of four.
-        // This will automatically zero-terminate the string.
-        size_t remainder = 4 - (strLen % 4);
-
-        // Write zeroes.
-        for ( size_t n = 0; n < remainder; n++ )
-        {
-            stringChunk.writeUInt8( 0 );
-        }
-    }
-    catch( ... )
-    {
-        stringChunk.LeaveContext();
-
-        throw;
-    }
-
-    stringChunk.LeaveContext();
-}
-
 template <typename numType>
 inline bool IsNumberInRange( numType val, numType lower, numType upper )
 {
@@ -649,10 +615,6 @@ void NativeTexturePS2::UpdateStructure( Interface *engineInterface )
         {
             uint32 depth = this->depth;
 
-            uint32 reqFormatDepth = getFormatEncodingDepth( requiredFormat );
-
-            uint32 currentEncodingDepth = getFormatEncodingDepth( currentMipmapEncodingType );
-
             for ( size_t n = 0; n < mipmapCount; n++ )
             {
                 NativeTexturePS2::GSMipmap& mipLayer = this->mipmaps[ n ];
@@ -716,18 +678,19 @@ void NativeTexturePS2::UpdateStructure( Interface *engineInterface )
         uint32 palSize = ( palTex.swizzleWidth * palTex.swizzleHeight );
         void *newPalTexels = NULL;
         uint32 newPalDataSize;
-        uint32 newPalWidth, newPalHeight;
 
         genpalettetexeldata(
-            version, palDataSource,
+            engineInterface,
+            reqPalWidth, reqPalHeight,
+            palDataSource,
             rasterFormat, paletteType, palSize,
-            newPalTexels, newPalDataSize, newPalWidth, newPalHeight
+            newPalTexels, newPalDataSize
         );
 
         if ( newPalTexels != palDataSource )
         {
-            palTex.swizzleWidth = newPalWidth;
-            palTex.swizzleHeight = newPalHeight;
+            palTex.swizzleWidth = reqPalWidth;
+            palTex.swizzleHeight = reqPalHeight;
             palTex.dataSize = newPalDataSize;
             palTex.texels = newPalTexels;
 
@@ -777,10 +740,10 @@ void ps2NativeTextureTypeProvider::SerializeTexture( TextureBase *theTexture, Pl
     }
 
     // Write texture name.
-    writeStringSection(engineInterface, outputProvider, theTexture->GetName().c_str(), theTexture->GetName().size());
+    utils::writeStringChunkANSI(engineInterface, outputProvider, theTexture->GetName().c_str(), theTexture->GetName().size());
 
     // Write mask name.
-    writeStringSection(engineInterface, outputProvider, theTexture->GetMaskName().c_str(), theTexture->GetMaskName().size());
+    utils::writeStringChunkANSI(engineInterface, outputProvider, theTexture->GetMaskName().c_str(), theTexture->GetMaskName().size());
 
     // Prepare the image data (if not already prepared).
     size_t mipmapCount = platformTex->mipmaps.size();

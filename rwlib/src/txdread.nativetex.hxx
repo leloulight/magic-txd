@@ -295,7 +295,7 @@ struct texNativeTypeProvider abstract
 
     virtual void            DeserializeNativeImage( Interface *engineInterface, Stream *outputSteam, void *objMem ) const
     {
-        throw RwException( "native image format not implemente" );
+        throw RwException( "native image format not implemented" );
     }
 
     // Driver identification functions.

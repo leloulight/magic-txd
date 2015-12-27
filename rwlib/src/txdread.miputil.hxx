@@ -1,3 +1,5 @@
+#include "txdread.common.hxx"
+
 namespace rw
 {
 
@@ -30,12 +32,12 @@ struct d3dMipmapManager
         Interface *engineInterface,
         const NativeTextureD3D::mipmapLayer& mipLayer,
         uint32& widthOut, uint32& heightOut, uint32& layerWidthOut, uint32& layerHeightOut,
-        eRasterFormat& dstRasterFormat, eColorOrdering& dstColorOrder, uint32& dstDepth,
-        uint32& dstRowAlignment,
-        ePaletteType& dstPaletteType, void*& dstPaletteData, uint32& dstPaletteSize,
-        eCompressionType& dstCompressionType, bool& hasAlpha,
+        eRasterFormat& dstRasterFormatOut, eColorOrdering& dstColorOrderOut, uint32& dstDepthOut,
+        uint32& dstRowAlignmentOut,
+        ePaletteType& dstPaletteTypeOut, void*& dstPaletteDataOut, uint32& dstPaletteSizeOut,
+        eCompressionType& dstCompressionTypeOut, bool& hasAlphaOut,
         void*& dstTexelsOut, uint32& dstDataSizeOut,
-        bool& isNewlyAllocatedOut, bool& isPaletteNewlyAllocated
+        bool& isNewlyAllocatedOut, bool& isPaletteNewlyAllocatedOut
     )
     {
 
@@ -254,7 +256,7 @@ inline bool virtualAddMipmapLayer(
     }
 
     // Add this layer.
-    mipmaps.push_back( newLayer );
+    mipmaps.push_back( std::move( newLayer ) );
 
     return true;
 }
@@ -262,11 +264,11 @@ inline bool virtualAddMipmapLayer(
 template <typename mipDataType, typename mipListType>
 inline void virtualClearMipmaps( Interface *engineInterface, mipListType& mipmaps )
 {
-    uint32 mipmapCount = (uint32)mipmaps.size();
+    size_t mipmapCount = mipmaps.size();
 
     if ( mipmapCount > 1 )
     {
-        for ( uint32 n = 1; n < mipmapCount; n++ )
+        for ( size_t n = 1; n < mipmapCount; n++ )
         {
             mipDataType& mipLayer = mipmaps[ n ];
 

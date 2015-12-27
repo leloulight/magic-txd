@@ -2879,6 +2879,9 @@ extern void registerXBOXNativePlugin( void );
 #ifdef RWLIB_INCLUDE_NATIVETEX_GAMECUBE
 extern void registerGCNativePlugin( void );
 #endif //RWLIB_INCLUDE_NATIVETEX_GAMECUBE
+#ifdef RWLIB_INCLUDE_NATIVETEX_PSP
+extern void registerPSPNativeTextureType( void );
+#endif //RWLIB_INCLUDE_NATIVETEX_PSP
 
 // Sub modules.
 void registerResizeFilteringEnvironment( void );
@@ -2919,6 +2922,9 @@ void registerTXDPlugins( void )
 #ifdef RWLIB_INCLUDE_NATIVETEX_GAMECUBE
     registerGCNativePlugin();
 #endif //RWLIB_INCLUDE_NATIVETEX_GAMECUBE
+#ifdef RWLIB_INCLUDE_NATIVETEX_PSP
+    registerPSPNativeTextureType();
+#endif //RWLIB_INCLUDE_NATIVETEX_PSP
 
     // Register pure sub modules.
     registerResizeFilteringEnvironment();

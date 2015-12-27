@@ -421,12 +421,17 @@
     <ClInclude Include="..\..\src\txdread.d3d9.hxx" />
     <ClInclude Include="..\..\src\txdread.dxtmobile.hxx" />
     <ClInclude Include="..\..\src\txdread.gc.hxx" />
+    <ClInclude Include="..\..\src\txdread.memcodec.hxx" />
     <ClInclude Include="..\..\src\txdread.miputil.hxx" />
     <ClInclude Include="..\..\src\txdread.natcompat.hxx" />
     <ClInclude Include="..\..\src\txdread.nativetex.hxx" />
     <ClInclude Include="..\..\src\txdread.palette.hxx" />
     <ClInclude Include="..\..\src\txdread.ps2.hxx" />
     <ClInclude Include="..\..\src\txdread.ps2gsman.hxx" />
+    <ClInclude Include="..\..\src\txdread.ps2shared.enc.hxx" />
+    <ClInclude Include="..\..\src\txdread.ps2shared.hxx" />
+    <ClInclude Include="..\..\src\txdread.psp.hxx" />
+    <ClInclude Include="..\..\src\txdread.psp.mem.hxx" />
     <ClInclude Include="..\..\src\txdread.pvr.hxx" />
     <ClInclude Include="..\..\src\txdread.rasterplg.hxx" />
     <ClInclude Include="..\..\src\txdread.size.hxx" />
@@ -516,6 +521,8 @@
     <ClCompile Include="..\..\src\txdread.ps2.cpp" />
     <ClCompile Include="..\..\src\txdread.ps2.debug.cpp" />
     <ClCompile Include="..\..\src\txdread.ps2mem.cpp" />
+    <ClCompile Include="..\..\src\txdread.psp.cpp" />
+    <ClCompile Include="..\..\src\txdread.psp.mem.cpp" />
     <ClCompile Include="..\..\src\txdread.pvr.cpp" />
     <ClCompile Include="..\..\src\txdread.size.blur.cpp" />
     <ClCompile Include="..\..\src\txdread.size.cpp" />
@@ -531,6 +538,7 @@
     <ClCompile Include="..\..\src\txdwrite.dxtmobile.cpp" />
     <ClCompile Include="..\..\src\txdwrite.gc.cpp" />
     <ClCompile Include="..\..\src\txdwrite.ps2.cpp" />
+    <ClCompile Include="..\..\src\txdwrite.psp.cpp" />
     <ClCompile Include="..\..\src\txdwrite.pvr.cpp" />
     <ClCompile Include="..\..\src\txdwrite.unc.cpp" />
     <ClCompile Include="..\..\src\txdwrite.xbox.cpp" />

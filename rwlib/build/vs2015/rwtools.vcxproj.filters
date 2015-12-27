@@ -198,6 +198,21 @@
     <ClInclude Include="..\..\include\renderware.utils.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\txdread.psp.hxx">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\txdread.memcodec.hxx">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\txdread.psp.mem.hxx">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\txdread.ps2shared.hxx">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\txdread.ps2shared.enc.hxx">
+      <Filter>Include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\dffread.cpp" />
@@ -271,6 +286,9 @@
     <ClCompile Include="..\..\src\rwinterface.warnings.cpp" />
     <ClCompile Include="..\..\src\rwimaging.utils.cpp" />
     <ClCompile Include="..\..\src\rwutils.cpp" />
+    <ClCompile Include="..\..\src\txdread.psp.cpp" />
+    <ClCompile Include="..\..\src\txdread.psp.mem.cpp" />
+    <ClCompile Include="..\..\src\txdwrite.psp.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="rwtools.natvis">
