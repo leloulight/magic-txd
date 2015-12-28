@@ -64,6 +64,8 @@ File "${dir}\v8u8.magf"
 !macro SHARED_INSTALL
 setOutPath $INSTDIR\resources
 File /r "..\..\resources\*"
+setOutPath $INSTDIR\data
+File /r "..\..\data\*"
 ${If} ${RunningX64}
     setOutPath $INSTDIR\formats_x64
     !insertmacro INCLUDE_FORMATS "..\..\output\formats_x64"
@@ -262,6 +264,7 @@ Section un.defUninst
 
 uninstmain:
     RMDIR /r $INSTDIR\resources
+    RMDIR /r $INSTDIR\data
     RMDIR /r $INSTDIR\licenses
     RMDIR /r /REBOOTOK $INSTDIR\formats
     RMDIR /r /REBOOTOK $INSTDIR\formats_x64
