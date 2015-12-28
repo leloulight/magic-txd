@@ -62,6 +62,9 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
         this->addImageGenMipmaps = true;
         this->lockDownTXDPlatform = true;
         this->adjustTextureChunksOnImport = true;
+        this->texaddViewportFill = false;
+        this->texaddViewportScaled = true;
+        this->texaddViewportBackground = false;
         this->showLogOnWarning = true;
         this->lastUsedAllExportFormat = "PNG";
         this->lastAllExportTarget = this->makeAppPath( "" ).toStdWString();

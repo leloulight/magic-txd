@@ -179,6 +179,7 @@ private:
     QScrollArea *previewScrollArea;
     QCheckBox *scaledPreviewCheckBox;
     QCheckBox *fillPreviewCheckBox;
+    QCheckBox *backgroundForPreviewCheckBox;
     QLabel *previewInfoLabel;
 
     // The buttons.

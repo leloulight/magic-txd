@@ -339,6 +339,9 @@ public:
     bool addImageGenMipmaps;
     bool lockDownTXDPlatform;
     bool adjustTextureChunksOnImport;
+    bool texaddViewportFill;
+    bool texaddViewportScaled;
+    bool texaddViewportBackground;
     
     // Options.
     bool showLogOnWarning;

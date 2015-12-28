@@ -1009,7 +1009,7 @@ TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create
 
                 // TODO: add API to fetch actually supported raster formats for a native texture.
                 // even though RenderWare may have added a bunch of raster formats, the native textures
-                // are completely liberal in inplementing any or not.
+                // are completely liberal in implementing any or not.
 
                 pixelFormatSelect->addItem(rw::GetRasterFormatStandardName(rw::RASTER_1555));
                 pixelFormatSelect->addItem(rw::GetRasterFormatStandardName(rw::RASTER_565));
@@ -1053,7 +1053,7 @@ TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create
 
             connect(fillPreviewCheckBox, &QCheckBox::stateChanged, this, &TexAddDialog::OnFillPreviewStateChanged);
 
-            QCheckBox *backgroundForPreviewCheckBox = new QCheckBox("Background");
+            backgroundForPreviewCheckBox = new QCheckBox("Background");
 
             connect(backgroundForPreviewCheckBox, &QCheckBox::stateChanged, this, &TexAddDialog::OnPreviewBackgroundStateChanged);
 
@@ -1134,6 +1134,11 @@ TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create
 
         // Set focus on the apply button, so users can quickly add textures.
         this->applyButton->setDefault( true );
+
+        // Setup the preview.
+        this->scaledPreviewCheckBox->setChecked( mainWnd->texaddViewportScaled );
+        this->fillPreviewCheckBox->setChecked( mainWnd->texaddViewportFill );
+        this->backgroundForPreviewCheckBox->setChecked( mainWnd->texaddViewportBackground );
     }
 
     this->isConstructing = false;
@@ -1706,6 +1711,13 @@ void TexAddDialog::OnTextureAddRequest(bool checked)
 
 void TexAddDialog::OnCloseRequest(bool checked)
 {
+    // We want to save some persistence related configurations.
+    {
+        mainWnd->texaddViewportScaled = this->scaledPreviewCheckBox->isChecked();
+        mainWnd->texaddViewportFill = this->fillPreviewCheckBox->isChecked();
+        mainWnd->texaddViewportBackground = this->backgroundForPreviewCheckBox->isChecked();
+    }
+
     // The user doesnt want to do it anymore.
     this->close();
 }
