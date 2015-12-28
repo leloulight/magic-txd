@@ -64,8 +64,9 @@ static gameToNaturalList_t gameToNaturalList =
     { rwkind::GAME_BULLY, "Bully" }
 };
 
+template <typename layoutClass>
 inline void createTargetConfigurationComponents(
-    QLayout *rootLayout,
+    layoutClass *rootLayout,
     rwkind::eTargetPlatform curPlatform, rwkind::eTargetGame curGame,
     QComboBox*& gameSelBoxOut,
     QComboBox*& platSelBoxOut
@@ -88,7 +89,7 @@ inline void createTargetConfigurationComponents(
 
     platformGroup->addWidget( platformSelBox );
 
-    rootLayout->addItem( platformGroup );
+    rootLayout->addLayout( platformGroup );
 
     QHBoxLayout *gameGroup = new QHBoxLayout();
 
@@ -105,7 +106,7 @@ inline void createTargetConfigurationComponents(
 
     gameGroup->addWidget( gameSelBox );
 
-    rootLayout->addItem( gameGroup );
+    rootLayout->addLayout( gameGroup );
 }
 
 };

@@ -203,7 +203,7 @@ void d3d9NativeTextureTypeProvider::DeserializeTexture( TextureBase *theTexture,
                     else
                     {
                         // Set it for clarity sake.
-                        // We do not load entirely complaint to GTA:SA, because we give higher priority to the D3DFORMAT field.
+                        // We do not load entirely compliant to GTA:SA, because we give higher priority to the D3DFORMAT field.
                         // Even though we do that, it is preferable, since the driver implementation is more powerful than the RW original types.
                         // TODO: add an interface property to enable GTA:SA-compliant loading behavior.
                         isD3DFORMATImportant = true;
