@@ -1006,7 +1006,14 @@ TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create
             // TODO: add API to fetch actually supported raster formats for a native texture.
             // even though RenderWare may have added a bunch of raster formats, the native textures
             // are completely liberal in inplementing any or not.
-
+            pixelFormatSelect->addItem(rw::GetRasterFormatStandardName(rw::RASTER_1555));
+            pixelFormatSelect->addItem(rw::GetRasterFormatStandardName(rw::RASTER_565));
+            pixelFormatSelect->addItem(rw::GetRasterFormatStandardName(rw::RASTER_4444));
+            pixelFormatSelect->addItem(rw::GetRasterFormatStandardName(rw::RASTER_LUM));
+            pixelFormatSelect->addItem(rw::GetRasterFormatStandardName(rw::RASTER_8888));
+            pixelFormatSelect->addItem(rw::GetRasterFormatStandardName(rw::RASTER_888));
+            pixelFormatSelect->addItem(rw::GetRasterFormatStandardName(rw::RASTER_555));
+            pixelFormatSelect->addItem(rw::GetRasterFormatStandardName(rw::RASTER_LUM_ALPHA));
 
             connect(pixelFormatSelect, (void (QComboBox::*)(const QString&))&QComboBox::activated, this, &TexAddDialog::OnTexturePixelFormatSelect);
 
@@ -1042,6 +1049,7 @@ TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create
 
         connect(fillPreviewCheckBox, &QCheckBox::stateChanged, this, &TexAddDialog::OnFillPreviewStateChanged);
 
+        backgroundForPreviewCheckBox = new QCheckBox(MAGIC_TEXT("Modify.Bckgr"));
 
         connect(backgroundForPreviewCheckBox, &QCheckBox::stateChanged, this, &TexAddDialog::OnPreviewBackgroundStateChanged);
 
