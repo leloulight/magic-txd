@@ -5,6 +5,8 @@
 #include <QFileDialog>
 #include <QHBoxLayout>
 
+#include "languages.h"
+
 // Put very generic shared things in this file.
 
 namespace qtshared
@@ -23,7 +25,7 @@ namespace qtshared
         {
             QString selPath =
                 QFileDialog::getExistingDirectory(
-                    this, "Browse Directory...",
+                    this, MAGIC_TEXT("Tools.BrwDesc"),
                     theEdit->text()
                 );
 
@@ -45,7 +47,7 @@ namespace qtshared
 
         pathRow->addWidget( pathEdit );
 
-        QPushButton *pathBrowseButton = new PathBrowseButton( "Browse", pathEdit );
+        QPushButton *pathBrowseButton = new PathBrowseButton( MAGIC_TEXT("Tools.Browse"), pathEdit );
 
         pathRow->addWidget( pathBrowseButton );
 
@@ -58,7 +60,7 @@ namespace qtshared
     {
         QHBoxLayout *genMipGroup = new QHBoxLayout();
 
-        QCheckBox *propGenMipmaps = new QCheckBox( "Generate mipmaps" );
+        QCheckBox *propGenMipmaps = new QCheckBox( MAGIC_TEXT("Tools.GenMips") );
 
         propGenMipmaps->setChecked( isEnabled );
 
@@ -70,7 +72,7 @@ namespace qtshared
 
         mipMaxLevelGroup->setAlignment( Qt::AlignRight );
 
-        mipMaxLevelGroup->addWidget( new QLabel( "Max:" ), 0, Qt::AlignRight );
+        mipMaxLevelGroup->addWidget( new QLabel( MAGIC_TEXT("Tools.MaxMips") ), 0, Qt::AlignRight );
 
         QLineEdit *maxMipLevelEdit = new QLineEdit( QString( "%1" ).arg( curMipMax ) );
 
@@ -96,8 +98,8 @@ namespace qtshared
         QLayout *gameRootLayout = qtshared::createPathSelectGroup( QString::fromStdWString( curGameRoot ), editGameRootOut );
         QLayout *outputRootLayout = qtshared::createPathSelectGroup( QString::fromStdWString( curOutputRoot ), editOutputRootOut );
 
-        basicPathForm->addRow( new QLabel( "Game root:" ), gameRootLayout );
-        basicPathForm->addRow( new QLabel( "Output root: " ), outputRootLayout );
+        basicPathForm->addRow( new QLabel(MAGIC_TEXT("Tools.GameRt")), gameRootLayout );
+        basicPathForm->addRow( new QLabel(MAGIC_TEXT("Tools.Output")), outputRootLayout );
 
         return basicPathForm;
     }

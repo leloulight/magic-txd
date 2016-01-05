@@ -1,17 +1,17 @@
 #pragma once
 
 #include <QDialog>
+#include "qtutils.h"
+#include "languages.h"
 
 struct TexNameWindow : public QDialog
 {
     inline TexNameWindow( MainWindow *mainWnd, TexInfoWidget *texInfo ) : QDialog( mainWnd )
     {
-        this->setWindowTitle( "Texture Name" );
+        this->setWindowTitle( MAGIC_TEXT("Main.Rename.Desc") );
         this->setWindowFlags( this->windowFlags() & ~Qt::WindowContextHelpButtonHint );
-
         this->mainWnd = mainWnd;
         this->texInfo = texInfo;
-        
         this->setWindowModality( Qt::WindowModal );
         this->setAttribute( Qt::WA_DeleteOnClose );
 
@@ -26,65 +26,24 @@ struct TexNameWindow : public QDialog
         }
 
         // Fill things.
-        QVBoxLayout *rootLayout = new QVBoxLayout( this );
+        MagicLayout<QHBoxLayout> layout(this);
+        layout.top->addWidget(new QLabel(MAGIC_TEXT("Main.Rename.Name")));
+        this->texNameEdit = new QLineEdit(curTexName);
+        layout.top->addWidget(this->texNameEdit);
+        this->texNameEdit->setMaxLength(32);
+        this->texNameEdit->setMinimumWidth(350);
 
-        rootLayout->setContentsMargins( 0, 0, 0, 0 );
-        rootLayout->setSpacing(0);
-        rootLayout->setSizeConstraint( QLayout::SetFixedSize );
+        connect(this->texNameEdit, &QLineEdit::textChanged, this, &TexNameWindow::OnUpdateTexName);
 
-        // We want a line with the texture name.
-        QHBoxLayout *texNameLayout = new QHBoxLayout();
+        this->buttonSet = CreateButton(MAGIC_TEXT("Main.Rename.Set"));
+        QPushButton *buttonCancel = CreateButton(MAGIC_TEXT("Main.Rename.Cancel"));
 
-        texNameLayout->setContentsMargins( QMargins( 12, 12, 12, 12 ) );
-        texNameLayout->setSpacing(10);
+        connect(this->buttonSet, &QPushButton::clicked, this, &TexNameWindow::OnRequestSet);
+        connect(buttonCancel, &QPushButton::clicked, this, &TexNameWindow::OnRequestCancel);
 
-        texNameLayout->addWidget( new QLabel( "Name:" ) );
-
-        QLineEdit *texNameEdit = new QLineEdit( curTexName );
-        texNameLayout->addWidget( texNameEdit );
-
-        texNameEdit->setMaxLength( 32 );
-
-        texNameEdit->setMinimumWidth(350);
-
-        this->texNameEdit = texNameEdit;
-
-        connect( texNameEdit, &QLineEdit::textChanged, this, &TexNameWindow::OnUpdateTexName );
-
-        QWidget *line = new QWidget();
-        line->setFixedHeight(1);
-        line->setObjectName("hLineBackground");
-
-        // Now we want a line with buttons.
-        QHBoxLayout *buttonLayout = new QHBoxLayout();
-        buttonLayout->setContentsMargins(QMargins(12, 12, 12, 12));
-        buttonLayout->setAlignment(Qt::AlignBottom | Qt::AlignRight);
-        buttonLayout->setSpacing(10);
-
-        QPushButton *buttonSet = new QPushButton( "Set" );
-        buttonSet->setMinimumWidth(90);
-
-        QPushButton *buttonCancel = new QPushButton( "Cancel" );
-        buttonCancel->setMinimumWidth(90);
-
-        this->buttonSet = buttonSet;
-
-        connect( buttonSet, &QPushButton::clicked, this, &TexNameWindow::OnRequestSet );
-        connect( buttonCancel, &QPushButton::clicked, this, &TexNameWindow::OnRequestCancel );
-
-        buttonLayout->addWidget( buttonSet );
-        buttonLayout->addWidget( buttonCancel );
-
-        QWidget *bottomWidget = new QWidget();
-        bottomWidget->setObjectName("background_0");
-        bottomWidget->setLayout(buttonLayout);
-
-        rootLayout->addLayout( texNameLayout );
-        rootLayout->addWidget( line );
-        rootLayout->addWidget( bottomWidget );
-        
+        layout.bottom->addWidget(this->buttonSet);
+        layout.bottom->addWidget(buttonCancel);
         this->mainWnd->texNameDlg = this;
-
         // Initialize the window.
         this->UpdateAccessibility();
     }

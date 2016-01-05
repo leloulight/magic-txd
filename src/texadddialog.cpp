@@ -2,6 +2,9 @@
 
 #include "qtrwutils.hxx"
 
+#include "qtutils.h"
+#include "languages.h"
+
 static const bool _lockdownPlatform = false;        // SET THIS TO TRUE FOR RELEASE.
 static const size_t _recommendedPlatformMaxName = 32;
 static const bool _enableMaskName = false;
@@ -865,265 +868,232 @@ TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create
 
     // TODO: verify that the texture name is full ANSI.
 
-    this->setWindowTitle(create_params.actionName + " Texture...");
+    this->setWindowTitle(create_params.actionDesc);
 
     QString curPlatformText;
 
     // Create our GUI interface.
-    QVBoxLayout *rootVertLayout = new QVBoxLayout();
-    rootVertLayout->setContentsMargins(0, 0, 0, 0);
-    rootVertLayout->setMargin(0);
-    rootVertLayout->setSpacing(0);
-    rootVertLayout->setAlignment(Qt::AlignTop);
+    MagicLayout<QHBoxLayout> layout;
+    layout.root->setAlignment(Qt::AlignTop);
 
-    QHBoxLayout *topLayout = new QHBoxLayout();
-    topLayout->setContentsMargins(12, 12, 12, 12);
-    topLayout->setSpacing(12);
-    { // Top
-        QVBoxLayout *leftPanelLayout = new QVBoxLayout();
-        leftPanelLayout->setAlignment(Qt::AlignTop);
-        { // Top Left (platform options)
-          //QWidget *leftTopWidget = new QWidget();
-            { // Names and Platform
-                texture_name_validator *texNameValid = new texture_name_validator( this );
+    QVBoxLayout *leftPanelLayout = new QVBoxLayout();
+    leftPanelLayout->setAlignment(Qt::AlignTop);
+    { // Top Left (platform options)
+      //QWidget *leftTopWidget = new QWidget();
+        { // Names and Platform
+            texture_name_validator *texNameValid = new texture_name_validator( this );
 
-                QFormLayout *leftTopLayout = new QFormLayout();
-                QLineEdit *texNameEdit = new QLineEdit(textureBaseName);
-                texNameEdit->setMaxLength(_recommendedPlatformMaxName);
-                texNameEdit->setFixedWidth(LEFTPANELADDDIALOGWIDTH);
-                texNameEdit->setFixedHeight(texNameEdit->sizeHint().height());
-                texNameEdit->setValidator( texNameValid );
-                this->textureNameEdit = texNameEdit;
-                leftTopLayout->addRow(new QLabel("Texture Name:"), texNameEdit);
-                if (_enableMaskName)
-                {
-                    QLineEdit *texMaskNameEdit = new QLineEdit(textureMaskName);
-                    texMaskNameEdit->setFixedWidth(LEFTPANELADDDIALOGWIDTH);
-                    texMaskNameEdit->setFixedHeight(texMaskNameEdit->sizeHint().height());
-                    texMaskNameEdit->setMaxLength(_recommendedPlatformMaxName);
-                    texMaskNameEdit->setValidator( texNameValid );
-                    leftTopLayout->addRow(new QLabel("Mask Name:"), texMaskNameEdit);
-                    this->textureMaskNameEdit = texMaskNameEdit;
-                }
-                else
-                {
-                    this->textureMaskNameEdit = NULL;
-                }
-                // If the current TXD already has a platform, we disable editing this platform and simply use it.
-                bool lockdownPlatform = ( _lockdownPlatform && mainWnd->lockDownTXDPlatform );
-
-                const char *currentForcedPlatform = mainWnd->GetTXDPlatformString(mainWnd->currentTXD);
-
-                this->hasConfidentPlatform = ( currentForcedPlatform != NULL );
-
-                QWidget *platformDisplayWidget;
-                if (lockdownPlatform == false || currentForcedPlatform == NULL)
-                {
-                    QComboBox *platformComboBox = createPlatformSelectComboBox(mainWnd);
-                    platformComboBox->setFixedWidth(LEFTPANELADDDIALOGWIDTH);
-                    
-                    connect(platformComboBox, (void (QComboBox::*)(const QString&))&QComboBox::activated, this, &TexAddDialog::OnPlatformSelect);
-
-                    platformDisplayWidget = platformComboBox;
-                    if (currentForcedPlatform != NULL)
-                    {
-                        platformComboBox->setCurrentText(currentForcedPlatform);
-                    }
-                    curPlatformText = platformComboBox->currentText();
-                }
-                else
-                {
-                    // We do not want to allow editing.
-                    QLineEdit *platformDisplayEdit = new QLineEdit();
-                    platformDisplayEdit->setFixedWidth(LEFTPANELADDDIALOGWIDTH);
-                    platformDisplayEdit->setDisabled(true);
-
-                    if ( currentForcedPlatform != NULL )
-                    {
-                        platformDisplayEdit->setText( currentForcedPlatform );
-                    }
-
-                    platformDisplayWidget = platformDisplayEdit;
-                    curPlatformText = platformDisplayEdit->text();
-                }
-                this->platformSelectWidget = platformDisplayWidget;
-                leftTopLayout->addRow(new QLabel("Platform:"), platformDisplayWidget);
-
-                this->platformHeaderLabel = new QLabel("Raster Format:");
-
-                leftTopLayout->addRow(platformHeaderLabel);
-
-                //leftTopWidget->setLayout(leftTopLayout);
-                //leftTopWidget->setObjectName("background_1");
-                leftPanelLayout->addLayout(leftTopLayout);
-
+            QFormLayout *leftTopLayout = new QFormLayout();
+            QLineEdit *texNameEdit = new QLineEdit(textureBaseName);
+            texNameEdit->setMaxLength(_recommendedPlatformMaxName);
+            //texNameEdit->setFixedWidth(LEFTPANELADDDIALOGWIDTH);
+            texNameEdit->setFixedHeight(texNameEdit->sizeHint().height());
+            texNameEdit->setValidator( texNameValid );
+            this->textureNameEdit = texNameEdit;
+            leftTopLayout->addRow(new QLabel(MAGIC_TEXT("Modify.TexName")), texNameEdit);
+            if (_enableMaskName)
+            {
+                QLineEdit *texMaskNameEdit = new QLineEdit(textureMaskName);
+                //texMaskNameEdit->setFixedWidth(LEFTPANELADDDIALOGWIDTH);
+                texMaskNameEdit->setFixedHeight(texMaskNameEdit->sizeHint().height());
+                texMaskNameEdit->setMaxLength(_recommendedPlatformMaxName);
+                texMaskNameEdit->setValidator( texNameValid );
+                leftTopLayout->addRow(new QLabel(MAGIC_TEXT("Modify.MskName")), texMaskNameEdit);
+                this->textureMaskNameEdit = texMaskNameEdit;
             }
-            //leftPanelLayout->addWidget(leftTopWidget);
-
-            QFormLayout *groupContentFormLayout = new QFormLayout();
-            { // Platform properties
-
-                this->platformPropForm = groupContentFormLayout;
-                QRadioButton *origRasterToggle = new QRadioButton("Original");
-
-                connect(origRasterToggle, &QRadioButton::toggled, this, &TexAddDialog::OnPlatformFormatTypeToggle);
-
-                this->platformOriginalToggle = origRasterToggle;
-                groupContentFormLayout->addRow(origRasterToggle);
-                QRadioButton *rawRasterToggle = new QRadioButton("Raw Raster");
-                this->platformRawRasterToggle = rawRasterToggle;
-                rawRasterToggle->setChecked(true);
-
-                connect(rawRasterToggle, &QRadioButton::toggled, this, &TexAddDialog::OnPlatformFormatTypeToggle);
-
-                groupContentFormLayout->addRow(rawRasterToggle);
-                this->platformRawRasterProp = rawRasterToggle;
-                QRadioButton *compressionFormatToggle = new QRadioButton("compressed");
-                this->platformCompressionToggle = compressionFormatToggle;
-
-                connect(compressionFormatToggle, &QRadioButton::toggled, this, &TexAddDialog::OnPlatformFormatTypeToggle);
-
-                QComboBox *compressionFormatSelect = new QComboBox();
-                //compressionFormatSelect->setFixedWidth(LEFTPANELADDDIALOGWIDTH - 18);
-
-                connect(compressionFormatSelect, (void (QComboBox::*)(const QString&))&QComboBox::activated, this, &TexAddDialog::OnTextureCompressionSeelct);
-
-                groupContentFormLayout->addRow(compressionFormatToggle, compressionFormatSelect);
-                this->platformCompressionSelectProp = compressionFormatSelect;
-                QRadioButton *paletteFormatToggle = new QRadioButton("palettized");
-                this->platformPaletteToggle = paletteFormatToggle;
-
-                connect(paletteFormatToggle, &QRadioButton::toggled, this, &TexAddDialog::OnPlatformFormatTypeToggle);
-
-                QComboBox *paletteFormatSelect = new QComboBox();
-                //paletteFormatSelect->setFixedWidth(LEFTPANELADDDIALOGWIDTH - 18);
-                paletteFormatSelect->addItem("PAL4");
-                paletteFormatSelect->addItem("PAL8");
-
-                connect(paletteFormatSelect, (void (QComboBox::*)(const QString&))&QComboBox::activated, this, &TexAddDialog::OnTexturePaletteTypeSelect);
-
-                groupContentFormLayout->addRow(paletteFormatToggle, paletteFormatSelect);
-                this->platformPaletteSelectProp = paletteFormatSelect;
-                QComboBox *pixelFormatSelect = new QComboBox();
-                //pixelFormatSelect->setFixedWidth(LEFTPANELADDDIALOGWIDTH - 18);
-
-                // TODO: add API to fetch actually supported raster formats for a native texture.
-                // even though RenderWare may have added a bunch of raster formats, the native textures
-                // are completely liberal in inplementing any or not.
-
-                pixelFormatSelect->addItem(rw::GetRasterFormatStandardName(rw::RASTER_1555));
-                pixelFormatSelect->addItem(rw::GetRasterFormatStandardName(rw::RASTER_565));
-                pixelFormatSelect->addItem(rw::GetRasterFormatStandardName(rw::RASTER_4444));
-                pixelFormatSelect->addItem(rw::GetRasterFormatStandardName(rw::RASTER_LUM));
-                pixelFormatSelect->addItem(rw::GetRasterFormatStandardName(rw::RASTER_8888));
-                pixelFormatSelect->addItem(rw::GetRasterFormatStandardName(rw::RASTER_888));
-                pixelFormatSelect->addItem(rw::GetRasterFormatStandardName(rw::RASTER_555));
-                pixelFormatSelect->addItem(rw::GetRasterFormatStandardName(rw::RASTER_LUM_ALPHA));
-
-                connect(pixelFormatSelect, (void (QComboBox::*)(const QString&))&QComboBox::activated, this, &TexAddDialog::OnTexturePixelFormatSelect);
-
-                groupContentFormLayout->addRow(new QLabel("Pixel Format:"), pixelFormatSelect);
-                this->platformPixelFormatSelectProp = pixelFormatSelect;
+            else
+            {
+                this->textureMaskNameEdit = NULL;
             }
+            // If the current TXD already has a platform, we disable editing this platform and simply use it.
+            bool lockdownPlatform = ( _lockdownPlatform && mainWnd->lockDownTXDPlatform );
 
-            leftPanelLayout->addLayout(groupContentFormLayout);
+            const char *currentForcedPlatform = mainWnd->GetTXDPlatformString(mainWnd->currentTXD);
 
-            leftPanelLayout->addSpacing(12);
+            this->hasConfidentPlatform = ( currentForcedPlatform != NULL );
 
-            { // Add some basic properties that exist no matter what platform.
-                QCheckBox *generateMipmapsToggle = new QCheckBox("Generate mipmaps");
-                generateMipmapsToggle->setChecked( mainWnd->addImageGenMipmaps );
+            QWidget *platformDisplayWidget;
+            if (lockdownPlatform == false || currentForcedPlatform == NULL)
+            {
+                QComboBox *platformComboBox = createPlatformSelectComboBox(mainWnd);
+                //platformComboBox->setFixedWidth(LEFTPANELADDDIALOGWIDTH);
+                
+                connect(platformComboBox, (void (QComboBox::*)(const QString&))&QComboBox::activated, this, &TexAddDialog::OnPlatformSelect);
 
-                this->propGenerateMipmaps = generateMipmapsToggle;
-
-                leftPanelLayout->addWidget(generateMipmapsToggle);
+                platformDisplayWidget = platformComboBox;
+                if (currentForcedPlatform != NULL)
+                {
+                    platformComboBox->setCurrentText(currentForcedPlatform);
+                }
+                curPlatformText = platformComboBox->currentText();
             }
+            else
+            {
+                // We do not want to allow editing.
+                QLineEdit *platformDisplayEdit = new QLineEdit();
+                //platformDisplayEdit->setFixedWidth(LEFTPANELADDDIALOGWIDTH);
+                platformDisplayEdit->setDisabled(true);
+
+                if ( currentForcedPlatform != NULL )
+                {
+                    platformDisplayEdit->setText( currentForcedPlatform );
+                }
+
+                platformDisplayWidget = platformDisplayEdit;
+                curPlatformText = platformDisplayEdit->text();
+            }
+            this->platformSelectWidget = platformDisplayWidget;
+            leftTopLayout->addRow(new QLabel(MAGIC_TEXT("Modify.Plat")), platformDisplayWidget);
+
+            this->platformHeaderLabel = new QLabel(MAGIC_TEXT("Modify.RasFmt"));
+
+            leftTopLayout->addRow(platformHeaderLabel);
+
+            //leftTopWidget->setLayout(leftTopLayout);
+            //leftTopWidget->setObjectName("background_1");
+            leftPanelLayout->addLayout(leftTopLayout);
+
         }
-        topLayout->addLayout(leftPanelLayout);
+        //leftPanelLayout->addWidget(leftTopWidget);
 
-        QVBoxLayout *rightPanelLayout = new QVBoxLayout();
-        { // Top right (preview options, preview image)
-            QHBoxLayout *rightTopPanelLayout = new QHBoxLayout();
-            scaledPreviewCheckBox = new QCheckBox("Scaled");
-            scaledPreviewCheckBox->setChecked(true);
+        QFormLayout *groupContentFormLayout = new QFormLayout();
+        { // Platform properties
 
-            connect(scaledPreviewCheckBox, &QCheckBox::stateChanged, this, &TexAddDialog::OnScalePreviewStateChanged);
+            this->platformPropForm = groupContentFormLayout;
+            QRadioButton *origRasterToggle = new QRadioButton(MAGIC_TEXT("Modify.Origin"));
 
-            fillPreviewCheckBox = new QCheckBox("Fill");
+            connect(origRasterToggle, &QRadioButton::toggled, this, &TexAddDialog::OnPlatformFormatTypeToggle);
 
-            connect(fillPreviewCheckBox, &QCheckBox::stateChanged, this, &TexAddDialog::OnFillPreviewStateChanged);
+            this->platformOriginalToggle = origRasterToggle;
+            groupContentFormLayout->addRow(origRasterToggle);
+            QRadioButton *rawRasterToggle = new QRadioButton(MAGIC_TEXT("Modify.RawRas"));
+            this->platformRawRasterToggle = rawRasterToggle;
+            rawRasterToggle->setChecked(true);
 
-            QCheckBox *backgroundForPreviewCheckBox = new QCheckBox("Background");
+            connect(rawRasterToggle, &QRadioButton::toggled, this, &TexAddDialog::OnPlatformFormatTypeToggle);
 
-            connect(backgroundForPreviewCheckBox, &QCheckBox::stateChanged, this, &TexAddDialog::OnPreviewBackgroundStateChanged);
+            groupContentFormLayout->addRow(rawRasterToggle);
+            this->platformRawRasterProp = rawRasterToggle;
+            QRadioButton *compressionFormatToggle = new QRadioButton(MAGIC_TEXT("Modify.Comp"));
+            this->platformCompressionToggle = compressionFormatToggle;
 
-            rightTopPanelLayout->addWidget(scaledPreviewCheckBox);
-            rightTopPanelLayout->addWidget(fillPreviewCheckBox);
-            rightTopPanelLayout->addWidget(backgroundForPreviewCheckBox);
-            rightPanelLayout->addLayout(rightTopPanelLayout);
+            connect(compressionFormatToggle, &QRadioButton::toggled, this, &TexAddDialog::OnPlatformFormatTypeToggle);
 
-            this->previewScrollArea = new QScrollArea;
-            this->previewScrollArea->setFrameShape(QFrame::NoFrame);
-            this->previewScrollArea->setObjectName("background_2");
-            this->previewLabel = new QLabel();
-            this->previewLabel->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
-            this->previewScrollArea->setWidget(this->previewLabel);
-            this->previewScrollArea->setAlignment(Qt::AlignCenter);
-            this->previewScrollArea->setFixedSize(300, 300);
+            QComboBox *compressionFormatSelect = new QComboBox();
+            //compressionFormatSelect->setFixedWidth(LEFTPANELADDDIALOGWIDTH - 18);
 
-            rightPanelLayout->addWidget(this->previewScrollArea);
+            connect(compressionFormatSelect, (void (QComboBox::*)(const QString&))&QComboBox::activated, this, &TexAddDialog::OnTextureCompressionSeelct);
 
-            QHBoxLayout *previewInfoLayout = new QHBoxLayout();
-            previewInfoLabel = new QLabel();
-            previewInfoLayout->addWidget(previewInfoLabel);
-            previewInfoLayout->setAlignment(Qt::AlignCenter);
+            groupContentFormLayout->addRow(compressionFormatToggle, compressionFormatSelect);
+            this->platformCompressionSelectProp = compressionFormatSelect;
+            QRadioButton *paletteFormatToggle = new QRadioButton(MAGIC_TEXT("Modify.Pal"));
+            this->platformPaletteToggle = paletteFormatToggle;
 
-            rightPanelLayout->addLayout(previewInfoLayout);
+            connect(paletteFormatToggle, &QRadioButton::toggled, this, &TexAddDialog::OnPlatformFormatTypeToggle);
+
+            QComboBox *paletteFormatSelect = new QComboBox();
+            //paletteFormatSelect->setFixedWidth(LEFTPANELADDDIALOGWIDTH - 18);
+            paletteFormatSelect->addItem("PAL4");
+            paletteFormatSelect->addItem("PAL8");
+
+            connect(paletteFormatSelect, (void (QComboBox::*)(const QString&))&QComboBox::activated, this, &TexAddDialog::OnTexturePaletteTypeSelect);
+
+            groupContentFormLayout->addRow(paletteFormatToggle, paletteFormatSelect);
+            this->platformPaletteSelectProp = paletteFormatSelect;
+            QComboBox *pixelFormatSelect = new QComboBox();
+            //pixelFormatSelect->setFixedWidth(LEFTPANELADDDIALOGWIDTH - 18);
+
+            // TODO: add API to fetch actually supported raster formats for a native texture.
+            // even though RenderWare may have added a bunch of raster formats, the native textures
+            // are completely liberal in inplementing any or not.
+
+            pixelFormatSelect->addItem(rw::GetRasterFormatStandardName(rw::RASTER_1555));
+            pixelFormatSelect->addItem(rw::GetRasterFormatStandardName(rw::RASTER_565));
+            pixelFormatSelect->addItem(rw::GetRasterFormatStandardName(rw::RASTER_4444));
+            pixelFormatSelect->addItem(rw::GetRasterFormatStandardName(rw::RASTER_LUM));
+            pixelFormatSelect->addItem(rw::GetRasterFormatStandardName(rw::RASTER_8888));
+            pixelFormatSelect->addItem(rw::GetRasterFormatStandardName(rw::RASTER_888));
+            pixelFormatSelect->addItem(rw::GetRasterFormatStandardName(rw::RASTER_555));
+            pixelFormatSelect->addItem(rw::GetRasterFormatStandardName(rw::RASTER_LUM_ALPHA));
+
+            connect(pixelFormatSelect, (void (QComboBox::*)(const QString&))&QComboBox::activated, this, &TexAddDialog::OnTexturePixelFormatSelect);
+
+            groupContentFormLayout->addRow(new QLabel(MAGIC_TEXT("Modify.PixFmt")), pixelFormatSelect);
+            this->platformPixelFormatSelectProp = pixelFormatSelect;
         }
-        topLayout->addLayout(rightPanelLayout);
+
+        leftPanelLayout->addLayout(groupContentFormLayout);
+
+        leftPanelLayout->addSpacing(12);
+
+        { // Add some basic properties that exist no matter what platform.
+            QCheckBox *generateMipmapsToggle = new QCheckBox(MAGIC_TEXT("Modify.GenML"));
+            generateMipmapsToggle->setChecked( mainWnd->addImageGenMipmaps );
+
+            this->propGenerateMipmaps = generateMipmapsToggle;
+
+            leftPanelLayout->addWidget(generateMipmapsToggle);
+        }
     }
-    rootVertLayout->addLayout(topLayout);
+    layout.top->addLayout(leftPanelLayout);
 
-    QWidget *line = new QWidget();
-    { // Middle (space and separator)
+    QVBoxLayout *rightPanelLayout = new QVBoxLayout();
+    rightPanelLayout->setAlignment(Qt::AlignHCenter);
+    { // Top right (preview options, preview image)
+        QHBoxLayout *rightTopPanelLayout = new QHBoxLayout();
+        scaledPreviewCheckBox = new QCheckBox(MAGIC_TEXT("Modify.Scaled"));
+        scaledPreviewCheckBox->setChecked(true);
 
-        line->setFixedHeight(1);
-        line->setObjectName("hLineBackground");
+        connect(scaledPreviewCheckBox, &QCheckBox::stateChanged, this, &TexAddDialog::OnScalePreviewStateChanged);
+
+        fillPreviewCheckBox = new QCheckBox(MAGIC_TEXT("Modify.Fill"));
+
+        connect(fillPreviewCheckBox, &QCheckBox::stateChanged, this, &TexAddDialog::OnFillPreviewStateChanged);
+
+        QCheckBox *backgroundForPreviewCheckBox = new QCheckBox(MAGIC_TEXT("Modify.Bckgr"));
+
+        connect(backgroundForPreviewCheckBox, &QCheckBox::stateChanged, this, &TexAddDialog::OnPreviewBackgroundStateChanged);
+
+        rightTopPanelLayout->addWidget(scaledPreviewCheckBox);
+        rightTopPanelLayout->addWidget(fillPreviewCheckBox);
+        rightTopPanelLayout->addWidget(backgroundForPreviewCheckBox);
+        rightPanelLayout->addLayout(rightTopPanelLayout);
+
+        this->previewScrollArea = new QScrollArea;
+        this->previewScrollArea->setFrameShape(QFrame::NoFrame);
+        this->previewScrollArea->setObjectName("background_2");
+        this->previewLabel = new QLabel();
+        this->previewLabel->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
+        this->previewScrollArea->setWidget(this->previewLabel);
+        this->previewScrollArea->setAlignment(Qt::AlignCenter);
+        this->previewScrollArea->setFixedSize(300, 300);
+
+        rightPanelLayout->addWidget(this->previewScrollArea);
+
+        this->previewInfoLabel = new QLabel();
+        rightPanelLayout->addWidget(this->previewInfoLabel);
+
+        rightPanelLayout->setAlignment(rightTopPanelLayout, Qt::AlignHCenter);
+        rightPanelLayout->setAlignment(this->previewScrollArea, Qt::AlignHCenter);
+        rightPanelLayout->setAlignment(this->previewInfoLabel, Qt::AlignHCenter);
     }
-    rootVertLayout->addWidget(line);
+    layout.top->addLayout(rightPanelLayout);
 
-    QGridLayout *gridBottomLayout = new QGridLayout();
-    gridBottomLayout->setContentsMargins(0, 0, 0, 0);
-    gridBottomLayout->setMargin(0);
-    QHBoxLayout *bottomControlButtonsGroup = new QHBoxLayout();
-    bottomControlButtonsGroup->setAlignment(Qt::AlignRight);
-    { // Bottom (buttons)
-      // Add control buttons at the bottom.
-        bottomControlButtonsGroup->setContentsMargins(12, 12, 12, 12);
-        QPushButton *cancelButton = new QPushButton("Cancel");
-        cancelButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-        this->cancelButton = cancelButton;
+    // Add control buttons at the bottom.
+    QPushButton *cancelButton = CreateButton(MAGIC_TEXT("Modify.Cancel"));
+    this->cancelButton = cancelButton;
 
-        connect(cancelButton, &QPushButton::clicked, this, &TexAddDialog::OnCloseRequest);
+    connect(cancelButton, &QPushButton::clicked, this, &TexAddDialog::OnCloseRequest);
 
-        bottomControlButtonsGroup->addWidget(cancelButton);
-        QPushButton *addButton = new QPushButton(create_params.actionName);
-        addButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-        addButton->setMinimumWidth(90);
-        this->applyButton = addButton;
+    layout.bottom->addWidget(cancelButton);
+    QPushButton *addButton = CreateButton(create_params.actionName);
+    this->applyButton = addButton;
 
-        connect(addButton, &QPushButton::clicked, this, &TexAddDialog::OnTextureAddRequest);
+    connect(addButton, &QPushButton::clicked, this, &TexAddDialog::OnTextureAddRequest);
 
-        bottomControlButtonsGroup->addWidget(addButton);
-    }
-    QWidget *bottomWidget = new QWidget();
-    bottomWidget->setObjectName("background_0");
-    bottomWidget->setLayout(bottomControlButtonsGroup);
-    rootVertLayout->addWidget(bottomWidget);
-
-    this->setLayout(rootVertLayout);
-    this->setFixedWidth(700);
-    this->setFixedHeight(465);
+    layout.bottom->addWidget(addButton);
+    
+    this->setLayout(layout.root);
 
     // Do initial stuff.
     {

@@ -74,7 +74,7 @@ inline void createTargetConfigurationComponents(
     // Now a target format selection group.
     QHBoxLayout *platformGroup = new QHBoxLayout();
 
-    platformGroup->addWidget( new QLabel( "Platform:" ) );
+    platformGroup->addWidget( new QLabel( MAGIC_TEXT("Tools.Plat") ) );
 
     QComboBox *platformSelBox = new QComboBox();
 
@@ -92,7 +92,7 @@ inline void createTargetConfigurationComponents(
 
     QHBoxLayout *gameGroup = new QHBoxLayout();
 
-    gameGroup->addWidget( new QLabel( "Game:" ) );
+    gameGroup->addWidget( new QLabel( MAGIC_TEXT("Tools.Game") ) );
 
     QComboBox *gameSelBox = new QComboBox();
 

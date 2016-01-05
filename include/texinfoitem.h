@@ -2,6 +2,7 @@
 
 #include <QLabel>
 #include <QVBoxLayout>
+#include "languages.h"
 
 class TexInfoWidget : public QWidget
 {
@@ -81,15 +82,21 @@ public:
         // After that how many mipmap levels we have.
         rw::uint32 mipCount = rasterInfo->getMipmapCount();
 
-        textureInfo += " " + QString::number( mipCount );
+        textureInfo += " " + QString::number( mipCount ) + " ";
 
         if ( mipCount == 1 )
         {
-            textureInfo += " level";
+            textureInfo += MAGIC_TEXT("Main.TexInfo.Level");
         }
         else
         {
-            textureInfo += " levels";
+            QString levelsKeyStr = "Main.TexInfo.Lvl" + QString::number(mipCount);
+            bool found;
+            QString levelsStr = MAGIC_TEXT_CHECK_IF_FOUND(levelsKeyStr, &found);
+            if(found)
+                textureInfo += levelsStr;
+            else
+                textureInfo += MAGIC_TEXT("Main.TexInfo.Levels");
         }
 
         return textureInfo;
@@ -112,8 +119,8 @@ public:
         }
         else
         {
-            this->texNameLabel->setText( "No Texture" );
-            this->texInfoLabel->setText( "invalid" );
+            this->texNameLabel->setText(MAGIC_TEXT("Main.TexInfo.NoTex"));
+            this->texInfoLabel->setText(MAGIC_TEXT("Main.TexInfo.Invalid"));
         }
     }
 

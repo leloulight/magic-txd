@@ -238,11 +238,8 @@ int main(int argc, char *argv[])
             {
                 w->setWindowIcon(QIcon(w->makeAppPath("resources\\icons\\stars.png")));
                 w->show();
-                QApplication::processEvents();
 
-                //char text[256];
-                //sprintf(text, "args: %d\n%s\n%s", argc, argv[0], argc > 1? argv[1] : "NO_ARG");
-                //MessageBoxA(0, text, 0, 0);
+                QApplication::processEvents();
 
                 QStringList appargs = a.arguments();
 

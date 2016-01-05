@@ -14,6 +14,9 @@
 
 #include <vector>
 
+#include "qtutils.h"
+#include "languages.h"
+
 class RwVersionDialog : public QDialog
 {
 	MainWindow *mainWnd;
@@ -113,7 +116,7 @@ private:
 
         // Check whether we should even enable input.
         // This is only if the user selected "Custom".
-        bool shouldAllowInput = ( this->gameSelectBox->currentText() == "Custom" );
+        bool shouldAllowInput = ( this->gameSelectBox->currentIndex() == 0 );
 
         this->versionLineEdit->setDisabled( !shouldAllowInput );
         this->buildLineEdit->setDisabled( !shouldAllowInput );
@@ -269,7 +272,7 @@ public slots:
 public:
 	RwVersionDialog( MainWindow *mainWnd ) : QDialog( mainWnd ) {
 		setObjectName("background_1");
-		setWindowTitle(tr("TXD Version Setup"));
+		setWindowTitle(MAGIC_TEXT("Main.SetupTV.Desc"));
         setWindowFlags( this->windowFlags() & ~Qt::WindowContextHelpButtonHint );
         setAttribute( Qt::WA_DeleteOnClose );
 
@@ -277,19 +280,15 @@ public:
 
         this->mainWnd = mainWnd;
 
-		QVBoxLayout *verticalLayout = new QVBoxLayout(this);
-
-		QVBoxLayout *topLayout = new QVBoxLayout;
-		topLayout->setSpacing(6);
-		topLayout->setMargin(10);
+        MagicLayout<QVBoxLayout> layout(this);
 
         /************* Set ****************/
 		QHBoxLayout *selectGameLayout = new QHBoxLayout;
-		QLabel *gameLabel = new QLabel(tr("Set"));
+		QLabel *gameLabel = new QLabel(MAGIC_TEXT("Main.SetupTV.Set"));
 		gameLabel->setObjectName("label25px");
 		QComboBox *gameComboBox = new QComboBox;
         gameComboBox->setFixedWidth(300);
-		gameComboBox->addItem("Custom");
+		gameComboBox->addItem(MAGIC_TEXT("Main.SetupTV.Custom"));
         for (unsigned int i = 0; i < this->mainWnd->versionSets.sets.size(); i++)
             gameComboBox->addItem(this->mainWnd->versionSets.sets[i].name);
         this->gameSelectBox = gameComboBox;
@@ -301,7 +300,7 @@ public:
 
         /************* Platform ****************/
         QHBoxLayout *selectPlatformLayout = new QHBoxLayout;
-        QLabel *platLabel = new QLabel(tr("Platform"));
+        QLabel *platLabel = new QLabel(MAGIC_TEXT("Main.SetupTV.Plat"));
         platLabel->setObjectName("label25px");
         QComboBox *platComboBox = new QComboBox;
         platComboBox->setFixedWidth(300);
@@ -314,7 +313,7 @@ public:
 
         /************* Data type ****************/
         QHBoxLayout *selectDataTypeLayout = new QHBoxLayout;
-        QLabel *dataTypeLabel = new QLabel(tr("Data type"));
+        QLabel *dataTypeLabel = new QLabel(MAGIC_TEXT("Main.SetupTV.Data"));
         dataTypeLabel->setObjectName("label25px");
         QComboBox *dataTypeComboBox = new QComboBox;
         dataTypeComboBox->setFixedWidth(300);
@@ -326,9 +325,10 @@ public:
         selectDataTypeLayout->addWidget(dataTypeComboBox);
 
 		QHBoxLayout *versionLayout = new QHBoxLayout;
-		QLabel *versionLabel = new QLabel(tr("Version"));
+        QString sVersion = MAGIC_TEXT("Main.SetupTV.Version");
+		QLabel *versionLabel = new QLabel(sVersion);
 		versionLabel->setObjectName("label25px");
-        versionLabel->setFixedWidth(80);
+        versionLabel->setFixedWidth(GetTextWidthInPixels(sVersion, 25));
 
 		QHBoxLayout *versionNumbersLayout = new QHBoxLayout;
 		QLineEdit *versionLine1 = new QLineEdit;
@@ -344,9 +344,10 @@ public:
 
         connect( versionLine1, &QLineEdit::textChanged, this, &RwVersionDialog::OnChangeVersion );
 
-		QLabel *buildLabel = new QLabel(tr("Build"));
+        QString sBuild = MAGIC_TEXT("Main.SetupTV.Build");
+		QLabel *buildLabel = new QLabel(sBuild);
 		buildLabel->setObjectName("label25px");
-        buildLabel->setFixedWidth(55);
+        buildLabel->setFixedWidth(GetTextWidthInPixels(sBuild, 25));
 		QLineEdit *buildLine = new QLineEdit;
 		buildLine->setInputMask(">HHHH");
         buildLine->clear();
@@ -361,40 +362,23 @@ public:
 
         versionLayout->setAlignment(Qt::AlignRight);
 
-		topLayout->addLayout(selectGameLayout);
-        topLayout->addLayout(selectPlatformLayout);
-        topLayout->addLayout(selectDataTypeLayout);
-		topLayout->addSpacing(8);
-		topLayout->addLayout(versionLayout);
+        layout.top->addLayout(selectGameLayout);
+        layout.top->addLayout(selectPlatformLayout);
+        layout.top->addLayout(selectDataTypeLayout);
+        layout.top->addSpacing(8);
+        layout.top->addLayout(versionLayout);
 
-		QWidget *line = new QWidget();
-		line->setFixedHeight(1);
-		line->setObjectName("hLineBackground");
-
-		QHBoxLayout *buttonsLayout = new QHBoxLayout;
-		QPushButton *buttonAccept = new QPushButton(tr("Accept"));
-		QPushButton *buttonCancel = new QPushButton(tr("Cancel"));
+		QPushButton *buttonAccept = new QPushButton(MAGIC_TEXT("Main.SetupTV.Accept"));
+		QPushButton *buttonCancel = new QPushButton(MAGIC_TEXT("Main.SetupTV.Cancel"));
 
         this->applyButton = buttonAccept;
 
         connect( buttonAccept, &QPushButton::clicked, this, &RwVersionDialog::OnRequestAccept );
         connect( buttonCancel, &QPushButton::clicked, this, &RwVersionDialog::OnRequestCancel );
 
-		buttonsLayout->addWidget(buttonAccept);
-		buttonsLayout->addWidget(buttonCancel);
-		buttonsLayout->setAlignment(Qt::AlignRight);
-		buttonsLayout->setMargin(10);
-		buttonsLayout->setSpacing(6);
+		layout.bottom->addWidget(buttonAccept);
+        layout.bottom->addWidget(buttonCancel);
 		
-		verticalLayout->addLayout(topLayout);
-		verticalLayout->addSpacing(12);
-		verticalLayout->addWidget(line);
-		verticalLayout->addLayout(buttonsLayout);
-		verticalLayout->setSpacing(0);
-		verticalLayout->setMargin(0);
-
-		verticalLayout->setSizeConstraint(QLayout::SetFixedSize);
-
         // Initiate the ready dialog.
         this->OnChangeSelectedGame( 0 );
 	}

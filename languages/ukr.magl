@@ -1,0 +1,190 @@
+MAGL|1|Ukrainian|Українська|UKR|Magic.TXD Team
+
+# language
+Lang.Lang                Мова:
+Lang.Authors             від _PARAM_1
+
+# textures list
+Main.TexInfo.Level       рівень
+Main.TexInfo.Levels      рівнів
+Main.TexInfo.Lvl2        рівня
+Main.TexInfo.Lvl3        ріаня
+Main.TexInfo.Lvl4        рівня
+Main.TexInfo.NoTex       Без текстури
+Main.TexInfo.Invalid     без даних
+
+# main menu
+Main.File                Файл
+Main.Edit                Змінити
+Main.Tools               Інструменти
+Main.Export              Експорт
+Main.View                Вигляд
+Main.Info                Інфо
+
+# main menu - File       
+Main.File.New            Створити
+Main.File.Open           Відкрити
+Main.File.Save           Зберегти
+Main.File.SaveAs         Зберегти як...
+Main.File.Close          Закрити поточний
+Main.File.Quit           Вийти
+
+# main menu - Edit       
+Main.Edit.Add            Додати
+Main.Edit.Replace        Замінити
+Main.Edit.Remove         Видалити
+Main.Edit.Rename         Перейменувати
+Main.Edit.Resize         Змінити розмір
+Main.Edit.Modify         Змінити формат
+Main.Edit.SetupML        Генерувати міп-рівні
+Main.Edit.ClearML        Видалити міп-рівні
+Main.Edit.SetupRP        Налаштування рендерингу
+Main.Edit.SetupTV        Налаштувати весрію TXD
+Main.Edit.Options        Опції
+
+# Rename
+Main.Rename.Desc         Ім'я текстури
+Main.Rename.Name         Ім'я:
+Main.Rename.Set          Прийняти
+Main.Rename.Cancel       Скасувати
+
+# Resize
+Main.Resize.Desc         Зміна розміру текстури
+Main.Resize.Width        Ширина:
+Main.Resize.Height       Висота:
+Main.Resize.Set          Прийняти
+Main.Resize.Cancel       Скасувати
+
+# Modify
+Modify.Desc.Add          Додати текстуру...
+Modify.Desc.Replace      Замінити текстуру...
+Modify.Desc.Modify       Змінити текстуру...
+Modify.Add               Додати
+Modify.Replace           Замінити
+Modify.Modify            Змінити
+Modify.TexName           Ім'я текстури:
+Modify.MskName           Ім'я маски:
+Modify.Plat              Платформа:
+Modify.RasFmt            Формат растру:
+Modify.Origin            Вихідний
+Modify.RawRas            Стандартний
+Modify.Comp              Стиснутий
+Modify.Pal               Палітра
+Modify.PixFmt            Формат пікселів:
+Modify.GenML             Генерувати міп-рівні
+Modify.Scaled            Масштаб
+Modify.Fill              Заповнити
+Modify.Bckgr             Фон
+Modify.Cancel            Відміна
+
+# Render Props
+Main.SetupRP.Desc        Налаштування рендерингу
+Main.SetupRP.Filter      Фільтрація:
+Main.SetupRP.UAddr       U-Адресація:
+Main.SetupRP.VAddr       V-Адресація:
+Main.SetupRP.Set         Прийняти
+Main.SetupRP.Cancel      Скасувати
+
+# Setup TXD Version dialog
+Main.SetupTV.Desc        Налаштування версії TXD
+Main.SetupTV.Set         Сет
+Main.SetupTV.Plat        Платформа
+Main.SetupTV.Data        Тип даних
+Main.SetupTV.Version     Версія
+Main.SetupTV.Build       Збірка
+Main.SetupTV.Accept      Прийняти
+Main.SetupTV.Cancel      Скасувати
+Main.SetupTV.Custom      Свій
+
+# Options
+Main.Options.Desc        Налаштування _MAGIC_TXD_NAME
+Main.Options.ShowLog     Відкрити лог при попередженнях
+Main.Options.DispIcn     Показувати значок гри
+Main.Options.Accept      Прийняти
+Main.Options.Cancel      Скасувати
+
+# main menu - Tools      
+Main.Tools.MassCnv       Масовий конверт
+Main.Tools.MassExp       Масовий експорт
+Main.Tools.MassBld       Масова збірка
+
+# main menu - Export
+Main.Export.ExpAll       Всі текстури
+Main.Export.Desc         Зберегти _PARAM_1 як...
+
+# Export All
+Main.ExpAll.Desc         Експорт усіх текстур...
+Main.ExpAll.Format       Формат:
+Main.ExpAll.Export       Експорт
+Main.ExpAll.Cancel       Скасувати
+Main.ExpAll.ExpTarg      Виберіть папку...
+
+# Log
+Main.Log.Desc            Лог
+Main.Log.Save            Зберегти
+Main.Log.Copy            Копіювати
+Main.Log.CopyAll         Копіювати все
+Main.Log.Clear           Очистити
+Main.Log.Close           Закрити
+Main.Log.SaveAs          Зберегти лог як...
+
+# View
+Main.View.FullImg        Показати повне зображення
+Main.View.Backgr         Прозорий фон
+Main.View.DispML         Показати міп-рівні
+Main.View.ShowLog        Відкрити лог
+Main.View.DarkThm        Темний інтерфейс
+Main.View.LightTm        Світлий інтерфейс
+
+# Info
+Main.Info.Website        Сайт програми
+Main.Info.About          Про програму
+
+# File - Open
+Main.Open.Desc           Відкрити TXD файл...
+
+# File - Save As
+Main.SaveAs.Desc         Зберегти TXD як...
+
+# Edit - Add
+Main.Edit.Add.Desc       Імпортувати текстуру...
+
+# About
+Main.Info.About.Desc     Про нас
+Main.Info.About.Credits  автори: _AUTHOR_NAME_1 та _AUTHOR_NAME_2
+Main.Info.About.ComUse1  Ця програма НЕ ПОВИННА використовуватися в комерційних цілях без явного письмового дозволу всіх третіх осіб, задіяних у розробці цієї програми. Ознайомтеся з ліцензійними угодами для отримання додаткової інформації.
+Main.Info.About.ComUse2  Команда _MAGIC_TXD_NAME вітає вашу підтримку!
+
+# Tools
+Tools.Browse             Вибрати
+Tools.BrwDesc            Вибір папки...
+Tools.GameRt             Вихідна папка:
+Tools.Output             Папка призначення:
+Tools.Plat               Платформа
+Tools.Game               Гра
+Tools.GenMips            Генерувати міп-рівні
+Tools.MaxMips            Макс.:
+
+# Mass export
+Tools.MassExp.Desc       Масовий експорт
+Tools.MassExp.ImgFmt     Формат зображень:
+Tools.MassExp.TxNmOnl    в назві лише ім'я текстури
+Tools.MassExp.PrTxdNm    в назві ім'я TXD
+Tools.MassExp.SepFld     розділити по папках
+Tools.MassExp.Export     Експорт
+Tools.MassExp.Cancel     Скасувати
+
+# Mass build
+Tools.MassBld.Desc       Масова збірка
+Tools.MassBld.Build      Зібрати
+Tools.MassBld.Cancel     Скасувати
+
+# Mass convert
+Tools.MassCnv.Desc       Масова конвертація
+Tools.MassCnv.ClearML    Видалити міп-рівні
+Tools.MassCnv.ImpFilt    Покращити фільтрацію
+Tools.MassCnv.CompTex    Стиснути текстури
+Tools.MassCnv.RecIMG     Перебудувати IMG-архіви
+Tools.MassCnv.CompIMG    Стиснути IMG
+Tools.MassCnv.Convert    Конвертувати
+Tools.MassCnv.Cancel     Скасувати

@@ -33,6 +33,8 @@
     </ClCompile>
     <ClCompile Include="..\..\src\taskcompletionwindow.cpp" />
     <ClCompile Include="..\..\src\textureviewport.cpp" />
+    <ClCompile Include="..\..\src\languages.cpp" />
+    <ClCompile Include="..\..\src\qtutils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="../../include/styles.h">
@@ -150,6 +152,15 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\textureviewport.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\languages.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\testmessage.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\qtutils.h">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>

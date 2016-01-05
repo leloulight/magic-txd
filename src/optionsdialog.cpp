@@ -1,83 +1,55 @@
 #include "mainwindow.h"
 #include "optionsdialog.h"
+#include "qtutils.h"
+#include "languages.h"
 
 OptionsDialog::OptionsDialog( MainWindow *mainWnd ) : QDialog( mainWnd )
 {
     this->mainWnd = mainWnd;
 
-    setWindowTitle( "Magic.TXD Options" );
+    setWindowTitle( MAGIC_TEXT("Main.Options.Desc") );
     setWindowFlags( this->windowFlags() & ~Qt::WindowContextHelpButtonHint );
 
     setAttribute( Qt::WA_DeleteOnClose );
 
     // This will be a fairly complicated dialog.
-    QVBoxLayout *mainVertical = new QVBoxLayout();
-    mainVertical->setContentsMargins(0, 0, 0, 0);
-    mainVertical->setSpacing(0);
+    MagicLayout<QVBoxLayout> layout(this);
 
-    // Pretty much options over options.
-    QVBoxLayout *optionsLayout = new QVBoxLayout();
-    optionsLayout->setContentsMargins(12, 12, 12, 12);
-    optionsLayout->setSpacing(12);
+    this->optionShowLogOnWarning = new QCheckBox(MAGIC_TEXT("Main.Options.ShowLog"));
+    this->optionShowLogOnWarning->setChecked( mainWnd->showLogOnWarning );
+    layout.top->addWidget(optionShowLogOnWarning);
+    this->optionShowGameIcon = new QCheckBox(MAGIC_TEXT("Main.Options.DispIcn"));
+    this->optionShowGameIcon->setChecked(mainWnd->showGameIcon);
+    layout.top->addWidget( optionShowGameIcon );
 
-    //optionsLayout->setAlignment( Qt::AlignTop );
-    
-    QCheckBox *optionShowLogOnWarning = new QCheckBox( "show TXD log on warning" );
-    optionShowLogOnWarning->setChecked( mainWnd->showLogOnWarning );
+    this->languageBox = new QComboBox();
 
-    this->optionShowLogOnWarning = optionShowLogOnWarning;
+    for (unsigned int i = 0; i < ourLanguages.languages.size(); i++) {
+        this->languageBox->addItem(ourLanguages.languages[i].info.nameInOriginal + " - " + ourLanguages.languages[i].info.name);
+    }
 
-    QCheckBox *optionShowGameIcon = new QCheckBox("show game icon");
-    optionShowGameIcon->setChecked(mainWnd->showGameIcon);
+    connect(this->languageBox, static_cast<void (QComboBox::*)(int index)>(&QComboBox::currentIndexChanged), this, &OptionsDialog::OnChangeSelectedLanguage);
 
-    this->optionShowGameIcon = optionShowGameIcon;
+    QFormLayout *languageFormLayout = new QFormLayout();
+    languageFormLayout->addRow(new QLabel(MAGIC_TEXT("Lang.Lang")), languageBox);
 
-    optionsLayout->addWidget( optionShowLogOnWarning );
-    optionsLayout->addWidget( optionShowGameIcon );
+    layout.top->addLayout(languageFormLayout);
 
-    mainVertical->addLayout( optionsLayout );
+    this->languageAuthorLabel = new QLabel();
 
-    // After everything we want to add our button row.
-    QHBoxLayout *buttonRow = new QHBoxLayout();
+    layout.top->addWidget(this->languageAuthorLabel);
 
-    buttonRow->setAlignment( Qt::AlignBottom | Qt::AlignRight );
+    this->languageBox->setCurrentIndex(ourLanguages.currentLanguage);
 
-    buttonRow->setContentsMargins(12, 12, 12, 12);
-    buttonRow->setSpacing(12);
+    layout.top->setAlignment(this->languageAuthorLabel, Qt::AlignRight);
 
-    QPushButton *buttonAccept = new QPushButton( "Accept" );
-    buttonAccept->setMaximumWidth( 100 );
+    QPushButton *buttonAccept = CreateButton(MAGIC_TEXT("Main.Options.Accept"));
+    layout.bottom->addWidget(buttonAccept);
+    QPushButton *buttonCancel = CreateButton(MAGIC_TEXT("Main.Options.Cancel"));
+    layout.bottom->addWidget(buttonCancel);
 
     connect( buttonAccept, &QPushButton::clicked, this, &OptionsDialog::OnRequestApply );
-
-    buttonRow->addWidget( buttonAccept );
-
-    QPushButton *buttonCancel = new QPushButton( "Cancel" );
-    buttonCancel->setMaximumWidth( 100 );
-
     connect( buttonCancel, &QPushButton::clicked, this, &OptionsDialog::OnRequestCancel );
-
-    buttonRow->addWidget( buttonCancel );
-
-    QWidget *line = new QWidget();
-    line->setFixedHeight(1);
-    line->setObjectName("hLineBackground");
-
-    mainVertical->addWidget(line);
-
-    QWidget *bottomWidget = new QWidget();
-    bottomWidget->setObjectName("background_0");
-    bottomWidget->setLayout(buttonRow);
-
-    mainVertical->addWidget( bottomWidget );
-
-    mainVertical->setSizeConstraint(QLayout::SetFixedSize);
-
-    this->setLayout( mainVertical );
-
-    //this->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    
-    //this->setFixedSize( 420, 200 );   // blaze it.
 
     mainWnd->optionsDlg = this;
 }
@@ -110,4 +82,31 @@ void OptionsDialog::serialize( void )
         mainWnd->showGameIcon = this->optionShowGameIcon->isChecked();
         mainWnd->updateFriendlyIcons();
     }
+
+    if (ourLanguages.currentLanguage != -1) {
+        if (mainWnd->lastLanguageFileName != ourLanguages.languages[ourLanguages.currentLanguage].languageFileName) {
+            mainWnd->lastLanguageFileName = ourLanguages.languages[ourLanguages.currentLanguage].languageFileName;
+
+            // Ask to restart the tool for language changing
+        }
+    }
+}
+
+void OptionsDialog::OnChangeSelectedLanguage(int newIndex)
+{
+    if (newIndex >= 0 && ourLanguages.languages[newIndex].info.authors != "Magic.TXD Team") {
+        QString names;
+        bool found = false;
+        QString namesFormat = MAGIC_TEXT_CHECK_IF_FOUND("Lang.Authors", &found);
+
+        if (found)
+            names = QString(namesFormat).arg(ourLanguages.languages[newIndex].info.authors);
+        else
+            names = QString("by " + ourLanguages.languages[newIndex].info.authors);
+        this->languageAuthorLabel->setText(names);
+
+        this->languageAuthorLabel->setDisabled(false);
+    }
+    else
+        this->languageAuthorLabel->setDisabled(true);
 }

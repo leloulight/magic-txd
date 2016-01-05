@@ -16,6 +16,12 @@
 
 #include "tools/txdgen.h"
 
+#include "qtutils.h"
+#include "languages.h"
+
+// TODO for all tools:
+// Make relative paths relate to app folder
+
 using namespace toolshare;
 
 struct massconvEnv : public magicSerializationProvider
@@ -150,21 +156,19 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
 
     this->mainwnd = mainwnd;
 
-    this->setWindowTitle( "Mass Conversion" );
+    this->setWindowTitle( MAGIC_TEXT("Tools.MassCnv.Desc") );
     this->setAttribute( Qt::WA_DeleteOnClose );
 
     this->setWindowFlags( this->windowFlags() & ~Qt::WindowContextHelpButtonHint );
 
     // Display lots of stuff.
-    QHBoxLayout *mainLayout = new QHBoxLayout( this );
+    MagicLayout<QHBoxLayout> layout(this);
 
-    mainLayout->setSizeConstraint( QLayout::SetFixedSize );
+    QVBoxLayout *leftPanelLayout = new QVBoxLayout();
 
-    QVBoxLayout *rootLayout = new QVBoxLayout();
+    layout.top->addLayout(leftPanelLayout);
 
-    mainLayout->addLayout( rootLayout );
-
-    rootLayout->addLayout(
+    leftPanelLayout->addLayout(
         qtshared::createGameRootInputOutputForm(
             massconv->txdgenConfig.c_gameRoot,
             massconv->txdgenConfig.c_outputRoot,
@@ -174,7 +178,7 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
     );
 
     createTargetConfigurationComponents(
-        rootLayout,
+        leftPanelLayout,
         massconv->txdgenConfig.c_targetPlatform,
         massconv->txdgenConfig.c_gameType,
         this->selGameBox,
@@ -182,15 +186,15 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
     );
 
     // INVASION OF CHECKBOXES.
-    QCheckBox *propClearMipmaps = new QCheckBox( "Clear mipmaps" );
+    QCheckBox *propClearMipmaps = new QCheckBox( MAGIC_TEXT("Tools.MassCnv.ClearML") );
 
     propClearMipmaps->setChecked( massconv->txdgenConfig.c_clearMipmaps );
 
     this->propClearMipmaps = propClearMipmaps;
 
-    rootLayout->addWidget( propClearMipmaps );
+    leftPanelLayout->addWidget( propClearMipmaps );
 
-    rootLayout->addLayout(
+    leftPanelLayout->addLayout(
         qtshared::createMipmapGenerationGroup(
             this,
             massconv->txdgenConfig.c_generateMipmaps,
@@ -200,78 +204,68 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
         )
     );
 
-    QCheckBox *propImproveFiltering = new QCheckBox( "Improve filtering" );
+    QCheckBox *propImproveFiltering = new QCheckBox( MAGIC_TEXT("Tools.MassCnv.ImpFilt") );
 
     propImproveFiltering->setChecked( massconv->txdgenConfig.c_improveFiltering );
 
     this->propImproveFiltering = propImproveFiltering;
 
-    rootLayout->addWidget( propImproveFiltering );
+    leftPanelLayout->addWidget( propImproveFiltering );
 
-    QCheckBox *propCompress = new QCheckBox( "Compress textures" );
+    QCheckBox *propCompress = new QCheckBox( MAGIC_TEXT("Tools.MassCnv.CompTex") );
 
     propCompress->setChecked( massconv->txdgenConfig.compressTextures );
 
     this->propCompressTextures = propCompress;
 
-    rootLayout->addWidget( propCompress );
+    leftPanelLayout->addWidget( propCompress );
 
-    QCheckBox *propReconstructIMG = new QCheckBox( "Reconstruct IMG archives" );
+    QCheckBox *propReconstructIMG = new QCheckBox( MAGIC_TEXT("Tools.MassCnv.RecIMG") );
 
     propReconstructIMG->setChecked( massconv->txdgenConfig.c_reconstructIMGArchives );
 
     this->propReconstructIMG = propReconstructIMG;
 
-    rootLayout->addWidget( propReconstructIMG );
+    leftPanelLayout->addWidget( propReconstructIMG );
 
-    QCheckBox *propCompressedIMG = new QCheckBox( "Compressed IMG" );
+    QCheckBox *propCompressedIMG = new QCheckBox( MAGIC_TEXT("Tools.MassCnv.CompIMG") );
 
     propCompressedIMG->setChecked( massconv->txdgenConfig.c_imgArchivesCompressed );
 
     this->propCompressedIMG = propCompressedIMG;
 
-    rootLayout->addWidget( propCompressedIMG );
-
-    // On the right we want to give messages to the user and the actual buttons to start things.
-    QVBoxLayout *logPaneGroup = new QVBoxLayout();
-
-    QHBoxLayout *buttonRow = new QHBoxLayout();
-
-    buttonRow->setAlignment( Qt::AlignCenter );
-
-    QPushButton *buttonConvert = new QPushButton( "Convert" );
-
-    this->buttonConvert = buttonConvert;
-
-    connect( buttonConvert, &QPushButton::clicked, this, &MassConvertWindow::OnRequestConvert );
-
-    buttonRow->addWidget( buttonConvert, 0, Qt::AlignCenter );
-
-    QPushButton *buttonCancel = new QPushButton( "Cancel" );
-
-    connect( buttonCancel, &QPushButton::clicked, this, &MassConvertWindow::OnRequestCancel );
-
-    buttonRow->addWidget( buttonCancel, 0, Qt::AlignCenter );
-
-    logPaneGroup->addLayout( buttonRow );
+    leftPanelLayout->addWidget( propCompressedIMG );
 
     // Add a log.
     QPlainTextEdit *logEdit = new QPlainTextEdit();
 
-    logEdit->setMinimumWidth( 450 );
+    logEdit->setMinimumWidth( 400 );
     logEdit->setReadOnly( true );
 
     this->logEdit = logEdit;
 
-    logPaneGroup->addWidget( logEdit );
-
-    mainLayout->addLayout( logPaneGroup );
+    layout.top->addWidget( logEdit );
 
     rw::Interface *rwEngine = mainwnd->GetEngine();
 
     this->convConsistencyLock = rw::CreateReadWriteLock( rwEngine );
 
     this->conversionThread = NULL;
+
+    // buttons at the bottom
+    QPushButton *buttonConvert = CreateButton(MAGIC_TEXT("Tools.MassCnv.Convert"));
+
+    this->buttonConvert = buttonConvert;
+
+    connect(buttonConvert, &QPushButton::clicked, this, &MassConvertWindow::OnRequestConvert);
+
+    layout.bottom->addWidget(buttonConvert, 0, Qt::AlignCenter);
+
+    QPushButton *buttonCancel = new QPushButton(MAGIC_TEXT("Tools.MassCnv.Cancel"));
+
+    connect(buttonCancel, &QPushButton::clicked, this, &MassConvertWindow::OnRequestCancel);
+
+    layout.bottom->addWidget(buttonCancel, 0, Qt::AlignCenter);
 
     LIST_INSERT( massconv->openDialogs.root, this->node );
 }

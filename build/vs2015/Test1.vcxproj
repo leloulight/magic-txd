@@ -649,6 +649,7 @@
     <ClCompile Include="..\..\src\friendlyicons.cpp" />
     <ClCompile Include="..\..\src\guiserialization.cpp" />
     <ClCompile Include="..\..\src\guiserialization.store.cpp" />
+    <ClCompile Include="..\..\src\languages.cpp" />
     <ClCompile Include="..\..\src\MagicExport.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release 2015|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug 2013|Win32'">NotUsing</PrecompiledHeader>
@@ -674,6 +675,7 @@
     <ClCompile Include="..\..\src\massconvert.cpp" />
     <ClCompile Include="..\..\src\massexport.cpp" />
     <ClCompile Include="..\..\src\optionsdialog.cpp" />
+    <ClCompile Include="..\..\src\qtutils.cpp" />
     <ClCompile Include="..\..\src\renderpropwindow.cpp" />
     <ClCompile Include="..\..\src\rwfswrap.cpp" />
     <ClCompile Include="..\..\src\streamcompress.cpp" />
@@ -694,7 +696,9 @@
     <ClInclude Include="..\..\include\defs.h" />
     <ClInclude Include="..\..\include\exportallwindow.h" />
     <ClInclude Include="..\..\include\guiserialization.h" />
+    <ClInclude Include="..\..\include\languages.h" />
     <ClInclude Include="..\..\include\MagicExport.h" />
+    <ClInclude Include="..\..\include\qtutils.h" />
     <ClInclude Include="..\..\include\massbuild.h" />
     <ClInclude Include="..\..\include\massconvert.h" />
     <ClInclude Include="..\..\include\massexport.h" />
@@ -708,6 +712,7 @@
     <ClInclude Include="..\..\include\rwversiondialog.h" />
     <ClInclude Include="..\..\include\streamcompress.h" />
     <ClInclude Include="..\..\include\taskcompletionwindow.h" />
+    <ClInclude Include="..\..\include\testmessage.h" />
     <ClInclude Include="..\..\include\texnamewindow.h" />
     <ClInclude Include="..\..\include\textureviewport.h" />
     <ClInclude Include="..\..\include\txdadddialog.h" />

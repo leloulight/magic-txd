@@ -77,80 +77,80 @@ public:
     ~MainWindow();
 
 private:
-    void initializeNativeFormats( void );
-    void shutdownNativeFormats( void );
+    void initializeNativeFormats(void);
+    void shutdownNativeFormats(void);
 
-    void UpdateExportAccessibility( void );
-    void UpdateAccessibility( void );
+    void UpdateExportAccessibility(void);
+    void UpdateAccessibility(void);
 
 public:
     void openTxdFile(QString fileName);
-    void setCurrentTXD( rw::TexDictionary *txdObj );
+    void setCurrentTXD(rw::TexDictionary *txdObj);
     void updateTextureList(bool selectLastItemInList);
 
-    void showFriendlyIcons( void );
-    void hideFriendlyIcons( void );
-    void updateFriendlyIcons( void );
+    void showFriendlyIcons(void);
+    void hideFriendlyIcons(void);
+    void updateFriendlyIcons(void);
 
 private:
-    void updateFriendlyVisibilityState( void );
+    void updateFriendlyVisibilityState(void);
 
 public:
-    void updateWindowTitle( void );
-    void updateTextureMetaInfo( void );
-    void updateAllTextureMetaInfo( void );
+    void updateWindowTitle(void);
+    void updateTextureMetaInfo(void);
+    void updateAllTextureMetaInfo(void);
 
-    void updateTextureView( void );
+    void updateTextureView(void);
 
     void updateTextureViewport(void);
 
-    void saveCurrentTXDAt( QString location );
+    void saveCurrentTXDAt(QString location);
 
-	void clearViewImage( void );
-    
-    rw::Interface* GetEngine( void )            { return this->rwEngine; }
+    void clearViewImage(void);
 
-    static const char* GetTXDPlatformString( rw::TexDictionary *txd );
+    rw::Interface* GetEngine(void) { return this->rwEngine; }
 
-    void SetTXDPlatformString( rw::TexDictionary *txd, const char *platform );
+    static const char* GetTXDPlatformString(rw::TexDictionary *txd);
+
+    void SetTXDPlatformString(rw::TexDictionary *txd, const char *platform);
 
 private:
-    void DoAddTexture( const TexAddDialog::texAddOperation& params );
+    void DoAddTexture(const TexAddDialog::texAddOperation& params);
 
-    inline void setCurrentFilePath( const QString& newPath )
+    inline void setCurrentFilePath(const QString& newPath)
     {
-        this->openedTXDFileInfo = QFileInfo( newPath );
+        this->openedTXDFileInfo = QFileInfo(newPath);
         this->hasOpenedTXDFileInfo = true;
 
         this->updateWindowTitle();
     }
 
-    inline void clearCurrentFilePath( void )
+    inline void clearCurrentFilePath(void)
     {
         this->hasOpenedTXDFileInfo = false;
 
         this->updateWindowTitle();
     }
 
-public slots:
-    void onCreateNewTXD( bool checked );
-    void onOpenFile( bool checked );
-    void onCloseCurrent( bool checked );
+    public slots:
+    void onCreateNewTXD(bool checked);
+    void onOpenFile(bool checked);
+    void onCloseCurrent(bool checked);
 
-	void onTextureItemChanged(QListWidgetItem *texInfoItem, QListWidgetItem *prevTexInfoItem);
+    void onTextureItemChanged(QListWidgetItem *texInfoItem, QListWidgetItem *prevTexInfoItem);
 
     void onToggleShowFullImage(bool checked);
-    void onToggleShowMipmapLayers( bool checked );
-	void onToggleShowBackground(bool checked);
-    void onToggleShowLog( bool checked );
-    void onSetupMipmapLayers( bool checked );
-    void onClearMipmapLayers( bool checked );
+    void onToggleShowMipmapLayers(bool checked);
+    void onToggleShowBackground(bool checked);
+    void onToggleShowLog(bool checked);
+    void onSetupMipmapLayers(bool checked);
+    void onClearMipmapLayers(bool checked);
 
-    void onRequestSaveTXD( bool checked );
-    void onRequestSaveAsTXD( bool checked );
+    void onRequestSaveTXD(bool checked);
+    void onRequestSaveAsTXD(bool checked);
 
-    void onSetupRenderingProps( bool checked );
-	void onSetupTxdVersion(bool checked);
+    void onSetupRenderingProps(bool checked);
+    void onSetupTxdVersion(bool checked);
     void onShowOptions(bool checked);
 
     void onRequestMassConvert(bool checked);
@@ -164,33 +164,33 @@ public slots:
     void onAboutUs(bool checked);
 
 private:
-    QString requestValidImagePath( void );
+    QString requestValidImagePath(void);
 
-public slots:
-    void onAddTexture( bool checked );
-    void onReplaceTexture( bool checked );
-    void onRemoveTexture( bool checked );
-    void onRenameTexture( bool checked );
-    void onResizeTexture( bool checked );
-    void onManipulateTexture( bool checked );
-    void onExportTexture( bool checked );
-    void onExportAllTextures( bool checked );
+    public slots:
+    void onAddTexture(bool checked);
+    void onReplaceTexture(bool checked);
+    void onRemoveTexture(bool checked);
+    void onRenameTexture(bool checked);
+    void onResizeTexture(bool checked);
+    void onManipulateTexture(bool checked);
+    void onExportTexture(bool checked);
+    void onExportAllTextures(bool checked);
 
 protected:
-    void addTextureFormatExportLinkToMenu( QMenu *theMenu, const char *displayName, const char *defaultExt, const char *formatName );
+    void addTextureFormatExportLinkToMenu(QMenu *theMenu, const char *displayName, const char *defaultExt, const char *formatName);
 
 private:
     class rwPublicWarningDispatcher : public rw::WarningManagerInterface
     {
     public:
-        inline rwPublicWarningDispatcher( MainWindow *theWindow )
+        inline rwPublicWarningDispatcher(MainWindow *theWindow)
         {
             this->mainWnd = theWindow;
         }
 
-        void OnWarning( std::string&& msg ) override
+        void OnWarning(std::string&& msg) override
         {
-			this->mainWnd->txdLog->addLogMessage( ansi_to_qt( msg ), LOGMSG_WARNING);
+            this->mainWnd->txdLog->addLogMessage(ansi_to_qt(msg), LOGMSG_WARNING);
         }
 
     private:
@@ -212,7 +212,7 @@ private:
     QListWidget *textureListWidget;
 
     TexViewportWidget *imageView; // we handle full 2d-viewport as a scroll-area
-	QLabel *imageWidget;    // we use label to put image on it
+    QLabel *imageWidget;    // we use label to put image on it
 
     QLabel *txdNameLabel;
 
@@ -224,7 +224,14 @@ private:
 
     bool showFullImage;
     bool drawMipmapLayers;
-	bool showBackground;
+    bool showBackground;
+
+    QMenu *fileMenu;
+    QMenu *editMenu;
+    QMenu *toolsMenu;
+    QMenu *exportMenu;
+    QMenu *viewMenu;
+    QMenu *infoMenu;
 
     // Accessibility management variables (menu items).
     // FILE MENU.
@@ -343,6 +350,8 @@ public:
     // Options.
     bool showLogOnWarning;
     bool showGameIcon;
+
+    QString lastLanguageFileName;
 
     // ExportAllWindow
     std::string lastUsedAllExportFormat;

@@ -37,6 +37,7 @@ public:
             this->overwriteTexName = NULL;
         }
 
+        QString actionDesc;
         QString actionName;
         eCreationType type;
         struct

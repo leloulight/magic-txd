@@ -13,6 +13,8 @@
 #include <QHBoxLayout>
 #include <qlistwidget.h>
 #include <QlistWidgetItem>
+#include <QApplication>
+#include <QClipboard>
 
 #include "defs.h"
 
@@ -80,21 +82,11 @@ public:
 	void clearLog(void);
 
 private:
-	static void str_replace(std::string &s, const std::string &search, const std::string &replace)
-	{
-	    for (size_t pos = 0;; pos += replace.length())
-		{
-			pos = s.find(search, pos);
-			if (pos == std::string::npos) break;
-			s.erase(pos, search.length());
-			s.insert(pos, replace);
-		}
-	}
 
-	std::string getLogItemLine(LogItemWidget *itemWidget)
+	QString getLogItemLine(LogItemWidget *itemWidget)
 	{
-		std::string str = "*** [\"";
-		std::string spacing = "\n          ";
+		QString str = "*** [\"";
+		QString spacing = "\n          ";
 		switch (itemWidget->getMessageType())
 		{
 		case LOGMSG_ERROR:
@@ -110,36 +102,16 @@ private:
 			str += "info\"]: ";
 		}
 		QString message = itemWidget->textLabel->text();
-		std::string ansiMessage = qt_to_ansi( message );
-		str_replace(ansiMessage, "\n", spacing);
-		str += ansiMessage;
+        message.replace("\n", spacing);
+		str += message;
 		str += "\n";
 		return str;
 	}
 
-	// NOTE - 
-	// Windows only
-	static void strToClipboard(const std::string &s)
+	static void strToClipboard(const QString &s)
 	{
-		if (OpenClipboard(NULL))
-		{
-			if (!EmptyClipboard())
-			{
-				CloseClipboard();
-				return;
-			}
-			HGLOBAL hg = GlobalAlloc(GMEM_MOVEABLE, s.size() + 1);
-			if (!hg)
-			{
-				CloseClipboard();
-				return;
-			}
-			memcpy(GlobalLock(hg), s.c_str(), s.size() + 1);
-			GlobalUnlock(hg);
-			SetClipboardData(CF_TEXT, hg);
-			CloseClipboard();
-			GlobalFree(hg);
-		}
+        QClipboard *clipboard = QApplication::clipboard();
+        clipboard->setText(s);
 	}
 
 public:
@@ -151,7 +123,7 @@ public:
 public slots:
     void onLogSaveRequest()
     {
-	    QString saveFileName = QFileDialog::getSaveFileName(parent, parent->tr("Save Log as..."), QString(), "Log File (*.txt)");
+	    QString saveFileName = QFileDialog::getSaveFileName(parent, MAGIC_TEXT("Main.Log.SaveAs"), QString(), "Log File (*.txt)");
 
 	    if (saveFileName.length() != 0)
 	    {
@@ -175,7 +147,7 @@ public slots:
 	    QList<QListWidgetItem *> reversed;
 	    reversed.reserve(selection.size());
 	    std::reverse_copy(selection.begin(), selection.end(), std::back_inserter(reversed));
-	    std::string str;
+	    QString str;
 	    foreach(QListWidgetItem *item, reversed)
 	    {
 		    LogItemWidget *logWidget = (LogItemWidget *)this->listWidget->itemWidget(item);
@@ -186,7 +158,7 @@ public slots:
 
     void onCopyAllLogLinesRequest()
     {
-	    std::string str;
+	    QString str;
 	    int numRows = this->listWidget->count();
 	    for (int n = numRows - 1; n >= 0; n--)
 	    {

@@ -5,12 +5,14 @@
 #include <QPushButton>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
+#include "qtutils.h"
+#include "languages.h"
 
 struct TexResizeWindow : public QDialog
 {
     inline TexResizeWindow( MainWindow *mainWnd, TexInfoWidget *texInfo ) : QDialog( mainWnd )
     {
-        this->setWindowTitle( "Texture Resize" );
+        this->setWindowTitle( MAGIC_TEXT("Main.Resize.Desc") );
         this->setWindowFlags( this->windowFlags() & ~Qt::WindowContextHelpButtonHint );
 
         this->mainWnd = mainWnd;
@@ -51,12 +53,7 @@ struct TexResizeWindow : public QDialog
         }
 
         // We want a basic dialog with two dimension line edits and our typical two buttons.
-        QVBoxLayout *rootLayout = new QVBoxLayout( this );
-
-        rootLayout->setSizeConstraint( QLayout::SetFixedSize );
-
-        // A form layout might do it.
-        QFormLayout *dimmForm = new QFormLayout();
+        MagicLayout<QFormLayout> layout(this);
 
         // We only want to accept unsigned integers.
         QIntValidator *dimensionValidator = new QIntValidator( 1, ( rasterRules.maximum ? rasterRules.maxVal : 4096 ), this );
@@ -75,30 +72,21 @@ struct TexResizeWindow : public QDialog
 
         connect( heightEdit, &QLineEdit::textChanged, this, &TexResizeWindow::OnChangeDimensionProperty );
 
-        dimmForm->addRow( new QLabel( "Width:" ), widthEdit );
-        dimmForm->addRow( new QLabel( "Height:" ), heightEdit );
-
-        rootLayout->addLayout( dimmForm );
-
-        // Make some space.
-        dimmForm->setContentsMargins( QMargins( 0, 0, 0, 10 ) );
+        layout.top->addRow( new QLabel( MAGIC_TEXT("Main.Resize.Width") ), widthEdit );
+        layout.top->addRow( new QLabel( MAGIC_TEXT("Main.Resize.Height") ), heightEdit );
 
         // Now the buttons, I guess.
-        QHBoxLayout *buttonRow = new QHBoxLayout();
-
-        QPushButton *buttonSet = new QPushButton( "Set" );
-        buttonRow->addWidget( buttonSet );
+        QPushButton *buttonSet = CreateButton(MAGIC_TEXT("Main.Resize.Set"));
+        layout.bottom->addWidget( buttonSet );
 
         this->buttonSet = buttonSet;
 
         connect( buttonSet, &QPushButton::clicked, this, &TexResizeWindow::OnRequestSet );
 
-        QPushButton *buttonCancel = new QPushButton( "Cancel" );
-        buttonRow->addWidget( buttonCancel );
+        QPushButton *buttonCancel = CreateButton(MAGIC_TEXT("Main.Resize.Cancel"));
+        layout.bottom->addWidget( buttonCancel );
 
         connect( buttonCancel, &QPushButton::clicked, this, &TexResizeWindow::OnRequestCancel );
-
-        rootLayout->addLayout( buttonRow );
 
         // Remember us as the only resize dialog.
         mainWnd->resizeDlg = this;

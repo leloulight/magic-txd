@@ -1,4 +1,7 @@
 #include "mainwindow.h"
+#include <QTextStream>
+#include "qtutils.h"
+#include "languages.h"
 
 TxdLog::TxdLog(MainWindow *mainWnd, QString AppPath, QWidget *ParentWidget)
 {
@@ -7,36 +10,55 @@ TxdLog::TxdLog(MainWindow *mainWnd, QString AppPath, QWidget *ParentWidget)
 	parent = ParentWidget;
 	positioned = false;
 	logWidget = new QWidget(ParentWidget, Qt::Window);
-	logWidget->setWindowTitle("Log");
-	logWidget->setMinimumSize(450, 150);
-	logWidget->resize(500, 200);
+	logWidget->setWindowTitle(MAGIC_TEXT("Main.Log.Desc"));
+	//logWidget->setMinimumSize(450, 150);
+	//logWidget->resize(500, 200);
 	logWidget->setObjectName("background_1");
 	/* --- Top panel --- */
-	QPushButton *buttonSave = new QPushButton("Save");
+
+    unsigned int menuWidth =  5 * 20 * 2 + 10 * 6;
+    QString sLogSave = MAGIC_TEXT("Main.Log.Save");
+    menuWidth += GetTextWidthInPixels(sLogSave, 20);
+	QPushButton *buttonSave = CreateButton(sLogSave);
 
 	connect(buttonSave, &QPushButton::clicked, this, &TxdLog::onLogSaveRequest);
 
 	buttonSave->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-	QPushButton *buttonCopy = new QPushButton("Copy");
+
+    QString sLogCopy = MAGIC_TEXT("Main.Log.Copy");
+    menuWidth += GetTextWidthInPixels(sLogCopy, 20);
+	QPushButton *buttonCopy = CreateButton(sLogCopy);
 
 	connect(buttonCopy, &QPushButton::clicked, this, &TxdLog::onCopyLogLinesRequest);
 
 	buttonSave->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-	QPushButton *buttonCopyAll = new QPushButton("Copy All");
+
+    QString sLogCopyAll = MAGIC_TEXT("Main.Log.CopyAll");
+    menuWidth += GetTextWidthInPixels(sLogCopyAll, 20);
+	QPushButton *buttonCopyAll = CreateButton(sLogCopyAll);
 
 	connect(buttonCopyAll, &QPushButton::clicked, this, &TxdLog::onCopyAllLogLinesRequest);
 
 	buttonCopyAll->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-	QPushButton *buttonClear = new QPushButton("Clear");
+
+    QString sLogClear = MAGIC_TEXT("Main.Log.Clear");
+    menuWidth += GetTextWidthInPixels(sLogClear, 20);
+	QPushButton *buttonClear = CreateButton(sLogClear);
 
 	connect(buttonClear, &QPushButton::clicked, this, &TxdLog::onLogClearRequest);
 
 	buttonClear->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-	QPushButton *buttonClose = new QPushButton("Close");
+
+    QString sLogClose = MAGIC_TEXT("Main.Log.Close");
+    menuWidth += GetTextWidthInPixels(sLogClose, 20);
+	QPushButton *buttonClose = CreateButton(sLogClose);
 
 	connect(buttonClose, &QPushButton::clicked, this, &TxdLog::onWindowHideRequest);
 
 	buttonClose->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+
+    CalculateWindowSize(logWidget, menuWidth, 450, 0, 150, 200);
+
 	QHBoxLayout *buttonsLayout = new QHBoxLayout;
 	buttonsLayout->addWidget(buttonSave);
 	buttonsLayout->addWidget(buttonCopy);
@@ -154,29 +176,27 @@ void TxdLog::clearLog( void )
 void TxdLog::saveLog( QString fileName )
 {
 	// Try to open a file handle.
-	const std::wstring unicodeFileName = fileName.toStdWString();
-	FILE *file = _wfopen(unicodeFileName.c_str(), L"wt");
-	if (file)
-	{
-		time_t currentTime = time(NULL);
-		char timeBuf[1024];
-		std::strftime(timeBuf, sizeof(timeBuf), "%A %c", localtime(&currentTime));
-		fprintf(file, "Magic.TXD generated log file on %s\ncompiled on %s version: %s\n", timeBuf, __DATE__, MTXD_VERSION_STRING);
-		// Go through all log rows and print them.
-		int numRows = this->listWidget->count();
-		for (int n = numRows - 1; n >= 0; n--)
-		{
-			// Get message information.
-			QListWidgetItem *logItem = (QListWidgetItem*)(this->listWidget->item(n));
-			if (logItem)
-			{
-				LogItemWidget *logWidget = (LogItemWidget *)this->listWidget->itemWidget(logItem);
-				std::string str = getLogItemLine(logWidget);
-				fputs(str.c_str(), file);
-			}
-		}
-		fclose(file);
-	}
+    QFile file(fileName);
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QTextStream out(&file);
+        out.setCodec("UTF-8");
+        time_t currentTime = time(NULL);
+        char timeBuf[1024];
+        std::strftime(timeBuf, sizeof(timeBuf), "%A %c", localtime(&currentTime));
+        out << "Magic.TXD generated log file on " << timeBuf << "\ncompiled on " << __DATE__ << " version: " << MTXD_VERSION_STRING << "\n";
+        // Go through all log rows and print them.
+        int numRows = this->listWidget->count();
+        for (int n = numRows - 1; n >= 0; n--)
+        {
+            // Get message information.
+            QListWidgetItem *logItem = (QListWidgetItem*)(this->listWidget->item(n));
+            if (logItem)
+            {
+                LogItemWidget *logWidget = (LogItemWidget *)this->listWidget->itemWidget(logItem);
+                out << getLogItemLine(logWidget);
+            }
+        }
+    }
 	else
 	{
 		// TODO: display reason why failed.

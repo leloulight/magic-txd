@@ -11,6 +11,9 @@
 
 #include "../src/tools/txdexport.h"
 
+#include "qtutils.h"
+#include "languages.h"
+
 struct massexportEnv : public magicSerializationProvider
 {
     inline void Initialize( MainWindow *mainWnd )
@@ -82,34 +85,30 @@ MassExportWindow::MassExportWindow( MainWindow *mainWnd ) : QDialog( mainWnd )
 
     rw::Interface *rwEngine = mainWnd->GetEngine();
 
-    this->setWindowTitle( "Mass Exporting" );
+    this->setWindowTitle(MAGIC_TEXT("Tools.MassExp.Desc"));
     this->setWindowFlags( this->windowFlags() & ~Qt::WindowContextHelpButtonHint );
 
     this->setAttribute( Qt::WA_DeleteOnClose );
 
     // Just one pane with things to edit.
     // First we should put the paths to perform the extraction.
-    QVBoxLayout *rootLayout = new QVBoxLayout();
-
-    rootLayout->setSizeConstraint( QLayout::SetFixedSize );
-
-    rootLayout->setSizeConstraint( QLayout::SetFixedSize );
-
+    MagicLayout<QVBoxLayout> layout(this);
+    
     QFormLayout *pathRootForm = new QFormLayout();
 
     pathRootForm->addRow(
-        new QLabel( "Game root:" ),
+        new QLabel(MAGIC_TEXT("Tools.GameRt")),
         qtshared::createPathSelectGroup( QString::fromStdWString( env->config.gameRoot ), this->editGameRoot )
     );
 
     QHBoxLayout *outputRootGroup = new QHBoxLayout();
 
     pathRootForm->addRow(
-        new QLabel( "Output root:" ),
+        new QLabel(MAGIC_TEXT("Tools.Output")),
         qtshared::createPathSelectGroup( QString::fromStdWString( env->config.outputRoot ), this->editOutputRoot )
    );
 
-    rootLayout->addLayout( pathRootForm );
+    layout.top->addLayout( pathRootForm );
 
     // The other most important thing is to select a target image format.
     // This is pretty easy.
@@ -117,7 +116,7 @@ MassExportWindow::MassExportWindow( MainWindow *mainWnd ) : QDialog( mainWnd )
 
     imgFormatGroup->setContentsMargins( 0, 0, 0, 10 );
 
-    imgFormatGroup->addWidget( new QLabel( "Image format:" ) );
+    imgFormatGroup->addWidget(new QLabel(MAGIC_TEXT("Tools.MassExp.ImgFmt")));
 
     QComboBox *boxRecomImageFormat = new QComboBox();
     {
@@ -156,7 +155,7 @@ MassExportWindow::MassExportWindow( MainWindow *mainWnd ) : QDialog( mainWnd )
 
     imgFormatGroup->addWidget( boxRecomImageFormat );
 
-    rootLayout->addLayout( imgFormatGroup );
+    layout.top->addLayout( imgFormatGroup );
 
     // Textures can be extracted in multiple modes, depending on how the user likes it best.
     // The plain mode extracts textures simply by their texture name into the location of the TXD.
@@ -165,7 +164,7 @@ MassExportWindow::MassExportWindow( MainWindow *mainWnd ) : QDialog( mainWnd )
 
     MassExportModule::eOutputType outputType = env->config.outputType;
 
-    QRadioButton *optionExportPlain = new QRadioButton( "with texture name only" );
+    QRadioButton *optionExportPlain = new QRadioButton(MAGIC_TEXT("Tools.MassExp.TxNmOnl"));
 
     this->optionExportPlain = optionExportPlain;
 
@@ -174,9 +173,9 @@ MassExportWindow::MassExportWindow( MainWindow *mainWnd ) : QDialog( mainWnd )
         optionExportPlain->setChecked( true );
     }
 
-    rootLayout->addWidget( optionExportPlain );
+    layout.top->addWidget( optionExportPlain );
 
-    QRadioButton *optionExportTXDName = new QRadioButton( "pre-prended with TXD name" );
+    QRadioButton *optionExportTXDName = new QRadioButton(MAGIC_TEXT("Tools.MassExp.PrTxdNm"));
 
     this->optionExportTXDName = optionExportTXDName;
 
@@ -185,9 +184,9 @@ MassExportWindow::MassExportWindow( MainWindow *mainWnd ) : QDialog( mainWnd )
         optionExportTXDName->setChecked( true );
     }
 
-    rootLayout->addWidget( optionExportTXDName );
+    layout.top->addWidget( optionExportTXDName );
 
-    QRadioButton *optionExportFolders = new QRadioButton( "in seperate folders" );
+    QRadioButton *optionExportFolders = new QRadioButton(MAGIC_TEXT("Tools.MassExp.SepFld"));
 
     this->optionExportFolders = optionExportFolders;
 
@@ -196,28 +195,20 @@ MassExportWindow::MassExportWindow( MainWindow *mainWnd ) : QDialog( mainWnd )
         optionExportFolders->setChecked( true );
     }
 
-    rootLayout->addWidget( optionExportFolders );
+    layout.top->addWidget( optionExportFolders );
 
     // The dialog is done, we finish off with the typical buttons.
-    QHBoxLayout *buttonRow = new QHBoxLayout();
-
-    buttonRow->setContentsMargins( 0, 15, 0, 0 );
-
-    QPushButton *buttonExport = new QPushButton( "Export" );
+    QPushButton *buttonExport = CreateButton(MAGIC_TEXT("Tools.MassExp.Export"));
 
     connect( buttonExport, &QPushButton::clicked, this, &MassExportWindow::OnRequestExport );
 
-    buttonRow->addWidget( buttonExport );
+    layout.bottom->addWidget( buttonExport );
 
-    QPushButton *buttonCancel = new QPushButton( "Cancel" );
+    QPushButton *buttonCancel = CreateButton(MAGIC_TEXT("Tools.MassExp.Cancel"));
 
     connect( buttonCancel, &QPushButton::clicked, this, &MassExportWindow::OnRequestCancel );
 
-    buttonRow->addWidget( buttonCancel );
-
-    rootLayout->addLayout( buttonRow );
-
-    this->setLayout( rootLayout );
+    layout.bottom->addWidget( buttonCancel );
 
     LIST_INSERT( env->openDialogs.root, this->node );
 

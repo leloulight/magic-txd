@@ -5,7 +5,7 @@ AboutDialog::AboutDialog( MainWindow *mainWnd ) : QDialog( mainWnd )
 {
     this->mainWnd = mainWnd;
 
-    setWindowTitle( "About us" );
+    setWindowTitle(MAGIC_TEXT("Main.Info.About.Desc"));
     setWindowFlags( this->windowFlags() & ~Qt::WindowContextHelpButtonHint );
 
     setAttribute( Qt::WA_DeleteOnClose );
@@ -31,7 +31,7 @@ AboutDialog::AboutDialog( MainWindow *mainWnd ) : QDialog( mainWnd )
     
     headerGroup->addWidget( mainLogoLabel );
 
-    QLabel *labelCopyrightHolders = new QLabel( "created by DK22Pac and The_GTA" );
+    QLabel *labelCopyrightHolders = new QLabel(MAGIC_TEXT("Main.Info.About.Credits"));
 
     labelCopyrightHolders->setObjectName( "labelCopyrightHolders" );
 
@@ -45,12 +45,7 @@ AboutDialog::AboutDialog( MainWindow *mainWnd ) : QDialog( mainWnd )
 
     QLabel *labelDoNotUseCommercially = new QLabel();
     labelDoNotUseCommercially->setWordWrap(true);
-    labelDoNotUseCommercially->setText(
-            "This tool MUST NOT be used commercially without the explicit, written "
-            "authorization of all third-parties that contributed to this tool. See the "
-            "licenses for more information.\n\n" \
-            "The Magic.TXD team welcomes your support!"
-        );
+    labelDoNotUseCommercially->setText(MAGIC_TEXT("Main.Info.About.ComUse1") + "\n\n" + MAGIC_TEXT("Main.Info.About.ComUse2"));
 
     labelDoNotUseCommercially->setAlignment(Qt::AlignCenter);
 

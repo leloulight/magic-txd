@@ -18,6 +18,8 @@
 
 #include <ctime>
 
+#include "languages.h"
+
 enum eLogMessageType
 {
     LOGMSG_INFO,
@@ -155,6 +157,14 @@ public:
         menuBar->setObjectName( "logWindowMenu" );
 
         // The main menu allows for specific control over the menu contents.
+        unsigned int logWidth = 0;
+
+        //QString sInfoMenu = MAGIC_TEXT("Main.Info");
+        //unsigned int width = GetTextWidthInPixels(sInfoMenu, FONT_SIZE_BUTTON);
+
+
+        //infoMenu = menu->addMenu("&" + sInfoMenu);
+
         QMenu *mainMenu = menuBar->addMenu( "&Main" );
 
         QAction *actionClear = new QAction( "&Clear", this );

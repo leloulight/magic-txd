@@ -3,6 +3,9 @@
 
 #include "qtinteroputils.hxx"
 
+#include "qtutils.h"
+#include "languages.h"
+
 struct addrToNatural
 {
     rw::eRasterStageAddressMode mode;
@@ -107,7 +110,7 @@ QComboBox* RenderPropWindow::createFilterBox( void ) const
 
 RenderPropWindow::RenderPropWindow( MainWindow *mainWnd, TexInfoWidget *texInfo ) : QDialog( mainWnd )
 {
-    this->setWindowTitle( "Rendering Props" );
+    this->setWindowTitle( MAGIC_TEXT("Main.SetupRP.Desc") );
     this->setWindowFlags( this->windowFlags() & ~Qt::WindowContextHelpButtonHint );
 
     this->mainWnd = mainWnd;
@@ -131,13 +134,9 @@ RenderPropWindow::RenderPropWindow( MainWindow *mainWnd, TexInfoWidget *texInfo 
         }
     }
 
-    QVBoxLayout *rootLayout = new QVBoxLayout( this );
-
-    rootLayout->setSizeConstraint( QLayout::SetFixedSize );
-
     // We want to put rows of combo boxes.
     // Best put them into a form layout.
-    QFormLayout *propForm = new QFormLayout();
+    MagicLayout<QFormLayout> layout(this);
 
     QComboBox *filteringSelectBox = createFilterBox();
     {
@@ -155,7 +154,7 @@ RenderPropWindow::RenderPropWindow( MainWindow *mainWnd, TexInfoWidget *texInfo 
 
     connect( filteringSelectBox, (void (QComboBox::*)( const QString& ))&QComboBox::activated, this, &RenderPropWindow::OnAnyPropertyChange );
 
-    propForm->addRow( new QLabel( "Filtering:" ), filteringSelectBox );
+    layout.top->addRow( new QLabel(MAGIC_TEXT("Main.SetupRP.Filter")), filteringSelectBox );
 
     QComboBox *uaddrSelectBox = createAddressingBox();
     {
@@ -173,7 +172,7 @@ RenderPropWindow::RenderPropWindow( MainWindow *mainWnd, TexInfoWidget *texInfo 
 
     connect( uaddrSelectBox, (void (QComboBox::*)( const QString& ))&QComboBox::activated, this, &RenderPropWindow::OnAnyPropertyChange );
 
-    propForm->addRow( new QLabel( "U Addressing:" ), uaddrSelectBox );
+    layout.top->addRow( new QLabel(MAGIC_TEXT("Main.SetupRP.UAddr")), uaddrSelectBox );
 
     QComboBox *vaddrSelectBox = createAddressingBox();
     {
@@ -191,29 +190,20 @@ RenderPropWindow::RenderPropWindow( MainWindow *mainWnd, TexInfoWidget *texInfo 
 
     connect( vaddrSelectBox, (void (QComboBox::*)( const QString& ))&QComboBox::activated, this, &RenderPropWindow::OnAnyPropertyChange );
 
-    propForm->addRow( new QLabel( "V Addressing:" ), vaddrSelectBox );
-
-    rootLayout->addLayout( propForm );
-
-    // Give some sort of padding between buttons and form.
-    propForm->setContentsMargins( QMargins( 0, 0, 0, 10 ) );
+    layout.top->addRow( new QLabel(MAGIC_TEXT("Main.SetupRP.VAddr")), vaddrSelectBox );
 
     // And now add the usual buttons.
-    QHBoxLayout *buttonRow = new QHBoxLayout();
-
-    QPushButton *buttonSet = new QPushButton( "Set" );
-    buttonRow->addWidget( buttonSet );
+    QPushButton *buttonSet = CreateButton(MAGIC_TEXT("Main.SetupRP.Set"));
+    layout.bottom->addWidget( buttonSet );
 
     this->buttonSet = buttonSet;
 
     connect( buttonSet, &QPushButton::clicked, this, &RenderPropWindow::OnRequestSet );
 
-    QPushButton *buttonCancel = new QPushButton( "Cancel" );
-    buttonRow->addWidget( buttonCancel );
+    QPushButton *buttonCancel = CreateButton(MAGIC_TEXT("Main.SetupRP.Cancel"));
+    layout.bottom->addWidget( buttonCancel );
 
     connect( buttonCancel, &QPushButton::clicked, this, &RenderPropWindow::OnRequestCancel );
-
-    rootLayout->addLayout( buttonRow );
 
     mainWnd->renderPropDlg = this;
 

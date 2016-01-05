@@ -7,6 +7,9 @@
 #include <QPushButton>
 #include <QLabel>
 
+#include "qtutils.h"
+#include "languages.h"
+
 // We want to have a simple window which can be used by the user to export all textures of a TXD.
 
 struct ExportAllWindow : public QDialog
@@ -97,74 +100,45 @@ private:
     }
 
 public:
-    inline ExportAllWindow( MainWindow *mainWnd, rw::TexDictionary *texDict ) : QDialog( mainWnd )
+    ExportAllWindow( MainWindow *mainWnd, rw::TexDictionary *texDict ) : QDialog( mainWnd )
     {
         this->mainWnd = mainWnd;
         this->texDict = texDict;
-
         setWindowFlags( windowFlags() & ~Qt::WindowContextHelpButtonHint );
-
-        setWindowTitle( "Select Format..." );
+        setWindowTitle( MAGIC_TEXT("Main.ExpAll.Desc") );
         setWindowModality( Qt::WindowModal );
-
         this->setAttribute( Qt::WA_DeleteOnClose );
-
         // Basic window with a combo box and a button to accept.
-        QVBoxLayout *rootLayout = new QVBoxLayout();
-
-        rootLayout->setSizeConstraint( QLayout::SetFixedSize );
-
-        QHBoxLayout *formatSelRow = new QHBoxLayout();
-
-        formatSelRow->addWidget( new QLabel( "Format:" ) );
+        MagicLayout<QFormLayout> layout(this);
 
         QComboBox *formatSelBox = new QComboBox();
-
         // List formats that are supported by every raster in a TXD.
         {
             std::vector <std::string> formatsSupported = GetAllSupportedImageFormats( texDict );
-
             for ( const std::string& format : formatsSupported )
-            {
                 formatSelBox->addItem( ansi_to_qt( format ) );
-            }
         }
 
         // Select the last used format, if it exists.
         {
             int foundLastUsed = formatSelBox->findText( ansi_to_qt( mainWnd->lastUsedAllExportFormat ), Qt::MatchExactly );
-
             if ( foundLastUsed != -1 )
-            {
                 formatSelBox->setCurrentIndex( foundLastUsed );
-            }
         }
-
         this->formatSelBox = formatSelBox;
-
-        formatSelRow->addWidget( formatSelBox );
-
-        rootLayout->addLayout( formatSelRow );
+        layout.top->addRow(new QLabel(MAGIC_TEXT("Main.ExpAll.Format")), formatSelBox);
 
         // Add the button row last.
-        QHBoxLayout *buttonRow = new QHBoxLayout();
-
-        QPushButton *buttonExport = new QPushButton( "Export" );
+        QPushButton *buttonExport = CreateButton( MAGIC_TEXT("Main.ExpAll.Export") );
 
         connect( buttonExport, &QPushButton::clicked, this, &ExportAllWindow::OnRequestExport );
 
-        buttonRow->addWidget( buttonExport );
-
-        QPushButton *buttonCancel = new QPushButton( "Cancel" );
+        layout.bottom->addWidget( buttonExport );
+        QPushButton *buttonCancel = CreateButton( MAGIC_TEXT("Main.ExpAll.Cancel") );
 
         connect( buttonCancel, &QPushButton::clicked, this, &ExportAllWindow::OnRequestCancel );
 
-        buttonRow->addWidget( buttonCancel );
-
-        rootLayout->addLayout( buttonRow );
-
-        this->setLayout( rootLayout );
-
+        layout.bottom->addWidget( buttonCancel );
         this->setMinimumWidth( 250 );
     }
 
@@ -186,7 +160,7 @@ public slots:
 
             // We need a directory to export to, so ask the user.
             QString folderExportTarget = QFileDialog::getExistingDirectory(
-                this, "Select Export Target...",
+                this, MAGIC_TEXT("Main.ExpAll.ExpTarg"),
                 QString::fromStdWString( this->mainWnd->lastAllExportTarget )
             );
 

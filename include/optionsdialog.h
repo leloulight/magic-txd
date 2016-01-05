@@ -11,6 +11,7 @@ struct OptionsDialog : public QDialog
 public slots:
     void OnRequestApply( bool checked );
     void OnRequestCancel( bool checked );
+    void OnChangeSelectedLanguage(int newIndex);
 
 private:
     void serialize( void );
@@ -19,4 +20,7 @@ private:
 
     QCheckBox *optionShowLogOnWarning;
     QCheckBox *optionShowGameIcon;
+
+    QComboBox *languageBox;
+    QLabel *languageAuthorLabel;
 };

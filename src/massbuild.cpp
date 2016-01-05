@@ -11,6 +11,9 @@
 
 #include "tools/txdbuild.h"
 
+#include "qtutils.h"
+#include "languages.h"
+
 using namespace toolshare;
 
 struct massbuildEnv : public magicSerializationProvider
@@ -89,18 +92,16 @@ MassBuildWindow::MassBuildWindow( MainWindow *mainWnd ) : QDialog( mainWnd )
 
     massbuildEnv *env = massbuildEnvRegister.GetPluginStruct( mainWnd );
 
-    this->setWindowTitle( "Mass Building" );
+    this->setWindowTitle( MAGIC_TEXT("Tools.MassBld.Desc") );
     this->setWindowFlags( this->windowFlags() & ~Qt::WindowContextHelpButtonHint );
 
     this->setAttribute( Qt::WA_DeleteOnClose );
 
     // We want a simple vertical dialog that is of fixed size and has buttons at the bottom.
-    QVBoxLayout *rootLayout = new QVBoxLayout();
-
-    rootLayout->setSizeConstraint( QLayout::SetFixedSize );
-
+    MagicLayout<QVBoxLayout> layout;
+    
     // First the ability to select the paths.
-    rootLayout->addLayout(
+    layout.top->addLayout(
         qtshared::createGameRootInputOutputForm(
             env->config.gameRoot,
             env->config.outputRoot,
@@ -109,21 +110,21 @@ MassBuildWindow::MassBuildWindow( MainWindow *mainWnd ) : QDialog( mainWnd )
         )
     );
 
-    rootLayout->addSpacing( 10 );
+    layout.top->addSpacing( 10 );
 
     // Then we should have a target configuration.
     createTargetConfigurationComponents(
-        rootLayout,
+        layout.top,
         env->config.targetPlatform,
         env->config.targetGame,
         this->selGameBox,
         this->selPlatformBox
     );
 
-    rootLayout->addSpacing( 10 );
+    layout.top->addSpacing( 10 );
 
     // Now some basic properties that the user might want to do globally.
-    rootLayout->addLayout(
+    layout.top->addLayout(
         qtshared::createMipmapGenerationGroup(
             this,
             env->config.generateMipmaps,
@@ -133,26 +134,22 @@ MassBuildWindow::MassBuildWindow( MainWindow *mainWnd ) : QDialog( mainWnd )
         )
     );
 
-    rootLayout->addSpacing( 15 );
+    layout.top->addSpacing( 15 );
 
     // Last thing is the typical button row.
-    QHBoxLayout *buttonRow = new QHBoxLayout();
-
-    QPushButton *buttonBuild = new QPushButton( "Build" );
+    QPushButton *buttonBuild = CreateButton( MAGIC_TEXT("Tools.MassBld.Build") );
 
     connect( buttonBuild, &QPushButton::clicked, this, &MassBuildWindow::OnRequestBuild );
 
-    buttonRow->addWidget( buttonBuild );
+    layout.bottom->addWidget( buttonBuild );
 
-    QPushButton *buttonCancel = new QPushButton( "Cancel" );
+    QPushButton *buttonCancel = CreateButton( MAGIC_TEXT("Tools.MassBld.Cancel") );
 
     connect( buttonCancel, &QPushButton::clicked, this, &MassBuildWindow::OnRequestCancel );
 
-    buttonRow->addWidget( buttonCancel );
+    layout.bottom->addWidget( buttonCancel );
 
-    rootLayout->addLayout( buttonRow );
-
-    this->setLayout( rootLayout );
+    this->setLayout(layout.root);
 
     // We want to know about all active windows.
     LIST_INSERT( env->windows.root, this->node );
