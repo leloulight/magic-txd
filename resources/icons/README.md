@@ -1,1 +1,0 @@
-game and platform icons by Ash Rogers

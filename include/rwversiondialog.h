@@ -172,28 +172,33 @@ public slots:
         if (newIndex >= 0) {
             this->dataTypeSelectBox->clear();
             unsigned int set = this->gameSelectBox->currentIndex();
-            for (unsigned int i = 0; i < this->mainWnd->versionSets.sets[set - 1].availablePlatforms[newIndex].availableDataTypes.size(); i++) {
-                this->dataTypeSelectBox->addItem(RwVersionSets::dataNameFromId(
-                    this->mainWnd->versionSets.sets[set - 1].availablePlatforms[newIndex].availableDataTypes[i]));
+
+            const RwVersionSets::Set& versionSet = this->mainWnd->versionSets.sets[ set - 1 ];
+            const RwVersionSets::Set::Platform& platformOfSet = versionSet.availablePlatforms[ newIndex ];
+
+            for (unsigned int i = 0; i < platformOfSet.availableDataTypes.size(); i++) {
+                this->dataTypeSelectBox->addItem(
+                    RwVersionSets::dataNameFromId(platformOfSet.availableDataTypes[i])
+                );
             }
-            if (this->mainWnd->versionSets.sets[set - 1].availablePlatforms[newIndex].availableDataTypes.size() < 2)
+            if (platformOfSet.availableDataTypes.size() < 2)
                 this->dataTypeSelectBox->setDisabled(true);
             else
                 this->dataTypeSelectBox->setDisabled(false);
 
             std::string verString =
-                std::to_string(this->mainWnd->versionSets.sets[set - 1].availablePlatforms[newIndex].version.rwLibMajor) + "." +
-                std::to_string(this->mainWnd->versionSets.sets[set - 1].availablePlatforms[newIndex].version.rwLibMinor) + "." +
-                std::to_string(this->mainWnd->versionSets.sets[set - 1].availablePlatforms[newIndex].version.rwRevMajor) + "." +
-                std::to_string(this->mainWnd->versionSets.sets[set - 1].availablePlatforms[newIndex].version.rwRevMinor);
+                std::to_string(platformOfSet.version.rwLibMajor) + "." +
+                std::to_string(platformOfSet.version.rwLibMinor) + "." +
+                std::to_string(platformOfSet.version.rwRevMajor) + "." +
+                std::to_string(platformOfSet.version.rwRevMinor);
 
             std::string buildString;
 
-            if (this->mainWnd->versionSets.sets[set - 1].availablePlatforms[newIndex].version.buildNumber != 0xFFFF)
+            if (platformOfSet.version.buildNumber != 0xFFFF)
             {
                 std::stringstream hex_stream;
 
-                hex_stream << std::hex << this->mainWnd->versionSets.sets[set - 1].availablePlatforms[newIndex].version.buildNumber;
+                hex_stream << std::hex << platformOfSet.version.buildNumber;
 
                 buildString = hex_stream.str();
             }

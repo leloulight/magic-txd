@@ -28,6 +28,9 @@ struct mainWindowSerializationEnv : public magicSerializationProvider
         bool showLogOnWarning;
         bool showGameIcon;
         bool adjustTextureChunksOnImport;
+        bool texaddViewportFill;
+        bool texaddViewportScaled;
+        bool texaddViewportBackground;
     };
 
     void Load( MainWindow *mainwnd, rw::BlockProvider& mtxdConfig ) override
@@ -79,6 +82,9 @@ struct mainWindowSerializationEnv : public magicSerializationProvider
         mainwnd->showLogOnWarning = cfgStruct.showLogOnWarning;
         mainwnd->showGameIcon = cfgStruct.showGameIcon;
         mainwnd->adjustTextureChunksOnImport = cfgStruct.adjustTextureChunksOnImport;
+        mainwnd->texaddViewportFill = cfgStruct.texaddViewportFill;
+        mainwnd->texaddViewportScaled = cfgStruct.texaddViewportScaled;
+        mainwnd->texaddViewportBackground = cfgStruct.texaddViewportBackground;
 
         // TXD log settings.
         {
@@ -136,6 +142,9 @@ struct mainWindowSerializationEnv : public magicSerializationProvider
         cfgStruct.showLogOnWarning = mainwnd->showLogOnWarning;
         cfgStruct.showGameIcon = mainwnd->showGameIcon;
         cfgStruct.adjustTextureChunksOnImport = mainwnd->adjustTextureChunksOnImport;
+        cfgStruct.texaddViewportFill = mainwnd->texaddViewportFill;
+        cfgStruct.texaddViewportScaled = mainwnd->texaddViewportScaled;
+        cfgStruct.texaddViewportBackground = mainwnd->texaddViewportBackground;
 
         mtxdConfig.writeStruct( cfgStruct );
 

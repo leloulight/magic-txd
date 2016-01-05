@@ -57,4 +57,8 @@ private:
     int prevLevel;
 };
 
+// Standardized string chunk utilities.
+void writeStringChunkANSI( Interface *engineInterface, BlockProvider& outputProvider, const char *string, size_t strLen );
+void readStringChunkANSI( Interface *engineInterface, BlockProvider& inputProvider, std::string& stringOut );
+
 }

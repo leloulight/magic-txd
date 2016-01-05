@@ -11,6 +11,7 @@ public:
         RWVS_PL_NOT_DEFINED,
         RWVS_PL_PC,
         RWVS_PL_PS2,
+        RWVS_PL_PSP,
         RWVS_PL_XBOX,
         RWVS_PL_MOBILE,
 
@@ -27,8 +28,9 @@ public:
         RWVS_DT_S3TC_MOBILE,
         RWVS_DT_UNCOMPRESSED_MOBILE,
         RWVS_DT_POWERVR,
+        RWVS_DT_PSP,
 
-        RWVS_DT_NUM_OF_TYPES = RWVS_DT_POWERVR
+        RWVS_DT_NUM_OF_TYPES = RWVS_DT_PSP
     };
 
     // translate name from settings file to id
@@ -37,6 +39,8 @@ public:
             return RWVS_PL_PC;
         if (!strcmp(name, "PS2"))
             return RWVS_PL_PS2;
+        if (!strcmp(name, "PSP"))
+            return RWVS_PL_PSP;
         if (!strcmp(name, "XBOX"))
             return RWVS_PL_XBOX;
         if (!strcmp(name, "MOBILE"))
@@ -61,6 +65,8 @@ public:
             return RWVS_DT_UNCOMPRESSED_MOBILE;
         if (!strcmp(name, "POWERVR"))
             return RWVS_DT_POWERVR;
+        if (!strcmp(name, "PSP"))
+            return RWVS_DT_PSP;
         return RWVS_DT_NOT_DEFINED;
     }
 
@@ -71,6 +77,8 @@ public:
             return "PC";
         case RWVS_PL_PS2:
             return "PlayStation2";
+        case RWVS_PL_PSP:
+            return "PSP";
         case RWVS_PL_XBOX:
             return "XBOX";
         case RWVS_PL_MOBILE:
@@ -97,6 +105,8 @@ public:
             return "uncompressed_mobile";
         case RWVS_DT_POWERVR:
             return "PowerVR";
+        case RWVS_DT_PSP:
+            return "PSP";
         }
         return "Unknown";
     }
@@ -118,6 +128,8 @@ public:
             return RWVS_DT_UNCOMPRESSED_MOBILE;
         if (!strcmp(name, "PowerVR"))
             return RWVS_DT_POWERVR;
+        if (!strcmp(name, "PSP"))
+            return RWVS_DT_PSP;
         return RWVS_DT_NOT_DEFINED;
     }
 
@@ -157,6 +169,7 @@ public:
     }
 
     class Set {
+    public:
         class Platform {
         public:
             ePlatformType platformType;
@@ -207,7 +220,6 @@ public:
                 }
             }
         };
-    public:
         char name[64];
         std::vector<Platform> availablePlatforms;
     };
@@ -230,10 +242,12 @@ public:
                 while (fileReadOneLine(file, line) && RwVersionSets::extractValue("PLATFORM", line, value)) {
                     ePlatformType platform = RwVersionSets::platformIdFromName(value.c_str());
                     if (platform != RWVS_PL_NOT_DEFINED) {
-                        unsigned int numPlatforms = sets[sets.size() - 1].availablePlatforms.size();
-                        sets[sets.size() - 1].availablePlatforms.resize(numPlatforms + 1);
-                        sets[sets.size() - 1].availablePlatforms[numPlatforms].platformType = platform;
-                        sets[sets.size() - 1].availablePlatforms[numPlatforms].readInfo(file);
+                        RwVersionSets::Set& currentSet = sets[ sets.size() - 1 ];
+                        unsigned int numPlatforms = currentSet.availablePlatforms.size();
+                        currentSet.availablePlatforms.resize(numPlatforms + 1);
+                        RwVersionSets::Set::Platform& currentPlatform = currentSet.availablePlatforms[numPlatforms];
+                        currentPlatform.platformType = platform;
+                        currentPlatform.readInfo(file);
                     }
                     else {
                         fileReadOneLine(file, line);
@@ -247,13 +261,18 @@ public:
 
     bool matchSet(rw::LibraryVersion &libVersion, eDataType dataTypeId, int &setIndex, int &platformIndex, int &dataTypeIndex) {
         for (unsigned int set = 0; set < sets.size(); set++) {
-            for (unsigned int p = 0; p < sets[set].availablePlatforms.size(); p++) {
-                if (sets[set].availablePlatforms[p].version.rwLibMajor == libVersion.rwLibMajor
-                    && sets[set].availablePlatforms[p].version.rwLibMinor == libVersion.rwLibMinor
-                    && sets[set].availablePlatforms[p].version.rwRevMajor == libVersion.rwRevMajor
-                    && sets[set].availablePlatforms[p].version.rwRevMinor == libVersion.rwRevMinor) {
-                    for (unsigned int d = 0; d < sets[set].availablePlatforms[p].availableDataTypes.size(); d++) {
-                        if (sets[set].availablePlatforms[p].availableDataTypes[d] == dataTypeId) {
+            const RwVersionSets::Set& currentSet = sets[ set ];
+
+            for (unsigned int p = 0; p < currentSet.availablePlatforms.size(); p++) {
+                const RwVersionSets::Set::Platform& platform = currentSet.availablePlatforms[ p ];
+
+                if (platform.version.rwLibMajor == libVersion.rwLibMajor
+                    && platform.version.rwLibMinor == libVersion.rwLibMinor
+                    && platform.version.rwRevMajor == libVersion.rwRevMajor
+                    && platform.version.rwRevMinor == libVersion.rwRevMinor)
+                {
+                    for (unsigned int d = 0; d < platform.availableDataTypes.size(); d++) {
+                        if (platform.availableDataTypes[d] == dataTypeId) {
                             setIndex = set;
                             platformIndex = p;
                             dataTypeIndex = d;

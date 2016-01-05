@@ -79,8 +79,8 @@ enum : uint32
 // An exclusively defined list of chunk ids.
 enum CHUNK_TYPE
 {
-    CHUNK_NAOBJECT        = 0x0,
-    CHUNK_STRUCT          = 0x1,
+    CHUNK_NAOBJECT        = 0x0,    // do NOT use this.
+    CHUNK_STRUCT          = 0x1,    // anonymous chunk.
     CHUNK_STRING          = 0x2,
     CHUNK_EXTENSION       = 0x3,
     CHUNK_CAMERA          = 0x5,
@@ -146,6 +146,7 @@ enum CHUNK_TYPE
     CHUNK_FRAME            = 0x253F2FE
 };
 
+// Raster format flags for RenderWare 3.
 enum
 {
 	RASTER_AUTOMIPMAP = 0x1000,

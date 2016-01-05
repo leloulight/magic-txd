@@ -114,7 +114,7 @@ inline void CompatibilityTransformPixelData( Interface *engineInterface, pixelDa
     }
 }
 
-inline void TruncateMipmapLayer(
+static inline void TruncateMipmapLayer(
     Interface *engineInterface,
     uint32 layerWidth, uint32 layerHeight, uint32 mipWidth, uint32 mipHeight, void *texelSource, uint32 srcDataSize,
     uint32 itemDepth, uint32 rowAlignment, eCompressionType compressionType,
@@ -218,6 +218,7 @@ inline void TruncateMipmapLayer(
         dstSurfWidthOut = dstSurfWidth;
         dstSurfHeightOut = dstSurfHeight;
         dstTexelsOut = dstTexels;
+        dstDataSizeOut = dstDataSize;
     }
     else if ( compressionType == RWCOMPRESS_NONE )
     {
