@@ -1,190 +1,190 @@
-MAGL|1|Ukrainian|Українська|UKR|Magic.TXD Team
+п»їMAGL|1|Ukrainian|РЈРєСЂР°С—РЅСЃСЊРєР°|UKR|Magic.TXD Team
 
 # language
-Lang.Lang                Мова:
-Lang.Authors             від _PARAM_1
+Lang.Lang                РњРѕРІР°:
+Lang.Authors             РІС–Рґ _PARAM_1
 
 # textures list
-Main.TexInfo.Level       рівень
-Main.TexInfo.Levels      рівнів
-Main.TexInfo.Lvl2        рівня
-Main.TexInfo.Lvl3        ріаня
-Main.TexInfo.Lvl4        рівня
-Main.TexInfo.NoTex       Без текстури
-Main.TexInfo.Invalid     без даних
+Main.TexInfo.Level       СЂС–РІРµРЅСЊ
+Main.TexInfo.Levels      СЂС–РІРЅС–РІ
+Main.TexInfo.Lvl2        СЂС–РІРЅСЏ
+Main.TexInfo.Lvl3        СЂС–Р°РЅСЏ
+Main.TexInfo.Lvl4        СЂС–РІРЅСЏ
+Main.TexInfo.NoTex       Р‘РµР· С‚РµРєСЃС‚СѓСЂРё
+Main.TexInfo.Invalid     Р±РµР· РґР°РЅРёС…
 
 # main menu
-Main.File                Файл
-Main.Edit                Змінити
-Main.Tools               Інструменти
-Main.Export              Експорт
-Main.View                Вигляд
-Main.Info                Інфо
+Main.File                Р¤Р°Р№Р»
+Main.Edit                Р—РјС–РЅРёС‚Рё
+Main.Tools               Р†РЅСЃС‚СЂСѓРјРµРЅС‚Рё
+Main.Export              Р•РєСЃРїРѕСЂС‚
+Main.View                Р’РёРіР»СЏРґ
+Main.Info                Р†РЅС„Рѕ
 
 # main menu - File       
-Main.File.New            Створити
-Main.File.Open           Відкрити
-Main.File.Save           Зберегти
-Main.File.SaveAs         Зберегти як...
-Main.File.Close          Закрити поточний
-Main.File.Quit           Вийти
+Main.File.New            РЎС‚РІРѕСЂРёС‚Рё
+Main.File.Open           Р’С–РґРєСЂРёС‚Рё
+Main.File.Save           Р—Р±РµСЂРµРіС‚Рё
+Main.File.SaveAs         Р—Р±РµСЂРµРіС‚Рё СЏРє...
+Main.File.Close          Р—Р°РєСЂРёС‚Рё РїРѕС‚РѕС‡РЅРёР№
+Main.File.Quit           Р’РёР№С‚Рё
 
 # main menu - Edit       
-Main.Edit.Add            Додати
-Main.Edit.Replace        Замінити
-Main.Edit.Remove         Видалити
-Main.Edit.Rename         Перейменувати
-Main.Edit.Resize         Змінити розмір
-Main.Edit.Modify         Змінити формат
-Main.Edit.SetupML        Генерувати міп-рівні
-Main.Edit.ClearML        Видалити міп-рівні
-Main.Edit.SetupRP        Налаштування рендерингу
-Main.Edit.SetupTV        Налаштувати весрію TXD
-Main.Edit.Options        Опції
+Main.Edit.Add            Р”РѕРґР°С‚Рё
+Main.Edit.Replace        Р—Р°РјС–РЅРёС‚Рё
+Main.Edit.Remove         Р’РёРґР°Р»РёС‚Рё
+Main.Edit.Rename         РџРµСЂРµР№РјРµРЅСѓРІР°С‚Рё
+Main.Edit.Resize         Р—РјС–РЅРёС‚Рё СЂРѕР·РјС–СЂ
+Main.Edit.Modify         Р—РјС–РЅРёС‚Рё С„РѕСЂРјР°С‚
+Main.Edit.SetupML        Р“РµРЅРµСЂСѓРІР°С‚Рё РјС–Рї-СЂС–РІРЅС–
+Main.Edit.ClearML        Р’РёРґР°Р»РёС‚Рё РјС–Рї-СЂС–РІРЅС–
+Main.Edit.SetupRP        РќР°Р»Р°С€С‚СѓРІР°РЅРЅСЏ СЂРµРЅРґРµСЂРёРЅРіСѓ
+Main.Edit.SetupTV        РќР°Р»Р°С€С‚СѓРІР°С‚Рё РІРµСЃСЂС–СЋ TXD
+Main.Edit.Options        РћРїС†С–С—
 
 # Rename
-Main.Rename.Desc         Ім'я текстури
-Main.Rename.Name         Ім'я:
-Main.Rename.Set          Прийняти
-Main.Rename.Cancel       Скасувати
+Main.Rename.Desc         Р†Рј'СЏ С‚РµРєСЃС‚СѓСЂРё
+Main.Rename.Name         Р†Рј'СЏ:
+Main.Rename.Set          РџСЂРёР№РЅСЏС‚Рё
+Main.Rename.Cancel       РЎРєР°СЃСѓРІР°С‚Рё
 
 # Resize
-Main.Resize.Desc         Зміна розміру текстури
-Main.Resize.Width        Ширина:
-Main.Resize.Height       Висота:
-Main.Resize.Set          Прийняти
-Main.Resize.Cancel       Скасувати
+Main.Resize.Desc         Р—РјС–РЅР° СЂРѕР·РјС–СЂСѓ С‚РµРєСЃС‚СѓСЂРё
+Main.Resize.Width        РЁРёСЂРёРЅР°:
+Main.Resize.Height       Р’РёСЃРѕС‚Р°:
+Main.Resize.Set          РџСЂРёР№РЅСЏС‚Рё
+Main.Resize.Cancel       РЎРєР°СЃСѓРІР°С‚Рё
 
 # Modify
-Modify.Desc.Add          Додати текстуру...
-Modify.Desc.Replace      Замінити текстуру...
-Modify.Desc.Modify       Змінити текстуру...
-Modify.Add               Додати
-Modify.Replace           Замінити
-Modify.Modify            Змінити
-Modify.TexName           Ім'я текстури:
-Modify.MskName           Ім'я маски:
-Modify.Plat              Платформа:
-Modify.RasFmt            Формат растру:
-Modify.Origin            Вихідний
-Modify.RawRas            Стандартний
-Modify.Comp              Стиснутий
-Modify.Pal               Палітра
-Modify.PixFmt            Формат пікселів:
-Modify.GenML             Генерувати міп-рівні
-Modify.Scaled            Масштаб
-Modify.Fill              Заповнити
-Modify.Bckgr             Фон
-Modify.Cancel            Відміна
+Modify.Desc.Add          Р”РѕРґР°С‚Рё С‚РµРєСЃС‚СѓСЂСѓ...
+Modify.Desc.Replace      Р—Р°РјС–РЅРёС‚Рё С‚РµРєСЃС‚СѓСЂСѓ...
+Modify.Desc.Modify       Р—РјС–РЅРёС‚Рё С‚РµРєСЃС‚СѓСЂСѓ...
+Modify.Add               Р”РѕРґР°С‚Рё
+Modify.Replace           Р—Р°РјС–РЅРёС‚Рё
+Modify.Modify            Р—РјС–РЅРёС‚Рё
+Modify.TexName           Р†Рј'СЏ С‚РµРєСЃС‚СѓСЂРё:
+Modify.MskName           Р†Рј'СЏ РјР°СЃРєРё:
+Modify.Plat              РџР»Р°С‚С„РѕСЂРјР°:
+Modify.RasFmt            Р¤РѕСЂРјР°С‚ СЂР°СЃС‚СЂСѓ:
+Modify.Origin            Р’РёС…С–РґРЅРёР№
+Modify.RawRas            РЎС‚Р°РЅРґР°СЂС‚РЅРёР№
+Modify.Comp              РЎС‚РёСЃРЅСѓС‚РёР№
+Modify.Pal               РџР°Р»С–С‚СЂР°
+Modify.PixFmt            Р¤РѕСЂРјР°С‚ РїС–РєСЃРµР»С–РІ:
+Modify.GenML             Р“РµРЅРµСЂСѓРІР°С‚Рё РјС–Рї-СЂС–РІРЅС–
+Modify.Scaled            РњР°СЃС€С‚Р°Р±
+Modify.Fill              Р—Р°РїРѕРІРЅРёС‚Рё
+Modify.Bckgr             Р¤РѕРЅ
+Modify.Cancel            Р’С–РґРјС–РЅР°
 
 # Render Props
-Main.SetupRP.Desc        Налаштування рендерингу
-Main.SetupRP.Filter      Фільтрація:
-Main.SetupRP.UAddr       U-Адресація:
-Main.SetupRP.VAddr       V-Адресація:
-Main.SetupRP.Set         Прийняти
-Main.SetupRP.Cancel      Скасувати
+Main.SetupRP.Desc        РќР°Р»Р°С€С‚СѓРІР°РЅРЅСЏ СЂРµРЅРґРµСЂРёРЅРіСѓ
+Main.SetupRP.Filter      Р¤С–Р»СЊС‚СЂР°С†С–СЏ:
+Main.SetupRP.UAddr       U-РђРґСЂРµСЃР°С†С–СЏ:
+Main.SetupRP.VAddr       V-РђРґСЂРµСЃР°С†С–СЏ:
+Main.SetupRP.Set         РџСЂРёР№РЅСЏС‚Рё
+Main.SetupRP.Cancel      РЎРєР°СЃСѓРІР°С‚Рё
 
 # Setup TXD Version dialog
-Main.SetupTV.Desc        Налаштування версії TXD
-Main.SetupTV.Set         Сет
-Main.SetupTV.Plat        Платформа
-Main.SetupTV.Data        Тип даних
-Main.SetupTV.Version     Версія
-Main.SetupTV.Build       Збірка
-Main.SetupTV.Accept      Прийняти
-Main.SetupTV.Cancel      Скасувати
-Main.SetupTV.Custom      Свій
+Main.SetupTV.Desc        РќР°Р»Р°С€С‚СѓРІР°РЅРЅСЏ РІРµСЂСЃС–С— TXD
+Main.SetupTV.Set         РЎРµС‚
+Main.SetupTV.Plat        РџР»Р°С‚С„РѕСЂРјР°
+Main.SetupTV.Data        РўРёРї РґР°РЅРёС…
+Main.SetupTV.Version     Р’РµСЂСЃС–СЏ
+Main.SetupTV.Build       Р—Р±С–СЂРєР°
+Main.SetupTV.Accept      РџСЂРёР№РЅСЏС‚Рё
+Main.SetupTV.Cancel      РЎРєР°СЃСѓРІР°С‚Рё
+Main.SetupTV.Custom      РЎРІС–Р№
 
 # Options
-Main.Options.Desc        Налаштування _MAGIC_TXD_NAME
-Main.Options.ShowLog     Відкрити лог при попередженнях
-Main.Options.DispIcn     Показувати значок гри
-Main.Options.Accept      Прийняти
-Main.Options.Cancel      Скасувати
+Main.Options.Desc        РќР°Р»Р°С€С‚СѓРІР°РЅРЅСЏ _MAGIC_TXD_NAME
+Main.Options.ShowLog     Р’С–РґРєСЂРёС‚Рё Р»РѕРі РїСЂРё РїРѕРїРµСЂРµРґР¶РµРЅРЅСЏС…
+Main.Options.DispIcn     РџРѕРєР°Р·СѓРІР°С‚Рё Р·РЅР°С‡РѕРє РіСЂРё
+Main.Options.Accept      РџСЂРёР№РЅСЏС‚Рё
+Main.Options.Cancel      РЎРєР°СЃСѓРІР°С‚Рё
 
 # main menu - Tools      
-Main.Tools.MassCnv       Масовий конверт
-Main.Tools.MassExp       Масовий експорт
-Main.Tools.MassBld       Масова збірка
+Main.Tools.MassCnv       РњР°СЃРѕРІРёР№ РєРѕРЅРІРµСЂС‚
+Main.Tools.MassExp       РњР°СЃРѕРІРёР№ РµРєСЃРїРѕСЂС‚
+Main.Tools.MassBld       РњР°СЃРѕРІР° Р·Р±С–СЂРєР°
 
 # main menu - Export
-Main.Export.ExpAll       Всі текстури
-Main.Export.Desc         Зберегти _PARAM_1 як...
+Main.Export.ExpAll       Р’СЃС– С‚РµРєСЃС‚СѓСЂРё
+Main.Export.Desc         Р—Р±РµСЂРµРіС‚Рё _PARAM_1 СЏРє...
 
 # Export All
-Main.ExpAll.Desc         Експорт усіх текстур...
-Main.ExpAll.Format       Формат:
-Main.ExpAll.Export       Експорт
-Main.ExpAll.Cancel       Скасувати
-Main.ExpAll.ExpTarg      Виберіть папку...
+Main.ExpAll.Desc         Р•РєСЃРїРѕСЂС‚ СѓСЃС–С… С‚РµРєСЃС‚СѓСЂ...
+Main.ExpAll.Format       Р¤РѕСЂРјР°С‚:
+Main.ExpAll.Export       Р•РєСЃРїРѕСЂС‚
+Main.ExpAll.Cancel       РЎРєР°СЃСѓРІР°С‚Рё
+Main.ExpAll.ExpTarg      Р’РёР±РµСЂС–С‚СЊ РїР°РїРєСѓ...
 
 # Log
-Main.Log.Desc            Лог
-Main.Log.Save            Зберегти
-Main.Log.Copy            Копіювати
-Main.Log.CopyAll         Копіювати все
-Main.Log.Clear           Очистити
-Main.Log.Close           Закрити
-Main.Log.SaveAs          Зберегти лог як...
+Main.Log.Desc            Р›РѕРі
+Main.Log.Save            Р—Р±РµСЂРµРіС‚Рё
+Main.Log.Copy            РљРѕРїС–СЋРІР°С‚Рё
+Main.Log.CopyAll         РљРѕРїС–СЋРІР°С‚Рё РІСЃРµ
+Main.Log.Clear           РћС‡РёСЃС‚РёС‚Рё
+Main.Log.Close           Р—Р°РєСЂРёС‚Рё
+Main.Log.SaveAs          Р—Р±РµСЂРµРіС‚Рё Р»РѕРі СЏРє...
 
 # View
-Main.View.FullImg        Показати повне зображення
-Main.View.Backgr         Прозорий фон
-Main.View.DispML         Показати міп-рівні
-Main.View.ShowLog        Відкрити лог
-Main.View.DarkThm        Темний інтерфейс
-Main.View.LightTm        Світлий інтерфейс
+Main.View.FullImg        РџРѕРєР°Р·Р°С‚Рё РїРѕРІРЅРµ Р·РѕР±СЂР°Р¶РµРЅРЅСЏ
+Main.View.Backgr         РџСЂРѕР·РѕСЂРёР№ С„РѕРЅ
+Main.View.DispML         РџРѕРєР°Р·Р°С‚Рё РјС–Рї-СЂС–РІРЅС–
+Main.View.ShowLog        Р’С–РґРєСЂРёС‚Рё Р»РѕРі
+Main.View.DarkThm        РўРµРјРЅРёР№ С–РЅС‚РµСЂС„РµР№СЃ
+Main.View.LightTm        РЎРІС–С‚Р»РёР№ С–РЅС‚РµСЂС„РµР№СЃ
 
 # Info
-Main.Info.Website        Сайт програми
-Main.Info.About          Про програму
+Main.Info.Website        РЎР°Р№С‚ РїСЂРѕРіСЂР°РјРё
+Main.Info.About          РџСЂРѕ РїСЂРѕРіСЂР°РјСѓ
 
 # File - Open
-Main.Open.Desc           Відкрити TXD файл...
+Main.Open.Desc           Р’С–РґРєСЂРёС‚Рё TXD С„Р°Р№Р»...
 
 # File - Save As
-Main.SaveAs.Desc         Зберегти TXD як...
+Main.SaveAs.Desc         Р—Р±РµСЂРµРіС‚Рё TXD СЏРє...
 
 # Edit - Add
-Main.Edit.Add.Desc       Імпортувати текстуру...
+Main.Edit.Add.Desc       Р†РјРїРѕСЂС‚СѓРІР°С‚Рё С‚РµРєСЃС‚СѓСЂСѓ...
 
 # About
-Main.Info.About.Desc     Про нас
-Main.Info.About.Credits  автори: _AUTHOR_NAME_1 та _AUTHOR_NAME_2
-Main.Info.About.ComUse1  Ця програма НЕ ПОВИННА використовуватися в комерційних цілях без явного письмового дозволу всіх третіх осіб, задіяних у розробці цієї програми. Ознайомтеся з ліцензійними угодами для отримання додаткової інформації.
-Main.Info.About.ComUse2  Команда _MAGIC_TXD_NAME вітає вашу підтримку!
+Main.Info.About.Desc     РџСЂРѕ РЅР°СЃ
+Main.Info.About.Credits  Р°РІС‚РѕСЂРё: _AUTHOR_NAME_1 С‚Р° _AUTHOR_NAME_2
+Main.Info.About.ComUse1  Р¦СЏ РїСЂРѕРіСЂР°РјР° РќР• РџРћР’РРќРќРђ РІРёРєРѕСЂРёСЃС‚РѕРІСѓРІР°С‚РёСЃСЏ РІ РєРѕРјРµСЂС†С–Р№РЅРёС… С†С–Р»СЏС… Р±РµР· СЏРІРЅРѕРіРѕ РїРёСЃСЊРјРѕРІРѕРіРѕ РґРѕР·РІРѕР»Сѓ РІСЃС–С… С‚СЂРµС‚С–С… РѕСЃС–Р±, Р·Р°РґС–СЏРЅРёС… Сѓ СЂРѕР·СЂРѕР±С†С– С†С–С”С— РїСЂРѕРіСЂР°РјРё. РћР·РЅР°Р№РѕРјС‚РµСЃСЏ Р· Р»С–С†РµРЅР·С–Р№РЅРёРјРё СѓРіРѕРґР°РјРё РґР»СЏ РѕС‚СЂРёРјР°РЅРЅСЏ РґРѕРґР°С‚РєРѕРІРѕС— С–РЅС„РѕСЂРјР°С†С–С—.
+Main.Info.About.ComUse2  РљРѕРјР°РЅРґР° _MAGIC_TXD_NAME РІС–С‚Р°С” РІР°С€Сѓ РїС–РґС‚СЂРёРјРєСѓ!
 
 # Tools
-Tools.Browse             Вибрати
-Tools.BrwDesc            Вибір папки...
-Tools.GameRt             Вихідна папка:
-Tools.Output             Папка призначення:
-Tools.Plat               Платформа
-Tools.Game               Гра
-Tools.GenMips            Генерувати міп-рівні
-Tools.MaxMips            Макс.:
+Tools.Browse             Р’РёР±СЂР°С‚Рё
+Tools.BrwDesc            Р’РёР±С–СЂ РїР°РїРєРё...
+Tools.GameRt             Р’РёС…С–РґРЅР° РїР°РїРєР°:
+Tools.Output             РџР°РїРєР° РїСЂРёР·РЅР°С‡РµРЅРЅСЏ:
+Tools.Plat               РџР»Р°С‚С„РѕСЂРјР°
+Tools.Game               Р“СЂР°
+Tools.GenMips            Р“РµРЅРµСЂСѓРІР°С‚Рё РјС–Рї-СЂС–РІРЅС–
+Tools.MaxMips            РњР°РєСЃ.:
 
 # Mass export
-Tools.MassExp.Desc       Масовий експорт
-Tools.MassExp.ImgFmt     Формат зображень:
-Tools.MassExp.TxNmOnl    в назві лише ім'я текстури
-Tools.MassExp.PrTxdNm    в назві ім'я TXD
-Tools.MassExp.SepFld     розділити по папках
-Tools.MassExp.Export     Експорт
-Tools.MassExp.Cancel     Скасувати
+Tools.MassExp.Desc       РњР°СЃРѕРІРёР№ РµРєСЃРїРѕСЂС‚
+Tools.MassExp.ImgFmt     Р¤РѕСЂРјР°С‚ Р·РѕР±СЂР°Р¶РµРЅСЊ:
+Tools.MassExp.TxNmOnl    РІ РЅР°Р·РІС– Р»РёС€Рµ С–Рј'СЏ С‚РµРєСЃС‚СѓСЂРё
+Tools.MassExp.PrTxdNm    РІ РЅР°Р·РІС– С–Рј'СЏ TXD
+Tools.MassExp.SepFld     СЂРѕР·РґС–Р»РёС‚Рё РїРѕ РїР°РїРєР°С…
+Tools.MassExp.Export     Р•РєСЃРїРѕСЂС‚
+Tools.MassExp.Cancel     РЎРєР°СЃСѓРІР°С‚Рё
 
 # Mass build
-Tools.MassBld.Desc       Масова збірка
-Tools.MassBld.Build      Зібрати
-Tools.MassBld.Cancel     Скасувати
+Tools.MassBld.Desc       РњР°СЃРѕРІР° Р·Р±С–СЂРєР°
+Tools.MassBld.Build      Р—С–Р±СЂР°С‚Рё
+Tools.MassBld.Cancel     РЎРєР°СЃСѓРІР°С‚Рё
 
 # Mass convert
-Tools.MassCnv.Desc       Масова конвертація
-Tools.MassCnv.ClearML    Видалити міп-рівні
-Tools.MassCnv.ImpFilt    Покращити фільтрацію
-Tools.MassCnv.CompTex    Стиснути текстури
-Tools.MassCnv.RecIMG     Перебудувати IMG-архіви
-Tools.MassCnv.CompIMG    Стиснути IMG
-Tools.MassCnv.Convert    Конвертувати
-Tools.MassCnv.Cancel     Скасувати
+Tools.MassCnv.Desc       РњР°СЃРѕРІР° РєРѕРЅРІРµСЂС‚Р°С†С–СЏ
+Tools.MassCnv.ClearML    Р’РёРґР°Р»РёС‚Рё РјС–Рї-СЂС–РІРЅС–
+Tools.MassCnv.ImpFilt    РџРѕРєСЂР°С‰РёС‚Рё С„С–Р»СЊС‚СЂР°С†С–СЋ
+Tools.MassCnv.CompTex    РЎС‚РёСЃРЅСѓС‚Рё С‚РµРєСЃС‚СѓСЂРё
+Tools.MassCnv.RecIMG     РџРµСЂРµР±СѓРґСѓРІР°С‚Рё IMG-Р°СЂС…С–РІРё
+Tools.MassCnv.CompIMG    РЎС‚РёСЃРЅСѓС‚Рё IMG
+Tools.MassCnv.Convert    РљРѕРЅРІРµСЂС‚СѓРІР°С‚Рё
+Tools.MassCnv.Cancel     РЎРєР°СЃСѓРІР°С‚Рё

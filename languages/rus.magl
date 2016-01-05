@@ -1,190 +1,190 @@
-MAGL|1|Russian|Русский|RUS|Magic.TXD Team
+п»їMAGL|1|Russian|Р СѓСЃСЃРєРёР№|RUS|Magic.TXD Team
 
 # language
-Lang.Lang                Язык:
-Lang.Authors             от _PARAM_1
+Lang.Lang                РЇР·С‹Рє:
+Lang.Authors             РѕС‚ _PARAM_1
 
 # textures list
-Main.TexInfo.Level       уровень
-Main.TexInfo.Levels      уровней
-Main.TexInfo.Lvl2        уровня
-Main.TexInfo.Lvl3        уровня
-Main.TexInfo.Lvl4        уровня
-Main.TexInfo.NoTex       Нет текстуры
-Main.TexInfo.Invalid     без данных
+Main.TexInfo.Level       СѓСЂРѕРІРµРЅСЊ
+Main.TexInfo.Levels      СѓСЂРѕРІРЅРµР№
+Main.TexInfo.Lvl2        СѓСЂРѕРІРЅСЏ
+Main.TexInfo.Lvl3        СѓСЂРѕРІРЅСЏ
+Main.TexInfo.Lvl4        СѓСЂРѕРІРЅСЏ
+Main.TexInfo.NoTex       РќРµС‚ С‚РµРєСЃС‚СѓСЂС‹
+Main.TexInfo.Invalid     Р±РµР· РґР°РЅРЅС‹С…
 
 # main menu
-Main.File                Файл
-Main.Edit                Правка
-Main.Tools               Инструменты
-Main.Export              Экспорт
-Main.View                Вид
-Main.Info                Инфо
+Main.File                Р¤Р°Р№Р»
+Main.Edit                РџСЂР°РІРєР°
+Main.Tools               РРЅСЃС‚СЂСѓРјРµРЅС‚С‹
+Main.Export              Р­РєСЃРїРѕСЂС‚
+Main.View                Р’РёРґ
+Main.Info                РРЅС„Рѕ
 
 # main menu - File       
-Main.File.New            Новый
-Main.File.Open           Открыть
-Main.File.Save           Сохранить
-Main.File.SaveAs         Сохранить как...
-Main.File.Close          Закрыть текущий
-Main.File.Quit           Выход
+Main.File.New            РќРѕРІС‹Р№
+Main.File.Open           РћС‚РєСЂС‹С‚СЊ
+Main.File.Save           РЎРѕС…СЂР°РЅРёС‚СЊ
+Main.File.SaveAs         РЎРѕС…СЂР°РЅРёС‚СЊ РєР°Рє...
+Main.File.Close          Р—Р°РєСЂС‹С‚СЊ С‚РµРєСѓС‰РёР№
+Main.File.Quit           Р’С‹С…РѕРґ
 
 # main menu - Edit       
-Main.Edit.Add            Добавить
-Main.Edit.Replace        Заменить
-Main.Edit.Remove         Удалить
-Main.Edit.Rename         Переименовать
-Main.Edit.Resize         Изменить размер
-Main.Edit.Modify         Изменить формат
-Main.Edit.SetupML        Добавить мип-уровни
-Main.Edit.ClearML        Убрать мип-уровни
-Main.Edit.SetupRP        Настройки рендеринга
-Main.Edit.SetupTV        Установить версию TXD
-Main.Edit.Options        Опции
+Main.Edit.Add            Р”РѕР±Р°РІРёС‚СЊ
+Main.Edit.Replace        Р—Р°РјРµРЅРёС‚СЊ
+Main.Edit.Remove         РЈРґР°Р»РёС‚СЊ
+Main.Edit.Rename         РџРµСЂРµРёРјРµРЅРѕРІР°С‚СЊ
+Main.Edit.Resize         РР·РјРµРЅРёС‚СЊ СЂР°Р·РјРµСЂ
+Main.Edit.Modify         РР·РјРµРЅРёС‚СЊ С„РѕСЂРјР°С‚
+Main.Edit.SetupML        Р”РѕР±Р°РІРёС‚СЊ РјРёРї-СѓСЂРѕРІРЅРё
+Main.Edit.ClearML        РЈР±СЂР°С‚СЊ РјРёРї-СѓСЂРѕРІРЅРё
+Main.Edit.SetupRP        РќР°СЃС‚СЂРѕР№РєРё СЂРµРЅРґРµСЂРёРЅРіР°
+Main.Edit.SetupTV        РЈСЃС‚Р°РЅРѕРІРёС‚СЊ РІРµСЂСЃРёСЋ TXD
+Main.Edit.Options        РћРїС†РёРё
 
 # Rename
-Main.Rename.Desc         Имя текстуры
-Main.Rename.Name         Имя:
-Main.Rename.Set          Принять
-Main.Rename.Cancel       Отмена
+Main.Rename.Desc         РРјСЏ С‚РµРєСЃС‚СѓСЂС‹
+Main.Rename.Name         РРјСЏ:
+Main.Rename.Set          РџСЂРёРЅСЏС‚СЊ
+Main.Rename.Cancel       РћС‚РјРµРЅР°
 
 # Resize
-Main.Resize.Desc         Изменение размера текстуры
-Main.Resize.Width        Ширина:
-Main.Resize.Height       Высота:
-Main.Resize.Set          Принять
-Main.Resize.Cancel       Отмена
+Main.Resize.Desc         РР·РјРµРЅРµРЅРёРµ СЂР°Р·РјРµСЂР° С‚РµРєСЃС‚СѓСЂС‹
+Main.Resize.Width        РЁРёСЂРёРЅР°:
+Main.Resize.Height       Р’С‹СЃРѕС‚Р°:
+Main.Resize.Set          РџСЂРёРЅСЏС‚СЊ
+Main.Resize.Cancel       РћС‚РјРµРЅР°
 
 # Modify
-Modify.Desc.Add          Добавить текстуру...
-Modify.Desc.Replace      Заменить текстуру...
-Modify.Desc.Modify       Изменить текстуру...
-Modify.Add               Добавить
-Modify.Replace           Заменить
-Modify.Modify            Изменить
-Modify.TexName           Имя текстуры:
-Modify.MskName           Имя маски:
-Modify.Plat              Платформа:
-Modify.RasFmt            Формат растра:
-Modify.Origin            Исходный
-Modify.RawRas            Стандартный
-Modify.Comp              Сжатый
-Modify.Pal               Палитра
-Modify.PixFmt            Формат пикселей:
-Modify.GenML             Генерировать мип-уровни
-Modify.Scaled            Масштаб
-Modify.Fill              Заполнить
-Modify.Bckgr             Фон
-Modify.Cancel            Отмена
+Modify.Desc.Add          Р”РѕР±Р°РІРёС‚СЊ С‚РµРєСЃС‚СѓСЂСѓ...
+Modify.Desc.Replace      Р—Р°РјРµРЅРёС‚СЊ С‚РµРєСЃС‚СѓСЂСѓ...
+Modify.Desc.Modify       РР·РјРµРЅРёС‚СЊ С‚РµРєСЃС‚СѓСЂСѓ...
+Modify.Add               Р”РѕР±Р°РІРёС‚СЊ
+Modify.Replace           Р—Р°РјРµРЅРёС‚СЊ
+Modify.Modify            РР·РјРµРЅРёС‚СЊ
+Modify.TexName           РРјСЏ С‚РµРєСЃС‚СѓСЂС‹:
+Modify.MskName           РРјСЏ РјР°СЃРєРё:
+Modify.Plat              РџР»Р°С‚С„РѕСЂРјР°:
+Modify.RasFmt            Р¤РѕСЂРјР°С‚ СЂР°СЃС‚СЂР°:
+Modify.Origin            РСЃС…РѕРґРЅС‹Р№
+Modify.RawRas            РЎС‚Р°РЅРґР°СЂС‚РЅС‹Р№
+Modify.Comp              РЎР¶Р°С‚С‹Р№
+Modify.Pal               РџР°Р»РёС‚СЂР°
+Modify.PixFmt            Р¤РѕСЂРјР°С‚ РїРёРєСЃРµР»РµР№:
+Modify.GenML             Р“РµРЅРµСЂРёСЂРѕРІР°С‚СЊ РјРёРї-СѓСЂРѕРІРЅРё
+Modify.Scaled            РњР°СЃС€С‚Р°Р±
+Modify.Fill              Р—Р°РїРѕР»РЅРёС‚СЊ
+Modify.Bckgr             Р¤РѕРЅ
+Modify.Cancel            РћС‚РјРµРЅР°
 
 # Render Props
-Main.SetupRP.Desc        Настройки рендеринга
-Main.SetupRP.Filter      Фильтрация:
-Main.SetupRP.UAddr       U-Адресация:
-Main.SetupRP.VAddr       V-Адресация:
-Main.SetupRP.Set         Принять
-Main.SetupRP.Cancel      Отмена
+Main.SetupRP.Desc        РќР°СЃС‚СЂРѕР№РєРё СЂРµРЅРґРµСЂРёРЅРіР°
+Main.SetupRP.Filter      Р¤РёР»СЊС‚СЂР°С†РёСЏ:
+Main.SetupRP.UAddr       U-РђРґСЂРµСЃР°С†РёСЏ:
+Main.SetupRP.VAddr       V-РђРґСЂРµСЃР°С†РёСЏ:
+Main.SetupRP.Set         РџСЂРёРЅСЏС‚СЊ
+Main.SetupRP.Cancel      РћС‚РјРµРЅР°
 
 # Setup TXD Version dialog
-Main.SetupTV.Desc        Настройка версии TXD
-Main.SetupTV.Set         Сет
-Main.SetupTV.Plat        Платформа
-Main.SetupTV.Data        Тип данных
-Main.SetupTV.Version     Версия
-Main.SetupTV.Build       Сборка
-Main.SetupTV.Accept      Принять
-Main.SetupTV.Cancel      Отмена
-Main.SetupTV.Custom      Свой
+Main.SetupTV.Desc        РќР°СЃС‚СЂРѕР№РєР° РІРµСЂСЃРёРё TXD
+Main.SetupTV.Set         РЎРµС‚
+Main.SetupTV.Plat        РџР»Р°С‚С„РѕСЂРјР°
+Main.SetupTV.Data        РўРёРї РґР°РЅРЅС‹С…
+Main.SetupTV.Version     Р’РµСЂСЃРёСЏ
+Main.SetupTV.Build       РЎР±РѕСЂРєР°
+Main.SetupTV.Accept      РџСЂРёРЅСЏС‚СЊ
+Main.SetupTV.Cancel      РћС‚РјРµРЅР°
+Main.SetupTV.Custom      РЎРІРѕР№
 
 # Options
-Main.Options.Desc        Настройки _MAGIC_TXD_NAME
-Main.Options.ShowLog     Открыть лог при предупреждениях
-Main.Options.DispIcn     Показывать значок игры
-Main.Options.Accept      Принять
-Main.Options.Cancel      Отмена
+Main.Options.Desc        РќР°СЃС‚СЂРѕР№РєРё _MAGIC_TXD_NAME
+Main.Options.ShowLog     РћС‚РєСЂС‹С‚СЊ Р»РѕРі РїСЂРё РїСЂРµРґСѓРїСЂРµР¶РґРµРЅРёСЏС…
+Main.Options.DispIcn     РџРѕРєР°Р·С‹РІР°С‚СЊ Р·РЅР°С‡РѕРє РёРіСЂС‹
+Main.Options.Accept      РџСЂРёРЅСЏС‚СЊ
+Main.Options.Cancel      РћС‚РјРµРЅР°
 
 # main menu - Tools      
-Main.Tools.MassCnv       Массовый конверт
-Main.Tools.MassExp       Массовый экспорт
-Main.Tools.MassBld       Массовая сборка
+Main.Tools.MassCnv       РњР°СЃСЃРѕРІС‹Р№ РєРѕРЅРІРµСЂС‚
+Main.Tools.MassExp       РњР°СЃСЃРѕРІС‹Р№ СЌРєСЃРїРѕСЂС‚
+Main.Tools.MassBld       РњР°СЃСЃРѕРІР°СЏ СЃР±РѕСЂРєР°
 
 # main menu - Export
-Main.Export.ExpAll       Все текстуры
-Main.Export.Desc         Сохранить _PARAM_1 как...
+Main.Export.ExpAll       Р’СЃРµ С‚РµРєСЃС‚СѓСЂС‹
+Main.Export.Desc         РЎРѕС…СЂР°РЅРёС‚СЊ _PARAM_1 РєР°Рє...
 
 # Export All
-Main.ExpAll.Desc         Экспорт всех текстур...
-Main.ExpAll.Format       Формат:
-Main.ExpAll.Export       Экспорт
-Main.ExpAll.Cancel       Отмена
-Main.ExpAll.ExpTarg      Выберите папку...
+Main.ExpAll.Desc         Р­РєСЃРїРѕСЂС‚ РІСЃРµС… С‚РµРєСЃС‚СѓСЂ...
+Main.ExpAll.Format       Р¤РѕСЂРјР°С‚:
+Main.ExpAll.Export       Р­РєСЃРїРѕСЂС‚
+Main.ExpAll.Cancel       РћС‚РјРµРЅР°
+Main.ExpAll.ExpTarg      Р’С‹Р±РµСЂРёС‚Рµ РїР°РїРєСѓ...
 
 # Log
-Main.Log.Desc            Лог
-Main.Log.Save            Сохранить
-Main.Log.Copy            Копировать
-Main.Log.CopyAll         Копировать всё
-Main.Log.Clear           Очистить
-Main.Log.Close           Закрыть
-Main.Log.SaveAs          Сохранить лог как...
+Main.Log.Desc            Р›РѕРі
+Main.Log.Save            РЎРѕС…СЂР°РЅРёС‚СЊ
+Main.Log.Copy            РљРѕРїРёСЂРѕРІР°С‚СЊ
+Main.Log.CopyAll         РљРѕРїРёСЂРѕРІР°С‚СЊ РІСЃС‘
+Main.Log.Clear           РћС‡РёСЃС‚РёС‚СЊ
+Main.Log.Close           Р—Р°РєСЂС‹С‚СЊ
+Main.Log.SaveAs          РЎРѕС…СЂР°РЅРёС‚СЊ Р»РѕРі РєР°Рє...
 
 # View
-Main.View.FullImg        Показать полное изображение
-Main.View.Backgr         Прозрачный фон
-Main.View.DispML         Показать мип-уровни
-Main.View.ShowLog        Открыть лог
-Main.View.DarkThm        Тёмный интерфейс
-Main.View.LightTm        Светлый интерфейс
+Main.View.FullImg        РџРѕРєР°Р·Р°С‚СЊ РїРѕР»РЅРѕРµ РёР·РѕР±СЂР°Р¶РµРЅРёРµ
+Main.View.Backgr         РџСЂРѕР·СЂР°С‡РЅС‹Р№ С„РѕРЅ
+Main.View.DispML         РџРѕРєР°Р·Р°С‚СЊ РјРёРї-СѓСЂРѕРІРЅРё
+Main.View.ShowLog        РћС‚РєСЂС‹С‚СЊ Р»РѕРі
+Main.View.DarkThm        РўС‘РјРЅС‹Р№ РёРЅС‚РµСЂС„РµР№СЃ
+Main.View.LightTm        РЎРІРµС‚Р»С‹Р№ РёРЅС‚РµСЂС„РµР№СЃ
 
 # Info
-Main.Info.Website        Сайт программы
-Main.Info.About          О программе
+Main.Info.Website        РЎР°Р№С‚ РїСЂРѕРіСЂР°РјРјС‹
+Main.Info.About          Рћ РїСЂРѕРіСЂР°РјРјРµ
 
 # File - Open
-Main.Open.Desc           Открыть TXD файл...
+Main.Open.Desc           РћС‚РєСЂС‹С‚СЊ TXD С„Р°Р№Р»...
 
 # File - Save As
-Main.SaveAs.Desc         Сохранить TXD как...
+Main.SaveAs.Desc         РЎРѕС…СЂР°РЅРёС‚СЊ TXD РєР°Рє...
 
 # Edit - Add
-Main.Edit.Add.Desc       Импортировать текстуру...
+Main.Edit.Add.Desc       РРјРїРѕСЂС‚РёСЂРѕРІР°С‚СЊ С‚РµРєСЃС‚СѓСЂСѓ...
 
 # About
-Main.Info.About.Desc     О нас
-Main.Info.About.Credits  создатели: _AUTHOR_NAME_1 и _AUTHOR_NAME_2
-Main.Info.About.ComUse1  Эта программа НЕ ДОЛЖНА использоваться в коммерческих целях без явного письменного разрешения всех третьих лиц, задействованных в разработке этой программы. Ознакомьтесь с лицензионными соглашениями для получения дополнительной информации.
-Main.Info.About.ComUse2  Команда _MAGIC_TXD_NAME приветствует вашу поддержку!
+Main.Info.About.Desc     Рћ РЅР°СЃ
+Main.Info.About.Credits  СЃРѕР·РґР°С‚РµР»Рё: _AUTHOR_NAME_1 Рё _AUTHOR_NAME_2
+Main.Info.About.ComUse1  Р­С‚Р° РїСЂРѕРіСЂР°РјРјР° РќР• Р”РћР›Р–РќРђ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊСЃСЏ РІ РєРѕРјРјРµСЂС‡РµСЃРєРёС… С†РµР»СЏС… Р±РµР· СЏРІРЅРѕРіРѕ РїРёСЃСЊРјРµРЅРЅРѕРіРѕ СЂР°Р·СЂРµС€РµРЅРёСЏ РІСЃРµС… С‚СЂРµС‚СЊРёС… Р»РёС†, Р·Р°РґРµР№СЃС‚РІРѕРІР°РЅРЅС‹С… РІ СЂР°Р·СЂР°Р±РѕС‚РєРµ СЌС‚РѕР№ РїСЂРѕРіСЂР°РјРјС‹. РћР·РЅР°РєРѕРјСЊС‚РµСЃСЊ СЃ Р»РёС†РµРЅР·РёРѕРЅРЅС‹РјРё СЃРѕРіР»Р°С€РµРЅРёСЏРјРё РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РґРѕРїРѕР»РЅРёС‚РµР»СЊРЅРѕР№ РёРЅС„РѕСЂРјР°С†РёРё.
+Main.Info.About.ComUse2  РљРѕРјР°РЅРґР° _MAGIC_TXD_NAME РїСЂРёРІРµС‚СЃС‚РІСѓРµС‚ РІР°С€Сѓ РїРѕРґРґРµСЂР¶РєСѓ!
 
 # Tools
-Tools.Browse             Выбрать
-Tools.BrwDesc            Выбор папки...
-Tools.GameRt             Исходная папка:
-Tools.Output             Выходная папка:
-Tools.Plat               Платформа
-Tools.Game               Игра
-Tools.GenMips            Генерировать мип-уровни
-Tools.MaxMips            Макс.:
+Tools.Browse             Р’С‹Р±СЂР°С‚СЊ
+Tools.BrwDesc            Р’С‹Р±РѕСЂ РїР°РїРєРё...
+Tools.GameRt             РСЃС…РѕРґРЅР°СЏ РїР°РїРєР°:
+Tools.Output             Р’С‹С…РѕРґРЅР°СЏ РїР°РїРєР°:
+Tools.Plat               РџР»Р°С‚С„РѕСЂРјР°
+Tools.Game               РРіСЂР°
+Tools.GenMips            Р“РµРЅРµСЂРёСЂРѕРІР°С‚СЊ РјРёРї-СѓСЂРѕРІРЅРё
+Tools.MaxMips            РњР°РєСЃ.:
 
 # Mass export
-Tools.MassExp.Desc       Массовый экспорт
-Tools.MassExp.ImgFmt     Формат изображений:
-Tools.MassExp.TxNmOnl    в названии только имя текстуры
-Tools.MassExp.PrTxdNm    в названии имя TXD
-Tools.MassExp.SepFld     разделить по папкам
-Tools.MassExp.Export     Экспорт
-Tools.MassExp.Cancel     Отмена
+Tools.MassExp.Desc       РњР°СЃСЃРѕРІС‹Р№ СЌРєСЃРїРѕСЂС‚
+Tools.MassExp.ImgFmt     Р¤РѕСЂРјР°С‚ РёР·РѕР±СЂР°Р¶РµРЅРёР№:
+Tools.MassExp.TxNmOnl    РІ РЅР°Р·РІР°РЅРёРё С‚РѕР»СЊРєРѕ РёРјСЏ С‚РµРєСЃС‚СѓСЂС‹
+Tools.MassExp.PrTxdNm    РІ РЅР°Р·РІР°РЅРёРё РёРјСЏ TXD
+Tools.MassExp.SepFld     СЂР°Р·РґРµР»РёС‚СЊ РїРѕ РїР°РїРєР°Рј
+Tools.MassExp.Export     Р­РєСЃРїРѕСЂС‚
+Tools.MassExp.Cancel     РћС‚РјРµРЅР°
 
 # Mass build
-Tools.MassBld.Desc       Массовая сборка
-Tools.MassBld.Build      Собрать
-Tools.MassBld.Cancel     Отмена
+Tools.MassBld.Desc       РњР°СЃСЃРѕРІР°СЏ СЃР±РѕСЂРєР°
+Tools.MassBld.Build      РЎРѕР±СЂР°С‚СЊ
+Tools.MassBld.Cancel     РћС‚РјРµРЅР°
 
 # Mass convert
-Tools.MassCnv.Desc       Массовый конверт
-Tools.MassCnv.ClearML    Убрать мип-уровни
-Tools.MassCnv.ImpFilt    Улучшить фильтрацию
-Tools.MassCnv.CompTex    Ужать текстуры
-Tools.MassCnv.RecIMG     Перестроить IMG-архивы
-Tools.MassCnv.CompIMG    Ужать IMG
-Tools.MassCnv.Convert    Конвертировать
-Tools.MassCnv.Cancel     Отмена
+Tools.MassCnv.Desc       РњР°СЃСЃРѕРІС‹Р№ РєРѕРЅРІРµСЂС‚
+Tools.MassCnv.ClearML    РЈР±СЂР°С‚СЊ РјРёРї-СѓСЂРѕРІРЅРё
+Tools.MassCnv.ImpFilt    РЈР»СѓС‡С€РёС‚СЊ С„РёР»СЊС‚СЂР°С†РёСЋ
+Tools.MassCnv.CompTex    РЈР¶Р°С‚СЊ С‚РµРєСЃС‚СѓСЂС‹
+Tools.MassCnv.RecIMG     РџРµСЂРµСЃС‚СЂРѕРёС‚СЊ IMG-Р°СЂС…РёРІС‹
+Tools.MassCnv.CompIMG    РЈР¶Р°С‚СЊ IMG
+Tools.MassCnv.Convert    РљРѕРЅРІРµСЂС‚РёСЂРѕРІР°С‚СЊ
+Tools.MassCnv.Cancel     РћС‚РјРµРЅР°

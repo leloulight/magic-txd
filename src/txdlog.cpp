@@ -180,6 +180,7 @@ void TxdLog::saveLog( QString fileName )
     if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
         QTextStream out(&file);
         out.setCodec("UTF-8");
+        out.setGenerateByteOrderMark(true);
         time_t currentTime = time(NULL);
         char timeBuf[1024];
         std::strftime(timeBuf, sizeof(timeBuf), "%A %c", localtime(&currentTime));
