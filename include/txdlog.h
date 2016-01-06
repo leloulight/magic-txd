@@ -65,10 +65,11 @@ public:
 	}
 };
 
-class TxdLog : public QObject
+class TxdLog : public QObject, public magicTextLocalizationItem
 {
 public:
 	TxdLog(MainWindow *mainWnd, QString AppPath, QWidget *ParentWidget);
+    ~TxdLog( void );
 
 	void show();
 	void hide();
@@ -80,6 +81,8 @@ public:
 
 	void addLogMessage(QString msg, eLogMessageType msgType = LOGMSG_INFO);
 	void clearLog(void);
+
+    void updateContent( MainWindow *mainWnd ) override;
 
 private:
 
@@ -123,7 +126,7 @@ public:
 public slots:
     void onLogSaveRequest()
     {
-	    QString saveFileName = QFileDialog::getSaveFileName(parent, MAGIC_TEXT("Main.Log.SaveAs"), QString(), "Log File (*.txt)");
+	    QString saveFileName = QFileDialog::getSaveFileName(parent, getLanguageItemByKey(mainWnd, "Main.Log.SaveAs"), QString(), "Log File (*.txt)");
 
 	    if (saveFileName.length() != 0)
 	    {
@@ -175,6 +178,12 @@ public slots:
 
 private:
     MainWindow *mainWnd;
+
+    QPushButton *buttonSave;
+    QPushButton *buttonCopy;
+    QPushButton *buttonCopyAll;
+    QPushButton *buttonClear;
+    QPushButton *buttonClose;
 
 	QWidget *parent;
 	QWidget *logWidget;

@@ -9,7 +9,7 @@
 #include <QComboBox>
 #include <QHBoxLayout>
 
-struct RenderPropWindow : public QDialog
+struct RenderPropWindow : public QDialog, public magicTextLocalizationItem
 {
 private:
     QComboBox* createFilterBox( void ) const;
@@ -17,6 +17,8 @@ private:
 public:
     RenderPropWindow( MainWindow *mainWnd, TexInfoWidget *texInfo );
     ~RenderPropWindow( void );
+
+    void updateContent( MainWindow *mainWnd ) override;
 
 public slots:
     void OnRequestSet( bool checked );

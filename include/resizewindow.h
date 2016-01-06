@@ -8,11 +8,10 @@
 #include "qtutils.h"
 #include "languages.h"
 
-struct TexResizeWindow : public QDialog
+struct TexResizeWindow : public QDialog, public magicTextLocalizationItem
 {
     inline TexResizeWindow( MainWindow *mainWnd, TexInfoWidget *texInfo ) : QDialog( mainWnd )
     {
-        this->setWindowTitle( MAGIC_TEXT("Main.Resize.Desc") );
         this->setWindowFlags( this->windowFlags() & ~Qt::WindowContextHelpButtonHint );
 
         this->mainWnd = mainWnd;
@@ -72,18 +71,18 @@ struct TexResizeWindow : public QDialog
 
         connect( heightEdit, &QLineEdit::textChanged, this, &TexResizeWindow::OnChangeDimensionProperty );
 
-        layout.top->addRow( new QLabel( MAGIC_TEXT("Main.Resize.Width") ), widthEdit );
-        layout.top->addRow( new QLabel( MAGIC_TEXT("Main.Resize.Height") ), heightEdit );
+        layout.top->addRow( CreateLabelL( mainWnd, "Main.Resize.Width" ), widthEdit );
+        layout.top->addRow( CreateLabelL( mainWnd, "Main.Resize.Height" ), heightEdit );
 
         // Now the buttons, I guess.
-        QPushButton *buttonSet = CreateButton(MAGIC_TEXT("Main.Resize.Set"));
+        QPushButton *buttonSet = CreateButtonL( mainWnd, "Main.Resize.Set" );
         layout.bottom->addWidget( buttonSet );
 
         this->buttonSet = buttonSet;
 
         connect( buttonSet, &QPushButton::clicked, this, &TexResizeWindow::OnRequestSet );
 
-        QPushButton *buttonCancel = CreateButton(MAGIC_TEXT("Main.Resize.Cancel"));
+        QPushButton *buttonCancel = CreateButtonL( mainWnd, "Main.Resize.Cancel" );
         layout.bottom->addWidget( buttonCancel );
 
         connect( buttonCancel, &QPushButton::clicked, this, &TexResizeWindow::OnRequestCancel );
@@ -93,12 +92,21 @@ struct TexResizeWindow : public QDialog
 
         // Initialize the dialog.
         this->UpdateAccessibility();
+
+        RegisterTextLocalizationItem( mainWnd, this );
     }
 
     inline ~TexResizeWindow( void )
     {
+        UnregisterTextLocalizationItem( mainWnd, this );
+
         // There can be only one.
         this->mainWnd->resizeDlg = NULL;
+    }
+
+    void updateContent( MainWindow *mainWnd ) override
+    {
+        this->setWindowTitle( getLanguageItemByKey( mainWnd, "Main.Resize.Desc" ) );
     }
 
 public slots:

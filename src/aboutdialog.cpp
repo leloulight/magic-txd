@@ -1,11 +1,37 @@
 #include "mainwindow.h"
 #include <QMovie>
 
+struct LabelDoNotUseCommercially : public QLabel, public magicTextLocalizationItem
+{
+    inline LabelDoNotUseCommercially( MainWindow *mainWnd )
+    {
+        this->mainWnd = mainWnd;
+
+        RegisterTextLocalizationItem( mainWnd, this );
+    }
+
+    inline ~LabelDoNotUseCommercially( void )
+    {
+        UnregisterTextLocalizationItem( mainWnd, this );
+    }
+
+    void updateContent( MainWindow *mainWnd )
+    {
+        setText(
+            getLanguageItemByKey( mainWnd, "Main.About.ComUse1" )
+            + "\n\n" +
+            getLanguageItemByKey( mainWnd, "Main.About.ComUse2")
+        );
+    }
+
+private:
+    MainWindow *mainWnd;
+};
+
 AboutDialog::AboutDialog( MainWindow *mainWnd ) : QDialog( mainWnd )
 {
     this->mainWnd = mainWnd;
 
-    setWindowTitle(MAGIC_TEXT("Main.Info.About.Desc"));
     setWindowFlags( this->windowFlags() & ~Qt::WindowContextHelpButtonHint );
 
     setAttribute( Qt::WA_DeleteOnClose );
@@ -31,7 +57,7 @@ AboutDialog::AboutDialog( MainWindow *mainWnd ) : QDialog( mainWnd )
     
     headerGroup->addWidget( mainLogoLabel );
 
-    QLabel *labelCopyrightHolders = new QLabel(MAGIC_TEXT("Main.Info.About.Credits"));
+    QLabel *labelCopyrightHolders = CreateLabelL( mainWnd, "Main.About.Credits" );
 
     labelCopyrightHolders->setObjectName( "labelCopyrightHolders" );
 
@@ -43,9 +69,8 @@ AboutDialog::AboutDialog( MainWindow *mainWnd ) : QDialog( mainWnd )
 
     rootLayout->addLayout( headerGroup );
 
-    QLabel *labelDoNotUseCommercially = new QLabel();
+    QLabel *labelDoNotUseCommercially = new LabelDoNotUseCommercially( mainWnd );
     labelDoNotUseCommercially->setWordWrap(true);
-    labelDoNotUseCommercially->setText(MAGIC_TEXT("Main.Info.About.ComUse1") + "\n\n" + MAGIC_TEXT("Main.Info.About.ComUse2"));
 
     labelDoNotUseCommercially->setAlignment(Qt::AlignCenter);
 
@@ -124,6 +149,8 @@ AboutDialog::AboutDialog( MainWindow *mainWnd ) : QDialog( mainWnd )
 
     this->setLayout( rootLayout );
 
+    RegisterTextLocalizationItem( mainWnd, this );
+
     // There can be only one.
     mainWnd->aboutDlg = this;
 }
@@ -131,4 +158,11 @@ AboutDialog::AboutDialog( MainWindow *mainWnd ) : QDialog( mainWnd )
 AboutDialog::~AboutDialog( void )
 {
     mainWnd->aboutDlg = NULL;
+
+    UnregisterTextLocalizationItem( mainWnd, this );
+}
+
+void AboutDialog::updateContent( MainWindow *mainWnd )
+{
+    setWindowTitle( getLanguageItemByKey( mainWnd, "Main.About.Desc" ) );
 }

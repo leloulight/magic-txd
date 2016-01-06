@@ -85,7 +85,6 @@ MassExportWindow::MassExportWindow( MainWindow *mainWnd ) : QDialog( mainWnd )
 
     rw::Interface *rwEngine = mainWnd->GetEngine();
 
-    this->setWindowTitle(MAGIC_TEXT("Tools.MassExp.Desc"));
     this->setWindowFlags( this->windowFlags() & ~Qt::WindowContextHelpButtonHint );
 
     this->setAttribute( Qt::WA_DeleteOnClose );
@@ -97,15 +96,15 @@ MassExportWindow::MassExportWindow( MainWindow *mainWnd ) : QDialog( mainWnd )
     QFormLayout *pathRootForm = new QFormLayout();
 
     pathRootForm->addRow(
-        new QLabel(MAGIC_TEXT("Tools.GameRt")),
-        qtshared::createPathSelectGroup( QString::fromStdWString( env->config.gameRoot ), this->editGameRoot )
+        CreateLabelL( mainWnd, "Tools.GameRt" ),
+        qtshared::createPathSelectGroup( mainWnd, QString::fromStdWString( env->config.gameRoot ), this->editGameRoot )
     );
 
     QHBoxLayout *outputRootGroup = new QHBoxLayout();
 
     pathRootForm->addRow(
-        new QLabel(MAGIC_TEXT("Tools.Output")),
-        qtshared::createPathSelectGroup( QString::fromStdWString( env->config.outputRoot ), this->editOutputRoot )
+        CreateLabelL( mainWnd, "Tools.Output" ),
+        qtshared::createPathSelectGroup( mainWnd, QString::fromStdWString( env->config.outputRoot ), this->editOutputRoot )
    );
 
     layout.top->addLayout( pathRootForm );
@@ -116,7 +115,7 @@ MassExportWindow::MassExportWindow( MainWindow *mainWnd ) : QDialog( mainWnd )
 
     imgFormatGroup->setContentsMargins( 0, 0, 0, 10 );
 
-    imgFormatGroup->addWidget(new QLabel(MAGIC_TEXT("Tools.MassExp.ImgFmt")));
+    imgFormatGroup->addWidget(CreateLabelL(mainWnd, "Tools.MassExp.ImgFmt"));
 
     QComboBox *boxRecomImageFormat = new QComboBox();
     {
@@ -164,7 +163,7 @@ MassExportWindow::MassExportWindow( MainWindow *mainWnd ) : QDialog( mainWnd )
 
     MassExportModule::eOutputType outputType = env->config.outputType;
 
-    QRadioButton *optionExportPlain = new QRadioButton(MAGIC_TEXT("Tools.MassExp.TxNmOnl"));
+    QRadioButton *optionExportPlain = CreateRadioButtonL( mainWnd, "Tools.MassExp.TxNmOnl" );
 
     this->optionExportPlain = optionExportPlain;
 
@@ -175,7 +174,7 @@ MassExportWindow::MassExportWindow( MainWindow *mainWnd ) : QDialog( mainWnd )
 
     layout.top->addWidget( optionExportPlain );
 
-    QRadioButton *optionExportTXDName = new QRadioButton(MAGIC_TEXT("Tools.MassExp.PrTxdNm"));
+    QRadioButton *optionExportTXDName = CreateRadioButtonL( mainWnd, "Tools.MassExp.PrTxdNm" );
 
     this->optionExportTXDName = optionExportTXDName;
 
@@ -186,7 +185,7 @@ MassExportWindow::MassExportWindow( MainWindow *mainWnd ) : QDialog( mainWnd )
 
     layout.top->addWidget( optionExportTXDName );
 
-    QRadioButton *optionExportFolders = new QRadioButton(MAGIC_TEXT("Tools.MassExp.SepFld"));
+    QRadioButton *optionExportFolders = CreateRadioButtonL( mainWnd, "Tools.MassExp.SepFld" );
 
     this->optionExportFolders = optionExportFolders;
 
@@ -198,17 +197,19 @@ MassExportWindow::MassExportWindow( MainWindow *mainWnd ) : QDialog( mainWnd )
     layout.top->addWidget( optionExportFolders );
 
     // The dialog is done, we finish off with the typical buttons.
-    QPushButton *buttonExport = CreateButton(MAGIC_TEXT("Tools.MassExp.Export"));
+    QPushButton *buttonExport = CreateButtonL( mainWnd, "Tools.MassExp.Export" );
 
     connect( buttonExport, &QPushButton::clicked, this, &MassExportWindow::OnRequestExport );
 
     layout.bottom->addWidget( buttonExport );
 
-    QPushButton *buttonCancel = CreateButton(MAGIC_TEXT("Tools.MassExp.Cancel"));
+    QPushButton *buttonCancel = CreateButtonL( mainWnd, "Tools.MassExp.Cancel" );
 
     connect( buttonCancel, &QPushButton::clicked, this, &MassExportWindow::OnRequestCancel );
 
     layout.bottom->addWidget( buttonCancel );
+
+    RegisterTextLocalizationItem( mainWnd, this );
 
     LIST_INSERT( env->openDialogs.root, this->node );
 
@@ -218,6 +219,13 @@ MassExportWindow::MassExportWindow( MainWindow *mainWnd ) : QDialog( mainWnd )
 MassExportWindow::~MassExportWindow( void )
 {
     LIST_REMOVE( this->node );
+
+    UnregisterTextLocalizationItem( mainWnd, this );
+}
+
+void MassExportWindow::updateContent( MainWindow *mainWnd )
+{
+    this->setWindowTitle( getLanguageItemByKey(mainWnd, "Tools.MassExp.Desc") );
 }
 
 struct MagicMassExportModule : public MassExportModule

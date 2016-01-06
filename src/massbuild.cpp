@@ -92,7 +92,6 @@ MassBuildWindow::MassBuildWindow( MainWindow *mainWnd ) : QDialog( mainWnd )
 
     massbuildEnv *env = massbuildEnvRegister.GetPluginStruct( mainWnd );
 
-    this->setWindowTitle( MAGIC_TEXT("Tools.MassBld.Desc") );
     this->setWindowFlags( this->windowFlags() & ~Qt::WindowContextHelpButtonHint );
 
     this->setAttribute( Qt::WA_DeleteOnClose );
@@ -103,6 +102,7 @@ MassBuildWindow::MassBuildWindow( MainWindow *mainWnd ) : QDialog( mainWnd )
     // First the ability to select the paths.
     layout.top->addLayout(
         qtshared::createGameRootInputOutputForm(
+            mainWnd,
             env->config.gameRoot,
             env->config.outputRoot,
             this->editGameRoot,
@@ -114,6 +114,7 @@ MassBuildWindow::MassBuildWindow( MainWindow *mainWnd ) : QDialog( mainWnd )
 
     // Then we should have a target configuration.
     createTargetConfigurationComponents(
+        mainWnd,
         layout.top,
         env->config.targetPlatform,
         env->config.targetGame,
@@ -126,6 +127,7 @@ MassBuildWindow::MassBuildWindow( MainWindow *mainWnd ) : QDialog( mainWnd )
     // Now some basic properties that the user might want to do globally.
     layout.top->addLayout(
         qtshared::createMipmapGenerationGroup(
+            mainWnd,
             this,
             env->config.generateMipmaps,
             env->config.curMipMaxLevel,
@@ -137,19 +139,21 @@ MassBuildWindow::MassBuildWindow( MainWindow *mainWnd ) : QDialog( mainWnd )
     layout.top->addSpacing( 15 );
 
     // Last thing is the typical button row.
-    QPushButton *buttonBuild = CreateButton( MAGIC_TEXT("Tools.MassBld.Build") );
+    QPushButton *buttonBuild = CreateButtonL( mainWnd, "Tools.MassBld.Build" );
 
     connect( buttonBuild, &QPushButton::clicked, this, &MassBuildWindow::OnRequestBuild );
 
     layout.bottom->addWidget( buttonBuild );
 
-    QPushButton *buttonCancel = CreateButton( MAGIC_TEXT("Tools.MassBld.Cancel") );
+    QPushButton *buttonCancel = CreateButtonL( mainWnd, "Tools.MassBld.Cancel" );
 
     connect( buttonCancel, &QPushButton::clicked, this, &MassBuildWindow::OnRequestCancel );
 
     layout.bottom->addWidget( buttonCancel );
 
     this->setLayout(layout.root);
+
+    RegisterTextLocalizationItem( mainWnd, this );
 
     // We want to know about all active windows.
     LIST_INSERT( env->windows.root, this->node );
@@ -159,6 +163,13 @@ MassBuildWindow::~MassBuildWindow( void )
 {
     // Remove us from the registry.
     LIST_REMOVE( this->node );
+
+    UnregisterTextLocalizationItem( mainWnd, this );
+}
+
+void MassBuildWindow::updateContent( MainWindow *mainWnd )
+{
+    this->setWindowTitle( getLanguageItemByKey(mainWnd, "Tools.MassBld.Desc") );
 }
 
 void MassBuildWindow::serialize( void )

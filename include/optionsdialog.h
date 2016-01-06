@@ -3,10 +3,12 @@
 #include <QDialog>
 #include <QComboBox>
 
-struct OptionsDialog : public QDialog
+struct OptionsDialog : public QDialog, public magicTextLocalizationItem
 {
     OptionsDialog( MainWindow *mainWnd );
     ~OptionsDialog( void );
+
+    void updateContent( MainWindow *mainWnd ) override;
 
 public slots:
     void OnRequestApply( bool checked );

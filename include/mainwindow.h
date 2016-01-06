@@ -23,6 +23,8 @@
 
 #include "defs.h"
 
+class MainWindow;
+
 #include "versionsets.h"
 #include "textureviewport.h"
 
@@ -59,7 +61,7 @@ inline QString ansi_to_qt( const std::string& str )
 
 #define _FEATURES_NOT_IN_CURRENT_RELEASE
 
-class MainWindow : public QMainWindow
+class MainWindow : public QMainWindow, public magicTextLocalizationItem
 {
     friend class TexAddDialog;
     friend class RwVersionDialog;
@@ -75,6 +77,8 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QString appPath, rw::Interface *rwEngine, CFileSystem *fsHandle, QWidget *parent = 0);
     ~MainWindow();
+
+    void updateContent( MainWindow *mainWnd );
 
 private:
     void initializeNativeFormats(void);

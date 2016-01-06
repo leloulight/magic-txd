@@ -11,13 +11,25 @@
 
 namespace qtshared
 {
-    struct PathBrowseButton : public QPushButton
+    struct PathBrowseButton : public QPushButton, public simpleLocalizationItem
     {
-        inline PathBrowseButton( QString text, QLineEdit *lineEdit ) : QPushButton( text )
+        inline PathBrowseButton( MainWindow *mainWnd, QLineEdit *lineEdit ) : QPushButton(), simpleLocalizationItem( mainWnd, "Tools.Browse" )
         {
             this->theEdit = lineEdit;
 
             connect( this, &QPushButton::clicked, this, &PathBrowseButton::OnBrowsePath );
+
+            Init();
+        }
+
+        inline ~PathBrowseButton( void )
+        {
+            Shutdown();
+        }
+
+        void doText( QString text ) override
+        {
+            this->setText( text );
         }
 
     public slots:
@@ -25,7 +37,7 @@ namespace qtshared
         {
             QString selPath =
                 QFileDialog::getExistingDirectory(
-                    this, MAGIC_TEXT("Tools.BrwDesc"),
+                    this, getLanguageItemByKey( mainWnd, "Tools.BrwDesc" ),
                     theEdit->text()
                 );
 
@@ -39,7 +51,7 @@ namespace qtshared
         QLineEdit *theEdit;
     };
 
-    inline QLayout* createPathSelectGroup( QString begStr, QLineEdit*& editOut )
+    inline QLayout* createPathSelectGroup( MainWindow *mainWnd, QString begStr, QLineEdit*& editOut )
     {
         QHBoxLayout *pathRow = new QHBoxLayout();
 
@@ -47,7 +59,7 @@ namespace qtshared
 
         pathRow->addWidget( pathEdit );
 
-        QPushButton *pathBrowseButton = new PathBrowseButton( MAGIC_TEXT("Tools.Browse"), pathEdit );
+        QPushButton *pathBrowseButton = new PathBrowseButton( mainWnd, pathEdit );
 
         pathRow->addWidget( pathBrowseButton );
 
@@ -56,11 +68,11 @@ namespace qtshared
         return pathRow;
     }
     
-    inline QLayout* createMipmapGenerationGroup( QObject *parent, bool isEnabled, int curMipMax, QCheckBox*& propGenMipmapsOut, QLineEdit*& editMaxMipLevelOut )
+    inline QLayout* createMipmapGenerationGroup( MainWindow *mainWnd, QObject *parent, bool isEnabled, int curMipMax, QCheckBox*& propGenMipmapsOut, QLineEdit*& editMaxMipLevelOut )
     {
         QHBoxLayout *genMipGroup = new QHBoxLayout();
 
-        QCheckBox *propGenMipmaps = new QCheckBox( MAGIC_TEXT("Tools.GenMips") );
+        QCheckBox *propGenMipmaps = CreateCheckBoxL( mainWnd, "Tools.GenMips" );
 
         propGenMipmaps->setChecked( isEnabled );
 
@@ -72,7 +84,7 @@ namespace qtshared
 
         mipMaxLevelGroup->setAlignment( Qt::AlignRight );
 
-        mipMaxLevelGroup->addWidget( new QLabel( MAGIC_TEXT("Tools.MaxMips") ), 0, Qt::AlignRight );
+        mipMaxLevelGroup->addWidget( CreateLabelL( mainWnd, "Tools.MaxMips" ), 0, Qt::AlignRight );
 
         QLineEdit *maxMipLevelEdit = new QLineEdit( QString( "%1" ).arg( curMipMax ) );
 
@@ -91,15 +103,15 @@ namespace qtshared
         return genMipGroup;
     }
 
-    inline QLayout* createGameRootInputOutputForm( const std::wstring& curGameRoot, const std::wstring& curOutputRoot, QLineEdit*& editGameRootOut, QLineEdit*& editOutputRootOut )
+    inline QLayout* createGameRootInputOutputForm( MainWindow *mainWnd, const std::wstring& curGameRoot, const std::wstring& curOutputRoot, QLineEdit*& editGameRootOut, QLineEdit*& editOutputRootOut )
     {
         QFormLayout *basicPathForm = new QFormLayout();
 
-        QLayout *gameRootLayout = qtshared::createPathSelectGroup( QString::fromStdWString( curGameRoot ), editGameRootOut );
-        QLayout *outputRootLayout = qtshared::createPathSelectGroup( QString::fromStdWString( curOutputRoot ), editOutputRootOut );
+        QLayout *gameRootLayout = qtshared::createPathSelectGroup( mainWnd, QString::fromStdWString( curGameRoot ), editGameRootOut );
+        QLayout *outputRootLayout = qtshared::createPathSelectGroup( mainWnd, QString::fromStdWString( curOutputRoot ), editOutputRootOut );
 
-        basicPathForm->addRow( new QLabel(MAGIC_TEXT("Tools.GameRt")), gameRootLayout );
-        basicPathForm->addRow( new QLabel(MAGIC_TEXT("Tools.Output")), outputRootLayout );
+        basicPathForm->addRow( CreateLabelL(mainWnd, "Tools.GameRt"), gameRootLayout );
+        basicPathForm->addRow( CreateLabelL(mainWnd, "Tools.Output"), outputRootLayout );
 
         return basicPathForm;
     }

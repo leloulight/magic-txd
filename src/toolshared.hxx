@@ -66,6 +66,7 @@ static gameToNaturalList_t gameToNaturalList =
 
 template <typename layoutClass>
 inline void createTargetConfigurationComponents(
+    MainWindow *mainWnd,
     layoutClass *rootLayout,
     rwkind::eTargetPlatform curPlatform, rwkind::eTargetGame curGame,
     QComboBox*& gameSelBoxOut,
@@ -75,7 +76,7 @@ inline void createTargetConfigurationComponents(
     // Now a target format selection group.
     QHBoxLayout *platformGroup = new QHBoxLayout();
 
-    platformGroup->addWidget( new QLabel( MAGIC_TEXT("Tools.Plat") ) );
+    platformGroup->addWidget( CreateLabelL( mainWnd, "Tools.Plat" ) );
 
     QComboBox *platformSelBox = new QComboBox();
 
@@ -93,7 +94,7 @@ inline void createTargetConfigurationComponents(
 
     QHBoxLayout *gameGroup = new QHBoxLayout();
 
-    gameGroup->addWidget( new QLabel( MAGIC_TEXT("Tools.Game") ) );
+    gameGroup->addWidget( CreateLabelL( mainWnd, "Tools.Game" ) );
 
     QComboBox *gameSelBox = new QComboBox();
 

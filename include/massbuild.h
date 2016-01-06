@@ -1,8 +1,9 @@
 #pragma once
 
 #include <QDialog>
+#include "languages.h"
 
-struct MassBuildWindow : public QDialog
+struct MassBuildWindow : public QDialog, public magicTextLocalizationItem
 {
 private:
     friend struct massbuildEnv;
@@ -10,6 +11,8 @@ private:
 public:
     MassBuildWindow( MainWindow *mainWnd );
     ~MassBuildWindow( void );
+
+    void updateContent( MainWindow *mainWnd ) override;
 
 public slots:
     void OnRequestBuild( bool checked );

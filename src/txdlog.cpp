@@ -10,54 +10,50 @@ TxdLog::TxdLog(MainWindow *mainWnd, QString AppPath, QWidget *ParentWidget)
 	parent = ParentWidget;
 	positioned = false;
 	logWidget = new QWidget(ParentWidget, Qt::Window);
-	logWidget->setWindowTitle(MAGIC_TEXT("Main.Log.Desc"));
 	//logWidget->setMinimumSize(450, 150);
 	//logWidget->resize(500, 200);
 	logWidget->setObjectName("background_1");
 	/* --- Top panel --- */
 
-    unsigned int menuWidth =  5 * 20 * 2 + 10 * 6;
-    QString sLogSave = MAGIC_TEXT("Main.Log.Save");
-    menuWidth += GetTextWidthInPixels(sLogSave, 20);
-	QPushButton *buttonSave = CreateButton(sLogSave);
+	QPushButton *buttonSave = CreateButton("");
+
+    this->buttonSave = buttonSave;
 
 	connect(buttonSave, &QPushButton::clicked, this, &TxdLog::onLogSaveRequest);
 
 	buttonSave->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
-    QString sLogCopy = MAGIC_TEXT("Main.Log.Copy");
-    menuWidth += GetTextWidthInPixels(sLogCopy, 20);
-	QPushButton *buttonCopy = CreateButton(sLogCopy);
+	QPushButton *buttonCopy = CreateButton("");
+
+    this->buttonCopy = buttonCopy;
 
 	connect(buttonCopy, &QPushButton::clicked, this, &TxdLog::onCopyLogLinesRequest);
 
 	buttonSave->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
-    QString sLogCopyAll = MAGIC_TEXT("Main.Log.CopyAll");
-    menuWidth += GetTextWidthInPixels(sLogCopyAll, 20);
-	QPushButton *buttonCopyAll = CreateButton(sLogCopyAll);
+	QPushButton *buttonCopyAll = CreateButton("");
+
+    this->buttonCopyAll = buttonCopyAll;
 
 	connect(buttonCopyAll, &QPushButton::clicked, this, &TxdLog::onCopyAllLogLinesRequest);
 
 	buttonCopyAll->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
-    QString sLogClear = MAGIC_TEXT("Main.Log.Clear");
-    menuWidth += GetTextWidthInPixels(sLogClear, 20);
-	QPushButton *buttonClear = CreateButton(sLogClear);
+	QPushButton *buttonClear = CreateButton(":3");
+
+    this->buttonClear = buttonClear;
 
 	connect(buttonClear, &QPushButton::clicked, this, &TxdLog::onLogClearRequest);
 
 	buttonClear->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
-    QString sLogClose = MAGIC_TEXT("Main.Log.Close");
-    menuWidth += GetTextWidthInPixels(sLogClose, 20);
-	QPushButton *buttonClose = CreateButton(sLogClose);
+	QPushButton *buttonClose = CreateButton("");
+
+    this->buttonClose = buttonClose;
 
 	connect(buttonClose, &QPushButton::clicked, this, &TxdLog::onWindowHideRequest);
 
 	buttonClose->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-
-    CalculateWindowSize(logWidget, menuWidth, 450, 0, 150, 200);
 
 	QHBoxLayout *buttonsLayout = new QHBoxLayout;
 	buttonsLayout->addWidget(buttonSave);
@@ -97,6 +93,48 @@ TxdLog::TxdLog(MainWindow *mainWnd, QString AppPath, QWidget *ParentWidget)
 	picWarning.load(AppPath + "\\resources\\warning.png");
 	picError.load(AppPath + "\\resources\\error.png");
 	picInfo.load(AppPath + "\\resources\\info.png");
+
+    RegisterTextLocalizationItem( mainWnd, this );
+}
+
+TxdLog::~TxdLog( void )
+{
+    UnregisterTextLocalizationItem( mainWnd, this );
+}
+
+void TxdLog::updateContent( MainWindow *mainWnd )
+{
+    logWidget->setWindowTitle( getLanguageItemByKey( mainWnd, "Main.Log.Desc" ) );
+
+    unsigned int menuWidth =  5 * 20 * 2 + 10 * 6;  // oh god no
+
+    QString sLogSave = getLanguageItemByKey(mainWnd, "Main.Log.Save");
+    menuWidth += GetTextWidthInPixels(sLogSave, 20);
+
+	buttonSave->setText( sLogSave );
+
+    QString sLogCopy = getLanguageItemByKey(mainWnd, "Main.Log.Copy");
+    menuWidth += GetTextWidthInPixels(sLogCopy, 20);
+	
+    buttonCopy->setText( sLogCopy );
+
+    QString sLogCopyAll = getLanguageItemByKey(mainWnd, "Main.Log.CopyAll");
+    menuWidth += GetTextWidthInPixels(sLogCopyAll, 20);
+	
+    buttonCopyAll->setText( sLogCopyAll );
+
+    QString sLogClear = getLanguageItemByKey(mainWnd, "Main.Log.Clear");
+    menuWidth += GetTextWidthInPixels(sLogClear, 20);
+	
+    buttonClear->setText( sLogClear );
+
+    QString sLogClose = getLanguageItemByKey(mainWnd, "Main.Log.Close");
+    menuWidth += GetTextWidthInPixels(sLogClose, 20);
+	
+    buttonClose->setText( sLogClose );
+
+    // Okay.
+    CalculateWindowSize(logWidget, menuWidth, 450, 0, 150, 200);
 }
 
 void TxdLog::show( void )

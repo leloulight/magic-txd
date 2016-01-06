@@ -1,13 +1,13 @@
 #include "mainwindow.h"
 #include "optionsdialog.h"
 #include "qtutils.h"
-#include "languages.h"
+
+#include "languages.hxx"
 
 OptionsDialog::OptionsDialog( MainWindow *mainWnd ) : QDialog( mainWnd )
 {
     this->mainWnd = mainWnd;
 
-    setWindowTitle( MAGIC_TEXT("Main.Options.Desc") );
     setWindowFlags( this->windowFlags() & ~Qt::WindowContextHelpButtonHint );
 
     setAttribute( Qt::WA_DeleteOnClose );
@@ -15,13 +15,14 @@ OptionsDialog::OptionsDialog( MainWindow *mainWnd ) : QDialog( mainWnd )
     // This will be a fairly complicated dialog.
     MagicLayout<QVBoxLayout> layout(this);
 
-    this->optionShowLogOnWarning = new QCheckBox(MAGIC_TEXT("Main.Options.ShowLog"));
+    this->optionShowLogOnWarning = CreateCheckBoxL( mainWnd, "Main.Options.ShowLog" );
     this->optionShowLogOnWarning->setChecked( mainWnd->showLogOnWarning );
     layout.top->addWidget(optionShowLogOnWarning);
-    this->optionShowGameIcon = new QCheckBox(MAGIC_TEXT("Main.Options.DispIcn"));
+    this->optionShowGameIcon = CreateCheckBoxL( mainWnd, "Main.Options.DispIcn" );
     this->optionShowGameIcon->setChecked(mainWnd->showGameIcon);
     layout.top->addWidget( optionShowGameIcon );
 
+    // Display language select.
     this->languageBox = new QComboBox();
 
     for (unsigned int i = 0; i < ourLanguages.languages.size(); i++) {
@@ -31,7 +32,7 @@ OptionsDialog::OptionsDialog( MainWindow *mainWnd ) : QDialog( mainWnd )
     connect(this->languageBox, static_cast<void (QComboBox::*)(int index)>(&QComboBox::currentIndexChanged), this, &OptionsDialog::OnChangeSelectedLanguage);
 
     QFormLayout *languageFormLayout = new QFormLayout();
-    languageFormLayout->addRow(new QLabel(MAGIC_TEXT("Lang.Lang")), languageBox);
+    languageFormLayout->addRow(CreateLabelL( mainWnd, "Lang.Lang" ), languageBox);
 
     layout.top->addLayout(languageFormLayout);
 
@@ -43,13 +44,15 @@ OptionsDialog::OptionsDialog( MainWindow *mainWnd ) : QDialog( mainWnd )
 
     layout.top->setAlignment(this->languageAuthorLabel, Qt::AlignRight);
 
-    QPushButton *buttonAccept = CreateButton(MAGIC_TEXT("Main.Options.Accept"));
+    QPushButton *buttonAccept = CreateButtonL( mainWnd, "Main.Options.Accept" );
     layout.bottom->addWidget(buttonAccept);
-    QPushButton *buttonCancel = CreateButton(MAGIC_TEXT("Main.Options.Cancel"));
+    QPushButton *buttonCancel = CreateButtonL( mainWnd, "Main.Options.Cancel" );
     layout.bottom->addWidget(buttonCancel);
 
     connect( buttonAccept, &QPushButton::clicked, this, &OptionsDialog::OnRequestApply );
     connect( buttonCancel, &QPushButton::clicked, this, &OptionsDialog::OnRequestCancel );
+
+    RegisterTextLocalizationItem( mainWnd, this );
 
     mainWnd->optionsDlg = this;
 }
@@ -57,6 +60,13 @@ OptionsDialog::OptionsDialog( MainWindow *mainWnd ) : QDialog( mainWnd )
 OptionsDialog::~OptionsDialog( void )
 {
     mainWnd->optionsDlg = NULL;
+
+    UnregisterTextLocalizationItem( mainWnd, this );
+}
+
+void OptionsDialog::updateContent( MainWindow *mainWnd )
+{
+    setWindowTitle( getLanguageItemByKey(mainWnd, "Main.Options.Desc") );
 }
 
 void OptionsDialog::OnRequestApply( bool checked )
@@ -84,10 +94,13 @@ void OptionsDialog::serialize( void )
     }
 
     if (ourLanguages.currentLanguage != -1) {
-        if (mainWnd->lastLanguageFileName != ourLanguages.languages[ourLanguages.currentLanguage].languageFileName) {
-            mainWnd->lastLanguageFileName = ourLanguages.languages[ourLanguages.currentLanguage].languageFileName;
+        MagicLanguage& magLang = ourLanguages.languages[ ourLanguages.currentLanguage ];
+
+        if (mainWnd->lastLanguageFileName != magLang.languageFileName) {
+            mainWnd->lastLanguageFileName = magLang.languageFileName;
 
             // Ask to restart the tool for language changing
+            // may b.
         }
     }
 }
@@ -97,7 +110,7 @@ void OptionsDialog::OnChangeSelectedLanguage(int newIndex)
     if (newIndex >= 0 && ourLanguages.languages[newIndex].info.authors != "Magic.TXD Team") {
         QString names;
         bool found = false;
-        QString namesFormat = MAGIC_TEXT_CHECK_IF_FOUND("Lang.Authors", &found);
+        QString namesFormat = getLanguageItemByKey(mainWnd, "Lang.Authors", &found);
 
         if (found)
             names = QString(namesFormat).arg(ourLanguages.languages[newIndex].info.authors);
@@ -109,4 +122,6 @@ void OptionsDialog::OnChangeSelectedLanguage(int newIndex)
     }
     else
         this->languageAuthorLabel->setDisabled(true);
+
+    ourLanguages.selectLanguageByIndex( newIndex );
 }

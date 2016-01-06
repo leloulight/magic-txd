@@ -150,10 +150,10 @@ Main.SaveAs.Desc         Зберегти TXD як...
 Main.Edit.Add.Desc       Імпортувати текстуру...
 
 # About
-Main.Info.About.Desc     Про нас
-Main.Info.About.Credits  автори: _AUTHOR_NAME_1 та _AUTHOR_NAME_2
-Main.Info.About.ComUse1  Ця програма НЕ ПОВИННА використовуватися в комерційних цілях без явного письмового дозволу всіх третіх осіб, задіяних у розробці цієї програми. Ознайомтеся з ліцензійними угодами для отримання додаткової інформації.
-Main.Info.About.ComUse2  Команда _MAGIC_TXD_NAME вітає вашу підтримку!
+Main.About.Desc          Про нас
+Main.About.Credits       автори: _AUTHOR_NAME_1 та _AUTHOR_NAME_2
+Main.About.ComUse1       Ця програма НЕ ПОВИННА використовуватися в комерційних цілях без явного письмового дозволу всіх третіх осіб, задіяних у розробці цієї програми. Ознайомтеся з ліцензійними угодами для отримання додаткової інформації.
+Main.About.ComUse2       Команда _MAGIC_TXD_NAME вітає вашу підтримку!
 
 # Tools
 Tools.Browse             Вибрати

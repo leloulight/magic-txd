@@ -156,7 +156,6 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
 
     this->mainwnd = mainwnd;
 
-    this->setWindowTitle( MAGIC_TEXT("Tools.MassCnv.Desc") );
     this->setAttribute( Qt::WA_DeleteOnClose );
 
     this->setWindowFlags( this->windowFlags() & ~Qt::WindowContextHelpButtonHint );
@@ -170,6 +169,7 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
 
     leftPanelLayout->addLayout(
         qtshared::createGameRootInputOutputForm(
+            mainwnd,
             massconv->txdgenConfig.c_gameRoot,
             massconv->txdgenConfig.c_outputRoot,
             this->editGameRoot,
@@ -178,6 +178,7 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
     );
 
     createTargetConfigurationComponents(
+        mainwnd,
         leftPanelLayout,
         massconv->txdgenConfig.c_targetPlatform,
         massconv->txdgenConfig.c_gameType,
@@ -186,7 +187,7 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
     );
 
     // INVASION OF CHECKBOXES.
-    QCheckBox *propClearMipmaps = new QCheckBox( MAGIC_TEXT("Tools.MassCnv.ClearML") );
+    QCheckBox *propClearMipmaps = CreateCheckBoxL( mainwnd, "Tools.MassCnv.ClearML" );
 
     propClearMipmaps->setChecked( massconv->txdgenConfig.c_clearMipmaps );
 
@@ -196,6 +197,7 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
 
     leftPanelLayout->addLayout(
         qtshared::createMipmapGenerationGroup(
+            mainwnd,
             this,
             massconv->txdgenConfig.c_generateMipmaps,
             massconv->txdgenConfig.c_mipGenMaxLevel,
@@ -204,7 +206,7 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
         )
     );
 
-    QCheckBox *propImproveFiltering = new QCheckBox( MAGIC_TEXT("Tools.MassCnv.ImpFilt") );
+    QCheckBox *propImproveFiltering = CreateCheckBoxL( mainwnd, "Tools.MassCnv.ImpFilt" );
 
     propImproveFiltering->setChecked( massconv->txdgenConfig.c_improveFiltering );
 
@@ -212,7 +214,7 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
 
     leftPanelLayout->addWidget( propImproveFiltering );
 
-    QCheckBox *propCompress = new QCheckBox( MAGIC_TEXT("Tools.MassCnv.CompTex") );
+    QCheckBox *propCompress = CreateCheckBoxL( mainwnd, "Tools.MassCnv.CompTex" );
 
     propCompress->setChecked( massconv->txdgenConfig.compressTextures );
 
@@ -220,7 +222,7 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
 
     leftPanelLayout->addWidget( propCompress );
 
-    QCheckBox *propReconstructIMG = new QCheckBox( MAGIC_TEXT("Tools.MassCnv.RecIMG") );
+    QCheckBox *propReconstructIMG = CreateCheckBoxL( mainwnd, "Tools.MassCnv.RecIMG" );
 
     propReconstructIMG->setChecked( massconv->txdgenConfig.c_reconstructIMGArchives );
 
@@ -228,7 +230,7 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
 
     leftPanelLayout->addWidget( propReconstructIMG );
 
-    QCheckBox *propCompressedIMG = new QCheckBox( MAGIC_TEXT("Tools.MassCnv.CompIMG") );
+    QCheckBox *propCompressedIMG = CreateCheckBoxL( mainwnd, "Tools.MassCnv.CompIMG" );
 
     propCompressedIMG->setChecked( massconv->txdgenConfig.c_imgArchivesCompressed );
 
@@ -253,7 +255,7 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
     this->conversionThread = NULL;
 
     // buttons at the bottom
-    QPushButton *buttonConvert = CreateButton(MAGIC_TEXT("Tools.MassCnv.Convert"));
+    QPushButton *buttonConvert = CreateButtonL(mainwnd, "Tools.MassCnv.Convert");
 
     this->buttonConvert = buttonConvert;
 
@@ -261,11 +263,13 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
 
     layout.bottom->addWidget(buttonConvert, 0, Qt::AlignCenter);
 
-    QPushButton *buttonCancel = new QPushButton(MAGIC_TEXT("Tools.MassCnv.Cancel"));
+    QPushButton *buttonCancel = CreateButtonL(mainwnd, "Tools.MassCnv.Cancel");
 
     connect(buttonCancel, &QPushButton::clicked, this, &MassConvertWindow::OnRequestCancel);
 
     layout.bottom->addWidget(buttonCancel, 0, Qt::AlignCenter);
+
+    RegisterTextLocalizationItem( mainwnd, this );
 
     LIST_INSERT( massconv->openDialogs.root, this->node );
 }
@@ -273,6 +277,8 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
 MassConvertWindow::~MassConvertWindow( void )
 {
     LIST_REMOVE( this->node );
+
+    UnregisterTextLocalizationItem( mainwnd, this );
 
     // Make sure we finished the thread.
     rw::Interface *rwEngine = this->mainwnd->GetEngine();
@@ -303,6 +309,11 @@ MassConvertWindow::~MassConvertWindow( void )
     rw::CloseReadWriteLock( rwEngine, this->convConsistencyLock );
 
     this->serialize();
+}
+
+void MassConvertWindow::updateContent( MainWindow *mainWnd )
+{
+    this->setWindowTitle( getLanguageItemByKey( mainWnd, "Tools.MassCnv.Desc" ) );
 }
 
 void MassConvertWindow::serialize( void )

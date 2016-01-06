@@ -125,6 +125,7 @@ extern void InitializeRWFileSystemWrap(void);
 extern void InitializeTaskCompletionWindowEnv( void );
 extern void InitializeSerializationStorageEnv( void );
 extern void InitializeMainWindowSerializationBlock( void );
+extern void InitializeMagicLanguages( void );
 extern void InitializeExportAllWindowSerialization( void );
 extern void InitializeMassconvToolEnvironment(void);
 extern void InitializeMassExportToolEnvironment( void );
@@ -141,6 +142,7 @@ int main(int argc, char *argv[])
     InitializeTaskCompletionWindowEnv();
     InitializeSerializationStorageEnv();
     InitializeMainWindowSerializationBlock();
+    InitializeMagicLanguages();
     InitializeExportAllWindowSerialization();
     InitializeMassconvToolEnvironment();
     InitializeMassExportToolEnvironment();

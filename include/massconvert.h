@@ -10,15 +10,19 @@
 #include <QCheckBox>
 #include <QPlainTextEdit>
 
+#include "languages.h"
+
 struct MassConvertWindow;
 
-struct MassConvertWindow : public QDialog
+struct MassConvertWindow : public QDialog, public magicTextLocalizationItem
 {
     friend struct massconvEnv;
 
 public:
     MassConvertWindow( MainWindow *mainwnd );
     ~MassConvertWindow();
+
+    void updateContent( MainWindow *mainWnd );
 
     void customEvent( QEvent *evt ) override;
 

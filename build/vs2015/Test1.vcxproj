@@ -649,6 +649,7 @@
     <ClCompile Include="..\..\src\friendlyicons.cpp" />
     <ClCompile Include="..\..\src\guiserialization.cpp" />
     <ClCompile Include="..\..\src\guiserialization.store.cpp" />
+    <ClCompile Include="..\..\src\languages.common.cpp" />
     <ClCompile Include="..\..\src\languages.cpp" />
     <ClCompile Include="..\..\src\MagicExport.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release 2015|Win32'">NotUsing</PrecompiledHeader>
@@ -722,6 +723,7 @@
     <ClInclude Include="..\..\magic_api\magfapi.h" />
     <ClInclude Include="..\..\magic_api\MagicFormats.h" />
     <ClInclude Include="..\..\src\guiserialization.hxx" />
+    <ClInclude Include="..\..\src\languages.hxx" />
     <ClInclude Include="..\..\src\qtinteroputils.hxx" />
     <ClInclude Include="..\..\src\qtrwutils.hxx" />
     <ClInclude Include="..\..\src\texformathelper.hxx" />

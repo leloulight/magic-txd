@@ -66,6 +66,8 @@ setOutPath $INSTDIR\resources
 File /r "..\..\resources\*"
 setOutPath $INSTDIR\data
 File /r "..\..\data\*"
+setOutPath $INSTDIR\languages
+File /r "..\..\languages\*"
 ${If} ${RunningX64}
     setOutPath $INSTDIR\formats_x64
     !insertmacro INCLUDE_FORMATS "..\..\output\formats_x64"

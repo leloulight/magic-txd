@@ -12,7 +12,7 @@
 
 // We want to have a simple window which can be used by the user to export all textures of a TXD.
 
-struct ExportAllWindow : public QDialog
+struct ExportAllWindow : public QDialog, public magicTextLocalizationItem
 {
 private:
     inline static std::vector <std::string> GetAllSupportedImageFormats( rw::TexDictionary *texDict )
@@ -105,7 +105,6 @@ public:
         this->mainWnd = mainWnd;
         this->texDict = texDict;
         setWindowFlags( windowFlags() & ~Qt::WindowContextHelpButtonHint );
-        setWindowTitle( MAGIC_TEXT("Main.ExpAll.Desc") );
         setWindowModality( Qt::WindowModal );
         this->setAttribute( Qt::WA_DeleteOnClose );
         // Basic window with a combo box and a button to accept.
@@ -126,20 +125,32 @@ public:
                 formatSelBox->setCurrentIndex( foundLastUsed );
         }
         this->formatSelBox = formatSelBox;
-        layout.top->addRow(new QLabel(MAGIC_TEXT("Main.ExpAll.Format")), formatSelBox);
+        layout.top->addRow(CreateLabelL( mainWnd, "Main.ExpAll.Format" ), formatSelBox);
 
         // Add the button row last.
-        QPushButton *buttonExport = CreateButton( MAGIC_TEXT("Main.ExpAll.Export") );
+        QPushButton *buttonExport = CreateButtonL( mainWnd, "Main.ExpAll.Export" );
 
         connect( buttonExport, &QPushButton::clicked, this, &ExportAllWindow::OnRequestExport );
 
         layout.bottom->addWidget( buttonExport );
-        QPushButton *buttonCancel = CreateButton( MAGIC_TEXT("Main.ExpAll.Cancel") );
+        QPushButton *buttonCancel = CreateButtonL( mainWnd, "Main.ExpAll.Cancel" );
 
         connect( buttonCancel, &QPushButton::clicked, this, &ExportAllWindow::OnRequestCancel );
 
         layout.bottom->addWidget( buttonCancel );
         this->setMinimumWidth( 250 );
+
+        RegisterTextLocalizationItem( mainWnd, this );
+    }
+
+    ~ExportAllWindow( void )
+    {
+        UnregisterTextLocalizationItem( mainWnd, this );
+    }
+
+    void updateContent( MainWindow *mainWnd ) override
+    {
+        this->setWindowTitle( getLanguageItemByKey( mainWnd, "Main.ExpAll.Desc" ) );
     }
 
 public slots:
@@ -160,7 +171,7 @@ public slots:
 
             // We need a directory to export to, so ask the user.
             QString folderExportTarget = QFileDialog::getExistingDirectory(
-                this, MAGIC_TEXT("Main.ExpAll.ExpTarg"),
+                this, getLanguageItemByKey(mainWnd, "Main.ExpAll.ExpTarg"),
                 QString::fromStdWString( this->mainWnd->lastAllExportTarget )
             );
 

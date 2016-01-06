@@ -4,11 +4,10 @@
 #include "qtutils.h"
 #include "languages.h"
 
-struct TexNameWindow : public QDialog
+struct TexNameWindow : public QDialog, public magicTextLocalizationItem
 {
     inline TexNameWindow( MainWindow *mainWnd, TexInfoWidget *texInfo ) : QDialog( mainWnd )
     {
-        this->setWindowTitle( MAGIC_TEXT("Main.Rename.Desc") );
         this->setWindowFlags( this->windowFlags() & ~Qt::WindowContextHelpButtonHint );
         this->mainWnd = mainWnd;
         this->texInfo = texInfo;
@@ -27,7 +26,7 @@ struct TexNameWindow : public QDialog
 
         // Fill things.
         MagicLayout<QHBoxLayout> layout(this);
-        layout.top->addWidget(new QLabel(MAGIC_TEXT("Main.Rename.Name")));
+        layout.top->addWidget(CreateLabelL( mainWnd, "Main.Rename.Name" ));
         this->texNameEdit = new QLineEdit(curTexName);
         layout.top->addWidget(this->texNameEdit);
         this->texNameEdit->setMaxLength(32);
@@ -35,8 +34,8 @@ struct TexNameWindow : public QDialog
 
         connect(this->texNameEdit, &QLineEdit::textChanged, this, &TexNameWindow::OnUpdateTexName);
 
-        this->buttonSet = CreateButton(MAGIC_TEXT("Main.Rename.Set"));
-        QPushButton *buttonCancel = CreateButton(MAGIC_TEXT("Main.Rename.Cancel"));
+        this->buttonSet = CreateButtonL(mainWnd, "Main.Rename.Set");
+        QPushButton *buttonCancel = CreateButtonL(mainWnd, "Main.Rename.Cancel");
 
         connect(this->buttonSet, &QPushButton::clicked, this, &TexNameWindow::OnRequestSet);
         connect(buttonCancel, &QPushButton::clicked, this, &TexNameWindow::OnRequestCancel);
@@ -46,12 +45,21 @@ struct TexNameWindow : public QDialog
         this->mainWnd->texNameDlg = this;
         // Initialize the window.
         this->UpdateAccessibility();
+
+        RegisterTextLocalizationItem( mainWnd, this );
     }
 
     inline ~TexNameWindow( void )
     {
+        UnregisterTextLocalizationItem( mainWnd, this );
+
         // There can be only one texture name dialog.
         this->mainWnd->texNameDlg = NULL;
+    }
+
+    void updateContent( MainWindow *mainWnd ) override
+    {
+        this->setWindowTitle( getLanguageItemByKey( mainWnd, "Main.Rename.Desc" ) );
     }
 
 public slots:

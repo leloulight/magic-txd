@@ -17,7 +17,7 @@
 #include "qtutils.h"
 #include "languages.h"
 
-class RwVersionDialog : public QDialog
+class RwVersionDialog : public QDialog, public magicTextLocalizationItem
 {
 	MainWindow *mainWnd;
 
@@ -275,9 +275,9 @@ public slots:
     }
 
 public:
-	RwVersionDialog( MainWindow *mainWnd ) : QDialog( mainWnd ) {
+	RwVersionDialog( MainWindow *mainWnd ) : QDialog( mainWnd )
+    {
 		setObjectName("background_1");
-		setWindowTitle(MAGIC_TEXT("Main.SetupTV.Desc"));
         setWindowFlags( this->windowFlags() & ~Qt::WindowContextHelpButtonHint );
         setAttribute( Qt::WA_DeleteOnClose );
 
@@ -289,11 +289,11 @@ public:
 
         /************* Set ****************/
 		QHBoxLayout *selectGameLayout = new QHBoxLayout;
-		QLabel *gameLabel = new QLabel(MAGIC_TEXT("Main.SetupTV.Set"));
+		QLabel *gameLabel = CreateLabelL( mainWnd, "Main.SetupTV.Set" );
 		gameLabel->setObjectName("label25px");
 		QComboBox *gameComboBox = new QComboBox;
         gameComboBox->setFixedWidth(300);
-		gameComboBox->addItem(MAGIC_TEXT("Main.SetupTV.Custom"));
+		gameComboBox->addItem(getLanguageItemByKey(mainWnd, "Main.SetupTV.Custom"));   /// HAXXXXXXX
         for (unsigned int i = 0; i < this->mainWnd->versionSets.sets.size(); i++)
             gameComboBox->addItem(this->mainWnd->versionSets.sets[i].name);
         this->gameSelectBox = gameComboBox;
@@ -305,7 +305,7 @@ public:
 
         /************* Platform ****************/
         QHBoxLayout *selectPlatformLayout = new QHBoxLayout;
-        QLabel *platLabel = new QLabel(MAGIC_TEXT("Main.SetupTV.Plat"));
+        QLabel *platLabel = CreateLabelL(mainWnd, "Main.SetupTV.Plat");
         platLabel->setObjectName("label25px");
         QComboBox *platComboBox = new QComboBox;
         platComboBox->setFixedWidth(300);
@@ -318,7 +318,7 @@ public:
 
         /************* Data type ****************/
         QHBoxLayout *selectDataTypeLayout = new QHBoxLayout;
-        QLabel *dataTypeLabel = new QLabel(MAGIC_TEXT("Main.SetupTV.Data"));
+        QLabel *dataTypeLabel = CreateLabelL( mainWnd, "Main.SetupTV.Data" );
         dataTypeLabel->setObjectName("label25px");
         QComboBox *dataTypeComboBox = new QComboBox;
         dataTypeComboBox->setFixedWidth(300);
@@ -330,10 +330,8 @@ public:
         selectDataTypeLayout->addWidget(dataTypeComboBox);
 
 		QHBoxLayout *versionLayout = new QHBoxLayout;
-        QString sVersion = MAGIC_TEXT("Main.SetupTV.Version");
-		QLabel *versionLabel = new QLabel(sVersion);
+		QLabel *versionLabel = CreateFixedWidthLabelL( mainWnd, "Main.SetupTV.Version", 25 );
 		versionLabel->setObjectName("label25px");
-        versionLabel->setFixedWidth(GetTextWidthInPixels(sVersion, 25));
 
 		QHBoxLayout *versionNumbersLayout = new QHBoxLayout;
 		QLineEdit *versionLine1 = new QLineEdit;
@@ -349,10 +347,8 @@ public:
 
         connect( versionLine1, &QLineEdit::textChanged, this, &RwVersionDialog::OnChangeVersion );
 
-        QString sBuild = MAGIC_TEXT("Main.SetupTV.Build");
-		QLabel *buildLabel = new QLabel(sBuild);
+		QLabel *buildLabel = CreateFixedWidthLabelL( mainWnd, "Main.SetupTV.Build", 25 );
 		buildLabel->setObjectName("label25px");
-        buildLabel->setFixedWidth(GetTextWidthInPixels(sBuild, 25));
 		QLineEdit *buildLine = new QLineEdit;
 		buildLine->setInputMask(">HHHH");
         buildLine->clear();
@@ -373,8 +369,8 @@ public:
         layout.top->addSpacing(8);
         layout.top->addLayout(versionLayout);
 
-		QPushButton *buttonAccept = new QPushButton(MAGIC_TEXT("Main.SetupTV.Accept"));
-		QPushButton *buttonCancel = new QPushButton(MAGIC_TEXT("Main.SetupTV.Cancel"));
+		QPushButton *buttonAccept = CreateButtonL( mainWnd, "Main.SetupTV.Accept" );
+		QPushButton *buttonCancel = CreateButtonL( mainWnd, "Main.SetupTV.Cancel" );
 
         this->applyButton = buttonAccept;
 
@@ -386,12 +382,21 @@ public:
 		
         // Initiate the ready dialog.
         this->OnChangeSelectedGame( 0 );
+
+        RegisterTextLocalizationItem( mainWnd, this );
 	}
 
     ~RwVersionDialog( void )
     {
+        UnregisterTextLocalizationItem( mainWnd, this );
+
         // There can only be one version dialog.
         this->mainWnd->verDlg = NULL;
+    }
+
+    void updateContent( MainWindow *mainWnd ) override
+    {
+        this->setWindowTitle( getLanguageItemByKey( mainWnd, "Main.SetupTV.Desc" ) );
     }
 
     void SelectGame(unsigned int gameId) {

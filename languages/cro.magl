@@ -1,0 +1,189 @@
+MAGL|1|Croatian|Hrvatski|CRO|Magic.TXD Team
+
+# translated by GodFather (http://gtaforums.com/user/606114-nikdelgad/)
+
+# language
+Lang.Lang              Language:
+Lang.Authors           by _PARAM_1
+
+# textures list        
+Main.TexInfo.Level     level
+Main.TexInfo.Levels    leveli
+Main.TexInfo.NoTex     Nema teksture
+Main.TexInfo.Invalid   Netoèno
+
+# main menu            
+Main.File              Datoteka
+Main.Edit              Uredi
+Main.Tools             Alati
+Main.Export            Izvoz
+Main.View              Pregled
+Main.Info              Info
+
+# main menu - File     
+Main.File.New          Novo
+Main.File.Open         Otvori
+Main.File.Save         Spremi
+Main.File.SaveAs       Spremi kao...
+Main.File.Close        Zatvori trenutni
+Main.File.Quit         Izaði
+
+# main menu - Edit   
+Main.Edit.Add          Dodaj
+Main.Edit.Replace      Zamjeni
+Main.Edit.Remove       Obriši
+Main.Edit.Rename       Preimenuj
+Main.Edit.Resize       Promjena velièine
+Main.Edit.Modify       Manipulirati
+Main.Edit.SetupML      Postaviti mip-levels
+Main.Edit.ClearML      Oèisti mip-levels
+Main.Edit.SetupRP      Postavi rendering opcije
+Main.Edit.SetupTV      Postavi TXD verziju
+Main.Edit.Options      Opcije
+
+# Rename
+Main.Rename.Desc       Ime teksture
+Main.Rename.Name       Ime:
+Main.Rename.Set        Postavi
+Main.Rename.Cancel     Odustani
+
+# Resize
+Main.Resize.Desc       Promjena velièine teksture
+Main.Resize.Width      Širina:
+Main.Resize.Height     Visina:
+Main.Resize.Set        Postavi
+Main.Resize.Cancel     Odustani
+
+# Modify
+Modify.Desc.Add        Dodaj teksturu...
+Modify.Desc.Replace    Zamjeni teksturu...
+Modify.Desc.Modify     Izmjeni teksturu...
+Modify.Add             Dodaj
+Modify.Replace         Zamjeni
+Modify.Modify          Izmjeni
+Modify.TexName         Ime teksture:
+Modify.MskName         Naziv maske:
+Modify.Plat            Platforma:
+Modify.RasFmt          Raster Format:
+Modify.Origin          Original
+Modify.RawRas          Raw Raster
+Modify.Comp            zbijen
+Modify.Pal             palettized
+Modify.PixFmt          Pixel Format:
+Modify.GenML           Generiraj mipmaps
+Modify.Scaled          Umanjena
+Modify.Fill            Ispuni
+Modify.Bckgr           Pozadina
+Modify.Cancel          Odustani
+
+# Render Props
+Main.SetupRP.Desc      Rendering Props
+Main.SetupRP.Filter    Filtriraj:
+Main.SetupRP.UAddr     U Adrese:
+Main.SetupRP.VAddr     V Adrese:
+Main.SetupRP.Set       Postavi
+Main.SetupRP.Cancel    Odustani
+
+# Setup TXD Version
+Main.SetupTV.Desc      TXD Version Setup
+Main.SetupTV.Set       Postavi
+Main.SetupTV.Plat      Platforma
+Main.SetupTV.Data      Tip podatka
+Main.SetupTV.Version   Verzija
+Main.SetupTV.Build     Build
+Main.SetupTV.Accept    Prihvati
+Main.SetupTV.Cancel    Odustani
+Main.SetupTV.Custom    Custom
+
+# Options
+Main.Options.Desc      _MAGIC_TXD_NAME Opcije
+Main.Options.ShowLog   Prikaži TXD log na upozorenju
+Main.Options.DispIcn   Prikaži ikonu igre
+Main.Options.Accept    Prihvati
+Main.Options.Cancel    Odustani
+
+# main menu - Tools    
+Main.Tools.MassCnv     Mass pretvori
+Main.Tools.MassExp     Mass izvoz
+Main.Tools.MassBld     Mass build
+
+# main menu - Export   
+Main.Export.ExpAll     Export all
+Main.Export.Desc       Spremi _PARAM_1 kao...
+
+# Export All
+Main.ExpAll.Desc       Izvedi sve teksture...
+Main.ExpAll.Format     Format:
+Main.ExpAll.Export     Izvoz
+Main.ExpAll.Cancel     Odustani
+Main.ExpAll.ExpTarg    Odaberi izvoz lokaciju...
+
+# Log
+Main.Log.Desc          Log
+Main.Log.Save          Spremi
+Main.Log.Copy          Kopiraj
+Main.Log.CopyAll       Kopiraj Sve
+Main.Log.Clear         Oèisti
+Main.Log.Close         Zatvori
+Main.Log.SaveAs        Spremi Log kao...
+
+# View   
+Main.View.FullImg      Prikaži punu sliku
+Main.View.Backgr       Pozadina
+Main.View.DispML       Prikaži mip-levels
+Main.View.ShowLog      Prikaži log
+Main.View.DarkThm      Tamna tema
+Main.View.LightTm      Svijetla tema
+
+# Info     
+Main.Info.Website      Web stranica
+Main.Info.About        O
+
+# File - Open
+Main.Open.Desc         Otvori TXD datoteku...
+
+# File - Save As
+Main.SaveAs.Desc       Spremi TXD kao...
+
+# Edit - Add
+Main.Edit.Add.Desc     Uvezi teksturu...
+
+# About
+Main.About.Desc        O nama
+Main.About.Credits     napravio _AUTHOR_NAME_1 i _AUTHOR_NAME_2
+Main.About.ComUse1     Ovaj alat NE SMIJETE koristiti komercijalno bez dozvole autora koji su sudjelovali u ovom programu. Pregledaj licence za više informacija.
+Main.About.ComUse2     _MAGIC_TXD_NAME tim pozdravlja vašu podršku!
+
+# Tools
+Tools.Browse           Pregledaj
+Tools.BrwDesc          Pregledaj direktoriji...
+Tools.GameRt           Lokacija igre:
+Tools.Output           Izlazna lokacija:
+Tools.Plat             Platforma
+Tools.Game             Igra
+Tools.GenMips          Generiraj mipmaps
+Tools.MaxMips          Maksimum:
+
+# Mass export
+Tools.MassExp.Desc     Maivni izvoz
+Tools.MassExp.ImgFmt   Format slike:
+Tools.MassExp.TxNmOnl  samo sa imenom teksture
+Tools.MassExp.PrTxdNm  pre-prended sa TXD imenom
+Tools.MassExp.SepFld   u razlièine datoteke
+Tools.MassExp.Export   Izvoz
+Tools.MassExp.Cancel   Odustani
+
+# Mass build
+Tools.MassBld.Desc     Mass Build
+Tools.MassBld.Build    Build
+Tools.MassBld.Cancel   Odustani
+
+# Mass convert
+Tools.MassCnv.Desc     Mass Conversion
+Tools.MassCnv.ClearML  Oèisti mipmaps
+Tools.MassCnv.ImpFilt  Poboljšaj filtraciju
+Tools.MassCnv.CompTex  Sažmi teksture
+Tools.MassCnv.RecIMG   Rekonstruiraj IMG arhive
+Tools.MassCnv.CompIMG  Sažmi IMG
+Tools.MassCnv.Convert  Pretvori
+Tools.MassCnv.Cancel   Odustani
