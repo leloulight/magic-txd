@@ -1,4 +1,4 @@
-MAGL|1|German|Deutsch|GER|Magic.TXD Team
+ÔªøMAGL|1|German|Deutsch|GER|Magic.TXD Team
 
 # translated by The_GTA (http://gtaforums.com/user/757437-the-gta/)
 
@@ -7,10 +7,10 @@ Lang.Lang              Sprache:
 Lang.Authors           von _PARAM_1
 
 # textures list        
-Main.TexInfo.Level     Fl‰che
-Main.TexInfo.Levels    Fl‰chen
+Main.TexInfo.Level     Fl√§che
+Main.TexInfo.Levels    Fl√§chen
 Main.TexInfo.NoTex     Keine Farbinformationen
-Main.TexInfo.Invalid   ung¸ltig
+Main.TexInfo.Invalid   ung√ºltig
 
 # main menu            
 Main.File              Datei
@@ -22,46 +22,46 @@ Main.Info              Info
 
 # main menu - File     
 Main.File.New          Neu
-Main.File.Open         ÷ffnen
+Main.File.Open         √ñffnen
 Main.File.Save         Speichern
 Main.File.SaveAs       Speichern als...
-Main.File.Close        Schlieﬂe
+Main.File.Close        Schlie√üe
 Main.File.Quit         Beenden
 
 # main menu - Edit   
-Main.Edit.Add          Hinzuf¸gen
+Main.Edit.Add          Hinzuf√ºgen
 Main.Edit.Replace      Ersetzen
-Main.Edit.Remove       Lˆschen
+Main.Edit.Remove       L√∂schen
 Main.Edit.Rename       Umbenennen
-Main.Edit.Resize       Grˆﬂe ‰ndern
+Main.Edit.Resize       Gr√∂√üe √§ndern
 Main.Edit.Modify       Verwalten
-Main.Edit.SetupML      Setze Unterfl‰chen auf
-Main.Edit.ClearML      Entferne Unterfl‰chen
+Main.Edit.SetupML      Setze Unterfl√§chen auf
+Main.Edit.ClearML      Entferne Unterfl√§chen
 Main.Edit.SetupRP      Darstellungsoptionen
 Main.Edit.SetupTV      Setze Version
 Main.Edit.Options      Einstellungen
 
 # Rename
-Main.Rename.Desc       Name der Fl‰che
+Main.Rename.Desc       Name der Fl√§che
 Main.Rename.Name       Name:
 Main.Rename.Set        Setzen
 Main.Rename.Cancel     Abbrechen
 
 # Resize
-Main.Resize.Desc       Grˆﬂe der Farbfl‰che
+Main.Resize.Desc       Gr√∂√üe der Farbfl√§che
 Main.Resize.Width      Breite:
-Main.Resize.Height     Hˆhe:
+Main.Resize.Height     H√∂he:
 Main.Resize.Set        Setzen
 Main.Resize.Cancel     Abbrechen
 
 # Modify
-Modify.Desc.Add        Farbfl‰che hinzuf¸gen...
-Modify.Desc.Replace    Farbfl‰che ersetzen...
-Modify.Desc.Modify     Farbfl‰che verwalten...
-Modify.Add             Hinzuf¸gen
+Modify.Desc.Add        Farbfl√§che hinzuf√ºgen...
+Modify.Desc.Replace    Farbfl√§che ersetzen...
+Modify.Desc.Modify     Farbfl√§che verwalten...
+Modify.Add             Hinzuf√ºgen
 Modify.Replace         Ersetzen
-Modify.Modify          ƒndern
-Modify.TexName         Name der Fl‰che:
+Modify.Modify          √Ñndern
+Modify.TexName         Name der Fl√§che:
 Modify.MskName         Name der Maske:
 Modify.Plat            Architektur:
 Modify.RasFmt          Gitterformat:
@@ -70,9 +70,9 @@ Modify.RawRas          Normalgitter
 Modify.Comp            komprimiert
 Modify.Pal             farbreduziert
 Modify.PixFmt          Pixelformat:
-Modify.GenML           Generiere Unterfl‰chen
+Modify.GenML           Generiere Unterfl√§chen
 Modify.Scaled          Skaliert
-Modify.Fill            Gef¸llt
+Modify.Fill            Gef√ºllt
 Modify.Bckgr           Hintergrund
 Modify.Cancel          Abbrechen
 
@@ -112,62 +112,62 @@ Main.Export.ExpAll     Alle exportieren
 Main.Export.Desc       Spechere _PARAM_1 als...
 
 # Export All
-Main.ExpAll.Desc       Extrahiere alle Fl‰chen...
+Main.ExpAll.Desc       Extrahiere alle Fl√§chen...
 Main.ExpAll.Format     Format:
 Main.ExpAll.Export     Export
-Main.ExpAll.Cancel     Schieﬂen
-Main.ExpAll.ExpTarg    W‰hle Zielformat...
+Main.ExpAll.Cancel     Schie√üen
+Main.ExpAll.ExpTarg    W√§hle Zielformat...
 
 # Log
 Main.Log.Desc          Protokoll
 Main.Log.Save          Speichern
 Main.Log.Copy          Kopiere
 Main.Log.CopyAll       Alles kopieren
-Main.Log.Clear         S‰ubern
-Main.Log.Close         Schlieﬂen
+Main.Log.Clear         S√§ubern
+Main.Log.Close         Schlie√üen
 Main.Log.SaveAs        Speicher Protokoll als...
 
 # View   
 Main.View.FullImg      Zeige Gesamtbild
 Main.View.Backgr       Hintergrund
-Main.View.DispML       Stelle Unterfl‰chen dar
+Main.View.DispML       Stelle Unterfl√§chen dar
 Main.View.ShowLog      Protokoll zeigen
 Main.View.DarkThm      Dunkle Theme
 Main.View.LightTm      Helle Theme
 
 # Info     
 Main.Info.Website      Webseite
-Main.Info.About        ‹ber uns
+Main.Info.About        √úber uns
 
 # File - Open
-Main.Open.Desc         ÷ffne TXD Datei...
+Main.Open.Desc         √ñffne TXD Datei...
 
 # File - Save As
 Main.SaveAs.Desc       Speichere TXD als...
 
 # Edit - Add
-Main.Edit.Add.Desc     Importiere Farbfl‰che...
+Main.Edit.Add.Desc     Importiere Farbfl√§che...
 
 # About
-Main.About.Desc        ‹ber uns
+Main.About.Desc        √úber uns
 Main.About.Credits     erstellt von _AUTHOR_NAME_1 und _AUTHOR_NAME_2
-Main.About.ComUse1     Dieses Programm darf NICHT ohne Erlaubnis aller Parteien, die an der Erstellung mitgewirkt haben, kommerziell verwendet werden. Siehe die Lizensdokumente f¸r weitere Informationen (auf Englisch).
+Main.About.ComUse1     Dieses Programm darf NICHT ohne Erlaubnis aller Parteien, die an der Erstellung mitgewirkt haben, kommerziell verwendet werden. Siehe die Lizensdokumente f√ºr weitere Informationen (auf Englisch).
 Main.About.ComUse2     Das _MAGIC_TXD_NAME Team freut sich auf deine Zusammenarbeit!
 
 # Tools
-Tools.Browse           Stˆbern
-Tools.BrwDesc          Zielordner ausw‰hlen...
+Tools.Browse           St√∂bern
+Tools.BrwDesc          Zielordner ausw√§hlen...
 Tools.GameRt           Spielpfad:
 Tools.Output           Ausgabepfad:
 Tools.Plat             Architektur
 Tools.Game             Spiel
-Tools.GenMips          Generiere Unterfl‰chen
+Tools.GenMips          Generiere Unterfl√§chen
 Tools.MaxMips          Max:
 
 # Mass export
 Tools.MassExp.Desc     Massenextrahierung
 Tools.MassExp.ImgFmt   Bildformat:
-Tools.MassExp.TxNmOnl  nur mit Fl‰chennamen
+Tools.MassExp.TxNmOnl  nur mit Fl√§chennamen
 Tools.MassExp.PrTxdNm  vorgeschobener TXD-Name
 Tools.MassExp.SepFld   in einzelne Ordner
 Tools.MassExp.Export   Export
@@ -180,9 +180,9 @@ Tools.MassBld.Cancel   Abbrechen
 
 # Mass convert
 Tools.MassCnv.Desc     Massenkonvertierung
-Tools.MassCnv.ClearML  Lˆsche Unterfl‰chen
+Tools.MassCnv.ClearML  L√∂sche Unterfl√§chen
 Tools.MassCnv.ImpFilt  Verbessere Filterung
-Tools.MassCnv.CompTex  Komprimiere Farbfl‰chen
+Tools.MassCnv.CompTex  Komprimiere Farbfl√§chen
 Tools.MassCnv.RecIMG   Stelle IMG wieder her
 Tools.MassCnv.CompIMG  Komprimiere IMG
 Tools.MassCnv.Convert  Konvertieren

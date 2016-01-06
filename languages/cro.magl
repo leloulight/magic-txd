@@ -1,4 +1,4 @@
-MAGL|1|Croatian|Hrvatski|CRO|Magic.TXD Team
+ÔªøMAGL|1|Croatian|Hrvatski|CRO|Magic.TXD Team
 
 # translated by GodFather (http://gtaforums.com/user/606114-nikdelgad/)
 
@@ -10,7 +10,7 @@ Lang.Authors           by _PARAM_1
 Main.TexInfo.Level     level
 Main.TexInfo.Levels    leveli
 Main.TexInfo.NoTex     Nema teksture
-Main.TexInfo.Invalid   NetoËno
+Main.TexInfo.Invalid   Neto√®no
 
 # main menu            
 Main.File              Datoteka
@@ -26,17 +26,17 @@ Main.File.Open         Otvori
 Main.File.Save         Spremi
 Main.File.SaveAs       Spremi kao...
 Main.File.Close        Zatvori trenutni
-Main.File.Quit         Izai
+Main.File.Quit         Iza√∞i
 
 # main menu - Edit   
 Main.Edit.Add          Dodaj
 Main.Edit.Replace      Zamjeni
-Main.Edit.Remove       Obriöi
+Main.Edit.Remove       Obri≈°i
 Main.Edit.Rename       Preimenuj
-Main.Edit.Resize       Promjena veliËine
+Main.Edit.Resize       Promjena veli√®ine
 Main.Edit.Modify       Manipulirati
 Main.Edit.SetupML      Postaviti mip-levels
-Main.Edit.ClearML      OËisti mip-levels
+Main.Edit.ClearML      O√®isti mip-levels
 Main.Edit.SetupRP      Postavi rendering opcije
 Main.Edit.SetupTV      Postavi TXD verziju
 Main.Edit.Options      Opcije
@@ -48,8 +48,8 @@ Main.Rename.Set        Postavi
 Main.Rename.Cancel     Odustani
 
 # Resize
-Main.Resize.Desc       Promjena veliËine teksture
-Main.Resize.Width      äirina:
+Main.Resize.Desc       Promjena veli√®ine teksture
+Main.Resize.Width      ≈†irina:
 Main.Resize.Height     Visina:
 Main.Resize.Set        Postavi
 Main.Resize.Cancel     Odustani
@@ -97,8 +97,8 @@ Main.SetupTV.Custom    Custom
 
 # Options
 Main.Options.Desc      _MAGIC_TXD_NAME Opcije
-Main.Options.ShowLog   Prikaûi TXD log na upozorenju
-Main.Options.DispIcn   Prikaûi ikonu igre
+Main.Options.ShowLog   Prika≈æi TXD log na upozorenju
+Main.Options.DispIcn   Prika≈æi ikonu igre
 Main.Options.Accept    Prihvati
 Main.Options.Cancel    Odustani
 
@@ -123,15 +123,15 @@ Main.Log.Desc          Log
 Main.Log.Save          Spremi
 Main.Log.Copy          Kopiraj
 Main.Log.CopyAll       Kopiraj Sve
-Main.Log.Clear         OËisti
+Main.Log.Clear         O√®isti
 Main.Log.Close         Zatvori
 Main.Log.SaveAs        Spremi Log kao...
 
 # View   
-Main.View.FullImg      Prikaûi punu sliku
+Main.View.FullImg      Prika≈æi punu sliku
 Main.View.Backgr       Pozadina
-Main.View.DispML       Prikaûi mip-levels
-Main.View.ShowLog      Prikaûi log
+Main.View.DispML       Prika≈æi mip-levels
+Main.View.ShowLog      Prika≈æi log
 Main.View.DarkThm      Tamna tema
 Main.View.LightTm      Svijetla tema
 
@@ -151,8 +151,8 @@ Main.Edit.Add.Desc     Uvezi teksturu...
 # About
 Main.About.Desc        O nama
 Main.About.Credits     napravio _AUTHOR_NAME_1 i _AUTHOR_NAME_2
-Main.About.ComUse1     Ovaj alat NE SMIJETE koristiti komercijalno bez dozvole autora koji su sudjelovali u ovom programu. Pregledaj licence za viöe informacija.
-Main.About.ComUse2     _MAGIC_TXD_NAME tim pozdravlja vaöu podröku!
+Main.About.ComUse1     Ovaj alat NE SMIJETE koristiti komercijalno bez dozvole autora koji su sudjelovali u ovom programu. Pregledaj licence za vi≈°e informacija.
+Main.About.ComUse2     _MAGIC_TXD_NAME tim pozdravlja va≈°u podr≈°ku!
 
 # Tools
 Tools.Browse           Pregledaj
@@ -169,7 +169,7 @@ Tools.MassExp.Desc     Maivni izvoz
 Tools.MassExp.ImgFmt   Format slike:
 Tools.MassExp.TxNmOnl  samo sa imenom teksture
 Tools.MassExp.PrTxdNm  pre-prended sa TXD imenom
-Tools.MassExp.SepFld   u razliËine datoteke
+Tools.MassExp.SepFld   u razli√®ine datoteke
 Tools.MassExp.Export   Izvoz
 Tools.MassExp.Cancel   Odustani
 
@@ -180,10 +180,10 @@ Tools.MassBld.Cancel   Odustani
 
 # Mass convert
 Tools.MassCnv.Desc     Mass Conversion
-Tools.MassCnv.ClearML  OËisti mipmaps
-Tools.MassCnv.ImpFilt  Poboljöaj filtraciju
-Tools.MassCnv.CompTex  Saûmi teksture
+Tools.MassCnv.ClearML  O√®isti mipmaps
+Tools.MassCnv.ImpFilt  Pobolj≈°aj filtraciju
+Tools.MassCnv.CompTex  Sa≈æmi teksture
 Tools.MassCnv.RecIMG   Rekonstruiraj IMG arhive
-Tools.MassCnv.CompIMG  Saûmi IMG
+Tools.MassCnv.CompIMG  Sa≈æmi IMG
 Tools.MassCnv.Convert  Pretvori
 Tools.MassCnv.Cancel   Odustani
