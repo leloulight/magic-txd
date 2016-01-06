@@ -868,7 +868,7 @@ TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create
 
     // TODO: verify that the texture name is full ANSI.
 
-    this->setWindowTitle(getLanguageItemByKey(mainWnd, create_params.actionDesc));
+    this->setWindowTitle(MAGIC_TEXT(create_params.actionDesc));
 
     QString curPlatformText;
 
@@ -890,7 +890,7 @@ TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create
             texNameEdit->setFixedHeight(texNameEdit->sizeHint().height());
             texNameEdit->setValidator( texNameValid );
             this->textureNameEdit = texNameEdit;
-            leftTopLayout->addRow(CreateLabelL(mainWnd, "Modify.TexName"), texNameEdit);
+            leftTopLayout->addRow(CreateLabelL("Modify.TexName"), texNameEdit);
             if (_enableMaskName)
             {
                 QLineEdit *texMaskNameEdit = new QLineEdit(textureMaskName);
@@ -898,7 +898,7 @@ TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create
                 texMaskNameEdit->setFixedHeight(texMaskNameEdit->sizeHint().height());
                 texMaskNameEdit->setMaxLength(_recommendedPlatformMaxName);
                 texMaskNameEdit->setValidator( texNameValid );
-                leftTopLayout->addRow(CreateLabelL(mainWnd, "Modify.MskName"), texMaskNameEdit);
+                leftTopLayout->addRow(CreateLabelL("Modify.MskName"), texMaskNameEdit);
                 this->textureMaskNameEdit = texMaskNameEdit;
             }
             else
@@ -943,9 +943,9 @@ TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create
                 curPlatformText = platformDisplayEdit->text();
             }
             this->platformSelectWidget = platformDisplayWidget;
-            leftTopLayout->addRow(CreateLabelL(mainWnd, "Modify.Plat"), platformDisplayWidget);
+            leftTopLayout->addRow(CreateLabelL("Modify.Plat"), platformDisplayWidget);
 
-            this->platformHeaderLabel = CreateLabelL(mainWnd, "Modify.RasFmt");
+            this->platformHeaderLabel = CreateLabelL("Modify.RasFmt");
 
             leftTopLayout->addRow(platformHeaderLabel);
 
@@ -960,13 +960,13 @@ TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create
         { // Platform properties
 
             this->platformPropForm = groupContentFormLayout;
-            QRadioButton *origRasterToggle = CreateRadioButtonL(mainWnd, "Modify.Origin");
+            QRadioButton *origRasterToggle = CreateRadioButtonL("Modify.Origin");
 
             connect(origRasterToggle, &QRadioButton::toggled, this, &TexAddDialog::OnPlatformFormatTypeToggle);
 
             this->platformOriginalToggle = origRasterToggle;
             groupContentFormLayout->addRow(origRasterToggle);
-            QRadioButton *rawRasterToggle = CreateRadioButtonL(mainWnd, "Modify.RawRas");
+            QRadioButton *rawRasterToggle = CreateRadioButtonL("Modify.RawRas");
             this->platformRawRasterToggle = rawRasterToggle;
             rawRasterToggle->setChecked(true);
 
@@ -974,7 +974,7 @@ TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create
 
             groupContentFormLayout->addRow(rawRasterToggle);
             this->platformRawRasterProp = rawRasterToggle;
-            QRadioButton *compressionFormatToggle = CreateRadioButtonL(mainWnd, "Modify.Comp");
+            QRadioButton *compressionFormatToggle = CreateRadioButtonL("Modify.Comp");
             this->platformCompressionToggle = compressionFormatToggle;
 
             connect(compressionFormatToggle, &QRadioButton::toggled, this, &TexAddDialog::OnPlatformFormatTypeToggle);
@@ -986,7 +986,7 @@ TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create
 
             groupContentFormLayout->addRow(compressionFormatToggle, compressionFormatSelect);
             this->platformCompressionSelectProp = compressionFormatSelect;
-            QRadioButton *paletteFormatToggle = CreateRadioButtonL(mainWnd, "Modify.Pal");
+            QRadioButton *paletteFormatToggle = CreateRadioButtonL("Modify.Pal");
             this->platformPaletteToggle = paletteFormatToggle;
 
             connect(paletteFormatToggle, &QRadioButton::toggled, this, &TexAddDialog::OnPlatformFormatTypeToggle);
@@ -1017,7 +1017,7 @@ TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create
 
             connect(pixelFormatSelect, (void (QComboBox::*)(const QString&))&QComboBox::activated, this, &TexAddDialog::OnTexturePixelFormatSelect);
 
-            groupContentFormLayout->addRow(CreateLabelL(mainWnd, "Modify.PixFmt"), pixelFormatSelect);
+            groupContentFormLayout->addRow(CreateLabelL("Modify.PixFmt"), pixelFormatSelect);
             this->platformPixelFormatSelectProp = pixelFormatSelect;
         }
 
@@ -1026,7 +1026,7 @@ TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create
         leftPanelLayout->addSpacing(12);
 
         { // Add some basic properties that exist no matter what platform.
-            QCheckBox *generateMipmapsToggle = CreateCheckBoxL(mainWnd, "Modify.GenML");
+            QCheckBox *generateMipmapsToggle = CreateCheckBoxL("Modify.GenML");
             generateMipmapsToggle->setChecked( mainWnd->addImageGenMipmaps );
 
             this->propGenerateMipmaps = generateMipmapsToggle;
@@ -1040,16 +1040,16 @@ TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create
     rightPanelLayout->setAlignment(Qt::AlignHCenter);
     { // Top right (preview options, preview image)
         QHBoxLayout *rightTopPanelLayout = new QHBoxLayout();
-        scaledPreviewCheckBox = CreateCheckBoxL(mainWnd, "Modify.Scaled");
+        scaledPreviewCheckBox = CreateCheckBoxL("Modify.Scaled");
         scaledPreviewCheckBox->setChecked(true);
 
         connect(scaledPreviewCheckBox, &QCheckBox::stateChanged, this, &TexAddDialog::OnScalePreviewStateChanged);
 
-        fillPreviewCheckBox = CreateCheckBoxL(mainWnd, "Modify.Fill");
+        fillPreviewCheckBox = CreateCheckBoxL("Modify.Fill");
 
         connect(fillPreviewCheckBox, &QCheckBox::stateChanged, this, &TexAddDialog::OnFillPreviewStateChanged);
 
-        backgroundForPreviewCheckBox = CreateCheckBoxL(mainWnd, "Modify.Bckgr");
+        backgroundForPreviewCheckBox = CreateCheckBoxL("Modify.Bckgr");
 
         connect(backgroundForPreviewCheckBox, &QCheckBox::stateChanged, this, &TexAddDialog::OnPreviewBackgroundStateChanged);
 
@@ -1079,13 +1079,13 @@ TexAddDialog::TexAddDialog(MainWindow *mainWnd, const dialogCreateParams& create
     layout.top->addLayout(rightPanelLayout);
 
     // Add control buttons at the bottom.
-    QPushButton *cancelButton = CreateButtonL(mainWnd, "Modify.Cancel");
+    QPushButton *cancelButton = CreateButtonL("Modify.Cancel");
     this->cancelButton = cancelButton;
 
     connect(cancelButton, &QPushButton::clicked, this, &TexAddDialog::OnCloseRequest);
 
     layout.bottom->addWidget(cancelButton);
-    QPushButton *addButton = CreateButtonL(mainWnd, create_params.actionName);
+    QPushButton *addButton = CreateButtonL(create_params.actionName);
     this->applyButton = addButton;
 
     connect(addButton, &QPushButton::clicked, this, &TexAddDialog::OnTextureAddRequest);
@@ -1497,7 +1497,7 @@ void TexAddDialog::OnPlatformSelect(const QString& _)
         if (hasPreview)
         {
             this->previewInfoLabel->setVisible( true );
-            this->previewInfoLabel->setText( TexInfoWidget::getDefaultRasterInfoString( mainWnd, origRaster ) );
+            this->previewInfoLabel->setText( TexInfoWidget::getDefaultRasterInfoString( origRaster ) );
         }
         else
         {

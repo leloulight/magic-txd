@@ -71,18 +71,18 @@ struct TexResizeWindow : public QDialog, public magicTextLocalizationItem
 
         connect( heightEdit, &QLineEdit::textChanged, this, &TexResizeWindow::OnChangeDimensionProperty );
 
-        layout.top->addRow( CreateLabelL( mainWnd, "Main.Resize.Width" ), widthEdit );
-        layout.top->addRow( CreateLabelL( mainWnd, "Main.Resize.Height" ), heightEdit );
+        layout.top->addRow( CreateLabelL( "Main.Resize.Width" ), widthEdit );
+        layout.top->addRow( CreateLabelL( "Main.Resize.Height" ), heightEdit );
 
         // Now the buttons, I guess.
-        QPushButton *buttonSet = CreateButtonL( mainWnd, "Main.Resize.Set" );
+        QPushButton *buttonSet = CreateButtonL( "Main.Resize.Set" );
         layout.bottom->addWidget( buttonSet );
 
         this->buttonSet = buttonSet;
 
         connect( buttonSet, &QPushButton::clicked, this, &TexResizeWindow::OnRequestSet );
 
-        QPushButton *buttonCancel = CreateButtonL( mainWnd, "Main.Resize.Cancel" );
+        QPushButton *buttonCancel = CreateButtonL( "Main.Resize.Cancel" );
         layout.bottom->addWidget( buttonCancel );
 
         connect( buttonCancel, &QPushButton::clicked, this, &TexResizeWindow::OnRequestCancel );
@@ -93,12 +93,12 @@ struct TexResizeWindow : public QDialog, public magicTextLocalizationItem
         // Initialize the dialog.
         this->UpdateAccessibility();
 
-        RegisterTextLocalizationItem( mainWnd, this );
+        RegisterTextLocalizationItem( this );
     }
 
     inline ~TexResizeWindow( void )
     {
-        UnregisterTextLocalizationItem( mainWnd, this );
+        UnregisterTextLocalizationItem( this );
 
         // There can be only one.
         this->mainWnd->resizeDlg = NULL;
@@ -106,7 +106,7 @@ struct TexResizeWindow : public QDialog, public magicTextLocalizationItem
 
     void updateContent( MainWindow *mainWnd ) override
     {
-        this->setWindowTitle( getLanguageItemByKey( mainWnd, "Main.Resize.Desc" ) );
+        this->setWindowTitle( getLanguageItemByKey( "Main.Resize.Desc" ) );
     }
 
 public slots:

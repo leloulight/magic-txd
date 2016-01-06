@@ -126,7 +126,7 @@ public:
 public slots:
     void onLogSaveRequest()
     {
-	    QString saveFileName = QFileDialog::getSaveFileName(parent, getLanguageItemByKey(mainWnd, "Main.Log.SaveAs"), QString(), "Log File (*.txt)");
+	    QString saveFileName = QFileDialog::getSaveFileName(parent, getLanguageItemByKey("Main.Log.SaveAs"), QString(), "Log File (*.txt)");
 
 	    if (saveFileName.length() != 0)
 	    {

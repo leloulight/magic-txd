@@ -153,7 +153,7 @@ RenderPropWindow::RenderPropWindow( MainWindow *mainWnd, TexInfoWidget *texInfo 
 
     connect( filteringSelectBox, (void (QComboBox::*)( const QString& ))&QComboBox::activated, this, &RenderPropWindow::OnAnyPropertyChange );
 
-    layout.top->addRow( CreateLabelL( mainWnd, "Main.SetupRP.Filter" ), filteringSelectBox );
+    layout.top->addRow( CreateLabelL( "Main.SetupRP.Filter" ), filteringSelectBox );
 
     QComboBox *uaddrSelectBox = createAddressingBox();
     {
@@ -171,7 +171,7 @@ RenderPropWindow::RenderPropWindow( MainWindow *mainWnd, TexInfoWidget *texInfo 
 
     connect( uaddrSelectBox, (void (QComboBox::*)( const QString& ))&QComboBox::activated, this, &RenderPropWindow::OnAnyPropertyChange );
 
-    layout.top->addRow( CreateLabelL( mainWnd, "Main.SetupRP.UAddr" ), uaddrSelectBox );
+    layout.top->addRow( CreateLabelL( "Main.SetupRP.UAddr" ), uaddrSelectBox );
 
     QComboBox *vaddrSelectBox = createAddressingBox();
     {
@@ -189,24 +189,24 @@ RenderPropWindow::RenderPropWindow( MainWindow *mainWnd, TexInfoWidget *texInfo 
 
     connect( vaddrSelectBox, (void (QComboBox::*)( const QString& ))&QComboBox::activated, this, &RenderPropWindow::OnAnyPropertyChange );
 
-    layout.top->addRow( CreateLabelL( mainWnd, "Main.SetupRP.VAddr" ), vaddrSelectBox );
+    layout.top->addRow( CreateLabelL( "Main.SetupRP.VAddr" ), vaddrSelectBox );
 
     // And now add the usual buttons.
-    QPushButton *buttonSet = CreateButtonL( mainWnd, "Main.SetupRP.Set" );
+    QPushButton *buttonSet = CreateButtonL( "Main.SetupRP.Set" );
     layout.bottom->addWidget( buttonSet );
 
     this->buttonSet = buttonSet;
 
     connect( buttonSet, &QPushButton::clicked, this, &RenderPropWindow::OnRequestSet );
 
-    QPushButton *buttonCancel = CreateButtonL( mainWnd, "Main.SetupRP.Cancel" );
+    QPushButton *buttonCancel = CreateButtonL( "Main.SetupRP.Cancel" );
     layout.bottom->addWidget( buttonCancel );
 
     connect( buttonCancel, &QPushButton::clicked, this, &RenderPropWindow::OnRequestCancel );
 
     mainWnd->renderPropDlg = this;
 
-    RegisterTextLocalizationItem( mainWnd, this );
+    RegisterTextLocalizationItem( this );
 
     // Initialize the dialog.
     this->UpdateAccessibility();
@@ -216,12 +216,12 @@ RenderPropWindow::~RenderPropWindow( void )
 {
     this->mainWnd->renderPropDlg = NULL;
 
-    UnregisterTextLocalizationItem( mainWnd, this );
+    UnregisterTextLocalizationItem( this );
 }
 
 void RenderPropWindow::updateContent( MainWindow *mainWnd )
 {
-    this->setWindowTitle( getLanguageItemByKey(mainWnd, "Main.SetupRP.Desc") );
+    this->setWindowTitle( MAGIC_TEXT("Main.SetupRP.Desc") );
 }
 
 void RenderPropWindow::OnRequestSet( bool checked )

@@ -169,7 +169,6 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
 
     leftPanelLayout->addLayout(
         qtshared::createGameRootInputOutputForm(
-            mainwnd,
             massconv->txdgenConfig.c_gameRoot,
             massconv->txdgenConfig.c_outputRoot,
             this->editGameRoot,
@@ -178,7 +177,6 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
     );
 
     createTargetConfigurationComponents(
-        mainwnd,
         leftPanelLayout,
         massconv->txdgenConfig.c_targetPlatform,
         massconv->txdgenConfig.c_gameType,
@@ -187,7 +185,7 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
     );
 
     // INVASION OF CHECKBOXES.
-    QCheckBox *propClearMipmaps = CreateCheckBoxL( mainwnd, "Tools.MassCnv.ClearML" );
+    QCheckBox *propClearMipmaps = CreateCheckBoxL( "Tools.MassCnv.ClearML" );
 
     propClearMipmaps->setChecked( massconv->txdgenConfig.c_clearMipmaps );
 
@@ -197,7 +195,6 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
 
     leftPanelLayout->addLayout(
         qtshared::createMipmapGenerationGroup(
-            mainwnd,
             this,
             massconv->txdgenConfig.c_generateMipmaps,
             massconv->txdgenConfig.c_mipGenMaxLevel,
@@ -206,7 +203,7 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
         )
     );
 
-    QCheckBox *propImproveFiltering = CreateCheckBoxL( mainwnd, "Tools.MassCnv.ImpFilt" );
+    QCheckBox *propImproveFiltering = CreateCheckBoxL( "Tools.MassCnv.ImpFilt" );
 
     propImproveFiltering->setChecked( massconv->txdgenConfig.c_improveFiltering );
 
@@ -214,7 +211,7 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
 
     leftPanelLayout->addWidget( propImproveFiltering );
 
-    QCheckBox *propCompress = CreateCheckBoxL( mainwnd, "Tools.MassCnv.CompTex" );
+    QCheckBox *propCompress = CreateCheckBoxL( "Tools.MassCnv.CompTex" );
 
     propCompress->setChecked( massconv->txdgenConfig.compressTextures );
 
@@ -222,7 +219,7 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
 
     leftPanelLayout->addWidget( propCompress );
 
-    QCheckBox *propReconstructIMG = CreateCheckBoxL( mainwnd, "Tools.MassCnv.RecIMG" );
+    QCheckBox *propReconstructIMG = CreateCheckBoxL( "Tools.MassCnv.RecIMG" );
 
     propReconstructIMG->setChecked( massconv->txdgenConfig.c_reconstructIMGArchives );
 
@@ -230,7 +227,7 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
 
     leftPanelLayout->addWidget( propReconstructIMG );
 
-    QCheckBox *propCompressedIMG = CreateCheckBoxL( mainwnd, "Tools.MassCnv.CompIMG" );
+    QCheckBox *propCompressedIMG = CreateCheckBoxL( "Tools.MassCnv.CompIMG" );
 
     propCompressedIMG->setChecked( massconv->txdgenConfig.c_imgArchivesCompressed );
 
@@ -255,7 +252,7 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
     this->conversionThread = NULL;
 
     // buttons at the bottom
-    QPushButton *buttonConvert = CreateButtonL(mainwnd, "Tools.MassCnv.Convert");
+    QPushButton *buttonConvert = CreateButtonL("Tools.MassCnv.Convert");
 
     this->buttonConvert = buttonConvert;
 
@@ -263,13 +260,13 @@ MassConvertWindow::MassConvertWindow( MainWindow *mainwnd ) : QDialog( mainwnd )
 
     layout.bottom->addWidget(buttonConvert, 0, Qt::AlignCenter);
 
-    QPushButton *buttonCancel = CreateButtonL(mainwnd, "Tools.MassCnv.Cancel");
+    QPushButton *buttonCancel = CreateButtonL("Tools.MassCnv.Cancel");
 
     connect(buttonCancel, &QPushButton::clicked, this, &MassConvertWindow::OnRequestCancel);
 
     layout.bottom->addWidget(buttonCancel, 0, Qt::AlignCenter);
 
-    RegisterTextLocalizationItem( mainwnd, this );
+    RegisterTextLocalizationItem( this );
 
     LIST_INSERT( massconv->openDialogs.root, this->node );
 }
@@ -278,7 +275,7 @@ MassConvertWindow::~MassConvertWindow( void )
 {
     LIST_REMOVE( this->node );
 
-    UnregisterTextLocalizationItem( mainwnd, this );
+    UnregisterTextLocalizationItem( this );
 
     // Make sure we finished the thread.
     rw::Interface *rwEngine = this->mainwnd->GetEngine();
@@ -313,7 +310,7 @@ MassConvertWindow::~MassConvertWindow( void )
 
 void MassConvertWindow::updateContent( MainWindow *mainWnd )
 {
-    this->setWindowTitle( getLanguageItemByKey( mainWnd, "Tools.MassCnv.Desc" ) );
+    this->setWindowTitle( MAGIC_TEXT( "Tools.MassCnv.Desc" ) );
 }
 
 void MassConvertWindow::serialize( void )

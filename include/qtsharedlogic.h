@@ -13,7 +13,7 @@ namespace qtshared
 {
     struct PathBrowseButton : public QPushButton, public simpleLocalizationItem
     {
-        inline PathBrowseButton( MainWindow *mainWnd, QLineEdit *lineEdit ) : QPushButton(), simpleLocalizationItem( mainWnd, "Tools.Browse" )
+        inline PathBrowseButton( QLineEdit *lineEdit ) : QPushButton(), simpleLocalizationItem( "Tools.Browse" )
         {
             this->theEdit = lineEdit;
 
@@ -37,7 +37,7 @@ namespace qtshared
         {
             QString selPath =
                 QFileDialog::getExistingDirectory(
-                    this, getLanguageItemByKey( mainWnd, "Tools.BrwDesc" ),
+                    this, getLanguageItemByKey( "Tools.BrwDesc" ),
                     theEdit->text()
                 );
 
@@ -51,7 +51,7 @@ namespace qtshared
         QLineEdit *theEdit;
     };
 
-    inline QLayout* createPathSelectGroup( MainWindow *mainWnd, QString begStr, QLineEdit*& editOut )
+    inline QLayout* createPathSelectGroup( QString begStr, QLineEdit*& editOut )
     {
         QHBoxLayout *pathRow = new QHBoxLayout();
 
@@ -59,7 +59,7 @@ namespace qtshared
 
         pathRow->addWidget( pathEdit );
 
-        QPushButton *pathBrowseButton = new PathBrowseButton( mainWnd, pathEdit );
+        QPushButton *pathBrowseButton = new PathBrowseButton( pathEdit );
 
         pathRow->addWidget( pathBrowseButton );
 
@@ -68,11 +68,11 @@ namespace qtshared
         return pathRow;
     }
     
-    inline QLayout* createMipmapGenerationGroup( MainWindow *mainWnd, QObject *parent, bool isEnabled, int curMipMax, QCheckBox*& propGenMipmapsOut, QLineEdit*& editMaxMipLevelOut )
+    inline QLayout* createMipmapGenerationGroup( QObject *parent, bool isEnabled, int curMipMax, QCheckBox*& propGenMipmapsOut, QLineEdit*& editMaxMipLevelOut )
     {
         QHBoxLayout *genMipGroup = new QHBoxLayout();
 
-        QCheckBox *propGenMipmaps = CreateCheckBoxL( mainWnd, "Tools.GenMips" );
+        QCheckBox *propGenMipmaps = CreateCheckBoxL( "Tools.GenMips" );
 
         propGenMipmaps->setChecked( isEnabled );
 
@@ -84,7 +84,7 @@ namespace qtshared
 
         mipMaxLevelGroup->setAlignment( Qt::AlignRight );
 
-        mipMaxLevelGroup->addWidget( CreateLabelL( mainWnd, "Tools.MaxMips" ), 0, Qt::AlignRight );
+        mipMaxLevelGroup->addWidget( CreateLabelL( "Tools.MaxMips" ), 0, Qt::AlignRight );
 
         QLineEdit *maxMipLevelEdit = new QLineEdit( QString( "%1" ).arg( curMipMax ) );
 
@@ -103,15 +103,15 @@ namespace qtshared
         return genMipGroup;
     }
 
-    inline QLayout* createGameRootInputOutputForm( MainWindow *mainWnd, const std::wstring& curGameRoot, const std::wstring& curOutputRoot, QLineEdit*& editGameRootOut, QLineEdit*& editOutputRootOut )
+    inline QLayout* createGameRootInputOutputForm( const std::wstring& curGameRoot, const std::wstring& curOutputRoot, QLineEdit*& editGameRootOut, QLineEdit*& editOutputRootOut )
     {
         QFormLayout *basicPathForm = new QFormLayout();
 
-        QLayout *gameRootLayout = qtshared::createPathSelectGroup( mainWnd, QString::fromStdWString( curGameRoot ), editGameRootOut );
-        QLayout *outputRootLayout = qtshared::createPathSelectGroup( mainWnd, QString::fromStdWString( curOutputRoot ), editOutputRootOut );
+        QLayout *gameRootLayout = qtshared::createPathSelectGroup( QString::fromStdWString( curGameRoot ), editGameRootOut );
+        QLayout *outputRootLayout = qtshared::createPathSelectGroup( QString::fromStdWString( curOutputRoot ), editOutputRootOut );
 
-        basicPathForm->addRow( CreateLabelL(mainWnd, "Tools.GameRt"), gameRootLayout );
-        basicPathForm->addRow( CreateLabelL(mainWnd, "Tools.Output"), outputRootLayout );
+        basicPathForm->addRow( CreateLabelL("Tools.GameRt"), gameRootLayout );
+        basicPathForm->addRow( CreateLabelL("Tools.Output"), outputRootLayout );
 
         return basicPathForm;
     }

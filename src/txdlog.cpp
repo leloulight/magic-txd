@@ -94,41 +94,41 @@ TxdLog::TxdLog(MainWindow *mainWnd, QString AppPath, QWidget *ParentWidget)
 	picError.load(AppPath + "\\resources\\error.png");
 	picInfo.load(AppPath + "\\resources\\info.png");
 
-    RegisterTextLocalizationItem( mainWnd, this );
+    RegisterTextLocalizationItem( this );
 }
 
 TxdLog::~TxdLog( void )
 {
-    UnregisterTextLocalizationItem( mainWnd, this );
+    UnregisterTextLocalizationItem( this );
 }
 
 void TxdLog::updateContent( MainWindow *mainWnd )
 {
-    logWidget->setWindowTitle( getLanguageItemByKey( mainWnd, "Main.Log.Desc" ) );
+    logWidget->setWindowTitle( MAGIC_TEXT( "Main.Log.Desc" ) );
 
     unsigned int menuWidth =  5 * 20 * 2 + 10 * 6;  // oh god no
 
-    QString sLogSave = getLanguageItemByKey(mainWnd, "Main.Log.Save");
+    QString sLogSave = MAGIC_TEXT("Main.Log.Save");
     menuWidth += GetTextWidthInPixels(sLogSave, 20);
 
 	buttonSave->setText( sLogSave );
 
-    QString sLogCopy = getLanguageItemByKey(mainWnd, "Main.Log.Copy");
+    QString sLogCopy = MAGIC_TEXT("Main.Log.Copy");
     menuWidth += GetTextWidthInPixels(sLogCopy, 20);
 	
     buttonCopy->setText( sLogCopy );
 
-    QString sLogCopyAll = getLanguageItemByKey(mainWnd, "Main.Log.CopyAll");
+    QString sLogCopyAll = MAGIC_TEXT("Main.Log.CopyAll");
     menuWidth += GetTextWidthInPixels(sLogCopyAll, 20);
 	
     buttonCopyAll->setText( sLogCopyAll );
 
-    QString sLogClear = getLanguageItemByKey(mainWnd, "Main.Log.Clear");
+    QString sLogClear = MAGIC_TEXT("Main.Log.Clear");
     menuWidth += GetTextWidthInPixels(sLogClear, 20);
 	
     buttonClear->setText( sLogClear );
 
-    QString sLogClose = getLanguageItemByKey(mainWnd, "Main.Log.Close");
+    QString sLogClose = MAGIC_TEXT("Main.Log.Close");
     menuWidth += GetTextWidthInPixels(sLogClose, 20);
 	
     buttonClose->setText( sLogClose );

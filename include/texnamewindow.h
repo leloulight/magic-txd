@@ -26,7 +26,7 @@ struct TexNameWindow : public QDialog, public magicTextLocalizationItem
 
         // Fill things.
         MagicLayout<QHBoxLayout> layout(this);
-        layout.top->addWidget(CreateLabelL( mainWnd, "Main.Rename.Name" ));
+        layout.top->addWidget(CreateLabelL( "Main.Rename.Name" ));
         this->texNameEdit = new QLineEdit(curTexName);
         layout.top->addWidget(this->texNameEdit);
         this->texNameEdit->setMaxLength(32);
@@ -34,8 +34,8 @@ struct TexNameWindow : public QDialog, public magicTextLocalizationItem
 
         connect(this->texNameEdit, &QLineEdit::textChanged, this, &TexNameWindow::OnUpdateTexName);
 
-        this->buttonSet = CreateButtonL(mainWnd, "Main.Rename.Set");
-        QPushButton *buttonCancel = CreateButtonL(mainWnd, "Main.Rename.Cancel");
+        this->buttonSet = CreateButtonL("Main.Rename.Set");
+        QPushButton *buttonCancel = CreateButtonL("Main.Rename.Cancel");
 
         connect(this->buttonSet, &QPushButton::clicked, this, &TexNameWindow::OnRequestSet);
         connect(buttonCancel, &QPushButton::clicked, this, &TexNameWindow::OnRequestCancel);
@@ -46,12 +46,12 @@ struct TexNameWindow : public QDialog, public magicTextLocalizationItem
         // Initialize the window.
         this->UpdateAccessibility();
 
-        RegisterTextLocalizationItem( mainWnd, this );
+        RegisterTextLocalizationItem( this );
     }
 
     inline ~TexNameWindow( void )
     {
-        UnregisterTextLocalizationItem( mainWnd, this );
+        UnregisterTextLocalizationItem( this );
 
         // There can be only one texture name dialog.
         this->mainWnd->texNameDlg = NULL;
@@ -59,7 +59,7 @@ struct TexNameWindow : public QDialog, public magicTextLocalizationItem
 
     void updateContent( MainWindow *mainWnd ) override
     {
-        this->setWindowTitle( getLanguageItemByKey( mainWnd, "Main.Rename.Desc" ) );
+        this->setWindowTitle( getLanguageItemByKey( "Main.Rename.Desc" ) );
     }
 
 public slots:

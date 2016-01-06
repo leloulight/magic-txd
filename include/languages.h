@@ -22,18 +22,22 @@ struct magicTextLocalizationItem abstract
 };
 
 // API to register localization items.
-bool RegisterTextLocalizationItem( MainWindow *mainWnd, magicTextLocalizationItem *provider );
-bool UnregisterTextLocalizationItem( MainWindow *mainWnd, magicTextLocalizationItem *provider );
+bool RegisterTextLocalizationItem( magicTextLocalizationItem *provider );
+bool UnregisterTextLocalizationItem( magicTextLocalizationItem *provider );
 
 // Main Query function to request current localized text strings.
-QString getLanguageItemByKey( MainWindow *mainWnd, QString token, bool *found = NULL );
+QString getLanguageItemByKey( QString token, bool *found = NULL );
+
+// If you want to you can use those colorful macros instead!
+#define MAGIC_TEXT( key )                       getLanguageItemByKey( key )
+
+#define MAGIC_TEXT_CHECK_AVAILABLE( key, b )    getLanguageItemByKey( key, b )
 
 // Helper struct.
 struct simpleLocalizationItem : public magicTextLocalizationItem
 {
-    inline simpleLocalizationItem( MainWindow *mainWnd, QString systemToken )
+    inline simpleLocalizationItem( QString systemToken )
     {
-        this->mainWnd = mainWnd;
         this->systemToken = std::move( systemToken );
     }
 
@@ -45,36 +49,36 @@ struct simpleLocalizationItem : public magicTextLocalizationItem
     void Init( void )
     {
         // Register ourselves.
-        RegisterTextLocalizationItem( mainWnd, this );
+        RegisterTextLocalizationItem( this );
     }
 
     void Shutdown( void )
     {
         // Unregister again.
-        UnregisterTextLocalizationItem( this->mainWnd, this );
+        UnregisterTextLocalizationItem( this );
     }
 
     void updateContent( MainWindow *mainWnd ) override
     {
-        QString newText = getLanguageItemByKey( mainWnd, this->systemToken );
+        QString newText = MAGIC_TEXT( this->systemToken );
 
         this->doText( std::move( newText ) );
     }
 
     virtual void doText( QString text ) = 0;
 
-    MainWindow *mainWnd;
     QString systemToken;
 };
 
 // Common GUI components that are linked to localized text.
-QPushButton* CreateButtonL( MainWindow *mainWnd, QString systemToken );
-QLabel* CreateLabelL( MainWindow *mainWnd, QString systemToken );
-QLabel* CreateFixedWidthLabelL( MainWindow *mainWnd, QString systemToken, int fontSize );
-QCheckBox* CreateCheckBoxL( MainWindow *mainWnd, QString systemToken );
-QRadioButton* CreateRadioButtonL( MainWindow *mainWnd, QString systemToken );
+QPushButton* CreateButtonL( QString systemToken );
+QLabel* CreateLabelL( QString systemToken );
+QLabel* CreateFixedWidthLabelL( QString systemToken, int fontSize );
+QCheckBox* CreateCheckBoxL( QString systemToken );
+QRadioButton* CreateRadioButtonL( QString systemToken );
 
-QAction* CreateMnemonicActionL( MainWindow *mainWnd, QString systemToken, QObject *parent = NULL );
+QAction* CreateMnemonicActionL( QString systemToken, QObject *parent = NULL );
 
 // TODO: Maybe move it somewhere
 unsigned int GetTextWidthInPixels(QString &text, unsigned int fontSize);
+

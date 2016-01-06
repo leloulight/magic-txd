@@ -125,32 +125,32 @@ public:
                 formatSelBox->setCurrentIndex( foundLastUsed );
         }
         this->formatSelBox = formatSelBox;
-        layout.top->addRow(CreateLabelL( mainWnd, "Main.ExpAll.Format" ), formatSelBox);
+        layout.top->addRow(CreateLabelL( "Main.ExpAll.Format" ), formatSelBox);
 
         // Add the button row last.
-        QPushButton *buttonExport = CreateButtonL( mainWnd, "Main.ExpAll.Export" );
+        QPushButton *buttonExport = CreateButtonL( "Main.ExpAll.Export" );
 
         connect( buttonExport, &QPushButton::clicked, this, &ExportAllWindow::OnRequestExport );
 
         layout.bottom->addWidget( buttonExport );
-        QPushButton *buttonCancel = CreateButtonL( mainWnd, "Main.ExpAll.Cancel" );
+        QPushButton *buttonCancel = CreateButtonL( "Main.ExpAll.Cancel" );
 
         connect( buttonCancel, &QPushButton::clicked, this, &ExportAllWindow::OnRequestCancel );
 
         layout.bottom->addWidget( buttonCancel );
         this->setMinimumWidth( 250 );
 
-        RegisterTextLocalizationItem( mainWnd, this );
+        RegisterTextLocalizationItem( this );
     }
 
     ~ExportAllWindow( void )
     {
-        UnregisterTextLocalizationItem( mainWnd, this );
+        UnregisterTextLocalizationItem( this );
     }
 
     void updateContent( MainWindow *mainWnd ) override
     {
-        this->setWindowTitle( getLanguageItemByKey( mainWnd, "Main.ExpAll.Desc" ) );
+        this->setWindowTitle( getLanguageItemByKey( "Main.ExpAll.Desc" ) );
     }
 
 public slots:
@@ -171,7 +171,7 @@ public slots:
 
             // We need a directory to export to, so ask the user.
             QString folderExportTarget = QFileDialog::getExistingDirectory(
-                this, getLanguageItemByKey(mainWnd, "Main.ExpAll.ExpTarg"),
+                this, getLanguageItemByKey("Main.ExpAll.ExpTarg"),
                 QString::fromStdWString( this->mainWnd->lastAllExportTarget )
             );
 

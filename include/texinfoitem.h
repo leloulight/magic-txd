@@ -7,10 +7,8 @@
 class TexInfoWidget : public QWidget, public magicTextLocalizationItem
 {
 public:
-	TexInfoWidget(MainWindow *mainWnd, QListWidgetItem *listItem, rw::TextureBase *texItem) : QWidget()
+	TexInfoWidget(QListWidgetItem *listItem, rw::TextureBase *texItem) : QWidget()
     {
-        this->mainWnd = mainWnd;
-
         QLabel *texName = new QLabel(QString());
         texName->setFixedHeight(23);
         texName->setObjectName("label19px");
@@ -30,12 +28,12 @@ public:
 
         this->setLayout(layout);
 
-        RegisterTextLocalizationItem( mainWnd, this );
+        RegisterTextLocalizationItem( this );
     }
 
     ~TexInfoWidget( void )
     {
-        UnregisterTextLocalizationItem( this->mainWnd, this );
+        UnregisterTextLocalizationItem( this );
     }
 
     inline void SetTextureHandle( rw::TextureBase *texHandle )
@@ -75,7 +73,7 @@ public:
         return QString( (const char*)platformTexInfoBuf );
     }
 
-    inline static QString getDefaultRasterInfoString( MainWindow *mainWnd, const rw::Raster *rasterInfo )
+    inline static QString getDefaultRasterInfoString( const rw::Raster *rasterInfo )
     {
         QString textureInfo;
 
@@ -95,17 +93,17 @@ public:
 
         if ( mipCount == 1 )
         {
-            textureInfo += getLanguageItemByKey( mainWnd, "Main.TexInfo.Level" );
+            textureInfo += MAGIC_TEXT( "Main.TexInfo.Level" );
         }
         else
         {
             QString levelsKeyStr = "Main.TexInfo.Lvl" + QString::number(mipCount);
             bool found;
-            QString levelsStr = getLanguageItemByKey( mainWnd, levelsKeyStr, &found );
+            QString levelsStr = MAGIC_TEXT_CHECK_AVAILABLE( levelsKeyStr, &found );
             if(found)
                 textureInfo += levelsStr;
             else
-                textureInfo += getLanguageItemByKey( mainWnd, "Main.TexInfo.Levels" );
+                textureInfo += MAGIC_TEXT( "Main.TexInfo.Levels" );
         }
 
         return textureInfo;
@@ -113,8 +111,6 @@ public:
 
     inline void updateInfo( void )
     {
-        MainWindow *mainWnd = this->mainWnd;
-
         // Construct some information about our texture item.
         if ( rw::TextureBase *texHandle = this->rwTextureHandle )
         {
@@ -122,7 +118,7 @@ public:
 
             if ( rw::Raster *rasterInfo = this->rwTextureHandle->GetRaster() )
             {
-                textureInfo = getDefaultRasterInfoString( mainWnd, rasterInfo );
+                textureInfo = getDefaultRasterInfoString( rasterInfo );
             }
 
             this->texNameLabel->setText( tr( this->rwTextureHandle->GetName().c_str() ) );
@@ -130,8 +126,8 @@ public:
         }
         else
         {
-            this->texNameLabel->setText( getLanguageItemByKey( mainWnd, "Main.TexInfo.NoTex" ) );
-            this->texInfoLabel->setText( getLanguageItemByKey( mainWnd, "Main.TexInfo.Invalid" ) );
+            this->texNameLabel->setText( getLanguageItemByKey( "Main.TexInfo.NoTex" ) );
+            this->texInfoLabel->setText( getLanguageItemByKey( "Main.TexInfo.Invalid" ) );
         }
     }
 
@@ -146,8 +142,6 @@ public:
     }
 
 private:
-    MainWindow *mainWnd;
-
     QLabel *texNameLabel;
     QLabel *texInfoLabel;
 

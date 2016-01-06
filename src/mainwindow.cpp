@@ -93,7 +93,7 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
 
     this->fileSystem = fsHandle;
 
-    RegisterTextLocalizationItem( this, this );
+    RegisterTextLocalizationItem( this );
 
     try
     {
@@ -170,21 +170,21 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
 	    QMenuBar *menu = new QMenuBar;
 
 	    fileMenu = menu->addMenu("");
-        QAction *actionNew = CreateMnemonicActionL( this, "Main.File.New", this );
+        QAction *actionNew = CreateMnemonicActionL( "Main.File.New", this );
         fileMenu->addAction(actionNew);
 
         this->actionNewTXD = actionNew;
         
         connect( actionNew, &QAction::triggered, this, &MainWindow::onCreateNewTXD );
 
-	    QAction *actionOpen = CreateMnemonicActionL( this, "Main.File.Open", this );
+	    QAction *actionOpen = CreateMnemonicActionL( "Main.File.Open", this );
 	    fileMenu->addAction(actionOpen);
 
         this->actionOpenTXD = actionOpen;
 
         connect( actionOpen, &QAction::triggered, this, &MainWindow::onOpenFile );
 
-	    QAction *actionSave = CreateMnemonicActionL( this, "Main.File.Save", this );
+	    QAction *actionSave = CreateMnemonicActionL( "Main.File.Save", this );
         actionSave->setShortcut( QKeySequence( Qt::CTRL | Qt::Key_S ) );
 	    fileMenu->addAction(actionSave);
 
@@ -192,14 +192,14 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
 
         connect( actionSave, &QAction::triggered, this, &MainWindow::onRequestSaveTXD );
 
-	    QAction *actionSaveAs = CreateMnemonicActionL( this, "Main.File.SaveAs", this );
+	    QAction *actionSaveAs = CreateMnemonicActionL( "Main.File.SaveAs", this );
 	    fileMenu->addAction(actionSaveAs);
 
         this->actionSaveTXDAs = actionSaveAs;
 
         connect( actionSaveAs, &QAction::triggered, this, &MainWindow::onRequestSaveAsTXD );
 
-	    QAction *closeCurrent = CreateMnemonicActionL( this, "Main.File.Close", this );
+	    QAction *closeCurrent = CreateMnemonicActionL( "Main.File.Close", this );
 	    fileMenu->addAction(closeCurrent);
 	    fileMenu->addSeparator();
 
@@ -207,11 +207,11 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
 
         connect( closeCurrent, &QAction::triggered, this, &MainWindow::onCloseCurrent );
 
-	    QAction *actionQuit = CreateMnemonicActionL( this, "Main.File.Quit", this );
+	    QAction *actionQuit = CreateMnemonicActionL( "Main.File.Quit", this );
 	    fileMenu->addAction(actionQuit);
 
 	    editMenu = menu->addMenu("");
-	    QAction *actionAdd = CreateMnemonicActionL( this, "Main.Edit.Add", this );
+	    QAction *actionAdd = CreateMnemonicActionL( "Main.Edit.Add", this );
         actionAdd->setShortcut( Qt::Key_Insert );
 	    editMenu->addAction(actionAdd);
 
@@ -219,7 +219,7 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
 
         connect( actionAdd, &QAction::triggered, this, &MainWindow::onAddTexture );
 
-	    QAction *actionReplace = CreateMnemonicActionL( this, "Main.Edit.Replace", this );
+	    QAction *actionReplace = CreateMnemonicActionL( "Main.Edit.Replace", this );
         actionReplace->setShortcut( QKeySequence( Qt::CTRL | Qt::Key_R ) );
 	    editMenu->addAction(actionReplace);
 
@@ -227,7 +227,7 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
 
         connect( actionReplace, &QAction::triggered, this, &MainWindow::onReplaceTexture );
 
-	    QAction *actionRemove = CreateMnemonicActionL( this, "Main.Edit.Remove", this );
+	    QAction *actionRemove = CreateMnemonicActionL( "Main.Edit.Remove", this );
         actionRemove->setShortcut( Qt::Key_Delete );
 	    editMenu->addAction(actionRemove);
 
@@ -235,7 +235,7 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
 
         connect( actionRemove, &QAction::triggered, this, &MainWindow::onRemoveTexture );
 
-	    QAction *actionRename = CreateMnemonicActionL( this, "Main.Edit.Rename", this );
+	    QAction *actionRename = CreateMnemonicActionL( "Main.Edit.Rename", this );
         actionRename->setShortcut( Qt::Key_N );
 	    editMenu->addAction(actionRename);
 
@@ -243,14 +243,14 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
 
         connect( actionRename, &QAction::triggered, this, &MainWindow::onRenameTexture );
 
-	    QAction *actionResize = CreateMnemonicActionL( this, "Main.Edit.Resize", this );
+	    QAction *actionResize = CreateMnemonicActionL( "Main.Edit.Resize", this );
 	    editMenu->addAction(actionResize);
 
         this->actionResizeTexture = actionResize;
 
         connect( actionResize, &QAction::triggered, this, &MainWindow::onResizeTexture );
 
-        QAction *actionManipulate = CreateMnemonicActionL( this, "Main.Edit.Modify", this );
+        QAction *actionManipulate = CreateMnemonicActionL( "Main.Edit.Modify", this );
         actionManipulate->setShortcut( Qt::Key_M );
         editMenu->addAction(actionManipulate);
 
@@ -258,7 +258,7 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
 
         connect( actionManipulate, &QAction::triggered, this, &MainWindow::onManipulateTexture );
 
-	    QAction *actionSetupMipLevels = CreateMnemonicActionL( this, "Main.Edit.SetupML", this );
+	    QAction *actionSetupMipLevels = CreateMnemonicActionL( "Main.Edit.SetupML", this );
         actionSetupMipLevels->setShortcut( Qt::CTRL | Qt::Key_M );
 	    editMenu->addAction(actionSetupMipLevels);
 
@@ -266,7 +266,7 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
 
         connect( actionSetupMipLevels, &QAction::triggered, this, &MainWindow::onSetupMipmapLayers );
 
-        QAction *actionClearMipLevels = CreateMnemonicActionL( this, "Main.Edit.ClearML", this );
+        QAction *actionClearMipLevels = CreateMnemonicActionL( "Main.Edit.ClearML", this );
         actionClearMipLevels->setShortcut( Qt::CTRL | Qt::Key_C );
         editMenu->addAction(actionClearMipLevels);
 
@@ -274,7 +274,7 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
 
         connect( actionClearMipLevels, &QAction::triggered, this, &MainWindow::onClearMipmapLayers );
 
-	    QAction *actionSetupRenderingProperties = CreateMnemonicActionL( this, "Main.Edit.SetupRP", this );
+	    QAction *actionSetupRenderingProperties = CreateMnemonicActionL( "Main.Edit.SetupRP", this );
 	    editMenu->addAction(actionSetupRenderingProperties);
 
         this->actionRenderProps = actionSetupRenderingProperties;
@@ -303,7 +303,7 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
 #endif //_FEATURES_NOT_IN_CURRENT_RELEASE
 
 	    editMenu->addSeparator();
-	    QAction *actionSetupTxdVersion = CreateMnemonicActionL( this, "Main.Edit.SetupTV", this );
+	    QAction *actionSetupTxdVersion = CreateMnemonicActionL( "Main.Edit.SetupTV", this );
 	    editMenu->addAction(actionSetupTxdVersion);
 
         this->actionSetupTXDVersion = actionSetupTxdVersion;
@@ -312,7 +312,7 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
 
         editMenu->addSeparator();
 
-        QAction *actionShowOptions = CreateMnemonicActionL( this, "Main.Edit.Options", this );
+        QAction *actionShowOptions = CreateMnemonicActionL( "Main.Edit.Options", this );
         editMenu->addAction(actionShowOptions);
 
         this->actionShowOptions = actionShowOptions;
@@ -321,17 +321,17 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
 
         toolsMenu = menu->addMenu("");
 
-        QAction *actionMassConvert = CreateMnemonicActionL( this, "Main.Tools.MassCnv", this );
+        QAction *actionMassConvert = CreateMnemonicActionL( "Main.Tools.MassCnv", this );
         toolsMenu->addAction(actionMassConvert);
 
         connect( actionMassConvert, &QAction::triggered, this, &MainWindow::onRequestMassConvert );
 
-        QAction *actionMassExport = CreateMnemonicActionL( this, "Main.Tools.MassExp", this );
+        QAction *actionMassExport = CreateMnemonicActionL( "Main.Tools.MassExp", this );
         toolsMenu->addAction(actionMassExport);
 
         connect( actionMassExport, &QAction::triggered, this, &MainWindow::onRequestMassExport );
 
-        QAction *actionMassBuild = CreateMnemonicActionL( this, "Main.Tools.MassBld", this );
+        QAction *actionMassBuild = CreateMnemonicActionL( "Main.Tools.MassBld", this );
         toolsMenu->addAction(actionMassBuild);
 
         connect( actionMassBuild, &QAction::triggered, this, &MainWindow::onRequestMassBuild );
@@ -434,7 +434,7 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
 #endif //_FEATURES_NOT_IN_CURRENT_RELEASE
 
 	    exportMenu->addSeparator();
-	    QAction *actionExportAll = CreateMnemonicActionL( this, "Main.Export.ExpAll", this );
+	    QAction *actionExportAll = CreateMnemonicActionL( "Main.Export.ExpAll", this );
 	    exportMenu->addAction(actionExportAll);
 
         this->exportAllImages = actionExportAll;
@@ -443,14 +443,14 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
 
 	    viewMenu = menu->addMenu("");
 
-        QAction *actionShowFullImage = CreateMnemonicActionL( this, "Main.View.FullImg", this);
+        QAction *actionShowFullImage = CreateMnemonicActionL( "Main.View.FullImg", this);
         // actionBackground->setShortcut(Qt::Key_F4);
         actionShowFullImage->setCheckable(true);
         viewMenu->addAction(actionShowFullImage);
 
         connect(actionShowFullImage, &QAction::triggered, this, &MainWindow::onToggleShowFullImage);
 
-	    QAction *actionBackground = CreateMnemonicActionL( this, "Main.View.Backgr", this);
+	    QAction *actionBackground = CreateMnemonicActionL( "Main.View.Backgr", this);
         actionBackground->setShortcut( Qt::Key_F5 );
 		actionBackground->setCheckable(true);
 	    viewMenu->addAction(actionBackground);
@@ -465,14 +465,14 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
 
 #endif //_FEATURES_NOT_IN_CURRENT_RELEASE
 
-	    QAction *actionShowMipLevels = CreateMnemonicActionL( this, "Main.View.DispML", this );
+	    QAction *actionShowMipLevels = CreateMnemonicActionL( "Main.View.DispML", this );
         actionShowMipLevels->setShortcut( Qt::Key_F6 );
 		actionShowMipLevels->setCheckable(true);
 	    viewMenu->addAction(actionShowMipLevels);
 
         connect( actionShowMipLevels, &QAction::triggered, this, &MainWindow::onToggleShowMipmapLayers );
         
-        QAction *actionShowLog = CreateMnemonicActionL( this, "Main.View.ShowLog", this );
+        QAction *actionShowLog = CreateMnemonicActionL( "Main.View.ShowLog", this );
         actionShowLog->setShortcut( Qt::Key_F7 );
         viewMenu->addAction(actionShowLog);
 
@@ -480,9 +480,9 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
 
 	    viewMenu->addSeparator();
 	        
-        this->actionThemeDark = CreateMnemonicActionL( this, "Main.View.DarkThm", this );
+        this->actionThemeDark = CreateMnemonicActionL( "Main.View.DarkThm", this );
         this->actionThemeDark->setCheckable(true);
-        this->actionThemeLight = CreateMnemonicActionL( this, "Main.View.LightTm", this );
+        this->actionThemeLight = CreateMnemonicActionL( "Main.View.LightTm", this );
         this->actionThemeLight->setCheckable(true);
 
         // enable needed theme in menu before connecting a slot
@@ -499,14 +499,14 @@ MainWindow::MainWindow(QString appPath, rw::Interface *engineInterface, CFileSys
 
         infoMenu = menu->addMenu("");
 
-        QAction *actionOpenWebsite = CreateMnemonicActionL( this, "Main.Info.Website", this );
+        QAction *actionOpenWebsite = CreateMnemonicActionL( "Main.Info.Website", this );
         infoMenu->addAction(actionOpenWebsite);
 
         connect( actionOpenWebsite, &QAction::triggered, this, &MainWindow::onRequestOpenWebsite );
 
         infoMenu->addSeparator();
 
-        QAction *actionAbout = CreateMnemonicActionL( this, "Main.Info.About", this );
+        QAction *actionAbout = CreateMnemonicActionL( "Main.Info.About", this );
         infoMenu->addAction(actionAbout);
 
         connect( actionAbout, &QAction::triggered, this, &MainWindow::onAboutUs );
@@ -653,39 +653,39 @@ MainWindow::~MainWindow()
     // Shutdown the native format handlers.
     this->shutdownNativeFormats();
 
-    UnregisterTextLocalizationItem( this, this );
+    UnregisterTextLocalizationItem( this );
 }
 
 void MainWindow::updateContent( MainWindow *mainWnd )
 {
     unsigned int menuLineWidth = 0;
 
-    QString sFileMenu = getLanguageItemByKey(mainWnd, "Main.File");
+    QString sFileMenu = MAGIC_TEXT("Main.File");
     menuLineWidth += GetTextWidthInPixels(sFileMenu, FONT_SIZE_MENU_PX);
 
     fileMenu->setTitle( "&" + sFileMenu );
 
-    QString sEditMenu = getLanguageItemByKey(mainWnd, "Main.Edit");
+    QString sEditMenu = MAGIC_TEXT("Main.Edit");
     menuLineWidth += GetTextWidthInPixels(sEditMenu, FONT_SIZE_MENU_PX);
 
     editMenu->setTitle( "&" + sEditMenu );
 
-    QString sToolsMenu = getLanguageItemByKey(mainWnd, "Main.Tools");
+    QString sToolsMenu = MAGIC_TEXT("Main.Tools");
     menuLineWidth += GetTextWidthInPixels(sToolsMenu, FONT_SIZE_MENU_PX);
 
     toolsMenu->setTitle( "&" + sToolsMenu );
 
-    QString sExportMenu = getLanguageItemByKey(mainWnd, "Main.Export");
+    QString sExportMenu = MAGIC_TEXT("Main.Export");
     menuLineWidth += GetTextWidthInPixels(sExportMenu, FONT_SIZE_MENU_PX);
 
     exportMenu->setTitle( sExportMenu );
 
-    QString sViewMenu = getLanguageItemByKey(mainWnd, "Main.View");
+    QString sViewMenu = MAGIC_TEXT("Main.View");
     menuLineWidth += GetTextWidthInPixels(sViewMenu, FONT_SIZE_MENU_PX);
 
     viewMenu->setTitle( sViewMenu );
 
-    QString sInfoMenu = getLanguageItemByKey(mainWnd, "Main.Info");
+    QString sInfoMenu = MAGIC_TEXT("Main.Info");
     menuLineWidth += GetTextWidthInPixels(sInfoMenu, FONT_SIZE_MENU_PX);
 
     infoMenu->setTitle( sInfoMenu );
@@ -838,7 +838,7 @@ void MainWindow::updateTextureList( bool selectLastItemInList )
 
 	        QListWidgetItem *item = new QListWidgetItem;
 	        listWidget->addItem(item);
-            TexInfoWidget *texInfoWidget = new TexInfoWidget(this, item, texItem);
+            TexInfoWidget *texInfoWidget = new TexInfoWidget(item, texItem);
 	        listWidget->setItemWidget(item, texInfoWidget);
 		    item->setSizeHint(QSize(listWidget->sizeHintForColumn(0), 54));
 
@@ -1086,7 +1086,7 @@ void MainWindow::openTxdFile(QString fileName) {
 
 void MainWindow::onOpenFile( bool checked )
 {
-    QString fileName = QFileDialog::getOpenFileName( this, getLanguageItemByKey( this, "Main.Open.Desc" ), this->lastTXDOpenDir, tr( "RW Texture Archive (*.txd);;Any File (*.*)" ) );
+    QString fileName = QFileDialog::getOpenFileName( this, MAGIC_TEXT( "Main.Open.Desc" ), this->lastTXDOpenDir, tr( "RW Texture Archive (*.txd);;Any File (*.*)" ) );
 
     if ( fileName.length() != 0 )
     {
@@ -1367,7 +1367,7 @@ void MainWindow::onRequestSaveAsTXD( bool checked )
 {
     if ( this->currentTXD != NULL )
     {
-        QString newSaveLocation = QFileDialog::getSaveFileName( this, getLanguageItemByKey(this, "Main.SaveAs.Desc"), this->lastTXDSaveDir, tr( "RW Texture Dictionary (*.txd)" ) );
+        QString newSaveLocation = QFileDialog::getSaveFileName( this, MAGIC_TEXT("Main.SaveAs.Desc"), this->lastTXDSaveDir, tr( "RW Texture Dictionary (*.txd)" ) );
 
         if ( newSaveLocation.length() != 0 )
         {
@@ -1545,7 +1545,7 @@ QString MainWindow::requestValidImagePath( void )
 
     hasEntry = true;
 
-    QString imagePath = QFileDialog::getOpenFileName( this, getLanguageItemByKey(this, "Main.Edit.Add.Desc"), this->lastImageFileOpenDir, imgExtensionSelect );
+    QString imagePath = QFileDialog::getOpenFileName( this, MAGIC_TEXT("Main.Edit.Add.Desc"), this->lastImageFileOpenDir, imgExtensionSelect );
 
     // Remember the directory.
     if ( imagePath.length() != 0 )
@@ -1797,7 +1797,7 @@ void MainWindow::onExportTexture( bool checked )
                 // Request a filename and do the export.
                 QString caption;
                 bool found = false;
-                QString captionFormat = getLanguageItemByKey(this, "Main.Export.Desc", &found);
+                QString captionFormat = MAGIC_TEXT_CHECK_AVAILABLE("Main.Export.Desc", &found);
                 
                 if (found)
                     caption = QString(captionFormat).arg(exportFunction);

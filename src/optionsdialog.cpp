@@ -15,10 +15,10 @@ OptionsDialog::OptionsDialog( MainWindow *mainWnd ) : QDialog( mainWnd )
     // This will be a fairly complicated dialog.
     MagicLayout<QVBoxLayout> layout(this);
 
-    this->optionShowLogOnWarning = CreateCheckBoxL( mainWnd, "Main.Options.ShowLog" );
+    this->optionShowLogOnWarning = CreateCheckBoxL( "Main.Options.ShowLog" );
     this->optionShowLogOnWarning->setChecked( mainWnd->showLogOnWarning );
     layout.top->addWidget(optionShowLogOnWarning);
-    this->optionShowGameIcon = CreateCheckBoxL( mainWnd, "Main.Options.DispIcn" );
+    this->optionShowGameIcon = CreateCheckBoxL( "Main.Options.DispIcn" );
     this->optionShowGameIcon->setChecked(mainWnd->showGameIcon);
     layout.top->addWidget( optionShowGameIcon );
 
@@ -32,7 +32,7 @@ OptionsDialog::OptionsDialog( MainWindow *mainWnd ) : QDialog( mainWnd )
     connect(this->languageBox, static_cast<void (QComboBox::*)(int index)>(&QComboBox::currentIndexChanged), this, &OptionsDialog::OnChangeSelectedLanguage);
 
     QFormLayout *languageFormLayout = new QFormLayout();
-    languageFormLayout->addRow(CreateLabelL( mainWnd, "Lang.Lang" ), languageBox);
+    languageFormLayout->addRow(CreateLabelL( "Lang.Lang" ), languageBox);
 
     layout.top->addLayout(languageFormLayout);
 
@@ -44,15 +44,15 @@ OptionsDialog::OptionsDialog( MainWindow *mainWnd ) : QDialog( mainWnd )
 
     layout.top->setAlignment(this->languageAuthorLabel, Qt::AlignRight);
 
-    QPushButton *buttonAccept = CreateButtonL( mainWnd, "Main.Options.Accept" );
+    QPushButton *buttonAccept = CreateButtonL( "Main.Options.Accept" );
     layout.bottom->addWidget(buttonAccept);
-    QPushButton *buttonCancel = CreateButtonL( mainWnd, "Main.Options.Cancel" );
+    QPushButton *buttonCancel = CreateButtonL( "Main.Options.Cancel" );
     layout.bottom->addWidget(buttonCancel);
 
     connect( buttonAccept, &QPushButton::clicked, this, &OptionsDialog::OnRequestApply );
     connect( buttonCancel, &QPushButton::clicked, this, &OptionsDialog::OnRequestCancel );
 
-    RegisterTextLocalizationItem( mainWnd, this );
+    RegisterTextLocalizationItem( this );
 
     mainWnd->optionsDlg = this;
 }
@@ -61,12 +61,12 @@ OptionsDialog::~OptionsDialog( void )
 {
     mainWnd->optionsDlg = NULL;
 
-    UnregisterTextLocalizationItem( mainWnd, this );
+    UnregisterTextLocalizationItem( this );
 }
 
 void OptionsDialog::updateContent( MainWindow *mainWnd )
 {
-    setWindowTitle( getLanguageItemByKey(mainWnd, "Main.Options.Desc") );
+    setWindowTitle( MAGIC_TEXT("Main.Options.Desc") );
 }
 
 void OptionsDialog::OnRequestApply( bool checked )
@@ -110,7 +110,7 @@ void OptionsDialog::OnChangeSelectedLanguage(int newIndex)
     if (newIndex >= 0 && ourLanguages.languages[newIndex].info.authors != "Magic.TXD Team") {
         QString names;
         bool found = false;
-        QString namesFormat = getLanguageItemByKey(mainWnd, "Lang.Authors", &found);
+        QString namesFormat = MAGIC_TEXT_CHECK_AVAILABLE("Lang.Authors", &found);
 
         if (found)
             names = QString(namesFormat).arg(ourLanguages.languages[newIndex].info.authors);

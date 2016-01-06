@@ -7,7 +7,7 @@
 
 struct SimpleLocalizedButton : public QPushButton, public simpleLocalizationItem
 {
-    inline SimpleLocalizedButton( MainWindow *mainWnd, QString systemToken ) : simpleLocalizationItem( mainWnd, std::move( systemToken ) )
+    inline SimpleLocalizedButton( QString systemToken ) : simpleLocalizationItem( std::move( systemToken ) )
     {
         Init();
     }
@@ -23,16 +23,16 @@ struct SimpleLocalizedButton : public QPushButton, public simpleLocalizationItem
     }
 };
 
-QPushButton* CreateButtonL( MainWindow *mainWnd, QString systemToken )
+QPushButton* CreateButtonL( QString systemToken )
 {
-    SimpleLocalizedButton *newButton = new SimpleLocalizedButton( mainWnd, std::move( systemToken ) );
+    SimpleLocalizedButton *newButton = new SimpleLocalizedButton( std::move( systemToken ) );
     newButton->setMinimumWidth( 90 );
     return newButton;
 }
 
 struct FixedWidthLocalizedButton : public QPushButton, public simpleLocalizationItem
 {
-    inline FixedWidthLocalizedButton( MainWindow *mainWnd, QString systemToken, int fontSize ) : fontSize( fontSize ), simpleLocalizationItem( mainWnd, systemToken )
+    inline FixedWidthLocalizedButton( QString systemToken, int fontSize ) : fontSize( fontSize ), simpleLocalizationItem( systemToken )
     {
         Init();
     }
@@ -51,16 +51,16 @@ struct FixedWidthLocalizedButton : public QPushButton, public simpleLocalization
     int fontSize;
 };
 
-QPushButton* CreateFixedWidthButtonL( MainWindow *mainWnd, QString systemToken, int fontSize )
+QPushButton* CreateFixedWidthButtonL( QString systemToken, int fontSize )
 {
-    FixedWidthLocalizedButton *newButton = new FixedWidthLocalizedButton( mainWnd, systemToken, fontSize );
+    FixedWidthLocalizedButton *newButton = new FixedWidthLocalizedButton( std::move( systemToken ), fontSize );
 
     return newButton;
 }
 
 struct SimpleLocalizedLabel : public QLabel, public simpleLocalizationItem
 {
-    inline SimpleLocalizedLabel( MainWindow *mainWnd, QString systemToken ) : simpleLocalizationItem( mainWnd, std::move( systemToken ) )
+    inline SimpleLocalizedLabel( QString systemToken ) : simpleLocalizationItem( std::move( systemToken ) )
     {
         Init();
     }
@@ -76,16 +76,16 @@ struct SimpleLocalizedLabel : public QLabel, public simpleLocalizationItem
     }
 };
 
-QLabel* CreateLabelL( MainWindow *mainWnd, QString systemToken )
+QLabel* CreateLabelL( QString systemToken )
 {
-    SimpleLocalizedLabel *newLabel = new SimpleLocalizedLabel( mainWnd, std::move( systemToken ) );
+    SimpleLocalizedLabel *newLabel = new SimpleLocalizedLabel( std::move( systemToken ) );
 
     return newLabel;
 }
 
 struct FixedWidthLocalizedLabel : public QLabel, public simpleLocalizationItem
 {
-    inline FixedWidthLocalizedLabel( MainWindow *mainWnd, QString systemToken, int fontSize ) : font_size( fontSize ), simpleLocalizationItem( mainWnd, std::move( systemToken ) )
+    inline FixedWidthLocalizedLabel( QString systemToken, int fontSize ) : font_size( fontSize ), simpleLocalizationItem( std::move( systemToken ) )
     {
         Init();
     }
@@ -104,16 +104,16 @@ struct FixedWidthLocalizedLabel : public QLabel, public simpleLocalizationItem
     int font_size;
 };
 
-QLabel* CreateFixedWidthLabelL( MainWindow *mainWnd, QString systemToken, int fontSize )
+QLabel* CreateFixedWidthLabelL( QString systemToken, int fontSize )
 {
-    FixedWidthLocalizedLabel *newLabel = new FixedWidthLocalizedLabel( mainWnd, systemToken, fontSize );
+    FixedWidthLocalizedLabel *newLabel = new FixedWidthLocalizedLabel( systemToken, fontSize );
 
     return newLabel;
 }
 
 struct SimpleLocalizedCheckBox : public QCheckBox, public simpleLocalizationItem
 {
-    inline SimpleLocalizedCheckBox( MainWindow *mainWnd, QString systemToken ) : simpleLocalizationItem( mainWnd, std::move( systemToken ) )
+    inline SimpleLocalizedCheckBox( QString systemToken ) : simpleLocalizationItem( std::move( systemToken ) )
     {
         Init();
     }
@@ -129,16 +129,16 @@ struct SimpleLocalizedCheckBox : public QCheckBox, public simpleLocalizationItem
     }
 };
 
-QCheckBox* CreateCheckBoxL( MainWindow *mainWnd, QString systemToken )
+QCheckBox* CreateCheckBoxL( QString systemToken )
 {
-    SimpleLocalizedCheckBox *newCB = new SimpleLocalizedCheckBox( mainWnd, std::move( systemToken ) );
+    SimpleLocalizedCheckBox *newCB = new SimpleLocalizedCheckBox( std::move( systemToken ) );
 
     return newCB;
 }
 
 struct SimpleLocalizedRadioButton : public QRadioButton, public simpleLocalizationItem
 {
-    inline SimpleLocalizedRadioButton( MainWindow *mainWnd, QString systemToken ) : simpleLocalizationItem( mainWnd, std::move( systemToken ) )
+    inline SimpleLocalizedRadioButton( QString systemToken ) : simpleLocalizationItem( std::move( systemToken ) )
     {
         Init();
     }
@@ -154,43 +154,41 @@ struct SimpleLocalizedRadioButton : public QRadioButton, public simpleLocalizati
     }
 };
 
-QRadioButton* CreateRadioButtonL( MainWindow *mainWnd, QString systemToken )
+QRadioButton* CreateRadioButtonL( QString systemToken )
 {
-    SimpleLocalizedRadioButton *radioButton = new SimpleLocalizedRadioButton( mainWnd, systemToken );
+    SimpleLocalizedRadioButton *radioButton = new SimpleLocalizedRadioButton( systemToken );
 
     return radioButton;
 }
 
 struct MnemonicAction : public QAction, public magicTextLocalizationItem
 {
-    inline MnemonicAction( MainWindow *mainWnd, QString systemToken, QObject *parent ) : QAction( parent )
+    inline MnemonicAction( QString systemToken, QObject *parent ) : QAction( parent )
     {
-        this->mainWnd = mainWnd;
         this->systemToken = std::move( systemToken );
 
-        RegisterTextLocalizationItem( mainWnd, this );
+        RegisterTextLocalizationItem( this );
     }
 
     inline ~MnemonicAction( void )
     {
-        UnregisterTextLocalizationItem( mainWnd, this );
+        UnregisterTextLocalizationItem( this );
     }
 
     void updateContent( MainWindow *mainWnd ) override
     {
-        QString descText = getLanguageItemByKey( mainWnd, this->systemToken );
+        QString descText = MAGIC_TEXT( this->systemToken );
 
         this->setText( "&" + descText );
     }
 
 private:
-    MainWindow *mainWnd;
     QString systemToken;
 };
 
-QAction* CreateMnemonicActionL( MainWindow *mainWnd, QString systemToken, QObject *parent )
+QAction* CreateMnemonicActionL( QString systemToken, QObject *parent )
 {
-    MnemonicAction *newAction = new MnemonicAction( mainWnd, systemToken, parent );
+    MnemonicAction *newAction = new MnemonicAction( systemToken, parent );
 
     return newAction;
 }

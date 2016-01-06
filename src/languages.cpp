@@ -50,7 +50,7 @@ void InitializeMagicLanguages( void )
     magicLanguagesMainWindowRegister.RegisterPlugin( mainWindowFactory );
 }
 
-bool RegisterTextLocalizationItem( MainWindow *mainWnd, magicTextLocalizationItem *provider )
+bool RegisterTextLocalizationItem( magicTextLocalizationItem *provider )
 {
     bool success = false;
     {
@@ -60,7 +60,7 @@ bool RegisterTextLocalizationItem( MainWindow *mainWnd, magicTextLocalizationIte
         // If we have a loaded language, notify the item.
         if ( ourLanguages.currentLanguage != -1 )
         {
-            provider->updateContent( mainWnd );
+            provider->updateContent( ourLanguages.mainWnd );
         }
 
         success = true;
@@ -69,7 +69,7 @@ bool RegisterTextLocalizationItem( MainWindow *mainWnd, magicTextLocalizationIte
     return success;
 }
 
-bool UnregisterTextLocalizationItem( MainWindow *mainWnd, magicTextLocalizationItem *provider )
+bool UnregisterTextLocalizationItem( magicTextLocalizationItem *provider )
 {
     bool success = false;
     {
@@ -88,7 +88,7 @@ bool UnregisterTextLocalizationItem( MainWindow *mainWnd, magicTextLocalizationI
     return success;
 }
 
-QString getLanguageItemByKey( MainWindow *mainWnd, QString token, bool *found )  // RIP mainWnd param
+QString getLanguageItemByKey( QString token, bool *found )  // RIP mainWnd param
 {
     return ourLanguages.getByKey( token, found );
 }
